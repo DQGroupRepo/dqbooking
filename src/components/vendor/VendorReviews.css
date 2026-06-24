@@ -1,0 +1,59 @@
+.vendor-reviews {
+
+    margin-top:50px;
+
+}
+
+
+
+.vendor-reviews h2 {
+
+    margin-bottom:25px;
+
+}
+
+
+
+.review-card {
+
+    background:#fff;
+
+    border:1px solid #eee;
+
+    padding:25px;
+
+    margin-bottom:20px;
+
+}
+
+
+
+.review-stars {
+
+    color:#dfa974;
+
+    font-size:20px;
+
+    margin-bottom:12px;
+
+}
+
+
+
+.review-card p {
+
+    color:#555;
+
+    line-height:1.7;
+
+    margin-bottom:15px;
+
+}
+
+
+
+.review-card strong {
+
+    color:#19191a;
+
+}

@@ -1,0 +1,165 @@
+.top-bar {
+    background: #222;
+    color: #fff;
+    font-size: 14px;
+    padding: 10px 0;
+}
+
+
+.top-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+
+.top-container a {
+    color: #fff;
+    text-decoration: none;
+    margin-left: 20px;
+    transition: color 0.3s ease;
+}
+
+
+.top-container a:hover {
+    color: #dfa974;
+}
+
+
+/* Main Header */
+
+.main-header {
+    background: #fff;
+    border-bottom: 1px solid #eee;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+}
+
+
+.header-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    min-height: 80px;
+}
+
+
+.logo {
+    font-size: 28px;
+    font-weight: 700;
+    color: #dfa974;
+}
+
+
+.desktop-menu {
+    display: flex;
+    align-items: center;
+    gap: 30px;
+}
+
+
+.desktop-menu a {
+    text-decoration: none;
+    color: #333;
+    font-size: 16px;
+    font-weight: 500;
+    transition: color 0.3s ease;
+}
+
+
+.desktop-menu a:hover {
+    color: #dfa974;
+}
+
+
+/* Mobile */
+
+@media(max-width:768px) {
+
+
+    .top-container,
+    .header-container {
+
+        flex-direction: column;
+        gap: 12px;
+
+    }
+
+
+    .main-header {
+        position: static;
+    }
+
+
+    .desktop-menu {
+
+        gap: 15px;
+        flex-wrap: wrap;
+        justify-content: center;
+
+    }
+
+
+    .logo {
+        font-size: 24px;
+    }
+
+}
+
+.header-actions {
+    display:flex;
+    align-items:center;
+    gap:15px;
+}
+
+
+.login-button,
+.register-button {
+
+    padding:8px 18px;
+    border-radius:5px;
+    text-decoration:none;
+    font-size:14px;
+    font-weight:500;
+
+}
+
+
+.login-button {
+
+    border:1px solid #dfa974;
+    color:#dfa974;
+
+}
+
+
+.login-button:hover {
+
+    background:#dfa974;
+    color:white;
+
+}
+
+
+.register-button {
+
+    background:#dfa974;
+    color:white;
+
+}
+
+
+.register-button:hover {
+
+    background:#c8925f;
+
+}
+
+header,
+.navbar,
+.header-wrapper {
+    position: relative;
+    z-index: 10;
+    background: #fff;
+}

@@ -1,0 +1,29 @@
+.star-rating {
+
+    display:flex;
+
+    gap:8px;
+
+    font-size:35px;
+
+    cursor:pointer;
+
+}
+
+
+
+.star-rating span {
+
+    color:#ddd;
+
+    transition:.2s;
+
+}
+
+
+
+.star-rating .active-star {
+
+    color:#dfa974;
+
+}

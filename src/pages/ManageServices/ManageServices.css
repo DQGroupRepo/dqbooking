@@ -1,0 +1,379 @@
+.manage-services {
+
+    min-height:100vh;
+
+    background:#fafafa;
+
+    padding:50px 40px;
+
+}
+
+
+
+.services-container {
+
+    max-width:1000px;
+
+    margin:auto;
+
+}
+
+
+
+
+
+/* ==========================
+   Header
+========================== */
+
+
+.services-header {
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    margin-bottom:35px;
+
+}
+
+
+
+.services-header h1 {
+
+    font-size:32px;
+
+    margin-bottom:10px;
+
+}
+
+
+
+.services-header p {
+
+    color:#666;
+
+}
+
+
+
+
+
+
+.add-service-btn {
+
+    background:#dfa974;
+
+    color:white;
+
+    border:none;
+
+    padding:14px 25px;
+
+    border-radius:6px;
+
+    cursor:pointer;
+
+    font-size:15px;
+
+}
+
+
+
+.add-service-btn:hover {
+
+    opacity:.9;
+
+}
+
+
+
+
+
+
+/* ==========================
+   Services Grid
+========================== */
+
+
+.services-grid {
+
+    display:grid;
+
+    grid-template-columns:
+
+    repeat(2,1fr);
+
+    gap:30px;
+
+}
+
+
+
+
+
+/* ==========================
+   Service Card
+========================== */
+
+
+.service-list-card {
+
+    background:white;
+
+    border-radius:12px;
+
+    overflow:hidden;
+
+    box-shadow:
+
+    0 4px 15px rgba(0,0,0,.08);
+
+}
+
+
+
+
+
+.service-list-card img {
+
+    width:100%;
+
+    height:220px;
+
+    object-fit:cover;
+
+}
+
+
+
+
+
+.service-content {
+
+    padding:25px;
+
+}
+
+
+
+
+
+.service-content h2 {
+
+    font-size:22px;
+
+    margin-bottom:15px;
+
+}
+
+
+
+
+
+.service-content p {
+
+    color:#666;
+
+    margin-bottom:10px;
+
+    font-size:15px;
+
+}
+
+
+
+
+
+
+
+/* ==========================
+   Status Badges
+========================== */
+
+
+.active-status,
+
+.draft-status {
+
+    display:inline-block;
+
+    margin-top:10px;
+
+    padding:7px 15px;
+
+    border-radius:20px;
+
+    font-size:13px;
+
+    font-weight:500;
+
+}
+
+
+
+.active-status {
+
+    background:#e8f7e8;
+
+    color:#268a26;
+
+}
+
+
+
+.draft-status {
+
+    background:#fff3df;
+
+    color:#b37a18;
+
+}
+
+
+
+
+
+
+
+/* ==========================
+   Actions
+========================== */
+
+
+.service-actions {
+
+    display:flex;
+
+    gap:12px;
+
+    margin-top:25px;
+
+}
+
+
+
+
+
+.service-actions button {
+
+    flex:1;
+
+    padding:10px;
+
+    border-radius:6px;
+
+    cursor:pointer;
+
+    font-size:14px;
+
+}
+
+
+
+
+
+.edit-btn {
+
+    background:white;
+
+    border:1px solid #dfa974;
+
+    color:#dfa974;
+
+}
+
+
+
+.delete-btn {
+
+    background:white;
+
+    border:1px solid #dc3545;
+
+    color:#dc3545;
+
+}
+
+
+
+
+
+
+.edit-btn:hover {
+
+    background:#dfa974;
+
+    color:white;
+
+}
+
+
+
+.delete-btn:hover {
+
+    background:#dc3545;
+
+    color:white;
+
+}
+
+
+
+
+
+
+
+
+/* ==========================
+   Responsive
+========================== */
+
+
+@media(max-width:900px){
+
+
+    .services-grid {
+
+        grid-template-columns:1fr;
+
+    }
+
+
+}
+
+
+
+@media(max-width:768px){
+
+
+    .manage-services {
+
+        padding:35px 20px;
+
+    }
+
+
+
+    .services-header {
+
+        flex-direction:column;
+
+        align-items:flex-start;
+
+        gap:20px;
+
+    }
+
+
+
+    .add-service-btn {
+
+        width:100%;
+
+    }
+
+
+}
