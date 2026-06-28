@@ -1,0 +1,43 @@
+.grid{
+
+    display:grid;
+
+    grid-template-columns:minmax(0,2.2fr) 380px;
+
+    gap:28px;
+
+    align-items:start;
+
+}
+
+.rightPanel{
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:24px;
+
+    position:sticky;
+
+    top:100px;
+
+}
+
+@media(max-width:1250px){
+
+.grid{
+
+    grid-template-columns:1fr;
+
+}
+
+.rightPanel{
+
+    position:relative;
+
+    top:0;
+
+}
+
+}

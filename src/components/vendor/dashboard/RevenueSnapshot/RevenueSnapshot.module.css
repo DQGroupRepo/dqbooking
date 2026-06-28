@@ -1,0 +1,57 @@
+.container{
+    display:flex;
+    flex-direction:column;
+    gap:16px;
+}
+
+.card{
+
+    background:#f8fbff;
+
+    border-radius:14px;
+
+    padding:18px;
+
+    border-left:5px solid #0F4C81;
+
+    transition:.25s;
+}
+
+.card:hover{
+
+    background:#eef6ff;
+
+}
+
+.card span{
+
+    color:#64748b;
+
+    font-size:13px;
+
+}
+
+.card h3{
+
+    margin-top:6px;
+
+    color:#0F4C81;
+
+    font-size:24px;
+
+}
+
+.growth{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:10px;
+
+    color:#16a34a;
+
+    font-weight:600;
+
+    padding-top:6px;
+}

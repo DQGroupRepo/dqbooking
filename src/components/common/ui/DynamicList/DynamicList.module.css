@@ -1,0 +1,69 @@
+.container{
+
+    margin-top:24px;
+
+}
+
+.container h4{
+
+    margin-bottom:16px;
+
+    color:#003580;
+
+}
+
+.row{
+
+    display:flex;
+
+    gap:10px;
+
+    margin-bottom:12px;
+
+}
+
+.row input{
+
+    flex:1;
+
+    padding:12px;
+
+    border:1px solid #dbe3ef;
+
+    border-radius:8px;
+
+    font-size:15px;
+
+}
+
+.row button{
+
+    width:42px;
+
+    border:none;
+
+    border-radius:8px;
+
+    cursor:pointer;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    color:white;
+
+}
+
+.add{
+
+    background:#059669;
+
+}
+
+.remove{
+
+    background:#dc2626;
+
+}

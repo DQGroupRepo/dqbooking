@@ -1,0 +1,31 @@
+.vendor-layout {
+    min-height: 100vh;
+    background: #f4f7fb;
+}
+
+.vendor-main {
+
+    margin-left: 270px;
+
+    width: calc(100vw - 270px);
+
+    min-height: 100vh;
+
+    display: flex;
+    flex-direction: column;
+
+    box-sizing: border-box;
+}
+
+.vendor-content {
+
+    flex: 1;
+
+    width: 100%;
+
+    padding: 32px;
+
+    box-sizing: border-box;
+
+    overflow: auto;
+}

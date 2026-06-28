@@ -3,13 +3,13 @@ import "./Home.css";
 import FeaturedVendorCard from "../../components/vendor/FeaturedVendorCard";
 import SearchBar from "../../components/search/SearchBar";
 import CategoryCard from "../../components/home/CategoryCard";
-import { categories } from "../../data/categories";
+import { categories } from "../../mocks/categories";
 import ServiceCard from "../../components/home/ServiceCard";
 import ServiceSection from "../../components/home/ServiceSection";
-import { popularLocations, testimonials } from "../../data/homeExtraData";
+import { popularLocations, testimonials } from "../../mocks/homeExtraData";
 
-import { popularHalls, bridalMakeup, photographyServices, videographyServices } from "../../data/homeServices";
-import { mockVendors } from "../../data/mockVendors";
+import { popularHalls, bridalMakeup, photographyServices, videographyServices } from "../../mocks/homeServices";
+import { mockVendors } from "../../mocks/mockVendors";
 
 const Home = () => {
   return (

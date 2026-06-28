@@ -1,0 +1,233 @@
+.vendor-topbar{
+
+    height:80px;
+
+    background:#ffffff;
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    padding:0 35px;
+
+    border-bottom:1px solid #E5E7EB;
+
+    position:sticky;
+
+    top:0;
+
+    z-index:100;
+
+}
+
+.topbar-left{
+
+    display:flex;
+
+    flex-direction:column;
+
+}
+
+.topbar-left h2{
+
+    margin:0;
+
+    font-size:28px;
+
+    font-weight:700;
+
+    color:#1E293B;
+
+}
+
+.topbar-left span{
+
+    margin-top:5px;
+
+    font-size:14px;
+
+    color:#64748B;
+
+}
+
+.topbar-center{
+
+    flex:1;
+
+    display:flex;
+
+    justify-content:center;
+
+}
+
+.search-box{
+
+    width:420px;
+
+    display:flex;
+
+    align-items:center;
+
+    gap:10px;
+
+    background:#F8FAFC;
+
+    border:1px solid #E2E8F0;
+
+    border-radius:12px;
+
+    padding:0 16px;
+
+    height:48px;
+
+}
+
+.search-box svg{
+
+    color:#94A3B8;
+
+}
+
+.search-box input{
+
+    flex:1;
+
+    border:none;
+
+    background:none;
+
+    outline:none;
+
+    font-size:15px;
+
+}
+
+.topbar-right{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:24px;
+
+}
+
+.notification-btn{
+
+    width:46px;
+
+    height:46px;
+
+    border:none;
+
+    border-radius:12px;
+
+    background:#F8FAFC;
+
+    cursor:pointer;
+
+    position:relative;
+
+    font-size:18px;
+
+}
+
+.badge{
+
+    position:absolute;
+
+    top:6px;
+
+    right:6px;
+
+    width:18px;
+
+    height:18px;
+
+    background:#EF4444;
+
+    color:white;
+
+    border-radius:50%;
+
+    font-size:11px;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+}
+
+.profile-box{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:12px;
+
+    cursor:pointer;
+
+}
+
+.avatar{
+
+    width:46px;
+
+    height:46px;
+
+    border-radius:50%;
+
+    background:#0F4C81;
+
+    color:white;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    font-weight:700;
+
+}
+
+.profile-box h4{
+
+    margin:0;
+
+    font-size:15px;
+
+}
+
+.profile-box span{
+
+    font-size:13px;
+
+    color:#64748B;
+
+}
+
+@media(max-width:1100px){
+
+.search-box{
+
+    width:280px;
+
+}
+
+}
+
+@media(max-width:900px){
+
+.topbar-center{
+
+    display:none;
+
+}
+
+}

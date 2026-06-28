@@ -5,7 +5,7 @@ import VendorCard from "../../components/vendor/VendorCard";
 
 import Pagination from "../../components/vendor/Pagination"
 
-import { mockVendors } from "../../data/mockVendors";
+import { mockVendors } from "../../mocks/mockVendors";
 
 import "./CategoryListing.css";
 

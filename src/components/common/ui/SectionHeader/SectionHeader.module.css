@@ -1,0 +1,33 @@
+.header{
+
+    margin-bottom:26px;
+
+    padding-bottom:18px;
+
+    border-bottom:1px solid #EEF2F7;
+
+}
+
+.header h2{
+
+    margin:0;
+
+    font-size:28px;
+
+    font-weight:700;
+
+    color:#0F172A;
+
+}
+
+.header p{
+
+    margin-top:8px;
+
+    color:#64748B;
+
+    font-size:15px;
+
+    line-height:1.6;
+
+}

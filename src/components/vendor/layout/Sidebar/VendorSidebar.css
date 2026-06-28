@@ -1,0 +1,139 @@
+.vendor-sidebar{
+
+    position:fixed;
+
+    left:0;
+
+    top:0;
+
+    width:270px;
+
+    height:100vh;
+
+    background:#0f172a;
+
+    color:white;
+
+    display:flex;
+
+    flex-direction:column;
+
+    padding:24px 18px;
+
+    box-sizing:border-box;
+
+    border-right:1px solid rgba(255,255,255,.08);
+
+}
+
+.vendor-logo{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:14px;
+
+    margin-bottom:40px;
+
+    padding:0 12px;
+
+}
+
+.logo-icon{
+
+    width:52px;
+
+    height:52px;
+
+    background:#1e40af;
+
+    border-radius:14px;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    font-size:24px;
+
+}
+
+.vendor-logo h2{
+
+    margin:0;
+
+    font-size:22px;
+
+}
+
+.vendor-logo p{
+
+    margin-top:4px;
+
+    color:#94a3b8;
+
+    font-size:13px;
+
+}
+
+.vendor-sidebar nav{
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:8px;
+
+}
+
+.sidebar-link{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:14px;
+
+    color:#cbd5e1;
+
+    text-decoration:none;
+
+    padding:14px 16px;
+
+    border-radius:12px;
+
+    transition:.25s;
+
+    font-size:15px;
+
+    font-weight:500;
+
+}
+
+.sidebar-icon{
+
+    font-size:18px;
+
+    width:22px;
+
+}
+
+.sidebar-link:hover{
+
+    background:#1e293b;
+
+    color:white;
+
+}
+
+.sidebar-link.active{
+
+    background:#2563eb;
+
+    color:white;
+
+    box-shadow:0 10px 20px rgba(37,99,235,.35);
+
+}

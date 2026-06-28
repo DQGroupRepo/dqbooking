@@ -1,0 +1,22 @@
+.group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.group label {
+    font-weight: 600;
+}
+
+.group textarea {
+    padding: 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    resize: vertical;
+    font-size: 15px;
+}
+
+.group textarea:focus {
+    outline: none;
+    border-color: #0071c2;
+}

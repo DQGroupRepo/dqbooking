@@ -1,0 +1,31 @@
+.button{
+
+    display:inline-flex;
+
+    align-items:center;
+
+    gap:10px;
+
+    border:none;
+
+    background:none;
+
+    color:#003580;
+
+    font-weight:600;
+
+    font-size:15px;
+
+    cursor:pointer;
+
+    margin-bottom:24px;
+
+    transition:.3s;
+
+}
+
+.button:hover{
+
+    color:#0056b3;
+
+}

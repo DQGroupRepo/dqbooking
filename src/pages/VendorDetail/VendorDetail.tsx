@@ -7,7 +7,7 @@ import VendorPackages from "../../components/vendor/VendorPackages";
 import VendorReviews from "../../components/vendor/VendorReviews";
 import BookingCard from "../../components/vendor/BookingCard";
 
-import { mockVendors } from "../../data/mockVendors";
+import { mockVendors } from "../../mocks/mockVendors";
 
 import "./VendorDetail.css";
 
@@ -41,29 +41,19 @@ const VendorDetail = () => {
 
         <div className="container vendor-layout">
 
+          <div className="vendor-detail-main">
 
-          <div className="vendor-main">
+            <VendorInfo vendor={vendor} />
 
+            <VendorAmenities vendor={vendor} />
 
-            <VendorInfo
-              vendor={vendor}
-            />
-
-
-            <VendorAmenities
-              vendor={vendor}
-            />
             <VendorPackages />
+
             <VendorReviews />
 
           </div>
 
-
-
-          <BookingCard
-              vendor={vendor}
-          />
-
+          <BookingCard vendor={vendor} />
 
         </div>
 

@@ -1,0 +1,109 @@
+.card{
+
+    background:#ffffff;
+
+    border-radius:18px;
+
+    padding:28px;
+
+    border:1px solid #E5E7EB;
+
+    display:flex;
+
+    flex-direction:column;
+
+    align-items:flex-start;
+
+    cursor:pointer;
+
+    transition:.25s;
+
+    min-height:240px;
+
+}
+
+.card:hover{
+
+    transform:translateY(-6px);
+
+    box-shadow:0 18px 35px rgba(15,76,129,.12);
+
+    border-color:#0F4C81;
+
+}
+
+.icon{
+
+    width:70px;
+
+    height:70px;
+
+    border-radius:18px;
+
+    background:#EFF6FF;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    font-size:34px;
+
+    margin-bottom:22px;
+
+}
+
+.card h3{
+
+    margin:0 0 12px;
+
+    font-size:22px;
+
+    color:#1E293B;
+
+    font-weight:700;
+
+}
+
+.card p{
+
+    margin:0;
+
+    color:#64748B;
+
+    line-height:1.6;
+
+    flex:1;
+
+}
+
+.button{
+
+    margin-top:24px;
+
+    border:none;
+
+    background:#0F4C81;
+
+    color:white;
+
+    border-radius:10px;
+
+    padding:12px 22px;
+
+    font-size:15px;
+
+    font-weight:600;
+
+    cursor:pointer;
+
+    transition:.25s;
+
+}
+
+.button:hover{
+
+    background:#0b3a61;
+
+}

@@ -1,0 +1,101 @@
+.list{
+    display:flex;
+    flex-direction:column;
+    gap:16px;
+}
+
+.item{
+
+    display:flex;
+
+    gap:14px;
+
+    align-items:flex-start;
+
+    padding:14px;
+
+    border-radius:14px;
+
+    transition:.25s;
+}
+
+.item:hover{
+
+    background:#f8fbff;
+
+}
+
+.icon{
+
+    width:48px;
+
+    height:48px;
+
+    border-radius:14px;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    flex-shrink:0;
+}
+
+.details{
+    flex:1;
+}
+
+.message{
+
+    font-size:14px;
+
+    font-weight:500;
+
+    color:#334155;
+
+    line-height:1.5;
+}
+
+.time{
+
+    display:block;
+
+    margin-top:6px;
+
+    font-size:12px;
+
+    color:#94a3b8;
+}
+
+.booking{
+    color:#2563eb;
+}
+
+.payment{
+    color:#16a34a;
+}
+
+.review{
+    color:#f59e0b;
+}
+
+.cancelled{
+    color:#ef4444;
+}
+
+.bookingBg{
+    background:#DBEAFE;
+}
+
+.paymentBg{
+    background:#DCFCE7;
+}
+
+.reviewBg{
+    background:#FEF3C7;
+}
+
+.cancelledBg{
+    background:#FEE2E2;
+}
