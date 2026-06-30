@@ -1,270 +1,288 @@
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import "./ManageServices.css";
 
+import {
+    FaEye,
+    FaEdit,
+    FaTrash,
+    FaMapMarkerAlt,
+    FaUsers,
+    FaStar
+} from "react-icons/fa";
+
+import VendorServiceService from "../../services/VendorServiceService";
+
+import type { VendorService } from "../../types/VendorService";
+
+import "./ManageServices.css";
 
 const ManageServices = () => {
 
+    const [services, setServices] = useState<VendorService[]>([]);
 
-    const services = [
+    const [search, setSearch] = useState("");
 
-        {
-            id:1,
+    const [statusFilter, setStatusFilter] = useState("All");
 
-            image:
-            "https://images.unsplash.com/photo-1519167758481-83f550bb49b3",
+    const [categoryFilter, setCategoryFilter] = useState("All");
 
-            name:"Royal Palace Convention Hall",
+    useEffect(() => {
 
-            category:"Hall",
+        loadServices();
 
-            location:"Chennai, Tamil Nadu",
+    }, []);
 
-            price:"₹45,000",
+    const loadServices = async () => {
 
-            capacity:"500 Guests",
+        const data = await VendorServiceService.getServices();
 
-            status:"Active"
+        setServices(data);
 
-        },
+    };
 
+    const categories = useMemo(() => {
 
-        {
-            id:2,
+        return [
+            "All",
+            ...new Set(services.map(service => service.category))
+        ];
 
-            image:
-            "https://images.unsplash.com/photo-1519741497674-611481863552",
+    }, [services]);
 
-            name:"Royal Wedding Photography",
+    const filteredServices = services.filter(service => {
 
-            category:"Photography",
+        const matchesSearch =
+            service.name.toLowerCase().includes(search.toLowerCase());
 
-            location:"Chennai, Tamil Nadu",
+        const matchesStatus =
+            statusFilter === "All" ||
+            service.status === statusFilter;
 
-            price:"₹75,000",
+        const matchesCategory =
+            categoryFilter === "All" ||
+            service.category === categoryFilter;
 
-            capacity:"Full Day",
+        return (
+            matchesSearch &&
+            matchesStatus &&
+            matchesCategory
+        );
 
-            status:"Draft"
-
-        },
-
-
-        {
-            id:3,
-
-            image:
-            "https://images.unsplash.com/photo-1507504031003-b417219a0fde",
-
-            name:"Premium Floral Decoration",
-
-            category:"Decoration",
-
-            location:"Chennai, Tamil Nadu",
-
-            price:"₹35,000",
-
-            capacity:"Event Package",
-
-            status:"Active"
-
-        }
-
-
-    ];
-
-
-
-
+    });
 
     return (
 
+        <section className="manage-services">
 
-<section className="manage-services">
+            <div className="services-container">
 
+                <div className="services-header">
 
-<div className="services-container">
+                    <div>
 
+                        <h1>Manage Services</h1>
 
+                        <p>
+                            View and manage all your EventNest listings.
+                        </p>
 
+                    </div>
 
+                    <Link to="/vendor/create-listing">
 
-<div className="services-header">
+                        <button className="add-service-btn">
 
+                            + Add New Service
 
-<div>
+                        </button>
 
-<h1>
-Manage Services
-</h1>
+                    </Link>
 
+                </div>
 
-<p>
-View and manage all your EventNest listings.
-</p>
+                <div className="service-filters">
 
-</div>
+                    <input
 
+                        type="text"
 
+                        placeholder="Search services..."
 
+                        value={search}
 
+                        onChange={(e) =>
+                            setSearch(e.target.value)
+                        }
 
-<Link to="/add-service">
+                    />
 
+                    <select
+                        value={categoryFilter}
+                        onChange={(e) =>
+                            setCategoryFilter(e.target.value)
+                        }
+                    >
 
-<button className="add-service-btn">
+                        {categories.map(category => (
 
-+ Add New Service
+                            <option
+                                key={category}
+                                value={category}
+                            >
+                                {category}
+                            </option>
 
-</button>
+                        ))}
 
+                    </select>
 
-</Link>
+                    <select
+                        value={statusFilter}
+                        onChange={(e) =>
+                            setStatusFilter(e.target.value)
+                        }
+                    >
 
+                        <option>All</option>
+                        <option>Active</option>
+                        <option>Inactive</option>
 
+                    </select>
 
-</div>
+                </div>
 
+                <div className="services-grid">
 
+                    {filteredServices.map(service => (
 
+                        <div
+                            key={service.id}
+                            className="service-list-card"
+                        >
 
+                            <img
+                                src={service.image}
+                                alt={service.name}
+                            />
 
+                            <div className="service-content">
 
+                                <div className="service-top">
 
-<div className="services-grid">
+                                    <span
+                                        className={
+                                            service.status === "Active"
+                                                ? "active-status"
+                                                : "draft-status"
+                                        }
+                                    >
+                                        {service.status}
+                                    </span>
 
+                                    <div className="rating">
 
+                                        <FaStar />
 
-{
-services.map(service=>(
+                                        {service.rating}
 
+                                        <small>
 
-<div
-className="service-list-card"
-key={service.id}
->
+                                            ({service.reviewCount})
 
+                                        </small>
 
+                                    </div>
 
-<img
+                                </div>
 
-src={service.image}
+                                <h2>{service.name}</h2>
 
-alt={service.name}
+                                <p>
 
-/>
+                                    {service.category}
 
+                                </p>
 
+                                <p>
 
+                                    <FaMapMarkerAlt />
 
+                                    {" "}
 
-<div className="service-content">
+                                    {service.city}
 
+                                </p>
 
+                                <p>
 
-<h2>
-{service.name}
-</h2>
+                                    <FaUsers />
 
+                                    {" "}
 
+                                    {service.capacity > 0
+                                        ? `${service.capacity} Guests`
+                                        : "Package Service"}
 
-<p>
-Category : {service.category}
-</p>
+                                </p>
 
+                                <p>
 
+                                    Starting from
 
-<p>
-📍 {service.location}
-</p>
+                                    <strong>
 
+                                        {" "}₹{service.price.toLocaleString()}
 
+                                    </strong>
 
-<p>
-Starting Price : {service.price}
-</p>
+                                </p>
 
+                                <div className="service-actions">
 
+                                    <Link to={`/vendor/services/${service.id}`}>
 
-<p>
-Capacity : {service.capacity}
-</p>
+                                        <button className="view-btn">
 
+                                            <FaEye />
 
+                                            View
 
+                                        </button>
 
+                                    </Link>
 
-<span
+                                    <button className="edit-btn">
 
-className={
-service.status==="Active"
-?
-"active-status"
-:
-"draft-status"
-}
+                                        <FaEdit />
 
->
+                                        Edit
 
-{service.status}
+                                    </button>
 
-</span>
+                                    <button className="delete-btn">
 
+                                        <FaTrash />
 
+                                        Delete
 
+                                    </button>
 
+                                </div>
 
-<div className="service-actions">
+                            </div>
 
+                        </div>
 
-<button className="edit-btn">
+                    ))}
 
-Edit
+                </div>
 
-</button>
+            </div>
 
-
-
-<button className="delete-btn">
-
-Delete
-
-</button>
-
-
-</div>
-
-
-
-</div>
-
-
-
-</div>
-
-
-
-))
-
-}
-
-
-
-</div>
-
-
-
-
-
-</div>
-
-
-</section>
-
+        </section>
 
     );
 
-
 };
-
 
 export default ManageServices;

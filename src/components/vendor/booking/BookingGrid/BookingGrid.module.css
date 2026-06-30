@@ -1,0 +1,85 @@
+.table{
+
+    width:100%;
+
+    border-collapse:collapse;
+
+    background:white;
+
+    border-radius:14px;
+
+    overflow:hidden;
+
+    box-shadow:0 10px 25px rgba(0,0,0,.05);
+
+}
+
+.table th{
+
+    background:#F8FAFC;
+
+    padding:16px;
+
+    text-align:left;
+
+}
+
+.table td{
+
+    padding:18px 16px;
+
+    border-top:1px solid #EEF2F7;
+
+}
+
+.table button{
+
+    border:none;
+
+    background:#0F4C81;
+
+    color:white;
+
+    padding:8px 16px;
+
+    border-radius:8px;
+
+    cursor:pointer;
+
+}
+
+.badge{
+
+    padding:6px 12px;
+
+    border-radius:20px;
+
+    font-size:13px;
+
+    font-weight:600;
+
+}
+
+.Pending{
+
+    background:#FEF3C7;
+
+}
+
+.Confirmed{
+
+    background:#DBEAFE;
+
+}
+
+.Completed{
+
+    background:#DCFCE7;
+
+}
+
+.Cancelled{
+
+    background:#FEE2E2;
+
+}

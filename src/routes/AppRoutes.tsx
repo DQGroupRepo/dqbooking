@@ -15,63 +15,106 @@ import VendorAddService from "../pages/VendorAddService/VendorAddService";
 
 import VendorDashboard from "../pages/VendorDashboard/VendorDashboard";
 import ManageServices from "../pages/ManageServices/ManageServices";
+import VendorBookingSummary from "../pages/VendorBookingSummary/VendorBookingSummary";
+import VendorBookingDetails from "../pages/VendorBookingDetails/VendorBookingDetails";
+import VendorServiceProfile from "../pages/VendorServiceProfile/VendorServiceProfile";
 
 const AppRoutes = () => {
-  return (
-    <BrowserRouter>
 
-      <Routes>
+    return (
 
-        {/* Public Website */}
+        <BrowserRouter>
 
-        <Route element={<MainLayout />}>
+            <Routes>
 
-          <Route path="/" element={<Home />} />
+                {/* Public Website */}
 
-          <Route path="/categories" element={<CategoryListing />} />
+                <Route element={<MainLayout />}>
 
-          <Route path="/vendor/:id" element={<VendorDetail />} />
+                    <Route path="/" element={<Home />} />
 
-          <Route path="/checkout" element={<BookingCheckout />} />
+                    <Route
+                        path="/categories"
+                        element={<CategoryListing />}
+                    />
 
-          <Route path="/login" element={<Login />} />
+                    <Route
+                        path="/vendor/:id"
+                        element={<VendorDetail />}
+                    />
 
-          <Route path="/register" element={<Register />} />
+                    <Route
+                        path="/checkout"
+                        element={<BookingCheckout />}
+                    />
 
-          <Route path="/review" element={<Review />} />
+                    <Route
+                        path="/login"
+                        element={<Login />}
+                    />
 
-        </Route>
+                    <Route
+                        path="/register"
+                        element={<Register />}
+                    />
 
-        {/* Vendor Portal */}
+                    <Route
+                        path="/review"
+                        element={<Review />}
+                    />
 
-        <Route element={<VendorLayout />}>
+                </Route>
 
-          <Route
-            path="/vendor/dashboard"
-            element={<VendorDashboard />}
-          />
+                {/* Vendor Portal */}
 
-          <Route
-              path="/vendor/create-listing"
-              element={<CreateListing />}
-          />
+                <Route element={<VendorLayout />}>
 
-          <Route
-              path="/vendor/add-service/:category"
-              element={<VendorAddService />}
-          />
+                    <Route
+                        path="/vendor/dashboard"
+                        element={<VendorDashboard />}
+                    />
 
-          <Route
-            path="/vendor/manage-services"
-            element={<ManageServices />}
-          />
+                    <Route
+                        path="/vendor/create-listing"
+                        element={<CreateListing />}
+                    />
 
-        </Route>
+                    <Route
+                        path="/vendor/add-service/:category"
+                        element={<VendorAddService />}
+                    />
 
-      </Routes>
+                    <Route
+                        path="/vendor/manage-services"
+                        element={<ManageServices />}
+                    />
 
-    </BrowserRouter>
-  );
+                    <Route
+                        path="/vendor/bookingStats"
+                        element={<VendorBookingSummary />}
+                    />
+
+                    <Route
+                        path="/vendor/bookings/:id"
+                        element={<VendorBookingDetails />}
+                    />
+
+                    <Route
+
+                    path="/vendor/services/:id"
+
+                    element={<VendorServiceProfile />}
+
+                    />
+
+                </Route>
+
+            </Routes>
+
+        </BrowserRouter>
+
+    );
+
 };
 
 export default AppRoutes;

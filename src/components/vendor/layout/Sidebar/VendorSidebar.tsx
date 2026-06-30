@@ -30,7 +30,7 @@ const vendorMenu = [
   },
   {
     label: "Bookings",
-    path: "/vendor/bookings",
+    path: "/vendor/bookingStats",
     icon: <FaCalendarAlt />
   },
   {

@@ -1,0 +1,178 @@
+.tableWrapper{
+
+    background:#fff;
+
+    border-radius:16px;
+
+    border:1px solid #E5E7EB;
+
+    overflow:hidden;
+
+    margin-top:24px;
+
+}
+
+.table{
+
+    width:100%;
+
+    border-collapse:collapse;
+
+}
+
+.table th{
+
+    background:#F8FAFC;
+
+    padding:18px;
+
+    text-align:left;
+
+    font-size:14px;
+
+    color:#64748B;
+
+    font-weight:600;
+
+}
+
+.table td{
+
+    padding:18px;
+
+    border-top:1px solid #F1F5F9;
+
+}
+
+.table tr:hover{
+
+    background:#FAFCFF;
+
+}
+
+.status{
+
+    padding:6px 12px;
+
+    border-radius:999px;
+
+    font-size:13px;
+
+    font-weight:600;
+
+}
+
+.upcoming{
+
+    background:#DBEAFE;
+
+    color:#1D4ED8;
+
+}
+
+.pending{
+
+    background:#FEF3C7;
+
+    color:#B45309;
+
+}
+
+.confirmed{
+
+    background:#DCFCE7;
+
+    color:#15803D;
+
+}
+
+.completed{
+
+    background:#E0F2FE;
+
+    color:#0369A1;
+
+}
+
+.cancelled{
+
+    background:#FEE2E2;
+
+    color:#B91C1C;
+
+}
+
+.viewBtn{
+
+    border:none;
+
+    background:#0F4C81;
+
+    color:white;
+
+    padding:8px 14px;
+
+    border-radius:8px;
+
+    cursor:pointer;
+
+}
+
+.clickableRow {
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.clickableRow:hover {
+    background-color: #f9fafb;
+}
+
+.emptyState {
+    text-align: center;
+    padding: 32px;
+    color: #6b7280;
+    font-style: italic;
+}
+
+.status {
+    display: inline-block;
+    padding: 6px 12px;
+    border-radius: 999px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: white;
+}
+
+.pending {
+    background: #f59e0b;
+}
+
+.upcoming {
+    background: #3b82f6;
+}
+
+.confirmed {
+    background: #10b981;
+}
+
+.completed {
+    background: #059669;
+}
+
+.cancelled {
+    background: #ef4444;
+}
+
+.viewBtn {
+    padding: 6px 14px;
+    border: none;
+    border-radius: 6px;
+    background: #2563eb;
+    color: white;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.viewBtn:hover {
+    background: #1d4ed8;
+}
