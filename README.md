@@ -8,6 +8,8 @@ npm install -g npm@11.17.0
 
 npm install react-router-dom axios
 
+To start -> npm run dev
+
 -------------------------------------------------------------------------
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
