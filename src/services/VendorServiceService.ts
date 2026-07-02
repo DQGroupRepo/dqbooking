@@ -24,6 +24,24 @@ class VendorServiceService {
 
     }
 
+    async deleteService(id:number){
+
+        const index=mockVendorServices.findIndex(
+
+            service=>service.id===id
+
+        );
+
+        if(index!==-1){
+
+            mockVendorServices.splice(index,1);
+
+        }
+
+        return Promise.resolve();
+
+    }
+
     async updateService(
         updatedService: VendorService
     ): Promise<VendorService> {

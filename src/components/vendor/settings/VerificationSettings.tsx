@@ -7,6 +7,7 @@ import Button from "../../common/ui/Button/Button";
 import VendorProfileService from "../../../services/VendorProfileService";
 
 import type { VendorProfile } from "../../../types/VendorProfile";
+import toast from "react-hot-toast";
 
 export default function VerificationSettings(){
 
@@ -52,7 +53,7 @@ export default function VerificationSettings(){
 
         await VendorProfileService.updateProfile(profile);
 
-        alert("Verification details updated.");
+        toast.success("Verification details updated.");
 
     }
 

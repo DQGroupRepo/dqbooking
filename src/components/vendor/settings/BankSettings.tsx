@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import SectionHeader from "../../common/ui/SectionHeader/SectionHeader";
 import Input from "../../common/ui/Input/Input";
 import Button from "../../common/ui/Button/Button";
+import toast from "react-hot-toast";
 
 import VendorProfileService from "../../../services/VendorProfileService";
 
@@ -54,7 +55,7 @@ export default function BankSettings(){
 
         await VendorProfileService.updateProfile(profile);
 
-        alert("Bank details updated.");
+        toast.success("Bank details updated.");
 
     }
 

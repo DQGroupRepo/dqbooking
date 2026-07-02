@@ -16,6 +16,7 @@ import BackButton from "../../components/common/ui/BackButton/BackButton";
 
 import FormProgress from "../../components/common/ui/FormProgress/FormProgress";
 import calculateListingProgress from "../../util/calculateListingProgress";
+import toast from "react-hot-toast";
 
 const AddService = () => {
 
@@ -205,7 +206,7 @@ const AddService = () => {
 
         if(!validateForm()){
 
-            alert("Please complete all required fields.");
+            toast.error("Please complete all required fields.");
 
             return;
 
@@ -221,7 +222,7 @@ const AddService = () => {
 
         setPublishing(false);
 
-        alert("Listing Published Successfully 🎉");
+        toast.success("Listing Published Successfully 🎉");
 
     };
 

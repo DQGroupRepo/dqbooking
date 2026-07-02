@@ -13,6 +13,9 @@ import {
 import VendorServiceService from "../../services/VendorServiceService";
 
 import type { VendorService } from "../../types/VendorService";
+import ConfirmationModal from "../../components/common/ui/ConfirmationModal/ConfirmationModal";
+
+import toast from "react-hot-toast";
 
 import "./ManageServices.css";
 
@@ -21,6 +24,10 @@ const ManageServices = () => {
     const [services, setServices] = useState<VendorService[]>([]);
 
     const [search, setSearch] = useState("");
+
+    const [showDeleteModal,setShowDeleteModal]=useState(false);
+
+    const [selectedServiceId,setSelectedServiceId]=useState<number|null>(null);
 
     const [statusFilter, setStatusFilter] = useState("All");
 
@@ -48,6 +55,28 @@ const ManageServices = () => {
         ];
 
     }, [services]);
+
+    const handleDelete=(id:number)=>{
+
+        setSelectedServiceId(id);
+
+        setShowDeleteModal(true);
+
+    };
+
+    const confirmDelete=async()=>{
+
+        if(selectedServiceId===null) return;
+
+        await VendorServiceService.deleteService(selectedServiceId);
+
+        loadServices();
+
+        toast.success("Service deleted successfully.");
+
+        setShowDeleteModal(false);
+
+    };
 
     const filteredServices = services.filter(service => {
 
@@ -259,9 +288,15 @@ const ManageServices = () => {
 
                                     </button>
 
-                                    <button className="delete-btn">
+                                    <button
 
-                                        <FaTrash />
+                                        className="delete-btn"
+
+                                        onClick={()=>handleDelete(service.id)}
+
+                                    >
+
+                                        <FaTrash/>
 
                                         Delete
 
@@ -278,7 +313,23 @@ const ManageServices = () => {
                 </div>
 
             </div>
+        <ConfirmationModal
 
+            isOpen={showDeleteModal}
+
+            title="Delete Service"
+
+            message="Are you sure you want to delete this service? This action cannot be undone."
+
+            confirmText="Delete"
+
+            cancelText="Cancel"
+
+            onConfirm={confirmDelete}
+
+            onCancel={()=>setShowDeleteModal(false)}
+
+        />
         </section>
 
     );

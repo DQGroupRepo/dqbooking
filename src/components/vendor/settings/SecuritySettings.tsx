@@ -3,6 +3,7 @@ import { useState } from "react";
 import SectionHeader from "../../common/ui/SectionHeader/SectionHeader";
 import Input from "../../common/ui/Input/Input";
 import Button from "../../common/ui/Button/Button";
+import toast from "react-hot-toast";
 
 export default function SecuritySettings(){
 
@@ -16,13 +17,13 @@ export default function SecuritySettings(){
 
         if(newPassword!==confirmPassword){
 
-            alert("Passwords do not match.");
+            toast.error("Passwords do not match.");
 
             return;
 
         }
 
-        alert("Password updated successfully.");
+        toast.success("Password updated successfully.");
 
         setCurrentPassword("");
 

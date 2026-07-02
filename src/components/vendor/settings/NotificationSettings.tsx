@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 
 import SectionHeader from "../../common/ui/SectionHeader/SectionHeader";
 import Button from "../../common/ui/Button/Button";
+import toast from "react-hot-toast";
 
 import VendorProfileService from "../../../services/VendorProfileService";
 
@@ -51,7 +52,7 @@ export default function NotificationSettings(){
 
         await VendorProfileService.updateProfile(profile);
 
-        alert("Notification preferences updated.");
+        toast.success("Notification preferences updated.");
 
     }
 

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-
+import toast from "react-hot-toast";
 import "./BookingCheckout.css";
 
 const BookingCheckout = () => {
@@ -58,8 +58,7 @@ const BookingCheckout = () => {
     };
 
     console.log("Booking Request", bookingRequest);
-
-    alert("Booking request submitted successfully!");
+    toast.success("Booking request submitted successfully!");
   };
 
   return (
