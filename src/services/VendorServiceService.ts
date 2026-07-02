@@ -24,6 +24,26 @@ class VendorServiceService {
 
     }
 
+    async updateService(
+        updatedService: VendorService
+    ): Promise<VendorService> {
+
+        const index = mockVendorServices.findIndex(
+
+            service => service.id === updatedService.id
+
+        );
+
+        if (index !== -1) {
+
+            mockVendorServices[index] = updatedService;
+
+        }
+
+        return Promise.resolve(updatedService);
+
+    }
+
 }
 
 export default new VendorServiceService();

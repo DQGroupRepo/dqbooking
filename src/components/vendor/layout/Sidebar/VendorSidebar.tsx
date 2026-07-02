@@ -7,7 +7,8 @@ import {
   FaCalendarAlt,
   FaStar,
   FaWallet,
-  FaCog
+  FaCog,
+  FaChartLine
 } from "react-icons/fa";
 
 import "./VendorSidebar.css";
@@ -41,7 +42,7 @@ const vendorMenu = [
   {
     label: "Revenue",
     path: "/vendor/revenue",
-    icon: <FaWallet />
+    icon: <FaChartLine />
   },
   {
     label: "Settings",

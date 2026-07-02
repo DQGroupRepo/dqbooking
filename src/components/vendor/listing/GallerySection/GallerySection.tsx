@@ -1,16 +1,18 @@
 import SectionHeader from "../../../common/ui/SectionHeader/SectionHeader";
 
-interface Props{
+interface Props {
 
-    handleImages:(
+    handleImages: (
+        e: React.ChangeEvent<HTMLInputElement>
+    ) => void;
 
-        e:React.ChangeEvent<HTMLInputElement>
+    images: File[];
 
-    )=>void;
+    existingImages?: string[];
 
-    images:File[];
+    removeImage: (index: number) => void;
 
-    removeImage:(index:number)=>void;
+    removeExistingImage?: (index: number) => void;
 
 }
 
@@ -20,11 +22,15 @@ export default function GallerySection({
 
     images,
 
-    removeImage
+    existingImages,
 
-}:Props){
+    removeImage,
 
-    return(
+    removeExistingImage
+
+}: Props) {
+
+    return (
 
         <>
 
@@ -68,15 +74,75 @@ export default function GallerySection({
 
             </div>
 
+            {/* Existing Gallery Images */}
+
             {
 
-                images.length>0 && (
+                existingImages &&
+
+                existingImages.length > 0 && (
 
                     <div className="preview-grid">
 
                         {
 
-                            images.map((image,index)=>(
+                            existingImages.map((image, index) => (
+
+                                <div
+
+                                    key={index}
+
+                                    className="preview-card"
+
+                                >
+
+                                    <img
+
+                                        src={image}
+
+                                        alt="gallery"
+
+                                    />
+
+                                    <button
+
+                                        type="button"
+
+                                        onClick={() =>
+
+                                            removeExistingImage?.(index)
+
+                                        }
+
+                                    >
+
+                                        ✕
+
+                                    </button>
+
+                                </div>
+
+                            ))
+
+                        }
+
+                    </div>
+
+                )
+
+            }
+
+            {/* Newly Uploaded Images */}
+
+            {
+
+                images.length > 0 && (
+
+                    <div className="preview-grid">
+
+                        {
+
+                            images.map((image, index) => (
 
                                 <div
 
@@ -98,7 +164,7 @@ export default function GallerySection({
 
                                         type="button"
 
-                                        onClick={()=>removeImage(index)}
+                                        onClick={() => removeImage(index)}
 
                                     >
 

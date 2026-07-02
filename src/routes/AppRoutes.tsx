@@ -18,6 +18,9 @@ import ManageServices from "../pages/ManageServices/ManageServices";
 import VendorBookingSummary from "../pages/VendorBookingSummary/VendorBookingSummary";
 import VendorBookingDetails from "../pages/VendorBookingDetails/VendorBookingDetails";
 import VendorServiceProfile from "../pages/VendorServiceProfile/VendorServiceProfile";
+import VendorRevenue from "../pages/VendorRevenue/VendorRevenue";
+import VendorReviews from "../pages/VendorReviews/VendorReviews";
+import VendorSettings from "../pages/VendorSettings/VendorSettings";
 
 const AppRoutes = () => {
 
@@ -104,6 +107,30 @@ const AppRoutes = () => {
                     path="/vendor/services/:id"
 
                     element={<VendorServiceProfile />}
+
+                    />
+
+                    <Route
+
+                        path="/vendor/revenue"
+
+                        element={<VendorRevenue/>}
+
+                    />
+
+                    <Route
+
+                        path="/vendor/reviews"
+
+                        element={<VendorReviews/>}
+
+                    />
+
+                    <Route
+
+                        path="/vendor/settings"
+
+                        element={<VendorSettings/>}
 
                     />
 

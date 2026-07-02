@@ -12,7 +12,18 @@ import {
     FaImage
 } from "react-icons/fa";
 
+import Button from "../../components/common/ui/Button/Button";
+
+import BasicInfoSection from "../../components/vendor/listing/BasicInfoSection/BasicInfoSection";
+import AmenitiesSection from "../../components/vendor/listing/AmenitiesSection/AmenitiesSection";
+import GallerySection from "../../components/vendor/listing/GallerySection/GallerySection";
+import ContactSection from "../../components/vendor/listing/ContactSection/ContactSection";
+import AvailabilitySection from "../../components/vendor/listing/AvailabilitySection/AvailabilitySection";
+import BookingSettingsSection from "../../components/vendor/listing/BookingSettingsSection/BookingSettingsSection";
+import CategorySpecificSection from "../../components/vendor/listing/category/CategorySpecificSection";
+
 import VendorServiceService from "../../services/VendorServiceService";
+
 import type { VendorService } from "../../types/VendorService";
 
 import "./VendorServiceProfile.css";
@@ -25,7 +36,41 @@ export default function VendorServiceProfile() {
 
     const [service, setService] = useState<VendorService>();
 
+    const [formData, setFormData] = useState<VendorService>();
+
+    const [isEditing, setIsEditing] = useState(false);
+
+    const [gallery,setGallery] = useState<string[]>([]);
+
     const [selectedImage, setSelectedImage] = useState("");
+
+    const [amenities, setAmenities] = useState<string[]>([]);
+
+    const [editingAmenities, setEditingAmenities] = useState(false);
+
+    const [editedAmenities, setEditedAmenities] = useState<string[]>([]);
+
+    const [editingPackages, setEditingPackages] = useState(false);
+
+    const [editedPackages, setEditedPackages] = useState(service?.packages || []);
+
+    const [images, setImages] = useState<File[]>([]);
+
+    const amenityList = [
+
+        "AC Hall",
+
+        "Parking",
+
+        "Dining Area",
+
+        "Stage",
+
+        "Generator Backup",
+
+        "Catering Available"
+
+    ];
 
     useEffect(() => {
 
@@ -36,149 +81,429 @@ export default function VendorServiceProfile() {
     const loadService = async () => {
 
         const response =
-            await VendorServiceService.getServiceById(Number(id));
+            await VendorServiceService.getServiceById(
+                Number(id)
+            );
 
-        if (response) {
+        if (!response) return;
 
-            setService(response);
+        setService(response);
 
-            if (response.gallery.length > 0)
+        setFormData(response);
+
+        setAmenities(response.amenities);
+
+        if (response.gallery.length > 0) {
+
+            setGallery(response.gallery);
+
+            if(response.gallery.length>0){
+
                 setSelectedImage(response.gallery[0]);
-            else
+
+            }else{
+
                 setSelectedImage(response.image);
+
+            }
+
+        }
+
+        else {
+
+            setSelectedImage(response.image);
 
         }
 
     };
 
-    if (!service) {
+    const toggleAmenity = (amenity: string) => {
+
+        if (editedAmenities.includes(amenity)) {
+
+            setEditedAmenities(
+                editedAmenities.filter(item => item !== amenity)
+            );
+
+        } else {
+
+            setEditedAmenities([
+                ...editedAmenities,
+                amenity
+            ]);
+
+        }
+
+    };
+
+    const removeExistingImage = (index:number)=>{
+
+        const updated = gallery.filter(
+
+            (_,i)=>i!==index
+
+        );
+
+        setGallery(updated);
+
+        if(updated.length>0){
+
+            setSelectedImage(updated[0]);
+
+        }
+
+    };
+
+    const handleChange = (
+
+        e: React.ChangeEvent<
+
+            HTMLInputElement |
+
+            HTMLTextAreaElement |
+
+            HTMLSelectElement
+
+        >
+
+    ) => {
+
+        if (!formData) return;
+
+        setFormData({
+
+            ...formData,
+
+            [e.target.name]:
+
+                e.target.type === "checkbox"
+
+                    ? (e.target as HTMLInputElement).checked
+
+                    : e.target.value
+
+        });
+
+    };
+
+    const handleAmenityChange = (
+
+        item: string
+
+    ) => {
+
+        if (amenities.includes(item)) {
+
+            setAmenities(
+
+                amenities.filter(
+
+                    amenity => amenity !== item
+
+                )
+
+            );
+
+        }
+
+        else {
+
+            setAmenities([
+
+                ...amenities,
+
+                item
+
+            ]);
+
+        }
+
+    };
+
+    const handleImages = (
+
+        e: React.ChangeEvent<HTMLInputElement>
+
+    ) => {
+
+        setImages(
+
+            Array.from(
+
+                e.target.files || []
+
+            )
+
+        );
+
+    };
+
+    const removeImage = (index: number) => {
+
+        setImages(
+
+            images.filter((_, i) => i !== index)
+
+        );
+
+    };
+
+    const handleSave = async () => {
+
+        if (!formData) return;
+
+        const updatedService = {
+
+            ...formData,
+            amenities: editedAmenities,
+            amenities
+
+        };
+
+        await VendorServiceService.updateService(updatedService);
+
+        setService(updatedService);
+
+        setFormData(updatedService);
+
+        setIsEditing(false);
+
+    };
+
+    const handleCancel = () => {
+
+        if (!service) return;
+
+        setFormData(service);
+
+        setAmenities(service.amenities);
+
+        setImages([]);
+
+        setIsEditing(false);
+
+    };
+
+    if (!service || !formData) {
 
         return <h2>Loading...</h2>;
 
     }
+return (
 
-    return (
+<section className="service-profile">
 
-        <section className="service-profile">
+    <button
+        className="back-button"
+        onClick={() => navigate(-1)}
+    >
+        <FaArrowLeft />
+        Back
+    </button>
 
-            <button
-                className="back-button"
-                onClick={() => navigate(-1)}
-            >
-                <FaArrowLeft />
+    <div className="hero-card">
 
-                Back
-            </button>
+        <img
+            src={selectedImage}
+            alt={service.name}
+            className="hero-image"
+        />
 
-            <div className="hero-card">
+        <div className="hero-overlay">
 
-                <img
-                    src={selectedImage}
-                    alt={service.name}
-                    className="hero-image"
+            <span className="status-badge">
+
+                {service.status}
+
+            </span>
+
+            <h1>
+
+                {service.name}
+
+            </h1>
+
+            <p>
+
+                {service.category}
+
+                <span className="dot">•</span>
+
+                <FaMapMarkerAlt />
+
+                {" "}
+
+                {service.city}
+
+            </p>
+
+            <div className="rating">
+
+                <FaStar />
+
+                {service.rating}
+
+                <span>
+
+                    ({service.reviewCount} Reviews)
+
+                </span>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    {/* STATS */}
+
+    <div className="stats-grid">
+
+        <div className="stat-card">
+
+            <h4>
+
+                Starting Price
+
+            </h4>
+
+            <h2>
+
+                ₹{service.price.toLocaleString()}
+
+            </h2>
+
+        </div>
+
+        <div className="stat-card">
+
+            <h4>
+
+                Capacity
+
+            </h4>
+
+            <h2>
+
+                <FaUsers />
+
+                {" "}
+
+                {service.capacity}
+
+            </h2>
+
+        </div>
+
+        <div className="stat-card">
+
+            <h4>
+
+                Reviews
+
+            </h4>
+
+            <h2>
+
+                {service.reviewCount}
+
+            </h2>
+
+        </div>
+
+        <div className="stat-card">
+
+            <h4>
+
+                Upcoming
+
+            </h4>
+
+            <h2>
+
+                {service.upcomingBookings.length}
+
+            </h2>
+
+        </div>
+
+    </div>
+
+    {
+
+        isEditing ? (
+
+            <div className="card">
+
+                <BasicInfoSection
+
+                    formData={formData}
+
+                    handleChange={handleChange}
+
                 />
 
-                <div className="hero-overlay">
+                <CategorySpecificSection
 
-                    <span className="status-badge">
+                    category={formData.category}
 
-                        {service.status}
+                    formData={formData}
 
-                    </span>
+                    handleChange={handleChange}
 
-                    <h1>{service.name}</h1>
+                />
 
-                    <p>
+                <AmenitiesSection
 
-                        {service.category}
+                    amenities={amenities}
 
-                        <span className="dot">
+                    amenityList={amenityList}
 
-                            •
+                    handleAmenityChange={handleAmenityChange}
 
-                        </span>
+                />
 
-                        <FaMapMarkerAlt />
+              <GallerySection
 
-                        {" "}
+              handleImages={handleImages}
 
-                        {service.city}
+              images={images}
 
-                    </p>
+              existingImages={gallery}
 
-                    <div className="rating">
+              removeImage={removeImage}
 
-                        <FaStar />
+              removeExistingImage={removeExistingImage}
 
-                        {service.rating}
+              />
 
-                        <span>
+                <ContactSection
 
-                            ({service.reviewCount} Reviews)
+                    formData={formData}
 
-                        </span>
+                    handleChange={handleChange}
 
-                    </div>
+                />
 
-                </div>
+                <AvailabilitySection
 
-            </div>
+                    formData={formData}
 
-            <div className="stats-grid">
+                    handleChange={handleChange}
 
-                <div className="stat-card">
+                />
 
-                    <h4>Starting Price</h4>
+                <BookingSettingsSection
 
-                    <h2>
+                    formData={formData}
 
-                        ₹{service.price.toLocaleString()}
+                    handleChange={handleChange}
 
-                    </h2>
-
-                </div>
-
-                <div className="stat-card">
-
-                    <h4>Capacity</h4>
-
-                    <h2>
-
-                        <FaUsers />
-
-                        {" "}
-
-                        {service.capacity}
-
-                    </h2>
-
-                </div>
-
-                <div className="stat-card">
-
-                    <h4>Reviews</h4>
-
-                    <h2>
-
-                        {service.reviewCount}
-
-                    </h2>
-
-                </div>
-
-                <div className="stat-card">
-
-                    <h4>Upcoming</h4>
-
-                    <h2>
-
-                        {service.upcomingBookings.length}
-
-                    </h2>
-
-                </div>
+                />
 
             </div>
+
+        ) : (
 
             <div className="content-grid">
 
@@ -186,7 +511,11 @@ export default function VendorServiceProfile() {
 
                     <div className="card">
 
-                        <h2>Overview</h2>
+                        <h2>
+
+                            Overview
+
+                        </h2>
 
                         <p>
 
@@ -208,131 +537,253 @@ export default function VendorServiceProfile() {
 
                         <div className="gallery">
 
-                            {service.gallery.map(image => (
+                            {
 
-                                <img
+                                service.gallery.map(image => (
 
-                                    key={image}
+                                    <img
 
-                                    src={image}
+                                        key={image}
 
-                                    onClick={() =>
-                                        setSelectedImage(image)
-                                    }
+                                        src={image}
 
-                                    alt="Gallery"
+                                        alt="Gallery"
 
-                                />
+                                        onClick={() =>
 
-                            ))}
+                                            setSelectedImage(image)
+
+                                        }
+
+                                    />
+
+                                ))
+
+                            }
 
                         </div>
 
                     </div>
+                                        <div className="card">
 
-                    <div className="card">
+                                            <h2>
 
-                        <h2>Packages</h2>
+                                                Packages
 
-                        <div className="packages">
+                                            </h2>
 
-                            {service.packages.map(pkg => (
+                                            <div className="packages">
 
-                                <div
-                                    key={pkg.id}
-                                    className="package-card"
-                                >
+                                                {
 
-                                    <h3>
+                                                    service.packages.map(pkg => (
 
-                                        {pkg.name}
+                                                        <div
 
-                                    </h3>
+                                                            key={pkg.id}
 
-                                    <p>
+                                                            className="package-card"
 
-                                        {pkg.description}
+                                                        >
 
-                                    </p>
+                                                            <h3>
 
-                                    <h2>
+                                                                {pkg.name}
 
-                                        ₹{pkg.price.toLocaleString()}
+                                                            </h3>
 
-                                    </h2>
+                                                            <p>
+
+                                                                {pkg.description}
+
+                                                            </p>
+
+                                                            <h2>
+
+                                                                ₹{pkg.price.toLocaleString()}
+
+                                                            </h2>
+
+                                                        </div>
+
+                                                    ))
+
+                                                }
+
+                                            </div>
+
+                                        </div>
+
+                                    </div>
+
+                                    <div className="right-column">
+
+                                        <div className="card">
+
+                                            <h2>
+
+                                                Amenities
+
+                                            </h2>
+
+                                            {
+
+                                                amenities.length > 0 ? (
+
+                                                    amenities.map(item => (
+
+                                                        <div
+
+                                                            key={item}
+
+                                                            className="amenity"
+
+                                                        >
+
+                                                            <FaCheckCircle />
+
+                                                            {item}
+
+                                                        </div>
+
+                                                    ))
+
+                                                ) : (
+
+                                                    <p>
+
+                                                        No amenities available.
+
+                                                    </p>
+
+                                                )
+
+                                            }
+
+                                        </div>
+
+                                        <div className="card">
+
+                                            <h2>
+
+                                                <FaCalendarAlt />
+
+                                                {" "}
+
+                                                Upcoming Bookings
+
+                                            </h2>
+
+                                            {
+
+                                                service.upcomingBookings.length > 0 ? (
+
+                                                    service.upcomingBookings.map(date => (
+
+                                                        <div
+
+                                                            key={date}
+
+                                                            className="booking-date"
+
+                                                        >
+
+                                                            {date}
+
+                                                        </div>
+
+                                                    ))
+
+                                                ) : (
+
+                                                    <p>
+
+                                                        No upcoming bookings.
+
+                                                    </p>
+
+                                                )
+
+                                            }
+
+                                        </div>
+
+                                        <button
+
+                                            className="edit-service-btn"
+
+                                            onClick={() =>
+
+                                                setIsEditing(true)
+
+                                            }
+
+                                        >
+
+                                            <FaEdit />
+
+                                            Edit Service
+
+                                        </button>
+
+                                    </div>
 
                                 </div>
 
-                            ))}
+                            )
 
-                        </div>
+                        }
 
-                    </div>
+                        {
 
-                </div>
+                            isEditing && (
 
-                <div className="right-column">
+                                <div
 
-                    <div className="card">
+                                    style={{
 
-                        <h2>Amenities</h2>
+                                        display: "flex",
 
-                        {service.amenities.map(item => (
+                                        justifyContent: "flex-end",
 
-                            <div
-                                key={item}
-                                className="amenity"
-                            >
+                                        gap: "15px",
 
-                                <FaCheckCircle />
+                                        marginTop: "30px"
 
-                                {item}
+                                    }}
 
-                            </div>
+                                >
 
-                        ))}
+                                    <Button
 
-                    </div>
+                                        variant="secondary"
 
-                    <div className="card">
+                                        onClick={handleCancel}
 
-                        <h2>
+                                    >
 
-                            <FaCalendarAlt />
+                                        Cancel
 
-                            Upcoming Bookings
+                                    </Button>
 
-                        </h2>
+                                    <Button
 
-                        {service.upcomingBookings.map(date => (
+                                        onClick={handleSave}
 
-                            <div
-                                key={date}
-                                className="booking-date"
-                            >
+                                    >
 
-                                {date}
+                                        Save Changes
 
-                            </div>
+                                    </Button>
 
-                        ))}
+                                </div>
 
-                    </div>
+                            )
 
-                    <button className="edit-service-btn">
+                        }
 
-                        <FaEdit />
+                    </section>
 
-                        Edit Service
+                    );
 
-                    </button>
-
-                </div>
-
-            </div>
-
-        </section>
-
-    );
-
-}
+                    }

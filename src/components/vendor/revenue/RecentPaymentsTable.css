@@ -1,0 +1,73 @@
+.payments-table{
+
+    background:#fff;
+
+    border-radius:14px;
+
+    overflow:hidden;
+
+    box-shadow:0 8px 20px rgba(0,0,0,.08);
+
+}
+
+.payments-table table{
+
+    width:100%;
+
+    border-collapse:collapse;
+
+}
+
+.payments-table th{
+
+    background:#f5f7fb;
+
+    padding:16px;
+
+    text-align:left;
+
+}
+
+.payments-table td{
+
+    padding:16px;
+
+    border-top:1px solid #eee;
+
+}
+
+.payment-status{
+
+    padding:6px 14px;
+
+    border-radius:30px;
+
+    font-size:13px;
+
+    font-weight:600;
+
+}
+
+.payment-status.paid{
+
+    background:#DCFCE7;
+
+    color:#15803D;
+
+}
+
+.payment-status.pending{
+
+    background:#FEF3C7;
+
+    color:#B45309;
+
+}
+
+.payment-status.refunded{
+
+    background:#FEE2E2;
+
+    color:#B91C1C;
+
+}

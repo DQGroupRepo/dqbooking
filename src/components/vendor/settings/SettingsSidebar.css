@@ -1,0 +1,53 @@
+.settings-sidebar{
+
+    background:white;
+
+    border-radius:14px;
+
+    padding:15px;
+
+    box-shadow:0 8px 20px rgba(0,0,0,.08);
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:10px;
+
+}
+
+.settings-sidebar button{
+
+    border:none;
+
+    background:none;
+
+    text-align:left;
+
+    padding:14px 18px;
+
+    border-radius:10px;
+
+    cursor:pointer;
+
+    font-size:15px;
+
+    transition:.25s;
+
+}
+
+.settings-sidebar button:hover{
+
+    background:#F3F4F6;
+
+}
+
+.settings-sidebar button.active{
+
+    background:#D9974D;
+
+    color:white;
+
+    font-weight:600;
+
+}

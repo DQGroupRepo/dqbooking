@@ -1,0 +1,27 @@
+.vendor-reviews{
+
+    padding:40px;
+
+    background:#F5F7FB;
+
+    min-height:100vh;
+
+}
+
+.page-header{
+
+    margin-bottom:30px;
+
+}
+
+.page-header h1{
+
+    margin-bottom:8px;
+
+}
+
+.page-header p{
+
+    color:#666;
+
+}

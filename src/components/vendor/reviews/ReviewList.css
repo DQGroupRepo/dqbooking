@@ -1,0 +1,111 @@
+.review-list{
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:24px;
+
+}
+
+.review-card{
+
+    background:#fff;
+
+    border-radius:14px;
+
+    padding:24px;
+
+    box-shadow:0 8px 20px rgba(0,0,0,.08);
+
+}
+
+.review-header{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:flex-start;
+
+    margin-bottom:12px;
+
+}
+
+.review-header h3{
+
+    margin:0;
+
+}
+
+.review-header p{
+
+    margin-top:6px;
+
+    color:#777;
+
+}
+
+.review-rating{
+
+    color:#D9974D;
+
+    font-size:18px;
+
+}
+
+.review-date{
+
+    color:#999;
+
+    font-size:14px;
+
+    margin-bottom:15px;
+
+}
+
+.review-comment{
+
+    line-height:1.7;
+
+    margin-bottom:20px;
+
+}
+
+.vendor-reply{
+
+    background:#F8F8F8;
+
+    padding:18px;
+
+    border-left:4px solid #D9974D;
+
+    border-radius:8px;
+
+    margin-bottom:20px;
+
+}
+
+.reply-box textarea{
+
+    width:100%;
+
+    padding:12px;
+
+    border:1px solid #ddd;
+
+    border-radius:8px;
+
+    resize:vertical;
+
+}
+
+.reply-actions{
+
+    display:flex;
+
+    gap:12px;
+
+    margin-top:15px;
+
+}
