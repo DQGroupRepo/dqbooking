@@ -1,7 +1,11 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 import "./VendorAddService.css";
+
+import type { VendorServiceForm } from "../../types/VendorServiceForm";
+import VendorServiceMapper from "../../mapper/VendorServiceMapper";
 
 import BasicInfoSection from "../../components/vendor/listing/BasicInfoSection/BasicInfoSection";
 import AmenitiesSection from "../../components/vendor/listing/AmenitiesSection/AmenitiesSection";
@@ -13,6 +17,8 @@ import FormActions from "../../components/vendor/listing/FormActions/FormActions
 
 import CategorySpecificSection from "../../components/vendor/listing/category/CategorySpecificSection";
 import BackButton from "../../components/common/ui/BackButton/BackButton";
+import VendorServiceService from "../../services/VendorServiceService";
+import VendorServiceFormFactory from "../../util/VendorServiceFormFactory";
 
 import FormProgress from "../../components/common/ui/FormProgress/FormProgress";
 import calculateListingProgress from "../../util/calculateListingProgress";
@@ -20,47 +26,15 @@ import toast from "react-hot-toast";
 
 const AddService = () => {
 
-    const { category } = useParams();
+    const { id, category } = useParams();
 
-    const [formData, setFormData] = useState({
+    const isEditMode = !!id;
 
-        category: category ?? "",
+    const [formData, setFormData] = useState<VendorServiceForm>(
+        VendorServiceFormFactory.create(category ?? "")
+    );
 
-        serviceName: "",
-
-        location: "",
-
-        price: "",
-
-        capacity: "",
-
-        description: "",
-
-        hallCapacity: "",
-
-        diningCapacity: "",
-
-        parkingCapacity: "",
-
-        rooms: "",
-
-        contactPerson: "",
-
-        mobile: "",
-
-        email: "",
-
-        availableFrom: "",
-
-        availableTo: "",
-
-        maxSimultaneousBookings: "1",
-
-        bundleOfferEnabled: false
-
-    });
-
-    const [amenities, setAmenities] = useState<string[]>([]);
+    const navigate = useNavigate();
 
     const [images, setImages] = useState<File[]>([]);
 
@@ -79,6 +53,43 @@ const AddService = () => {
         "Catering Available"
 
     ];
+
+    useEffect(() => {
+
+        if (!isEditMode) return;
+
+        loadService();
+
+    }, [id]);
+
+    const loadService = async () => {
+
+        if (!id) return;
+
+        try {
+
+            const service =
+                await VendorServiceService.getServiceById(id);
+
+            const attributeMap = new Map(
+                service.attributes.map(a => [a.key, a.value])
+            );
+
+            setFormData(
+                 VendorServiceMapper.responseToForm(service)
+            );
+
+        }
+
+        catch (err) {
+
+            console.error(err);
+
+            toast.error("Unable to load service.");
+
+        }
+
+    };
 
     const handleChange = (
 
@@ -108,31 +119,19 @@ const AddService = () => {
 
     const handleAmenityChange = (item: string) => {
 
-        if (amenities.includes(item)) {
+        setFormData(prev => ({
 
-            setAmenities(
+            ...prev,
 
-                amenities.filter(
+            amenities: prev.amenities.includes(item)
 
+                ? prev.amenities.filter(
                     amenity => amenity !== item
-
                 )
 
-            );
+                : [...prev.amenities, item]
 
-        }
-
-        else {
-
-            setAmenities([
-
-                ...amenities,
-
-                item
-
-            ]);
-
-        }
+        }));
 
     };
 
@@ -198,13 +197,13 @@ const AddService = () => {
 
     const handleSubmit = async (
 
-        e:React.FormEvent
+        e: React.FormEvent
 
-    )=>{
+    ) => {
 
         e.preventDefault();
 
-        if(!validateForm()){
+        if (!validateForm()) {
 
             toast.error("Please complete all required fields.");
 
@@ -214,15 +213,50 @@ const AddService = () => {
 
         setPublishing(true);
 
-        await new Promise(
+        try {
 
-            resolve=>setTimeout(resolve,2000)
+            const request =
+                VendorServiceMapper.formToRequest(formData);
 
-        );
+            if (isEditMode) {
 
-        setPublishing(false);
+                await VendorServiceService.updateService(
 
-        toast.success("Listing Published Successfully 🎉");
+                    id!,
+
+                    request
+
+                );
+
+                toast.success("Service updated successfully.");
+
+            }
+
+            else {
+
+                await VendorServiceService.createService(request);
+
+                toast.success("Listing published successfully 🎉");
+
+            }
+            // Redirect after success
+            navigate("/vendor/manage-services");
+
+        }
+
+        catch (error) {
+
+            console.error(error);
+
+            toast.error("Unable to publish listing.");
+
+        }
+
+        finally {
+
+            setPublishing(false);
+
+        }
 
     };
 
@@ -230,12 +264,11 @@ const AddService = () => {
 
         formData,
 
-        amenities,
+        formData.amenities,
 
         images
 
     );
-
     const [publishing, setPublishing] = useState(false);
 
     const [saved, setSaved] = useState(false);
@@ -248,13 +281,7 @@ const AddService = () => {
 
             "vendorListingDraft",
 
-            JSON.stringify({
-
-                formData,
-
-                amenities
-
-            })
+            JSON.stringify(formData)
 
         );
 
@@ -279,85 +306,48 @@ const AddService = () => {
                 <div className="vendor-form-card">
 
                     <BackButton
-
                         label="Back to Categories"
-
                         to="/vendor/create-listing"
-
                     />
 
                     <h1>
 
-                        Add New Service
+                        {isEditMode
+
+                            ? "Edit Service"
+
+                            : "Add New Service"}
 
                     </h1>
 
                     <p>
 
-                        Create a new listing that customers can discover and book.
+                        {isEditMode
+
+                            ? "Update your listing details."
+
+                            : "Create a new listing that customers can discover and book."}
 
                     </p>
 
-                    <FormProgress
-
-                        progress={progress} Complete
-
-                    />
-                    <div className="vendor-form-card">
-
-                        <BackButton
-                            label="Back to Categories"
-                            to="/vendor/create-listing"
-                        />
-
-                        <h1>
-                            Add New Service
-                        </h1>
-
-                        <p>
-                            Create a new listing that customers can discover and book.
-                        </p>
-
-                        <FormProgress
-                            progress={progress}
-                        />
-
-                        <form onSubmit={handleSubmit}>
-
-                            <BasicInfoSection
-                                formData={formData}
-                                handleChange={handleChange}
-                            />
-
-                            ...
-
-                        </form>
-
-                    </div>
+                    <FormProgress progress={progress} />
 
                     <form onSubmit={handleSubmit}>
 
                         <BasicInfoSection
-
                             formData={formData}
-
                             handleChange={handleChange}
-
                         />
 
                         <CategorySpecificSection
-
                             category={formData.category}
-
                             formData={formData}
-
                             handleChange={handleChange}
-
                         />
 
                         <AmenitiesSection
 
-                            amenities={amenities}
+                            amenities={formData.amenities}
 
                             amenityList={amenityList}
 
@@ -366,37 +356,24 @@ const AddService = () => {
                         />
 
                         <GallerySection
-
                             handleImages={handleImages}
-
                             images={images}
-
                             removeImage={removeImage}
-
                         />
 
                         <ContactSection
-
                             formData={formData}
-
                             handleChange={handleChange}
-
                         />
 
                         <AvailabilitySection
-
                             formData={formData}
-
                             handleChange={handleChange}
-
                         />
 
                         <BookingSettingsSection
-
                             formData={formData}
-
                             handleChange={handleChange}
-
                         />
 
                         <FormActions
@@ -404,6 +381,8 @@ const AddService = () => {
                             onSaveDraft={saveDraft}
 
                             publishing={publishing}
+
+                            isEditMode={isEditMode}
 
                         />
 

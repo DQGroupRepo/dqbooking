@@ -1,9 +1,9 @@
 import styles from "./VendorBookingTable.module.css";
-import type { VendorBooking } from "../../../types/VendorBooking";
+import type { RecentBooking } from "../../../types/RecentBooking";
 
 interface VendorBookingTableProps {
   title: string;
-  bookings: VendorBooking[];
+  bookings: RecentBooking[];
 }
 
 export default function VendorBookingTable({
@@ -72,7 +72,7 @@ export default function VendorBookingTable({
 
               </td>
 
-              <td>{booking.eventName}</td>
+              <td>{booking.serviceName}</td>
 
               <td>{booking.eventDate}</td>
 

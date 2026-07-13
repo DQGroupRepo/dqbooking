@@ -1,3 +1,5 @@
+/*
+
 import { mockVendorBookings } from "../mocks/mockVendorBookings";
 import type { VendorBooking } from "../types/VendorBooking";
 
@@ -12,3 +14,4 @@ class VendorBookingService {
 }
 
 export default new VendorBookingService();
+ */

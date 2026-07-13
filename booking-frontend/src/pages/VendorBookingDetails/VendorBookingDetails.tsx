@@ -71,7 +71,7 @@ export default function VendorBookingDetails() {
                 <h2>Booking not found</h2>
 
                 <button
-                    onClick={() => navigate("/vendor/bookingStats")}
+                    onClick={() => navigate("/vendor/bookings")}
                 >
                     Back
                 </button>
@@ -92,7 +92,7 @@ export default function VendorBookingDetails() {
 
                 className={styles.backButton}
 
-                onClick={() => navigate("/vendor/bookingStats")}
+                onClick={() => navigate("/vendor/bookings")}
 
             >
 
