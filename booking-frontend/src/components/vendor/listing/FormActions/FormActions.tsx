@@ -1,10 +1,9 @@
 import Button from "../../../common/ui/Button/Button";
-
 interface Props{
 
     onSaveDraft?:()=>void;
-
     publishing?:boolean;
+    isEditMode?: boolean;
 
 }
 
@@ -12,9 +11,11 @@ export default function FormActions({
 
     onSaveDraft,
 
-    publishing
+    publishing,
 
-}:Props){
+    isEditMode = false
+
+}: Props) {
 
     return(
 
@@ -46,13 +47,9 @@ export default function FormActions({
 
                     publishing
 
-                    ?
+                        ? (isEditMode ? "Updating..." : "Publishing...")
 
-                    "Publishing..."
-
-                    :
-
-                    "Publish Listing"
+                        : (isEditMode ? "Update Service" : "Publish Listing")
 
                 }
 
