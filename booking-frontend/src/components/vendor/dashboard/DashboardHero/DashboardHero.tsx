@@ -3,6 +3,7 @@ import {
   FaChartLine,
   FaPlusCircle
 } from "react-icons/fa";
+import { useNavigate } from "react-router-dom";
 
 import styles from "./DashboardHero.module.css";
 
@@ -19,7 +20,7 @@ export default function DashboardHero({
     day: "numeric",
     month: "long",
   });
-
+  const navigate = useNavigate();
   return (
 
     <section className={styles.hero}>
@@ -42,19 +43,24 @@ export default function DashboardHero({
 
         <div className={styles.actions}>
 
-          <button>
+          <button
+              onClick={() => navigate("/vendor/create-listing")}
+          >
 
-            <FaPlusCircle />
+              <FaPlusCircle />
 
-            Create Listing
+              Create Listing
 
           </button>
 
-          <button className={styles.secondary}>
+          <button
+              className={styles.secondary}
+              onClick={() => navigate("/vendor/bookings")}
+          >
 
-            <FaCalendarCheck />
+              <FaCalendarCheck />
 
-            View Bookings
+              View Bookings
 
           </button>
 

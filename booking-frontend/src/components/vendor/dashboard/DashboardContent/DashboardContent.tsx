@@ -2,24 +2,26 @@ import VendorBookingTable from "../../booking/VendorBookingTable/VendorBookingTa
 
 import TodaySummary from "../TodaySummary/TodaySummary";
 import QuickActions from "../QuickActions/QuickActions";
-import DashboardPanel from "../DashboardPanel/DashboardPanel";
-import Notifications from "../Notifications/Notifications";
-import RevenueSnapshot from "../RevenueSnapshot/RevenueSnapshot";
-import ReviewList from "../../../common/reviews/ReviewList/ReviewList";
 
-import type { VendorBooking } from "../../../types/VendorBooking";
+import type { RecentBooking } from "../../../types/RecentBooking";
 import type { VendorDashboardSummary } from "../../../types/VendorDashboard";
 
 import styles from "./DashboardContent.module.css";
 
 interface Props {
-    bookings: VendorBooking[];
+
+    bookings: RecentBooking[];
+
     summary: VendorDashboardSummary;
+
 }
 
 export default function DashboardContent({
+
     bookings,
-    summary,
+
+    summary
+
 }: Props) {
 
     return (
@@ -33,29 +35,11 @@ export default function DashboardContent({
 
             <div className={styles.rightPanel}>
 
-                <TodaySummary summary={summary}/>
+                <TodaySummary summary={summary} />
 
                 <QuickActions />
 
-                <Notifications />
-
-                <RevenueSnapshot />
-
             </div>
-
-            <DashboardPanel title="Recent Reviews">
-
-                <ReviewList
-
-                    title=""
-
-                    limit={2}
-
-                    layout="list"
-
-                />
-
-            </DashboardPanel>
 
         </div>
 

@@ -4,11 +4,13 @@ import PhotographySection from "./PhotographySection/PhotographySection";
 import DecorationSection from "./DecorationSection/DecorationSection";
 import MakeupSection from "./MakeupSection/MakeupSection";
 
+import type { VendorServiceForm } from "../../../../types/VendorServiceForm";
+
 interface Props {
 
     category: string;
 
-    formData: any;
+    formData: VendorServiceForm;
 
     handleChange: (
         e: React.ChangeEvent<
@@ -35,71 +37,46 @@ export default function CategorySpecificSection({
         case "hall":
 
             return (
-
                 <HallSection
-
                     formData={formData}
-
                     handleChange={handleChange}
-
                 />
-
             );
 
         case "catering":
 
             return (
-
                 <CateringSection
-
                     formData={formData}
-
                     handleChange={handleChange}
-
                 />
-
             );
 
         case "photography":
 
             return (
-
                 <PhotographySection
-
                     formData={formData}
-
                     handleChange={handleChange}
-
                 />
-
             );
 
         case "decoration":
 
             return (
-
                 <DecorationSection
-
                     formData={formData}
-
                     handleChange={handleChange}
-
                 />
-
             );
 
         case "makeup":
 
             return (
-
                 <MakeupSection
-
                     formData={formData}
-
                     handleChange={handleChange}
-
                 />
-
             );
 
         default:

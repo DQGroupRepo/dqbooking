@@ -203,3 +203,21 @@
 }
 
 }
+
+.dashboard-hero{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+}
+
+.dashboard-actions{
+
+    display:flex;
+
+    gap:12px;
+
+}
