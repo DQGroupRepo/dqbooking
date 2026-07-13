@@ -2,9 +2,11 @@ import Input from "../../../common/ui/Input/Input";
 import TextArea from "../../../common/ui/TextArea/TextArea";
 import SectionHeader from "../../../common/ui/SectionHeader/SectionHeader";
 
+import type { VendorServiceForm } from "../../../../types/VendorServiceForm";
+
 interface Props {
 
-    formData: any;
+    formData: VendorServiceForm;
 
     handleChange: (
         e: React.ChangeEvent<
@@ -46,7 +48,8 @@ export default function BasicInfoSection({
 
                 <div className="category-badge">
 
-                    {formData.category.charAt(0).toUpperCase() + formData.category.slice(1)}
+                    {formData.category.charAt(0).toUpperCase() +
+                        formData.category.slice(1)}
 
                 </div>
 
@@ -112,6 +115,15 @@ export default function BasicInfoSection({
 
                     onChange={handleChange}
 
+                />
+
+                <Input
+                    name="durationHours"
+                    type="number"
+                    label="Duration (Hours)"
+                    value={formData.durationHours}
+                    placeholder="8"
+                    onChange={handleChange}
                 />
 
             </div>
