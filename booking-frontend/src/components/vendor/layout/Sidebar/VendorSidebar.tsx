@@ -25,13 +25,13 @@ const vendorMenu = [
     icon: <FaPlusCircle />
   },
   {
-    label: "Manage Services",
+    label: "Services",
     path: "/vendor/manage-services",
     icon: <FaConciergeBell />
   },
   {
     label: "Bookings",
-    path: "/vendor/bookingStats",
+    path: "/vendor/bookings",
     icon: <FaCalendarAlt />
   },
   {
