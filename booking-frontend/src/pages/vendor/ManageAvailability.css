@@ -1,0 +1,53 @@
+.manage-availability{
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:24px;
+
+}
+
+.availability-layout{
+
+    display:grid;
+
+    grid-template-columns:340px 1fr;
+
+    gap:24px;
+
+}
+
+.calendar-panel{
+
+    background:#fff;
+
+    padding:20px;
+
+    border-radius:12px;
+
+    box-shadow:0 2px 10px rgba(0,0,0,.05);
+
+}
+
+.slot-panel{
+
+    background:#fff;
+
+    padding:20px;
+
+    border-radius:12px;
+
+    box-shadow:0 2px 10px rgba(0,0,0,.05);
+
+}
+
+@media(max-width:900px){
+
+.availability-layout{
+
+grid-template-columns:1fr;
+
+}
+
+}

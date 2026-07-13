@@ -7,15 +7,18 @@ import {
     FaTrash,
     FaMapMarkerAlt,
     FaUsers,
-    FaStar
+    FaStar,
+    FaClock
 } from "react-icons/fa";
 
 import VendorServiceService from "../../services/VendorServiceService";
+import Button from "../../components/common/ui/Button/Button";
 
 import type { VendorService } from "../../types/VendorService";
 import ConfirmationModal from "../../components/common/ui/ConfirmationModal/ConfirmationModal";
 
 import toast from "react-hot-toast";
+import { useNavigate } from "react-router-dom";
 
 import "./ManageServices.css";
 
@@ -27,7 +30,7 @@ const ManageServices = () => {
 
     const [showDeleteModal,setShowDeleteModal]=useState(false);
 
-    const [selectedServiceId,setSelectedServiceId]=useState<number|null>(null);
+    const [selectedServiceId,setSelectedServiceId]=useState<string|null>(null);
 
     const [statusFilter, setStatusFilter] = useState("All");
 
@@ -47,6 +50,8 @@ const ManageServices = () => {
 
     };
 
+    const navigate = useNavigate();
+
     const categories = useMemo(() => {
 
         return [
@@ -56,7 +61,7 @@ const ManageServices = () => {
 
     }, [services]);
 
-    const handleDelete=(id:number)=>{
+    const handleDelete=(id:string)=>{
 
         setSelectedServiceId(id);
 
@@ -81,11 +86,12 @@ const ManageServices = () => {
     const filteredServices = services.filter(service => {
 
         const matchesSearch =
-            service.name.toLowerCase().includes(search.toLowerCase());
+            service.serviceName.toLowerCase().includes(search.toLowerCase());
 
         const matchesStatus =
             statusFilter === "All" ||
-            service.status === statusFilter;
+            (statusFilter === "Active" && service.active) ||
+            (statusFilter === "Inactive" && !service.active);
 
         const matchesCategory =
             categoryFilter === "All" ||
@@ -109,10 +115,10 @@ const ManageServices = () => {
 
                     <div>
 
-                        <h1>Manage Services</h1>
+                        <h1>Services</h1>
 
                         <p>
-                            View and manage all your EventNest listings.
+                             Create, edit and manage every service offered by your business.
                         </p>
 
                     </div>
@@ -190,8 +196,12 @@ const ManageServices = () => {
                         >
 
                             <img
-                                src={service.image}
-                                alt={service.name}
+                                src={
+                                    service.imageUrls.length > 0
+                                        ? service.imageUrls[0]
+                                        : "/images/no-image.png"
+                                }
+                                alt={service.serviceName}
                             />
 
                             <div className="service-content">
@@ -200,12 +210,12 @@ const ManageServices = () => {
 
                                     <span
                                         className={
-                                            service.status === "Active"
+                                            service.active
                                                 ? "active-status"
                                                 : "draft-status"
                                         }
                                     >
-                                        {service.status}
+                                        {service.active ? "Active" : "Inactive"}
                                     </span>
 
                                     <div className="rating">
@@ -224,7 +234,7 @@ const ManageServices = () => {
 
                                 </div>
 
-                                <h2>{service.name}</h2>
+                                <h2>{service.serviceName}</h2>
 
                                 <p>
 
@@ -238,7 +248,8 @@ const ManageServices = () => {
 
                                     {" "}
 
-                                    {service.city}
+                                    {service.contactInfo.contactPerson}
+
 
                                 </p>
 
@@ -268,39 +279,32 @@ const ManageServices = () => {
 
                                 <div className="service-actions">
 
-                                    <Link to={`/vendor/services/${service.id}`}>
-
-                                        <button className="view-btn">
-
-                                            <FaEye />
-
-                                            View
-
-                                        </button>
-
-                                    </Link>
-
-                                    <button className="edit-btn">
-
-                                        <FaEdit />
-
-                                        Edit
-
-                                    </button>
-
-                                    <button
-
-                                        className="delete-btn"
-
-                                        onClick={()=>handleDelete(service.id)}
-
+                                    <Button
+                                        variant="secondary"
+                                        onClick={() =>
+                                            navigate(`/vendor/services/${service.id}`)
+                                        }
                                     >
+                                        <FaEye />
+                                        Open Workspace
+                                    </Button>
 
-                                        <FaTrash/>
+                                    <Button
+                                        onClick={() =>
+                                            navigate(`/vendor/services/edit/${service.id}`)
+                                        }
+                                    >
+                                        <FaEdit />
+                                        Edit
+                                    </Button>
 
+                                    <Button
+                                        variant="danger"
+                                        onClick={() => handleDelete(service.id)}
+                                    >
+                                        <FaTrash />
                                         Delete
-
-                                    </button>
+                                    </Button>
 
                                 </div>
 

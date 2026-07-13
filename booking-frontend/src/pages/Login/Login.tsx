@@ -1,4 +1,7 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+
+import AuthService from "../../services/AuthService";
 import { Link } from "react-router-dom";
 
 import "./Login.css";
@@ -7,6 +10,110 @@ const Login = () => {
 
   const [userType, setUserType] =
     useState<"customer" | "vendor">("customer");
+  const navigate = useNavigate();
+
+  const [email, setEmail] = useState("");
+
+  const [password, setPassword] = useState("");
+
+  const [loading, setLoading] = useState(false);
+
+  const [error, setError] = useState("");
+
+  const handleLogin = async (
+      e: React.FormEvent
+  ) => {
+
+      e.preventDefault();
+
+      setLoading(true);
+
+      setError("");
+
+      try {
+
+          const response =
+              await AuthService.login({
+
+                  email,
+
+                  password
+
+              });
+
+          localStorage.setItem(
+
+              "token",
+
+              response.data.token
+
+          );
+
+          localStorage.setItem(
+
+              "userId",
+
+              response.data.userId
+
+          );
+
+          localStorage.setItem(
+
+              "role",
+
+              response.data.role
+
+          );
+
+          localStorage.setItem(
+
+              "name",
+
+              response.data.name
+
+          );
+
+         switch (response.data.role) {
+
+             case "ADMIN":
+
+                 navigate("/admin/dashboard");
+
+                 break;
+
+             case "CUSTOMER":
+
+                 navigate("/");
+
+                 break;
+
+             default:
+
+                 navigate("/vendor/dashboard");
+
+         }
+
+      }
+
+      catch (err: any) {
+
+          setError(
+
+              err.response?.data ||
+
+              "Invalid Email or Password"
+
+          );
+
+      }
+
+      finally {
+
+          setLoading(false);
+
+      }
+
+  };
 
   return (
 
@@ -77,7 +184,7 @@ const Login = () => {
           </div>
 
 
-          <form>
+          <form onSubmit={handleLogin}>
 
             <div className="form-group">
 
@@ -86,8 +193,10 @@ const Login = () => {
               </label>
 
               <input
-                type="email"
-                placeholder="Enter email"
+                  type="email"
+                  placeholder="Enter email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
               />
 
             </div>
@@ -100,8 +209,10 @@ const Login = () => {
               </label>
 
               <input
-                type="password"
-                placeholder="Enter password"
+                  type="password"
+                  placeholder="Enter password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
               />
 
             </div>
@@ -124,12 +235,34 @@ const Login = () => {
 
             </div>
 
+            {
+                error &&
+
+                <p
+                    style={{
+
+                        color: "red",
+
+                        marginBottom: "15px"
+
+                    }}
+                >
+                    {error}
+                </p>
+            }
 
             <button
-              className="primary-login"
-              type="submit"
+                className="primary-login"
+                type="submit"
+                disabled={loading}
             >
-              Login
+              {
+                  loading
+
+                      ? "Logging in..."
+
+                      : "Login"
+              }
             </button>
 
 
