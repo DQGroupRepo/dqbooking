@@ -12,6 +12,7 @@ import Register from "../pages/Register/Register";
 import Review from "../pages/Review/Review";
 import CreateListing from "../pages/CreateListing/CreateListing";
 import VendorAddService from "../pages/VendorAddService/VendorAddService";
+import VendorServiceWorkspace from "../pages/vendor/VendorServiceWorkspace";
 
 import VendorDashboard from "../pages/VendorDashboard/VendorDashboard";
 import ManageServices from "../pages/ManageServices/ManageServices";
@@ -21,6 +22,8 @@ import VendorServiceProfile from "../pages/VendorServiceProfile/VendorServicePro
 import VendorRevenue from "../pages/VendorRevenue/VendorRevenue";
 import VendorReviews from "../pages/VendorReviews/VendorReviews";
 import VendorSettings from "../pages/VendorSettings/VendorSettings";
+import ManageBookingSlots from "../pages/vendor/ManageBookingSlots";
+import ManageAvailability from "../pages/vendor/ManageAvailability";
 
 const AppRoutes = () => {
 
@@ -93,7 +96,7 @@ const AppRoutes = () => {
                     />
 
                     <Route
-                        path="/vendor/bookingStats"
+                        path="/vendor/bookings"
                         element={<VendorBookingSummary />}
                     />
 
@@ -102,13 +105,7 @@ const AppRoutes = () => {
                         element={<VendorBookingDetails />}
                     />
 
-                    <Route
 
-                    path="/vendor/services/:id"
-
-                    element={<VendorServiceProfile />}
-
-                    />
 
                     <Route
 
@@ -133,6 +130,75 @@ const AppRoutes = () => {
                         element={<VendorSettings/>}
 
                     />
+
+                    <Route
+                        path="/vendor/services/edit/:id"
+                        element={<VendorAddService />}
+                    />
+
+                    <Route
+
+                        path="/vendor/services/:id/slots"
+
+                        element={<ManageBookingSlots />}
+
+                    />
+
+                    <Route
+                        path="/vendor/services/:id"
+                        element={<VendorServiceWorkspace />}
+                    >
+
+                        <Route
+
+                            index
+
+                            element={<VendorServiceProfile />}
+
+                        />
+
+                        <Route
+
+                            path="slots"
+
+                            element={<ManageBookingSlots />}
+
+                        />
+
+                        <Route
+
+                            path="availability"
+
+                            element={<ManageAvailability />}
+
+                        />
+
+                        <Route
+
+                            path="bookings"
+
+                        //    element={<ComingSoonPage title="Bookings" />}
+
+                        />
+
+                        <Route
+
+                            path="reviews"
+
+                       //     element={<ComingSoonPage title="Reviews" />}
+
+                        />
+
+                        <Route
+
+                            path="settings"
+
+                    //        element={<ComingSoonPage title="Settings" />}
+
+                        />
+
+                    </Route>
+
 
                 </Route>
 

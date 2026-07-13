@@ -1,0 +1,135 @@
+.availability-slot-card{
+
+    background:#fff;
+
+    border-radius:12px;
+
+    border:1px solid #e5e7eb;
+
+    padding:20px;
+
+    display:flex;
+
+    flex-direction:column;
+
+    justify-content:space-between;
+
+    transition:.2s;
+
+}
+
+.availability-slot-card:hover{
+
+    box-shadow:0 8px 20px rgba(0,0,0,.08);
+
+}
+
+.availability-slot-header{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:flex-start;
+
+    margin-bottom:18px;
+
+}
+
+.availability-slot-header h3{
+
+    margin:0;
+
+    font-size:18px;
+
+}
+
+.availability-slot-header p{
+
+    margin-top:8px;
+
+    color:#666;
+
+}
+
+.status{
+
+    padding:6px 12px;
+
+    border-radius:30px;
+
+    font-size:12px;
+
+    font-weight:600;
+
+}
+
+.status.active{
+
+    background:#dcfce7;
+
+    color:#166534;
+
+}
+
+.status.inactive{
+
+    background:#fee2e2;
+
+    color:#991b1b;
+
+}
+
+.availability-slot-body{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    margin-bottom:20px;
+
+}
+
+.availability-slot-body div{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:10px;
+
+}
+
+.manage-btn{
+
+    width:auto;
+
+    align-self:flex-end;
+
+    padding:8px 18px;
+
+    border-radius:8px;
+
+}
+
+.status.blocked{
+
+    background:#fee2e2;
+
+    color:#dc2626;
+
+}
+
+.override-reason{
+
+    margin-top:12px;
+
+    padding:12px;
+
+    background:#fff8dc;
+
+    border-left:4px solid orange;
+
+    border-radius:8px;
+
+}
