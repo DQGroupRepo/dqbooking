@@ -1,3 +1,5 @@
+import type { ServiceAttribute } from "./ServiceAttribute";
+
 export interface VendorServiceForm {
 
     /* =====================================
@@ -15,6 +17,8 @@ export interface VendorServiceForm {
     capacity: string;
 
     description: string;
+
+    durationHours: string;
 
     /* =====================================
        Contact Information
@@ -41,6 +45,16 @@ export interface VendorServiceForm {
     maxSimultaneousBookings: string;
 
     bundleOfferEnabled: boolean;
+
+    /* =====================================
+       Backend Collections
+    ===================================== */
+
+    amenities: string[];
+
+    imageUrls: string[];
+
+    attributes: ServiceAttribute[];
 
     /* =====================================
        Hall

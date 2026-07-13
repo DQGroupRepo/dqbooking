@@ -1,0 +1,49 @@
+package com.booking.dto.vendorservice;
+
+import com.booking.model.enums.ServiceCategory;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import lombok.Getter;
+import lombok.Setter;
+
+import java.math.BigDecimal;
+import java.util.List;
+
+@Getter
+@Setter
+public class VendorServiceRequest {
+
+    @NotBlank
+    private String serviceName;
+
+    @NotNull(message = "Category is required")
+    private ServiceCategory category;
+
+    private String description;
+
+    @NotNull
+    private BigDecimal price;
+
+    private Integer capacity;
+
+    private Integer durationHours;
+
+    @Valid
+    private ContactInfoDto contactInfo;
+
+    @Valid
+    private AvailabilityDto availability;
+
+    @Valid
+    private BookingSettingsDto bookingSettings;
+
+    private List<String> imageUrls;
+
+    private List<String> amenities;
+
+    private List<ServiceAttributeDto> attributes;
+
+    private String location;
+
+}
