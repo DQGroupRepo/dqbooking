@@ -3,6 +3,9 @@ import { useNavigate } from "react-router-dom";
 import DashboardPanel from "../DashboardPanel/DashboardPanel";
 
 import styles from "./QuickActions.module.css";
+import {
+   FaConciergeBell
+} from "react-icons/fa";
 
 export default function QuickActions() {
 
@@ -23,7 +26,11 @@ export default function QuickActions() {
                 <button
                     onClick={() => navigate("/vendor/manage-services")}
                 >
-                    Manage Services
+
+                    <FaConciergeBell />
+
+                    Services
+
                 </button>
 
                 <button
