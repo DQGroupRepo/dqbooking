@@ -1,10 +1,9 @@
 import { useEffect, useState } from "react";
 import DashboardHero from "../../components/vendor/dashboard/DashboardHero/DashboardHero";
 
-import VendorBookingService from "../../services/VendorBookingService";
 import VendorDashboardService from "../../services/VendorDashboardService";
 
-import type { VendorBooking } from "../../types/VendorBooking";
+import type { RecentBooking } from "../../types/RecentBooking";
 import type { VendorDashboardSummary } from "../../types/VendorDashboard";
 
 import DashboardStats from "../../components/vendor/dashboard/DashboardStats/DashboardStats";
@@ -16,25 +15,57 @@ export default function VendorDashboard() {
   const [summary, setSummary] =
     useState<VendorDashboardSummary | null>(null);
 
-  const [bookings, setBookings] = useState<VendorBooking[]>([]);
+  const [bookings, setBookings] = useState<RecentBooking[]>([]);
 
   useEffect(() => {
     loadDashboard();
   }, []);
 
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
   const loadDashboard = async () => {
 
-    const dashboard =
-      await VendorDashboardService.getDashboardSummary();
+      try {
 
-    setSummary(dashboard);
+          setLoading(true);
 
-    const recentBookings =
-      await VendorBookingService.getRecentBookings();
+          const dashboard =
+              await VendorDashboardService.getDashboard();
 
-    setBookings(recentBookings);
+          setSummary(dashboard);
+
+          setBookings(dashboard.recentBookings);
+
+      }
+
+      catch (err) {
+
+          console.error(err);
+
+          setError("Unable to load dashboard.");
+
+      }
+
+      finally {
+
+          setLoading(false);
+
+      }
 
   };
+
+  if (loading) {
+
+      return <p>Loading Dashboard...</p>;
+
+  }
+
+  if (error) {
+
+      return <p>{error}</p>;
+
+  }
 
   if (!summary) {
     return <p>Loading Dashboard...</p>;
@@ -44,7 +75,7 @@ export default function VendorDashboard() {
     <div className={styles.dashboard}>
 
       <DashboardHero
-        vendorName="Royal Palace Events"
+        vendorName={summary.vendorName}
       />
 
       <DashboardStats
