@@ -1,3 +1,4 @@
+/*
 export type BookingStatus =
   | "Pending"
   | "Confirmed"
@@ -17,4 +18,4 @@ export interface VendorBooking {
 
   status:BookingStatus;
 
-}
+} */

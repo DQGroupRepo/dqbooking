@@ -48,6 +48,8 @@ public class SecurityConfig {
 
                         .permitAll()
                         .requestMatchers("/api/vendor/**").hasRole("VENDOR")
+                        .requestMatchers("/api/bookings/**").hasRole("VENDOR")
+                        .requestMatchers("/api/reviews/**").hasRole("VENDOR")
                         .anyRequest()
 
                         .authenticated()

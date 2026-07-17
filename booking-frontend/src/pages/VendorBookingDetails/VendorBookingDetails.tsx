@@ -36,7 +36,7 @@ export default function VendorBookingDetails() {
         }
 
         const response =
-            await BookingStatsService.getBookingById(Number(id));
+            await BookingStatsService.getBookingById(id!);
 
         if (response) {
 
@@ -155,6 +155,11 @@ export default function VendorBookingDetails() {
                     <p><strong>Paid:</strong> ₹{booking.paidAmount}</p>
 
                     <p><strong>Balance:</strong> ₹{balance}</p>
+
+                    <p>
+                        <strong>Payment Status:</strong>{" "}
+                        {booking.paymentStatus}
+                    </p>
 
                 </div>
 

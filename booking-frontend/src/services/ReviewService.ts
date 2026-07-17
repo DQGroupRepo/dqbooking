@@ -1,14 +1,16 @@
-import { mockReviews } from "../mocks/mockReviews";
+import api from "../api/axiosConfig";
+import type { Review } from "../types/Review";
 
-class ReviewService{
+class ReviewService {
 
-    async getReviews(){
+    async getReviews(): Promise<Review[]> {
 
-        return Promise.resolve(
+        const response =
+            await api.get<Review[]>(
+                "/reviews/vendor"
+            );
 
-            mockReviews
-
-        );
+        return response.data;
 
     }
 
