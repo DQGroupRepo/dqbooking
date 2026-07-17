@@ -1,13 +1,18 @@
-import { mockVendorReviews } from "../mocks/mockVendorReviews";
+import api from "../api/axiosConfig";
+import type { Review } from "../types/Review";
 
-const VendorReviewService = {
+class VendorReviewService {
 
-    async getReviews() {
+    async getReviews(serviceId: string) {
 
-        return Promise.resolve(mockVendorReviews);
+        const response =
+            await api.get<Review[]>(
+                `/vendor/services/${serviceId}/reviews`
+            );
 
+        return response.data;
     }
 
-};
+}
 
-export default VendorReviewService;
+export default new VendorReviewService();

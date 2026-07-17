@@ -48,4 +48,6 @@ export interface VendorProfile{
 
     marketingEmails:boolean;
 
+    description:string;
+
 }

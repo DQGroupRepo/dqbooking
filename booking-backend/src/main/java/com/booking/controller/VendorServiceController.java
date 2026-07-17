@@ -1,6 +1,10 @@
 package com.booking.controller;
 
+import com.booking.dto.booking.BookingResponse;
+import com.booking.dto.review.ReviewResponse;
 import com.booking.dto.vendorservice.*;
+import com.booking.service.BookingService;
+import com.booking.service.ReviewService;
 import com.booking.service.VendorOfferingService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -16,6 +20,10 @@ import java.util.List;
 public class VendorServiceController {
 
     private final VendorOfferingService vendorOfferingService;
+
+    private final BookingService bookingService;
+
+    private final ReviewService reviewService;
 
     @PostMapping
     public ResponseEntity<VendorServiceResponse> createService(
@@ -79,6 +87,22 @@ public class VendorServiceController {
         vendorServiceRepository.save(vendorService);*/
 
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/{serviceId}/bookings")
+    public ResponseEntity<List<BookingResponse>> getServiceBookings(
+            @PathVariable String serviceId) {
+
+        return ResponseEntity.ok(
+                bookingService.getServiceBookings(serviceId)
+        );
+    }
+
+    @GetMapping("/{serviceId}/reviews")
+    public List<ReviewResponse> getServiceReviews(
+            @PathVariable String serviceId) {
+
+        return reviewService.getServiceReviews(serviceId);
     }
 
 }

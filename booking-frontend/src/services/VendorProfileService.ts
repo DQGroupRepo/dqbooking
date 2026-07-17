@@ -1,38 +1,28 @@
-import { mockVendorProfile } from "../mocks/mockVendorProfile";
-
+import api from "../api/axiosConfig";
 import type { VendorProfile } from "../types/VendorProfile";
 
-class VendorProfileService{
+class VendorProfileService {
 
-    private profile={
+    async getProfile(): Promise<VendorProfile> {
 
-        ...mockVendorProfile
-
-    };
-
-    async getProfile():Promise<VendorProfile>{
-
-        return Promise.resolve(
-
-            this.profile
-
+        const response = await api.get<VendorProfile>(
+            "/vendor/profile"
         );
+
+        return response.data;
 
     }
 
     async updateProfile(
+        profile: VendorProfile
+    ): Promise<VendorProfile> {
 
-        profile:VendorProfile
+        const response = await api.put<VendorProfile>(
+            "/vendor/profile",
+            profile
+        );
 
-    ){
-
-        this.profile={
-
-            ...profile
-
-        };
-
-        return Promise.resolve(true);
+        return response.data;
 
     }
 

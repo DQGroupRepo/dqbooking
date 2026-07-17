@@ -35,4 +35,6 @@ export interface VendorService {
 
     attributes: ServiceAttribute[];
 
+    location: string;
+
 }
