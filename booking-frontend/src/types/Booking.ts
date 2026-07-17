@@ -1,3 +1,4 @@
+/*
 export interface Booking {
   bookingId: number;
   vendorId: number;
@@ -6,4 +7,4 @@ export interface Booking {
   totalAmount: number;
   guestCount: number;
   status: string;
-}
+} */

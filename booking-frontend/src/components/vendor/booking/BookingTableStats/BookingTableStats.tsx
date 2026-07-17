@@ -14,7 +14,7 @@ export default function BookingTableStats({
 
     const navigate = useNavigate();
 
-    const openBooking = (id: number) => {
+    const openBooking = (id: string) => {
         navigate(`/vendor/bookings/${id}`);
     };
 

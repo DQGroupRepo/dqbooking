@@ -28,4 +28,6 @@ public interface BookingRepository extends MongoRepository<Booking, String> {
             String vendorId
     );
 
+    List<Booking> findByServiceId(String serviceId);
+
 }

@@ -8,13 +8,16 @@ import com.booking.helper.BookingHelper;
 import com.booking.mapper.BookingMapper;
 import com.booking.model.Booking;
 import com.booking.model.User;
+import com.booking.model.Vendor;
 import com.booking.model.VendorService;
 import com.booking.repository.BookingRepository;
+import com.booking.repository.VendorRepository;
 import com.booking.repository.VendorServiceRepository;
 import com.booking.service.AuthenticatedUserService;
 import com.booking.service.BookingService;
 import com.booking.util.BookingNumberGenerator;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -35,6 +38,8 @@ public class BookingServiceImpl implements BookingService
     private final BookingMapper bookingMapper;
 
     private final BookingHelper bookingHelper;
+
+    private final VendorRepository vendorRepository;
 
     @Override
     public BookingResponse createBooking(CreateBookingRequest request) {
@@ -62,9 +67,15 @@ public class BookingServiceImpl implements BookingService
 
         booking.setEventType(request.getEventType());
 
+        Vendor vendor = vendorRepository
+                .findById(vendorService.getVendorId())
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Vendor not found"));
         bookingHelper.prepareBooking(
                 booking,
-                vendorService
+                vendorService,
+                customer,
+                vendor
         );
 
         booking = bookingRepository.save(booking);
@@ -116,4 +127,26 @@ public class BookingServiceImpl implements BookingService
 
     }
 
+           @Override
+           public List<BookingResponse> getServiceBookings(String serviceId) {
+
+               String vendorId = authenticatedUserService
+                       .getCurrentVendor()
+                       .getId();
+
+               VendorService service = vendorServiceRepository
+                       .findById(serviceId)
+                       .orElseThrow(() ->
+                               new ResourceNotFoundException("Service not found"));
+
+               if (!service.getVendorId().equals(vendorId)) {
+                   throw new AccessDeniedException("Access denied.");
+               }
+
+               return bookingRepository
+                       .findByServiceId(serviceId)
+                       .stream()
+                       .map(bookingMapper::toResponse)
+                       .toList();
+           }
 }

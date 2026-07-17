@@ -1,6 +1,6 @@
 export interface BookingStats {
 
-    id: number;
+    id: string;
 
     bookingNumber: string;
 
@@ -21,6 +21,12 @@ export interface BookingStats {
     amount: number;
 
     paidAmount: number;
+
+     paymentStatus:
+            | "Pending"
+            | "Paid"
+            | "Refunded";
+
 
     notes: string;
 

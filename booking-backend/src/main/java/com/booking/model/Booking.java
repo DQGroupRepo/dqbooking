@@ -41,4 +41,24 @@ public class Booking extends BaseEntity {
     private String specialRequest;
 
     private String eventType;
+
+    /*
+     * Customer snapshot.
+     * Preserves customer details even if the profile changes later.
+     */
+    private String customerName;
+
+    private String customerPhone;
+
+    private String customerEmail;
+
+    /*
+     * Venue snapshot.
+     */
+    private String venue;
+
+    /*
+     * Payment snapshot.
+     */
+    private BigDecimal paidAmount = BigDecimal.ZERO;
 }

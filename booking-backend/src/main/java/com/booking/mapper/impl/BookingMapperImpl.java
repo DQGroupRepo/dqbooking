@@ -22,6 +22,15 @@ public class BookingMapperImpl implements BookingMapper {
                 .paymentStatus(booking.getPaymentStatus())
                 .specialRequest(booking.getSpecialRequest())
                 .eventType(booking.getEventType())
+                .customerName(booking.getCustomerName())
+
+                .customerPhone(booking.getCustomerPhone())
+
+                .customerEmail(booking.getCustomerEmail())
+
+                .venue(booking.getVenue())
+
+                .paidAmount(booking.getPaidAmount())
                 .build();
     }
 }

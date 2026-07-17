@@ -12,6 +12,6 @@ export interface AvailabilityOverride {
 
     reason?: string;
 
-    capacityOverride?: number;
+    capacityOverride?: number | null;
 
 }

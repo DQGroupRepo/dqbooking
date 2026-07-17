@@ -31,4 +31,14 @@ public class BookingResponse {
     private String specialRequest;
 
     private String eventType;
+
+    private String customerName;
+
+    private String customerPhone;
+
+    private String customerEmail;
+
+    private String venue;
+
+    private BigDecimal paidAmount;
 }

@@ -15,4 +15,6 @@ public interface BookingService {
 
     List<BookingResponse> getCustomerBookings();
 
+    List<BookingResponse> getServiceBookings(String serviceId);
+
 }

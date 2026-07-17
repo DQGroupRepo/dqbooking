@@ -13,7 +13,7 @@ import Review from "../pages/Review/Review";
 import CreateListing from "../pages/CreateListing/CreateListing";
 import VendorAddService from "../pages/VendorAddService/VendorAddService";
 import VendorServiceWorkspace from "../pages/vendor/VendorServiceWorkspace";
-
+import VendorServiceReviews from "../pages/vendor/VendorServiceReviews";
 import VendorDashboard from "../pages/VendorDashboard/VendorDashboard";
 import ManageServices from "../pages/ManageServices/ManageServices";
 import VendorBookingSummary from "../pages/VendorBookingSummary/VendorBookingSummary";
@@ -24,6 +24,7 @@ import VendorReviews from "../pages/VendorReviews/VendorReviews";
 import VendorSettings from "../pages/VendorSettings/VendorSettings";
 import ManageBookingSlots from "../pages/vendor/ManageBookingSlots";
 import ManageAvailability from "../pages/vendor/ManageAvailability";
+import VendorServiceBookings from "../pages/vendor/VendorServiceBookings";
 
 const AppRoutes = () => {
 
@@ -174,19 +175,13 @@ const AppRoutes = () => {
                         />
 
                         <Route
-
                             path="bookings"
-
-                        //    element={<ComingSoonPage title="Bookings" />}
-
+                            element={<VendorServiceBookings />}
                         />
 
                         <Route
-
                             path="reviews"
-
-                       //     element={<ComingSoonPage title="Reviews" />}
-
+                            element={<VendorServiceReviews />}
                         />
 
                         <Route
