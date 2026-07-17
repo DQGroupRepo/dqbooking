@@ -186,6 +186,13 @@ export default function GeneralSettings(){
 
                                     />
 
+                                    <TextArea
+                                        name="description"
+                                        label="Business Description"
+                                        value={profile.description}
+                                        onChange={handleChange}
+                                    />
+
                                     <div className="logo-section">
 
                                         <label>

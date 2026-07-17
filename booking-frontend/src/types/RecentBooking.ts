@@ -8,7 +8,11 @@ export interface RecentBooking {
 
     eventDate: string;
 
-    status: string;
+    status:
+        | "PENDING"
+        | "CONFIRMED"
+        | "COMPLETED"
+        | "CANCELLED";
 
     amount: number;
 
