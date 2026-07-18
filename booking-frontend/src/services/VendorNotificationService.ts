@@ -1,13 +1,22 @@
-import { mockVendorNotifications } from "../mocks/mockVendorNotifications";
+import api from "../api/axiosConfig";
 
-const VendorNotificationService = {
+import type {
+    VendorNotification
+} from "../types/VendorNotification";
 
-    async getNotifications() {
+class VendorNotificationService {
 
-        return Promise.resolve(mockVendorNotifications);
+    async getNotifications(): Promise<VendorNotification[]> {
+
+        const response =
+            await api.get<VendorNotification[]>(
+                "/vendor/notifications"
+            );
+
+        return response.data;
 
     }
 
-};
+}
 
-export default VendorNotificationService;
+export default new VendorNotificationService();

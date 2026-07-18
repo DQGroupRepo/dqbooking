@@ -2,9 +2,12 @@ package com.booking.controller;
 
 import com.booking.dto.booking.BookingResponse;
 import com.booking.dto.review.ReviewResponse;
+import com.booking.dto.servicesettings.ServiceSettingsResponse;
+import com.booking.dto.servicesettings.UpdateServiceSettingsRequest;
 import com.booking.dto.vendorservice.*;
 import com.booking.service.BookingService;
 import com.booking.service.ReviewService;
+import com.booking.service.ServiceSettingsService;
 import com.booking.service.VendorOfferingService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +27,8 @@ public class VendorServiceController {
     private final BookingService bookingService;
 
     private final ReviewService reviewService;
+
+    private final ServiceSettingsService serviceSettingsService;
 
     @PostMapping
     public ResponseEntity<VendorServiceResponse> createService(
@@ -105,4 +110,27 @@ public class VendorServiceController {
         return reviewService.getServiceReviews(serviceId);
     }
 
+    @GetMapping("/{serviceId}/settings")
+    public ResponseEntity<ServiceSettingsResponse> getSettings(
+            @PathVariable String serviceId) {
+
+        return ResponseEntity.ok(
+                serviceSettingsService.getSettings(serviceId)
+        );
+
+    }
+
+    @PutMapping("/{serviceId}/settings")
+    public ResponseEntity<ServiceSettingsResponse> updateSettings(
+            @PathVariable String serviceId,
+            @Valid @RequestBody UpdateServiceSettingsRequest request) {
+
+        return ResponseEntity.ok(
+                serviceSettingsService.updateSettings(
+                        serviceId,
+                        request
+                )
+        );
+
+    }
 }
