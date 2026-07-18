@@ -10,11 +10,13 @@ import com.booking.model.Booking;
 import com.booking.model.User;
 import com.booking.model.Vendor;
 import com.booking.model.VendorService;
+import com.booking.model.enums.NotificationType;
 import com.booking.repository.BookingRepository;
 import com.booking.repository.VendorRepository;
 import com.booking.repository.VendorServiceRepository;
 import com.booking.service.AuthenticatedUserService;
 import com.booking.service.BookingService;
+import com.booking.service.NotificationService;
 import com.booking.util.BookingNumberGenerator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
@@ -40,6 +42,8 @@ public class BookingServiceImpl implements BookingService
     private final BookingHelper bookingHelper;
 
     private final VendorRepository vendorRepository;
+
+    private final NotificationService notificationService;
 
     @Override
     public BookingResponse createBooking(CreateBookingRequest request) {
@@ -79,6 +83,16 @@ public class BookingServiceImpl implements BookingService
         );
 
         booking = bookingRepository.save(booking);
+
+        notificationService.createNotification(
+                vendor.getUserId(),
+                NotificationType.BOOKING,
+                "New Booking",
+                customer.getFullName()
+                        + " booked "
+                        + booking.getServiceName(),
+                booking.getId()
+        );
 
         return bookingMapper.toResponse(booking);
 

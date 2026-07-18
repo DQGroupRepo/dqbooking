@@ -25,6 +25,7 @@ import VendorSettings from "../pages/VendorSettings/VendorSettings";
 import ManageBookingSlots from "../pages/vendor/ManageBookingSlots";
 import ManageAvailability from "../pages/vendor/ManageAvailability";
 import VendorServiceBookings from "../pages/vendor/VendorServiceBookings";
+import ServiceSettings from "../pages/vendor/ServiceSettings";
 
 const AppRoutes = () => {
 
@@ -185,11 +186,8 @@ const AppRoutes = () => {
                         />
 
                         <Route
-
                             path="settings"
-
-                    //        element={<ComingSoonPage title="Settings" />}
-
+                            element={<ServiceSettings />}
                         />
 
                     </Route>
