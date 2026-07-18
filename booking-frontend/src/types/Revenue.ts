@@ -20,16 +20,18 @@ export interface MonthlyRevenue {
 
 export interface PaymentHistory {
 
-    id: number;
-
     bookingNumber: string;
 
-    customer: string;
+    customerName: string;
 
-    date: string;
+    serviceName: string;
 
-    amount: number;
+    totalAmount: number;
 
-    status: "Paid" | "Pending" | "Refunded";
+    paidAmount: number;
+
+    paymentStatus: string;
+
+    eventDate: string;
 
 }

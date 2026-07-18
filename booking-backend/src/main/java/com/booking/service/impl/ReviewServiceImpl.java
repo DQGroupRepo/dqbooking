@@ -6,8 +6,10 @@ import com.booking.helper.ReviewHelper;
 import com.booking.mapper.ReviewMapper;
 import com.booking.model.*;
 import com.booking.model.enums.BookingStatus;
+import com.booking.model.enums.NotificationType;
 import com.booking.repository.*;
 import com.booking.service.AuthenticatedUserService;
+import com.booking.service.NotificationService;
 import com.booking.service.ReviewService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
@@ -36,6 +38,8 @@ public class ReviewServiceImpl
     private final ReviewHelper reviewHelper;
 
     private final AuthenticatedUserService authenticatedUserService;
+
+    private final NotificationService notificationService;
 
     @Override
     public ReviewResponse createReview(
@@ -104,6 +108,18 @@ public class ReviewServiceImpl
 
         review = reviewRepository.save(review);
 
+        notificationService.createNotification(
+                booking.getVendorId(),
+                NotificationType.REVIEW,
+                "New Review",
+                customer.getFullName()
+                        + " left a "
+                        + review.getRating()
+                        + "★ review for "
+                        + booking.getServiceName(),
+                review.getId()
+        );
+
         Vendor vendor =
                 vendorRepository.findById(
                         booking.getVendorId()
@@ -120,6 +136,8 @@ public class ReviewServiceImpl
         );
 
         vendorRepository.save(vendor);
+
+
 
         ReviewResponse response =
                 reviewMapper.toResponse(review);

@@ -1,40 +1,48 @@
-import {
+import api from "../api/axiosConfig";
 
-    mockRevenueSummary,
-    mockMonthlyRevenue,
-    mockPaymentHistory
+import type {
 
-} from "../mocks/mockRevenue";
+    RevenueSummary,
+    MonthlyRevenue,
+    PaymentHistory
+
+} from "../types/Revenue";
 
 class RevenueService {
 
-    async getRevenueSummary() {
+    async getRevenueSummary()
+        : Promise<RevenueSummary> {
 
-        return Promise.resolve(
+        const response =
+            await api.get<RevenueSummary>(
+                "/vendor/revenue/summary"
+            );
 
-            mockRevenueSummary
-
-        );
-
-    }
-
-    async getMonthlyRevenue() {
-
-        return Promise.resolve(
-
-            mockMonthlyRevenue
-
-        );
+        return response.data;
 
     }
 
-    async getPaymentHistory() {
+    async getMonthlyRevenue()
+        : Promise<MonthlyRevenue[]> {
 
-        return Promise.resolve(
+        const response =
+            await api.get<MonthlyRevenue[]>(
+                "/vendor/revenue/monthly"
+            );
 
-            mockPaymentHistory
+        return response.data;
 
-        );
+    }
+
+    async getPaymentHistory()
+        : Promise<PaymentHistory[]> {
+
+        const response =
+            await api.get<PaymentHistory[]>(
+                "/vendor/revenue/payments"
+            );
+
+        return response.data;
 
     }
 
