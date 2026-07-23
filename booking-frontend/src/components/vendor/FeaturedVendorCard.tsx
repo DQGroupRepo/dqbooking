@@ -3,85 +3,53 @@ import type { Vendor } from "../../types/Vendor";
 
 import "./FeaturedVendorCard.css";
 
-
 interface Props {
-
-  vendor: Vendor;
-
+    vendor: Vendor;
 }
 
+export default function FeaturedVendorCard({
+    vendor
+}: Props) {
 
-const FeaturedVendorCard = ({
-  vendor
-}: Props) => {
+    return (
 
+        <div className="featured-card">
 
-return (
+            <img
+                src={vendor.imageUrl}
+                alt={vendor.businessName}
+            />
 
-<div className="featured-card">
+            <div className="featured-info">
 
+                <h3>
+                    {vendor.businessName}
+                </h3>
 
-<img
+                <p>
+                    📍 {vendor.city}
+                </p>
 
-src={vendor.imageUrl}
+                <div className="featured-rating">
+                    ⭐ {vendor.rating}
+                </div>
 
-alt={vendor.businessName}
+                <h4>
+                    ₹{vendor.startingPrice.toLocaleString("en-IN")} onwards
+                </h4>
 
-/>
+                <Link
+                    to={`/vendor/${vendor.id}`}
+                >
+                    <button>
+                        View Details
+                    </button>
+                </Link>
 
+            </div>
 
+        </div>
 
-<div className="featured-info">
+    );
 
-
-<h3>
-{vendor.businessName}
-</h3>
-
-
-
-<p>
-📍 {vendor.city}
-</p>
-
-
-
-<div className="featured-rating">
-
-⭐ {vendor.rating}
-
-</div>
-
-
-
-<h4>
-
-₹{vendor.startingPrice.toLocaleString("en-IN")} onwards
-
-</h4>
-
-
-
-<Link
-to={`/vendor/${vendor.id}`}
->
-
-<button>
-View Details
-</button>
-
-</Link>
-
-
-</div>
-
-
-</div>
-
-);
-
-
-};
-
-
-export default FeaturedVendorCard;
+}
