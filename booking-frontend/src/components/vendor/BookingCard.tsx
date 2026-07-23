@@ -1,13 +1,13 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-import type { Vendor } from "../../types/Vendor";
+import type { VendorDetail } from "../../types/VendorDetail";
 
 import "./BookingCard.css";
 
 
 interface Props {
-  vendor: Vendor;
+  vendor: VendorDetail
 }
 
 
@@ -49,7 +49,7 @@ const BookingCard = ({ vendor }: Props) => {
 
 
       <h2>
-        ₹{vendor.startingPrice.toLocaleString("en-IN")}
+        ₹{Number(vendor.startingPrice).toLocaleString("en-IN")}
       </h2>
 
 

@@ -1,115 +1,100 @@
+import { useSearchParams } from "react-router-dom";
+import { useEffect, useState } from "react";
+
 import SearchBar from "../../components/search/SearchBar";
 import FilterPanel from "../../components/search/FilterPanel";
-
 import VendorCard from "../../components/vendor/VendorCard";
+import Pagination from "../../components/vendor/Pagination";
 
-import Pagination from "../../components/vendor/Pagination"
+import VendorListingService from "../../services/VendorListingService";
 
-import { mockVendors } from "../../mocks/mockVendors";
+import type { VendorListing } from "../../types/VendorListing";
 
 import "./CategoryListing.css";
 
-
 const CategoryListing = () => {
 
+    const [vendors, setVendors] =
+        useState<VendorListing[]>([]);
 
-return (
+    const [searchParams] = useSearchParams();
 
-<>
+    const category =
+        searchParams.get("category") ?? "";
 
+    useEffect(() => {
 
-<SearchBar />
+        loadListings();
 
+    }, [category]);
 
+    async function loadListings() {
 
-<section className="results-section">
+        const response =
+            await VendorListingService.getListings(
+                category
+            );
 
+        setVendors(response);
 
-<div className="container results-layout">
+    }
 
+    return (
 
-<FilterPanel />
+        <>
+            <SearchBar />
 
+            <section className="results-section">
 
+                <div className="container results-layout">
 
-<div className="results-content">
+                    <FilterPanel />
 
+                    <div className="results-content">
 
-<div className="results-header">
+                        <div className="results-header">
 
+                            <h2>
+                                {vendors.length} Vendors Found
+                            </h2>
 
-<h2>
+                            <select>
 
-{mockVendors.length} Vendors Found
+                                <option>Sort by Popularity</option>
 
-</h2>
+                                <option>Price Low to High</option>
 
+                                <option>Rating</option>
 
+                            </select>
 
-<select>
+                        </div>
 
-<option>
-Sort by Popularity
-</option>
+                        <div className="vendor-results">
 
-<option>
-Price Low to High
-</option>
+                            {vendors.map(vendor => (
 
-<option>
-Rating
-</option>
+                                <VendorCard
+                                    key={vendor.id}
+                                    vendor={vendor}
+                                />
 
+                            ))}
 
-</select>
+                            <Pagination />
 
+                        </div>
 
-</div>
+                    </div>
 
+                </div>
 
+            </section>
 
+        </>
 
-<div className="vendor-results">
-
-
-{
-mockVendors.map(vendor=>(
-
-
-<VendorCard
-
-key={vendor.id}
-
-vendor={vendor}
-
-/>
-
-
-))
-}
-<Pagination />
-
-
-
-</div>
-
-
-
-</div>
-
-
-
-</div>
-
-
-</section>
-
-
-</>
-
-);
+    );
 
 };
-
 
 export default CategoryListing;

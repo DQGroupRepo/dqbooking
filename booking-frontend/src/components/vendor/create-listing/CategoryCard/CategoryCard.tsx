@@ -1,3 +1,4 @@
+//This is used by the Vendor when creating a new listing.
 import type { VendorCategory } from "../../../../types/VendorCategory";
 
 import styles from "./CategoryCard.module.css";

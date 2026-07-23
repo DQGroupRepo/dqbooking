@@ -1,0 +1,8 @@
+spring:
+
+  profiles:
+    active: prod
+
+CLOUDINARY_CLOUD_NAME: xxxxxxxx
+CLOUDINARY_API_KEY: xxxxxxxx
+CLOUDINARY_API_SECRET: xxxxxxxx

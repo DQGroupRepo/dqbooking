@@ -3,43 +3,49 @@ export const categories = [
   {
     icon: "🏛",
     title: "Halls",
+    category: "HALL",
     description: "Find perfect venues",
-    link: "/categories?type=halls"
+    link: "/categories"
   },
 
   {
     icon: "💄",
     title: "Bridal Makeup",
+    category: "MAKEUP",
     description: "Professional artists",
-    link: "/categories?type=makeup"
+    link: "/categories"
   },
 
   {
     icon: "📸",
     title: "Photography",
+    category: "PHOTOGRAPHY",
     description: "Capture memories",
-    link: "/categories?type=photography"
+    link: "/categories"
   },
 
   {
     icon: "🎥",
     title: "Videography",
+    category: "VIDEOGRAPHY",
     description: "Cinematic videos",
-    link: "/categories?type=videography"
+    link: "/categories"
   },
 
   {
     icon: "🌸",
     title: "Floral Decor",
+    category: "DECORATION",
     description: "Beautiful decorations",
-    link: "/categories?type=decor"
+    link: "/categories"
   },
 
   {
     icon: "🍽",
     title: "Catering",
+    category: "CATERING",
     description: "Delicious food services",
-    link: "/categories?type=catering"
+    link: "/categories"
   }
 
 ];

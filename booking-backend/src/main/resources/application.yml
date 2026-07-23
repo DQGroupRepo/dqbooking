@@ -7,6 +7,11 @@ spring:
     mongodb:
       uri: mongodb://localhost:27017/Catalog
 
+  servlet:
+    multipart:
+      max-file-size: 100MB
+      max-request-size: 500MB
+
 server:
   port: 8080
 
@@ -18,3 +23,10 @@ logging:
 jwt:
   secret: 4A6B4D6E5A715564586E3272357538782F413F4428472B4B6250655368566D5971
   expiration: 86400000
+
+app:
+  upload:
+    path: C://workspace//DqBooking//booking-backend//src//main//resources
+    base-url: http://localhost:8080/uploads
+    image-max-size-mb: 5
+    video-max-size-mb: 50

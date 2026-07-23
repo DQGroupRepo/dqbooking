@@ -47,7 +47,7 @@ const AppRoutes = () => {
                     />
 
                     <Route
-                        path="/vendor/:id"
+                        path="/vendor/:serviceId"
                         element={<VendorDetail />}
                     />
 
@@ -138,13 +138,7 @@ const AppRoutes = () => {
                         element={<VendorAddService />}
                     />
 
-                    <Route
 
-                        path="/vendor/services/:id/slots"
-
-                        element={<ManageBookingSlots />}
-
-                    />
 
                     <Route
                         path="/vendor/services/:id"
