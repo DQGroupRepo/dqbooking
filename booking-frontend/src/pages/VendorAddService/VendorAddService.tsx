@@ -9,7 +9,8 @@ import VendorServiceMapper from "../../mapper/VendorServiceMapper";
 
 import BasicInfoSection from "../../components/vendor/listing/BasicInfoSection/BasicInfoSection";
 import AmenitiesSection from "../../components/vendor/listing/AmenitiesSection/AmenitiesSection";
-import GallerySection from "../../components/vendor/listing/GallerySection/GallerySection";
+import ImageUploader from "../../components/common/imageUpload/ImageUploader";
+import UploadService from "../../services/UploadService";
 import ContactSection from "../../components/vendor/listing/ContactSection/ContactSection";
 import AvailabilitySection from "../../components/vendor/listing/AvailabilitySection/AvailabilitySection";
 import BookingSettingsSection from "../../components/vendor/listing/BookingSettingsSection/BookingSettingsSection";
@@ -37,6 +38,8 @@ const AddService = () => {
     const navigate = useNavigate();
 
     const [images, setImages] = useState<File[]>([]);
+
+    const [existingImages, setExistingImages] = useState<string[]>([]);
 
     const amenityList = [
 
@@ -78,6 +81,7 @@ const AddService = () => {
             setFormData(
                  VendorServiceMapper.responseToForm(service)
             );
+            setExistingImages(service.imageUrls ?? []);
 
         }
 
@@ -135,38 +139,6 @@ const AddService = () => {
 
     };
 
-    const handleImages = (
-
-        e: React.ChangeEvent<HTMLInputElement>
-
-    ) => {
-
-        const files = Array.from(e.target.files || []);
-
-        setImages(prev => [
-
-            ...prev,
-
-            ...files
-
-        ]);
-
-    };
-
-    const removeImage = (
-
-        index:number
-
-    )=>{
-
-        setImages(
-
-            images.filter((_,i)=>i!==index)
-
-        );
-
-    };
-
     function validateForm() {
 
         const validationErrors:string[]=[];
@@ -215,8 +187,24 @@ const AddService = () => {
 
         try {
 
+            let imageUrls = [...existingImages];
+
+            if (images.length > 0) {
+
+                const uploadedImages =
+                    await UploadService.uploadImages(images);
+
+                imageUrls = [
+                    ...imageUrls,
+                    ...uploadedImages
+                ];
+
+            }
+
             const request =
                 VendorServiceMapper.formToRequest(formData);
+
+            request.imageUrls = imageUrls;
 
             if (isEditMode) {
 
@@ -355,10 +343,28 @@ const AddService = () => {
 
                         />
 
-                        <GallerySection
-                            handleImages={handleImages}
+                        <ImageUploader
+
                             images={images}
-                            removeImage={removeImage}
+
+                            existingImages={existingImages}
+
+                            onChange={setImages}
+
+                            onRemoveExisting={(url)=>
+
+                                setExistingImages(
+
+                                    existingImages.filter(
+
+                                        image=>image!==url
+
+                                    )
+
+                                )
+
+                            }
+
                         />
 
                         <ContactSection

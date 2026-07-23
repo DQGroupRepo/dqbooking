@@ -6,26 +6,44 @@ import VendorAmenities from "../../components/vendor/VendorAmenities";
 import VendorPackages from "../../components/vendor/VendorPackages";
 import VendorReviews from "../../components/vendor/VendorReviews";
 import BookingCard from "../../components/vendor/BookingCard";
+import { useEffect, useState } from "react";
 
-import { mockVendors } from "../../mocks/mockVendors";
+import VendorDetailService from "../../services/VendorDetailService";
 
+import type { VendorDetail } from "../../types/VendorDetail";
 import "./VendorDetail.css";
 
 
 const VendorDetail = () => {
 
-  const { id } = useParams();
+const { serviceId } = useParams();
 
+const [vendor, setVendor] = useState<VendorDetail>();
 
-  const vendor =
-    mockVendors.find(
-      item => item.id === Number(id)
-    );
+useEffect(() => {
 
+    if (serviceId) {
+        loadVendor(serviceId);
+    }
 
-  if(!vendor){
-    return <h2>Vendor not found</h2>;
-  }
+}, [serviceId]);
+
+async function loadVendor(serviceId: string) {
+
+    if (!serviceId) return;
+
+    const data =
+        await VendorDetailService.getById(serviceId);
+
+    setVendor(data);
+
+}
+
+if (!vendor) {
+
+    return <h2>Loading...</h2>;
+
+}
 
 
   return (

@@ -1,99 +1,89 @@
 import { Link } from "react-router-dom";
-import type { Vendor } from "../../types/Vendor";
+import type { VendorListing } from "../../types/VendorListing";
 import "./VendorCard.css";
 
 
 interface VendorCardProps {
-  vendor: Vendor;
-}
 
+    vendor: VendorListing;
+
+}
 
 const VendorCard = ({
   vendor
 }: VendorCardProps) => {
-
+  console.log("VendorCard:", vendor);
 return (
 
-<div className="listing-card">
+    <div className="listing-card">
 
 
-<img
-src={vendor.imageUrl}
-alt={vendor.businessName}
-/>
+    <img
+        src={vendor.imageUrl ?? "/images/no-image.png"}
+        alt={vendor.businessName}
+    />
 
 
-<div className="listing-info">
+    <div className="listing-info">
 
 
-<h3>
-{vendor.businessName}
-</h3>
+    <h3>{vendor.businessName}</h3>
+
+    <p>{vendor.serviceName}</p>
 
 
-<p>
-📍 {vendor.city}
-</p>
+    <p>
+    📍 {vendor.city}
+    </p>
 
 
-{vendor.capacity && (
+    {vendor.capacity && (
 
-<p>
-Capacity: {vendor.capacity} Guests
-</p>
+    <p>
+    Capacity: {vendor.capacity} Guests
+    </p>
 
-)}
-
-
-{vendor.amenities && (
-
-<p>
-{vendor.amenities.join(" • ")}
-</p>
-
-)}
+    )}
 
 
 
-<div className="listing-footer">
+    <div className="listing-footer">
 
 
-<div>
+    <div>
 
-<div className="rating">
+    <div className="rating">
 
-⭐ {vendor.rating}
+    ⭐ {vendor.rating}
 
-</div>
-
-
-<h4>
-₹{vendor.startingPrice.toLocaleString()} onwards
-</h4>
+    </div>
 
 
-</div>
+    <h4>
+    ₹{vendor.startingPrice.toLocaleString()} onwards
+    </h4>
 
 
+    </div>
 
-<Link
-to={`/vendor/${vendor.id}`}
->
+    <Link
+    to={`/vendor/${vendor.serviceId}`}
+    >
 
-<button>
-View Details
-</button>
+    <button>
+    View Details
+    </button>
 
-</Link>
-
-
-</div>
+    </Link>
 
 
-</div>
+    </div>
 
 
-</div>
+    </div>
+
+
+    </div>
 
 );
 

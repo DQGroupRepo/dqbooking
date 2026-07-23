@@ -1,6 +1,6 @@
 export interface Vendor {
 
-  id:number;
+  id:string;
 
   businessName:string;
 
