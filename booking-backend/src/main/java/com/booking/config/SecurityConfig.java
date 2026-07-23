@@ -50,6 +50,9 @@ public class SecurityConfig {
                         .requestMatchers("/api/vendor/**").hasRole("VENDOR")
                         .requestMatchers("/api/bookings/**").hasRole("VENDOR")
                         .requestMatchers("/api/reviews/**").hasRole("VENDOR")
+                        .requestMatchers("/api/uploads/**").hasRole("VENDOR")
+                        .requestMatchers("/uploads/**").permitAll()
+                        .requestMatchers("/api/customer/**").permitAll()
                         .anyRequest()
 
                         .authenticated()

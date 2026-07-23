@@ -1,3 +1,4 @@
+/*
 import type { Vendor } from "../types/Vendor";
 
 export const mockVendors: Vendor[] = [
@@ -55,4 +56,4 @@ export const mockVendors: Vendor[] = [
     amenities: ["Parking", "AC Hall"],
     capacity: 350
   }
-];
+]; */
