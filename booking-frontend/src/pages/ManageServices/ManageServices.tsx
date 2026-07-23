@@ -195,14 +195,31 @@ const ManageServices = () => {
                             className="service-list-card"
                         >
 
-                            <img
-                                src={
-                                    service.imageUrls.length > 0
-                                        ? service.imageUrls[0]
-                                        : "/images/no-image.png"
-                                }
-                                alt={service.serviceName}
-                            />
+                            {service.imageUrls?.length > 0 && (
+                                service.imageUrls[0].match(
+                                    /\.(mp4|webm|ogg|mov)$/i
+                                ) ? (
+
+                                    <video
+                                        src={service.imageUrls[0]}
+                                        muted
+                                        autoPlay
+                                        loop
+                                        playsInline
+                                    />
+
+                                ) : (
+
+                                    <img
+                                        src={service.imageUrls.length > 0
+                                            ? service.imageUrls[0]
+                                            : "/images/no-image.png"
+                                            }
+                                        alt={service.serviceName}
+                                    />
+
+                                )
+                            )}
 
                             <div className="service-content">
 

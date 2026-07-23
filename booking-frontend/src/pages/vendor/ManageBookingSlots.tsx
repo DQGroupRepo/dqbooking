@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { FaPlus } from "react-icons/fa";
 import toast from "react-hot-toast";
 
@@ -9,15 +9,12 @@ import type { BookingSlot } from "../../types/BookingSlot";
 import BookingSlotCard from "../../components/vendor/bookingSlot/BookingSlotCard";
 import BookingSlotModal from "../../components/vendor/bookingSlot/BookingSlotModal";
 import Button from "../../components/common/ui/Button/Button";
-import BackButton from "../../components/common/ui/BackButton/BackButton";
 
 import "./ManageBookingSlots.css";
 
 export default function ManageBookingSlots() {
 
     const { id } = useParams();
-
-    const navigate = useNavigate();
 
     const [slots, setSlots] = useState<BookingSlot[]>([]);
 
@@ -207,27 +204,6 @@ export default function ManageBookingSlots() {
         <section className="manage-booking-slots">
 
             <div className="page-header">
-
-                <BackButton
-                    label="Back to Service"
-                    to={`/vendor/services/${id}`}
-                />
-
-                <div>
-
-                    <h1>
-
-                        Booking Slots
-
-                    </h1>
-
-                    <p>
-
-                        Manage the available booking slots for this service.
-
-                    </p>
-
-                </div>
 
                 <Button onClick={handleAdd}>
 

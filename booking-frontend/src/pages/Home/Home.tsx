@@ -9,9 +9,40 @@ import ServiceSection from "../../components/home/ServiceSection";
 import { popularLocations, testimonials } from "../../mocks/homeExtraData";
 
 import { popularHalls, bridalMakeup, photographyServices, videographyServices } from "../../mocks/homeServices";
-import { mockVendors } from "../../mocks/mockVendors";
+import { useEffect, useState } from "react";
+
+import VendorListingService from "../../services/VendorListingService";
+
+import type { Vendor } from "../../types/Vendor";
 
 const Home = () => {
+
+  const [vendors, setVendors] = useState<Vendor[]>([]);
+
+  useEffect(() => {
+
+      loadFeaturedVendors();
+
+  }, []);
+
+  async function loadFeaturedVendors() {
+
+      try {
+
+          const data =
+              await VendorListingService.getListings();
+
+          setVendors(data.slice(0, 6));
+
+      }
+
+      catch (error) {
+
+          console.error(error);
+
+      }
+
+  }
   return (
     <>
 
@@ -64,6 +95,7 @@ const Home = () => {
                   description={category.description}
 
                   link={category.link}
+                  category={category.category}
 
                 />
 
@@ -102,12 +134,12 @@ const Home = () => {
 
                   <div className="vendor-grid">
 
-                    {mockVendors.map((vendor) => (
+                    {vendors.map((vendor) => (
 
-                      <FeaturedVendorCard
-                        key={vendor.id}
-                        vendor={vendor}
-                      />
+                        <FeaturedVendorCard
+                            key={vendor.serviceId}
+                            vendor={vendor}
+                        />
 
                     ))}
 
