@@ -8,6 +8,7 @@ import com.booking.model.Vendor;
 import com.booking.model.VendorService;
 import com.booking.repository.VendorServiceRepository;
 import com.booking.service.AuthenticatedUserService;
+import com.booking.service.storage.StorageService;
 import com.booking.service.VendorOfferingService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -21,6 +22,7 @@ public class VendorOfferingServiceImpl implements VendorOfferingService {
     private final VendorServiceRepository vendorServiceRepository;
     private final AuthenticatedUserService authenticatedUserService;
     private final VendorServiceMapper vendorServiceMapper;
+    private final StorageService storageService;
 
     @Override
     public VendorServiceResponse createService(VendorServiceRequest request) {

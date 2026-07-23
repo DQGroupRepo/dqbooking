@@ -1,9 +1,9 @@
-import type { Vendor } from "../../types/Vendor";
+import type { VendorDetail } from "../../types/VendorDetail";
 import "./VendorInfo.css";
 
 
 interface Props {
-  vendor: Vendor;
+  vendor: VendorDetail
 }
 
 

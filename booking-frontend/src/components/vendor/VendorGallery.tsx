@@ -1,63 +1,179 @@
-import type { Vendor } from "../../types/Vendor";
+import type { VendorDetail } from "../../types/VendorDetail";
 import "./VendorGallery.css";
 
 interface Props {
-  vendor: Vendor;
+    vendor: VendorDetail;
 }
-
 
 const VendorGallery = ({ vendor }: Props) => {
 
-  const images =
-    vendor.gallery && vendor.gallery.length > 0
-      ? vendor.gallery
-      : [vendor.imageUrl];
+    const media =
+
+        vendor.gallery &&
+
+        vendor.gallery.length > 0
+
+            ? vendor.gallery
+
+            : vendor.imageUrl
+
+                ? [vendor.imageUrl]
+
+                : [];
 
 
-  return (
+    const isVideo = (url: string) => {
 
-    <section className="vendor-gallery container">
+        const cleanUrl =
 
-
-      <div className="main-image">
-
-        <img
-          src={images[0]}
-          alt={vendor.businessName}
-        />
-
-      </div>
+            url.split("?")[0].toLowerCase();
 
 
+        return (
 
-      <div className="thumbnail-row">
+            cleanUrl.endsWith(".mp4") ||
 
+            cleanUrl.endsWith(".webm") ||
 
-        {images.slice(0,4).map((image,index)=>(
+            cleanUrl.endsWith(".mov") ||
 
-          <img
-            key={index}
-            src={image}
-            alt={`${vendor.businessName}-${index}`}
-          />
+            cleanUrl.endsWith(".avi") ||
 
-        ))}
+            cleanUrl.includes("video")
 
+        );
 
-
-        <div className="more-images">
-
-          +12 Photos
-
-        </div>
+    };
 
 
-      </div>
+    if (media.length === 0) {
+
+        return (
+
+            <section className="vendor-gallery container">
+
+                <div className="main-image">
+
+                    <img
+
+                        src="/images/no-image.png"
+
+                        alt={vendor.businessName}
+
+                    />
+
+                </div>
+
+            </section>
+
+        );
+
+    }
 
 
-    </section>
+    return (
 
-  );
+        <section className="vendor-gallery container">
+
+
+            <div className="main-image">
+
+
+                {isVideo(media[0]) ? (
+
+                    <video
+
+                        src={media[0]}
+
+                        controls
+
+                        className="gallery-main-media"
+
+                    />
+
+                ) : (
+
+                    <img
+
+                        src={media[0]}
+
+                        alt={vendor.businessName}
+
+                        className="gallery-main-media"
+
+                    />
+
+                )}
+
+
+            </div>
+
+
+            <div className="thumbnail-row">
+
+
+                {media
+
+                    .slice(0, 4)
+
+                    .map((item, index) => (
+
+                        <div
+
+                            key={index}
+
+                            className="gallery-thumbnail"
+
+                        >
+
+
+                            {isVideo(item) ? (
+
+                                <video
+
+                                    src={item}
+
+                                    className="gallery-thumbnail-media"
+
+                                />
+
+                            ) : (
+
+                                <img
+
+                                    src={item}
+
+                                    alt={`${vendor.businessName}-${index}`}
+
+                                    className="gallery-thumbnail-media"
+
+                                />
+
+                            )}
+
+
+                        </div>
+
+                    ))}
+
+
+                {media.length > 4 && (
+
+                    <div className="more-images">
+
+                        +{media.length - 4} More
+
+                    </div>
+
+                )}
+
+
+            </div>
+
+
+        </section>
+
+    );
 
 };
 

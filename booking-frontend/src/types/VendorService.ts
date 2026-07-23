@@ -29,7 +29,7 @@ export interface VendorService {
 
     bookingSettings: BookingSettings;
 
-    imageUrls: string[];
+    imageUrls?: string[];
 
     amenities: string[];
 

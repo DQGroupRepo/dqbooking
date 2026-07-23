@@ -254,18 +254,47 @@ return (
 
                         <div className="gallery">
 
-                            {
+                            {service.imageUrls?.map((media, index) => {
 
-                                service.imageUrls?.map(image => (
-                                    <img
-                                        key={image}
-                                        src={image}
-                                        alt="Gallery"
-                                        onClick={() => setSelectedImage(image)}
-                                    />
-                                ))
+                                const cleanUrl =
+                                    media.split("?")[0].toLowerCase();
 
-                            }
+                                const isVideo =
+                                    cleanUrl.endsWith(".mp4") ||
+                                    cleanUrl.endsWith(".webm") ||
+                                    cleanUrl.endsWith(".mov") ||
+                                    cleanUrl.endsWith(".avi");
+
+                                return (
+
+                                    <div
+                                        key={index}
+                                        className="service-media-item"
+                                    >
+
+                                        {isVideo ? (
+
+                                            <video
+                                                src={media}
+                                                controls
+                                                className="service-media"
+                                            />
+
+                                        ) : (
+
+                                            <img
+                                                src={media}
+                                                alt={`${service.serviceName}-${index}`}
+                                                className="service-media"
+                                            />
+
+                                        )}
+
+                                    </div>
+
+                                );
+
+                            })}
 
                         </div>
 

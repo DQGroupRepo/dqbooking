@@ -1,5 +1,6 @@
 import api from "../api/axiosConfig";
 import type { VendorService } from "../types/VendorService";
+import type { CreateVendorServiceRequest } from "../types/CreateVendorServiceRequest";
 
 class VendorServiceService {
 

@@ -1,6 +1,7 @@
 package com.booking.repository;
 
 import com.booking.model.VendorService;
+import com.booking.model.enums.ServiceCategory;
 import org.springframework.data.mongodb.repository.MongoRepository;
 
 import java.util.List;
@@ -19,5 +20,11 @@ public interface VendorServiceRepository extends MongoRepository<VendorService, 
 
     Optional<VendorService> findByIdAndActiveTrueAndDeletedFalse(
             String id
+    );
+
+    List<VendorService> findByActiveTrueAndDeletedFalse();
+
+    List<VendorService> findByCategoryAndActiveTrueAndDeletedFalse(
+            ServiceCategory category
     );
 }
