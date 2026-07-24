@@ -1,28 +1,27 @@
-// File used in listing categories page
 import { Link } from "react-router-dom";
 import "./CategoryCard.css";
 
 interface Props {
   icon: string;
   title: string;
+  category: string;
   description: string;
   link: string;
-  category: string;
 }
 
 const CategoryCard = ({
   icon,
   title,
+  category,
   description,
-  link,
-  category
+  link
 }: Props) => {
 
   return (
 
     <Link
-        to={`${link}?category=${category}`}
-        className="category-link"
+      to={`${link}?category=${category}`}
+      className="category-link"
     >
 
       <div className="category-card">

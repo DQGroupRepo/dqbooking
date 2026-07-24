@@ -1,5 +1,6 @@
 import {
-    useRef
+    useRef,
+    useState
 } from "react";
 
 import toast from "react-hot-toast";
@@ -9,6 +10,10 @@ import type {
 } from "./ImageUploader.types";
 
 import ImagePreview from "./ImagePreview";
+
+import MediaViewer, {
+    type MediaItem
+} from "../../common/media/MediaViewer/MediaViewer";
 
 import "./ImageUploader.css";
 
@@ -21,9 +26,7 @@ export default function ImageUploader({
 
     maxFiles = 10,
 
-    maxImageSizeMb = 5,
-
-    maxVideoSizeMb = 50,
+    maxSizeMb = 5,
 
     onChange,
 
@@ -33,8 +36,67 @@ export default function ImageUploader({
 
 
     const inputRef =
-
         useRef<HTMLInputElement>(null);
+
+
+    const [viewerOpen, setViewerOpen] =
+        useState(false);
+
+
+    const [viewerIndex, setViewerIndex] =
+        useState(0);
+
+
+    /*
+     * Convert existing URLs into
+     * MediaViewer items.
+     */
+    const existingMedia: MediaItem[] =
+        existingImages.map(url => ({
+
+            src: url,
+
+            type:
+                /\.(mp4|webm|ogg|mov)$/i.test(
+                    url.split("?")[0]
+                )
+                    ? "video"
+                    : "image"
+
+        }));
+
+
+    /*
+     * Convert newly selected Files into
+     * MediaViewer items.
+     */
+    const newMedia: MediaItem[] =
+        images.map(file => ({
+
+            src: URL.createObjectURL(file),
+
+            type:
+                file.type.startsWith("video/")
+                    ? "video"
+                    : "image"
+
+        }));
+
+
+    /*
+     * Complete gallery containing:
+     *
+     * Existing images/videos
+     * +
+     * Newly selected images/videos
+     */
+    const allMedia: MediaItem[] = [
+
+        ...existingMedia,
+
+        ...newMedia
+
+    ];
 
 
     function browseFiles() {
@@ -50,12 +112,10 @@ export default function ImageUploader({
 
     ) {
 
-
         if (!files) return;
 
 
         const selected =
-
             Array.from(files);
 
 
@@ -73,7 +133,7 @@ export default function ImageUploader({
 
             toast.error(
 
-                `Maximum ${maxFiles} media files allowed.`
+                `Maximum ${maxFiles} images/videos allowed.`
 
             );
 
@@ -88,17 +148,17 @@ export default function ImageUploader({
         for (const file of selected) {
 
 
+            /*
+             * Allow both images
+             * and videos.
+             */
             const isImage =
-
                 file.type.startsWith("image/");
 
 
             const isVideo =
-
                 file.type.startsWith("video/");
 
-
-            // Validate file type
 
             if (!isImage && !isVideo) {
 
@@ -113,44 +173,17 @@ export default function ImageUploader({
             }
 
 
-            // Image size validation
-
             if (
-
-                isImage &&
 
                 file.size >
 
-                maxImageSizeMb * 1024 * 1024
+                maxSizeMb * 1024 * 1024
 
             ) {
 
                 toast.error(
 
-                    `${file.name} exceeds the ${maxImageSizeMb}MB image limit.`
-
-                );
-
-                continue;
-
-            }
-
-
-            // Video size validation
-
-            if (
-
-                isVideo &&
-
-                file.size >
-
-                maxVideoSizeMb * 1024 * 1024
-
-            ) {
-
-                toast.error(
-
-                    `${file.name} exceeds the ${maxVideoSizeMb}MB video limit.`
+                    `${file.name} exceeds ${maxSizeMb}MB.`
 
                 );
 
@@ -175,18 +208,10 @@ export default function ImageUploader({
     }
 
 
-    function removeFile(
+    function removeFile(index: number) {
 
-        index: number
-
-    ) {
-
-
-        const updated = [
-
-            ...images
-
-        ];
+        const updated =
+            [...images];
 
 
         updated.splice(
@@ -199,6 +224,59 @@ export default function ImageUploader({
 
 
         onChange(updated);
+
+    }
+
+
+    /*
+     * Open the full MediaViewer.
+     *
+     * index is based on the complete
+     * gallery containing existing +
+     * new media.
+     */
+    function openViewer(index: number) {
+
+        setViewerIndex(index);
+
+        setViewerOpen(true);
+
+    }
+
+
+    /*
+     * Existing media was clicked.
+     */
+    function handleExistingMediaClick(
+
+        index: number
+
+    ) {
+
+        openViewer(index);
+
+    }
+
+
+    /*
+     * New media was clicked.
+     *
+     * New media starts after all
+     * existing media.
+     */
+    function handleNewMediaClick(
+
+        index: number
+
+    ) {
+
+        openViewer(
+
+            existingImages.length +
+
+            index
+
+        );
 
     }
 
@@ -225,21 +303,16 @@ export default function ImageUploader({
 
                 <p>
 
-                    📷 Upload Images & Videos
+                    📷 Drag & Drop Images/Videos Here
 
                 </p>
 
 
                 <span>
 
-                    Images up to {maxImageSizeMb}MB
-
-                    {" • "}
-
-                    Videos up to {maxVideoSizeMb}MB
+                    or click to browse
 
                 </span>
-
 
             </div>
 
@@ -264,6 +337,10 @@ export default function ImageUploader({
 
                     );
 
+                    /*
+                     * Allows selecting the
+                     * same file again.
+                     */
                     e.target.value = "";
 
                 }}
@@ -274,13 +351,13 @@ export default function ImageUploader({
             <div className="image-grid">
 
 
-                {/* Existing media */}
-
                 {
+
 
                     existingImages.map(
 
-                        url => (
+                        (url, index) => (
+
 
                             <ImagePreview
 
@@ -288,7 +365,29 @@ export default function ImageUploader({
 
                                 src={url}
 
-                                type="image"
+                                type={
+
+                                    /\.(mp4|webm|ogg|mov)$/i.test(
+
+                                        url.split("?")[0]
+
+                                    )
+
+                                        ? "video"
+
+                                        : "image"
+
+                                }
+
+                                onClick={() =>
+
+                                    handleExistingMediaClick(
+
+                                        index
+
+                                    )
+
+                                }
 
                                 onRemove={() =>
 
@@ -302,26 +401,40 @@ export default function ImageUploader({
 
                             />
 
+
                         )
 
                     )
 
+
                 }
 
 
-                {/* Newly selected media */}
-
                 {
+
 
                     images.map(
 
                         (file, index) => (
 
+
                             <ImagePreview
 
-                                key={index}
+                                key={
 
-                                src={URL.createObjectURL(file)}
+                                    `${file.name}-${index}`
+
+                                }
+
+                                src={
+
+                                    URL.createObjectURL(
+
+                                        file
+
+                                    )
+
+                                }
 
                                 type={
 
@@ -337,9 +450,9 @@ export default function ImageUploader({
 
                                 }
 
-                                onRemove={() =>
+                                onClick={() =>
 
-                                    removeFile(
+                                    handleNewMediaClick(
 
                                         index
 
@@ -347,16 +460,53 @@ export default function ImageUploader({
 
                                 }
 
+                                onRemove={() =>
+
+                                    removeFile(index)
+
+                                }
+
                             />
+
 
                         )
 
                     )
 
+
                 }
 
 
             </div>
+
+
+            {
+
+
+                viewerOpen &&
+
+                allMedia.length > 0 && (
+
+
+                    <MediaViewer
+
+                        media={allMedia}
+
+                        initialIndex={viewerIndex}
+
+                        onClose={() =>
+
+                            setViewerOpen(false)
+
+                        }
+
+                    />
+
+
+                )
+
+
+            }
 
 
         </div>

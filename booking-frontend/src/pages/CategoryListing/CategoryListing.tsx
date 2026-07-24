@@ -75,7 +75,7 @@ const CategoryListing = () => {
                             {vendors.map(vendor => (
 
                                 <VendorCard
-                                    key={vendor.id}
+                                    key={vendor.serviceId}
                                     vendor={vendor}
                                 />
 

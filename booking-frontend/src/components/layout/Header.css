@@ -156,10 +156,3 @@
 
 }
 
-header,
-.navbar,
-.header-wrapper {
-    position: relative;
-    z-index: 10;
-    background: #fff;
-}

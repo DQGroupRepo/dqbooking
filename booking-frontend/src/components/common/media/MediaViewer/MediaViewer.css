@@ -1,0 +1,242 @@
+.media-viewer-overlay {
+
+    position: fixed;
+
+    inset: 0;
+
+    z-index: 9999;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    padding: 24px;
+
+    background: rgba(
+        0,
+        0,
+        0,
+        0.85
+    );
+
+}
+
+
+.media-viewer-content {
+
+    position: relative;
+
+    max-width: 90vw;
+
+    max-height: 90vh;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+}
+
+
+.media-viewer-media {
+
+    display: block;
+
+    max-width: 80vw;
+
+    max-height: 85vh;
+
+    width: auto;
+
+    height: auto;
+
+    object-fit: contain;
+
+    border-radius: 8px;
+
+}
+
+
+.media-viewer-close {
+
+    position: absolute;
+
+    top: -45px;
+
+    right: 0;
+
+    width: 36px;
+
+    height: 36px;
+
+    border: none;
+
+    border-radius: 50%;
+
+    background: white;
+
+    color: #222;
+
+    font-size: 20px;
+
+    line-height: 1;
+
+    cursor: pointer;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    z-index: 3;
+
+}
+
+
+.media-viewer-nav {
+
+    position: absolute;
+
+    top: 50%;
+
+    transform: translateY(-50%);
+
+    width: 48px;
+
+    height: 64px;
+
+    border: none;
+
+    border-radius: 8px;
+
+    background: rgba(
+        255,
+        255,
+        255,
+        0.85
+    );
+
+    color: #222;
+
+    font-size: 42px;
+
+    line-height: 1;
+
+    cursor: pointer;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    z-index: 3;
+
+}
+
+
+.media-viewer-nav:hover {
+
+    background: white;
+
+}
+
+
+.media-viewer-prev {
+
+    left: -70px;
+
+}
+
+
+.media-viewer-next {
+
+    right: -70px;
+
+}
+
+
+.media-viewer-counter {
+
+    position: absolute;
+
+    bottom: -40px;
+
+    left: 50%;
+
+    transform: translateX(-50%);
+
+    color: white;
+
+    font-size: 14px;
+
+    white-space: nowrap;
+
+}
+
+
+@media (
+    max-width: 768px
+) {
+
+    .media-viewer-overlay {
+
+        padding: 16px;
+
+    }
+
+
+    .media-viewer-media {
+
+        max-width: 85vw;
+
+        max-height: 75vh;
+
+    }
+
+
+    .media-viewer-nav {
+
+        width: 40px;
+
+        height: 52px;
+
+        font-size: 34px;
+
+    }
+
+
+    .media-viewer-prev {
+
+        left: 5px;
+
+    }
+
+
+    .media-viewer-next {
+
+        right: 5px;
+
+    }
+
+
+    .media-viewer-close {
+
+        top: 10px;
+
+        right: 10px;
+
+    }
+
+
+    .media-viewer-counter {
+
+        bottom: -30px;
+
+    }
+
+}

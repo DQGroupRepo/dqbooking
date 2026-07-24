@@ -1,99 +1,87 @@
 import { Link } from "react-router-dom";
 import "./Header.css";
 
-
 const Header = () => {
 
-  return (
+return (
 
-    <>
+<>
 
-      <div className="top-bar">
+  <div className="top-bar">
 
-        <div className="container top-container">
+    <div className="container top-container">
 
-          <div>
-            🇮🇳 India ▼ &nbsp;&nbsp; ₹ INR ▼
-          </div>
+      <div>
+        🇮🇳 India ▼ &nbsp;&nbsp; ₹ INR ▼
+      </div>
 
+      <div className="header-actions">
 
-          <div className="header-actions">
-
-          <Link to="/help">
+        <Link to="/help">
           Help
-          </Link>
+        </Link>
 
+        <Link to="/login">
+          <button className="login-btn">
+            Login
+          </button>
+        </Link>
 
-          <Link to="/login">
-            <button className="login-btn">
-              Login
-            </button>
-          </Link>
-
-
-          <Link to="/register">
-            <button className="register-btn">
-              Register
-            </button>
-          </Link>
-
-          </div>
-
-        </div>
+        <Link to="/register">
+          <button className="register-btn">
+            Register
+          </button>
+        </Link>
 
       </div>
 
+    </div>
+
+  </div>
 
 
-      <header className="main-header">
+  <header className="main-header">
 
-        <div className="container header-container">
+    <div className="container header-container">
+
+      <div className="logo">
+        🎉 EventNest
+      </div>
 
 
-          <div className="logo">
-            🎉 EventNest
-          </div>
+      <nav className="desktop-menu">
 
-
-          <nav className="desktop-menu">
-
-          <Link to="/">
+        <Link to="/">
           Home
-          </Link>
+        </Link>
 
-
-          <Link to="/categories">
+        <Link to="/categories?category=HALL">
           Halls
-          </Link>
+        </Link>
 
-
-          <Link to="/categories?type=photography">
+        <Link to="/categories?category=PHOTOGRAPHY">
           Photography
-          </Link>
+        </Link>
 
-
-          <Link to="/categories?type=makeup">
+        <Link to="/categories?category=MAKEUP">
           Makeup
-          </Link>
+        </Link>
 
-
-          <Link to="/bookings">
+        <Link to="/bookings">
           My Bookings
-          </Link>
+        </Link>
+
+      </nav>
+
+    </div>
+
+  </header>
+
+</>
 
 
-          </nav>
-
-
-        </div>
-
-      </header>
-
-    </>
-
-  );
+);
 
 };
-
 
 export default Header;

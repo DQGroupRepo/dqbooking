@@ -1,3 +1,4 @@
+import { useState } from "react";
 import type { VendorDetail } from "../../types/VendorDetail";
 import "./VendorGallery.css";
 
@@ -8,39 +9,67 @@ interface Props {
 const VendorGallery = ({ vendor }: Props) => {
 
     const media =
+        vendor.imageUrls &&
+        vendor.imageUrls.length > 0
+            ? vendor.imageUrls
+            : [];
 
-        vendor.gallery &&
-
-        vendor.gallery.length > 0
-
-            ? vendor.gallery
-
-            : vendor.imageUrl
-
-                ? [vendor.imageUrl]
-
-                : [];
+    const [selectedIndex, setSelectedIndex] =
+        useState<number | null>(null);
 
 
     const isVideo = (url: string) => {
 
         const cleanUrl =
-
             url.split("?")[0].toLowerCase();
 
-
         return (
-
             cleanUrl.endsWith(".mp4") ||
-
             cleanUrl.endsWith(".webm") ||
-
             cleanUrl.endsWith(".mov") ||
-
             cleanUrl.endsWith(".avi") ||
-
+            cleanUrl.endsWith(".ogg") ||
             cleanUrl.includes("video")
+        );
 
+    };
+
+
+    const openMedia = (index: number) => {
+
+        setSelectedIndex(index);
+
+    };
+
+
+    const closeMedia = () => {
+
+        setSelectedIndex(null);
+
+    };
+
+
+    const showPrevious = () => {
+
+        if (selectedIndex === null) return;
+
+        setSelectedIndex(
+            selectedIndex === 0
+                ? media.length - 1
+                : selectedIndex - 1
+        );
+
+    };
+
+
+    const showNext = () => {
+
+        if (selectedIndex === null) return;
+
+        setSelectedIndex(
+            selectedIndex === media.length - 1
+                ? 0
+                : selectedIndex + 1
         );
 
     };
@@ -55,11 +84,9 @@ const VendorGallery = ({ vendor }: Props) => {
                 <div className="main-image">
 
                     <img
-
                         src="/images/no-image.png"
-
                         alt={vendor.businessName}
-
+                        className="gallery-main-media"
                     />
 
                 </div>
@@ -73,105 +100,179 @@ const VendorGallery = ({ vendor }: Props) => {
 
     return (
 
-        <section className="vendor-gallery container">
+        <>
+
+            <section className="vendor-gallery container">
+
+                {/* Main Media */}
+
+                <div className="main-image">
+
+                    {isVideo(media[0]) ? (
+
+                        <video
+                            src={media[0]}
+                            controls
+                            className="gallery-main-media"
+                        />
+
+                    ) : (
+
+                        <img
+                            src={media[0]}
+                            alt={vendor.businessName}
+                            className="gallery-main-media"
+                        />
+
+                    )}
+
+                </div>
 
 
-            <div className="main-image">
+                {/* Thumbnail Row */}
+
+                <div className="thumbnail-row">
+
+                    {media
+                        .slice(0, 4)
+                        .map((item, index) => (
+
+                            <div
+                                key={item}
+                                className="gallery-thumbnail"
+                                onClick={() =>
+                                    openMedia(index)
+                                }
+                            >
+
+                                {isVideo(item) ? (
+
+                                    <video
+                                        src={item}
+                                        className="gallery-thumbnail-media"
+                                        muted
+                                        playsInline
+                                    />
+
+                                ) : (
+
+                                    <img
+                                        src={item}
+                                        alt={`${vendor.businessName}-${index}`}
+                                        className="gallery-thumbnail-media"
+                                    />
+
+                                )}
+
+                            </div>
+
+                        ))}
 
 
-                {isVideo(media[0]) ? (
-
-                    <video
-
-                        src={media[0]}
-
-                        controls
-
-                        className="gallery-main-media"
-
-                    />
-
-                ) : (
-
-                    <img
-
-                        src={media[0]}
-
-                        alt={vendor.businessName}
-
-                        className="gallery-main-media"
-
-                    />
-
-                )}
-
-
-            </div>
-
-
-            <div className="thumbnail-row">
-
-
-                {media
-
-                    .slice(0, 4)
-
-                    .map((item, index) => (
+                    {media.length > 4 && (
 
                         <div
-
-                            key={index}
-
-                            className="gallery-thumbnail"
-
+                            className="more-images"
+                            onClick={() => openMedia(4)}
                         >
 
-
-                            {isVideo(item) ? (
-
-                                <video
-
-                                    src={item}
-
-                                    className="gallery-thumbnail-media"
-
-                                />
-
-                            ) : (
-
-                                <img
-
-                                    src={item}
-
-                                    alt={`${vendor.businessName}-${index}`}
-
-                                    className="gallery-thumbnail-media"
-
-                                />
-
-                            )}
-
+                            +{media.length - 4} More
 
                         </div>
 
-                    ))}
+                    )}
+
+                </div>
+
+            </section>
 
 
-                {media.length > 4 && (
+            {/* Media Popup */}
 
-                    <div className="more-images">
+            {selectedIndex !== null && (
 
-                        +{media.length - 4} More
+                <div
+                    className="media-lightbox"
+                    onClick={closeMedia}
+                >
+
+                    <button
+                        className="lightbox-close"
+                        onClick={closeMedia}
+                    >
+                        ✕
+                    </button>
+
+
+                    <button
+                        className="lightbox-prev"
+                        onClick={(event) => {
+
+                            event.stopPropagation();
+
+                            showPrevious();
+
+                        }}
+                    >
+                        ‹
+                    </button>
+
+
+                    <div
+                        className="lightbox-content"
+                        onClick={(event) =>
+                            event.stopPropagation()
+                        }
+                    >
+
+                        {isVideo(
+                            media[selectedIndex]
+                        ) ? (
+
+                            <video
+                                src={
+                                    media[selectedIndex]
+                                }
+                                controls
+                                autoPlay
+                                className="lightbox-media"
+                            />
+
+                        ) : (
+
+                            <img
+                                src={
+                                    media[selectedIndex]
+                                }
+                                alt={
+                                    `${vendor.businessName}-${selectedIndex}`
+                                }
+                                className="lightbox-media"
+                            />
+
+                        )}
 
                     </div>
 
-                )}
 
+                    <button
+                        className="lightbox-next"
+                        onClick={(event) => {
 
-            </div>
+                            event.stopPropagation();
 
+                            showNext();
 
-        </section>
+                        }}
+                    >
+                        ›
+                    </button>
+
+                </div>
+
+            )}
+
+        </>
 
     );
 

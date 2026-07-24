@@ -8,6 +8,8 @@ interface ImagePreviewProps {
 
     onRemove?: () => void;
 
+    onClick?: () => void;
+
 }
 
 
@@ -17,44 +19,61 @@ export default function ImagePreview({
 
     type = "image",
 
-    onRemove
+    onRemove,
+
+    onClick
 
 }: ImagePreviewProps) {
 
 
     return (
 
-        <div className="image-preview">
+        <div
+
+            className="image-preview"
+
+            onClick={onClick}
+
+        >
 
 
-            {type === "video" ? (
+            <div className="preview-clickable">
 
-                <video
 
-                    src={src}
+                {type === "video" ? (
 
-                    controls
+                    <video
 
-                    className="preview-media"
+                        src={src}
 
-                />
+                        muted
 
-            ) : (
+                        playsInline
 
-                <img
+                        className="preview-media"
 
-                    src={src}
+                    />
 
-                    alt="Preview"
+                ) : (
 
-                    className="preview-media"
+                    <img
 
-                />
+                        src={src}
 
-            )}
+                        alt="Preview"
+
+                        className="preview-media"
+
+                    />
+
+                )}
+
+
+            </div>
 
 
             {onRemove && (
+
 
                 <button
 
@@ -62,13 +81,20 @@ export default function ImagePreview({
 
                     className="remove-image"
 
-                    onClick={onRemove}
+                    onClick={(e) => {
+
+                        e.stopPropagation();
+
+                        onRemove();
+
+                    }}
 
                 >
 
                     ✕
 
                 </button>
+
 
             )}
 

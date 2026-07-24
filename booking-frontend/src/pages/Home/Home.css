@@ -1,4 +1,6 @@
 .hero {
+    position: relative;
+
     min-height: 650px;
 
     background-image:
@@ -10,20 +12,30 @@
     display: flex;
     align-items: center;
     justify-content: center;
+
+    overflow: hidden;
 }
+
 
 .hero-overlay {
 
-    min-height: 650px;
+    position: absolute;
 
-    background: rgba(0,0,0,0.65);
+    inset: 0;
+
+    background: rgba(0, 0, 0, 0.65);
 
     display: flex;
     align-items: center;
     justify-content: center;
 }
 
+
 .hero-content {
+
+    position: relative;
+
+    z-index: 1;
 
     width: 100%;
     max-width: 1200px;
