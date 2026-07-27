@@ -32,7 +32,10 @@ export default function VendorDashboard() {
 
           const dashboard =
               await VendorDashboardService.getDashboard();
-
+            console.log(
+                "VENDOR DASHBOARD RESPONSE:",
+                dashboard
+            );
           setSummary(dashboard);
 
           setBookings(dashboard.recentBookings);

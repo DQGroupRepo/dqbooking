@@ -1,18 +1,29 @@
 import {
+
     useRef,
+
     useState
+
 } from "react";
 
 import toast from "react-hot-toast";
 
-import type {
-    ImageUploaderProps
-} from "./ImageUploader.types";
-
 import ImagePreview from "./ImagePreview";
 
+import type {
+
+    ImageUploaderProps,
+
+    MediaItem,
+
+    ExistingMediaItem
+
+} from "./ImageUploader.types";
+
 import MediaViewer, {
-    type MediaItem
+
+    type MediaItem as ViewerMediaItem
+
 } from "../../common/media/MediaViewer/MediaViewer";
 
 import "./ImageUploader.css";
@@ -20,9 +31,7 @@ import "./ImageUploader.css";
 
 export default function ImageUploader({
 
-    images,
-
-    existingImages = [],
+    media,
 
     maxFiles = 10,
 
@@ -36,68 +45,143 @@ export default function ImageUploader({
 
 
     const inputRef =
+
         useRef<HTMLInputElement>(null);
 
 
-    const [viewerOpen, setViewerOpen] =
-        useState(false);
+    const [
+
+        viewerOpen,
+
+        setViewerOpen
+
+    ] = useState(false);
 
 
-    const [viewerIndex, setViewerIndex] =
-        useState(0);
+    const [
+
+        viewerIndex,
+
+        setViewerIndex
+
+    ] = useState(0);
+
+
+    const [
+
+        draggedIndex,
+
+        setDraggedIndex
+
+    ] = useState<number | null>(null);
+
 
 
     /*
-     * Convert existing URLs into
-     * MediaViewer items.
+     * =========================
+     * Generate Preview URL
+     * =========================
      */
-    const existingMedia: MediaItem[] =
-        existingImages.map(url => ({
 
-            src: url,
+    const getMediaSrc = (
 
-            type:
+        item: MediaItem
+
+    ): string => {
+
+
+        if (item.kind === "existing") {
+
+            return item.url;
+
+        }
+
+
+        return URL.createObjectURL(
+
+            item.file
+
+        );
+
+    };
+
+
+
+    /*
+     * =========================
+     * Detect Media Type
+     * =========================
+     */
+
+    const getMediaType = (
+
+        item: MediaItem
+
+    ): "image" | "video" => {
+
+
+        if (item.kind === "existing") {
+
+            return (
+
                 /\.(mp4|webm|ogg|mov)$/i.test(
-                    url.split("?")[0]
+
+                    item.url.split("?")[0]
+
                 )
+
                     ? "video"
+
                     : "image"
 
-        }));
+            );
+
+        }
+
+
+        return item.file.type.startsWith(
+
+            "video/"
+
+        )
+
+            ? "video"
+
+            : "image";
+
+    };
+
 
 
     /*
-     * Convert newly selected Files into
-     * MediaViewer items.
+     * =========================
+     * Convert To MediaViewer
+     * =========================
      */
-    const newMedia: MediaItem[] =
-        images.map(file => ({
 
-            src: URL.createObjectURL(file),
+    const allViewerMedia:
+
+        ViewerMediaItem[] =
+
+        media.map(item => ({
+
+            src:
+
+                getMediaSrc(item),
 
             type:
-                file.type.startsWith("video/")
-                    ? "video"
-                    : "image"
+
+                getMediaType(item)
 
         }));
 
 
+
     /*
-     * Complete gallery containing:
-     *
-     * Existing images/videos
-     * +
-     * Newly selected images/videos
+     * =========================
+     * Browse Files
+     * =========================
      */
-    const allMedia: MediaItem[] = [
-
-        ...existingMedia,
-
-        ...newMedia
-
-    ];
-
 
     function browseFiles() {
 
@@ -106,26 +190,37 @@ export default function ImageUploader({
     }
 
 
+
+    /*
+     * =========================
+     * Handle New Files
+     * =========================
+     */
+
     function handleFiles(
 
         files: FileList | null
 
     ) {
 
-        if (!files) return;
+
+        if (!files) {
+
+            return;
+
+        }
 
 
-        const selected =
+        const selectedFiles =
+
             Array.from(files);
 
 
         if (
 
-            selected.length +
+            media.length +
 
-            images.length +
-
-            existingImages.length >
+            selectedFiles.length >
 
             maxFiles
 
@@ -142,25 +237,41 @@ export default function ImageUploader({
         }
 
 
-        const valid: File[] = [];
+        const validFiles: File[] = [];
 
 
-        for (const file of selected) {
+        for (
+
+            const file of selectedFiles
+
+        ) {
 
 
-            /*
-             * Allow both images
-             * and videos.
-             */
             const isImage =
-                file.type.startsWith("image/");
+
+                file.type.startsWith(
+
+                    "image/"
+
+                );
 
 
             const isVideo =
-                file.type.startsWith("video/");
+
+                file.type.startsWith(
+
+                    "video/"
+
+                );
 
 
-            if (!isImage && !isVideo) {
+            if (
+
+                !isImage &&
+
+                !isVideo
+
+            ) {
 
                 toast.error(
 
@@ -177,7 +288,11 @@ export default function ImageUploader({
 
                 file.size >
 
-                maxSizeMb * 1024 * 1024
+                maxSizeMb *
+
+                1024 *
+
+                1024
 
             ) {
 
@@ -192,93 +307,304 @@ export default function ImageUploader({
             }
 
 
-            valid.push(file);
+            validFiles.push(file);
 
         }
 
 
+
+        /*
+         * Add new media at the end.
+         */
+
+        const newMedia:
+
+            MediaItem[] =
+
+            validFiles.map(file => ({
+
+                id:
+
+                    `${
+
+                        file.name
+
+                    }-${
+
+                        Date.now()
+
+                    }-${
+
+                        Math.random()
+
+                    }`,
+
+                kind: "new",
+
+                file
+
+            }));
+
+
         onChange([
 
-            ...images,
+            ...media,
 
-            ...valid
+            ...newMedia
 
         ]);
 
     }
 
 
-    function removeFile(index: number) {
 
-        const updated =
-            [...images];
+    /*
+     * =========================
+     * Remove Media
+     * =========================
+     */
+
+    function removeMedia(
+
+        index: number
+
+    ) {
 
 
-        updated.splice(
+        const item =
 
-            index,
+            media[index];
 
-            1
+
+        if (!item) {
+
+            return;
+
+        }
+
+
+
+        /*
+         * Existing media:
+         *
+         * Ask parent to confirm.
+         *
+         * Parent only removes
+         * from React state.
+         *
+         * Database is NOT changed
+         * until Update is clicked.
+         */
+
+        if (
+
+            item.kind === "existing"
+
+        ) {
+
+
+            onRemoveExisting?.(
+
+                item
+
+            );
+
+
+            return;
+
+        }
+
+
+
+        /*
+         * New media:
+         *
+         * Simply remove from state.
+         *
+         * File has not been uploaded
+         * yet.
+         */
+
+        const updatedMedia =
+
+            media.filter(
+
+                (_, itemIndex) =>
+
+                    itemIndex !== index
+
+            );
+
+
+        onChange(
+
+            updatedMedia
 
         );
 
-
-        onChange(updated);
-
     }
 
 
-    /*
-     * Open the full MediaViewer.
-     *
-     * index is based on the complete
-     * gallery containing existing +
-     * new media.
-     */
-    function openViewer(index: number) {
-
-        setViewerIndex(index);
-
-        setViewerOpen(true);
-
-    }
-
 
     /*
-     * Existing media was clicked.
+     * =========================
+     * Drag Start
+     * =========================
      */
-    function handleExistingMediaClick(
+
+    function handleDragStart(
 
         index: number
 
     ) {
 
-        openViewer(index);
 
-    }
-
-
-    /*
-     * New media was clicked.
-     *
-     * New media starts after all
-     * existing media.
-     */
-    function handleNewMediaClick(
-
-        index: number
-
-    ) {
-
-        openViewer(
-
-            existingImages.length +
+        setDraggedIndex(
 
             index
 
         );
 
     }
+
+
+
+    /*
+     * =========================
+     * Drag Over
+     * =========================
+     */
+
+    function handleDragOver(
+
+        targetIndex: number
+
+    ) {
+
+
+        if (
+
+            draggedIndex === null
+
+        ) {
+
+            return;
+
+        }
+
+
+        if (
+
+            draggedIndex ===
+
+            targetIndex
+
+        ) {
+
+            return;
+
+        }
+
+
+        const reorderedMedia = [
+
+            ...media
+
+        ];
+
+
+        const draggedItem =
+
+            reorderedMedia.splice(
+
+                draggedIndex,
+
+                1
+
+            )[0];
+
+
+        if (!draggedItem) {
+
+            return;
+
+        }
+
+
+        reorderedMedia.splice(
+
+            targetIndex,
+
+            0,
+
+            draggedItem
+
+        );
+
+
+        onChange(
+
+            reorderedMedia
+
+        );
+
+
+        setDraggedIndex(
+
+            targetIndex
+
+        );
+
+    }
+
+
+
+    /*
+     * =========================
+     * Drag End
+     * =========================
+     */
+
+    function handleDragEnd() {
+
+        setDraggedIndex(
+
+            null
+
+        );
+
+    }
+
+
+
+    /*
+     * =========================
+     * Open Media Viewer
+     * =========================
+     */
+
+    function openViewer(
+
+        index: number
+
+    ) {
+
+
+        setViewerIndex(
+
+            index
+
+        );
+
+
+        setViewerOpen(
+
+            true
+
+        );
+
+    }
+
 
 
     return (
@@ -292,6 +618,11 @@ export default function ImageUploader({
 
             </label>
 
+
+
+            {/* =========================
+                Upload Area
+            ========================= */}
 
             <div
 
@@ -317,6 +648,7 @@ export default function ImageUploader({
             </div>
 
 
+
             <input
 
                 ref={inputRef}
@@ -331,16 +663,19 @@ export default function ImageUploader({
 
                 onChange={(e) => {
 
+
                     handleFiles(
 
                         e.target.files
 
                     );
 
+
                     /*
-                     * Allows selecting the
-                     * same file again.
+                     * Allows selecting
+                     * the same file again.
                      */
+
                     e.target.value = "";
 
                 }}
@@ -348,131 +683,112 @@ export default function ImageUploader({
             />
 
 
+
+            {/* =========================
+                Media Grid
+            ========================= */}
+
             <div className="image-grid">
 
 
                 {
 
+                    media.map(
 
-                    existingImages.map(
+                        (
 
-                        (url, index) => (
+                            item,
 
+                            index
 
-                            <ImagePreview
-
-                                key={url}
-
-                                src={url}
-
-                                type={
-
-                                    /\.(mp4|webm|ogg|mov)$/i.test(
-
-                                        url.split("?")[0]
-
-                                    )
-
-                                        ? "video"
-
-                                        : "image"
-
-                                }
-
-                                onClick={() =>
-
-                                    handleExistingMediaClick(
-
-                                        index
-
-                                    )
-
-                                }
-
-                                onRemove={() =>
-
-                                    onRemoveExisting?.(
-
-                                        url
-
-                                    )
-
-                                }
-
-                            />
+                        ) => {
 
 
-                        )
+                            const src =
 
-                    )
+                                getMediaSrc(
 
+                                    item
 
-                }
-
-
-                {
+                                );
 
 
-                    images.map(
+                            const type =
 
-                        (file, index) => (
+                                getMediaType(
 
+                                    item
 
-                            <ImagePreview
-
-                                key={
-
-                                    `${file.name}-${index}`
-
-                                }
-
-                                src={
-
-                                    URL.createObjectURL(
-
-                                        file
-
-                                    )
-
-                                }
-
-                                type={
-
-                                    file.type.startsWith(
-
-                                        "video/"
-
-                                    )
-
-                                        ? "video"
-
-                                        : "image"
-
-                                }
-
-                                onClick={() =>
-
-                                    handleNewMediaClick(
-
-                                        index
-
-                                    )
-
-                                }
-
-                                onRemove={() =>
-
-                                    removeFile(index)
-
-                                }
-
-                            />
+                                );
 
 
-                        )
+                            return (
+
+                                <ImagePreview
+
+                                    key={
+
+                                        item.id
+
+                                    }
+
+                                    src={src}
+
+                                    type={type}
+
+                                    draggable={
+
+                                        true
+
+                                    }
+
+                                    onDragStart={() =>
+
+                                        handleDragStart(
+
+                                            index
+
+                                        )
+
+                                    }
+
+                                    onDragOver={() =>
+
+                                        handleDragOver(
+
+                                            index
+
+                                        )
+
+                                    }
+
+                                    onClick={() =>
+
+                                        openViewer(
+
+                                            index
+
+                                        )
+
+                                    }
+
+                                    onRemove={() =>
+
+                                        removeMedia(
+
+                                            index
+
+                                        )
+
+                                    }
+
+                                />
+
+                            );
+
+                        }
 
                     )
-
 
                 }
 
@@ -480,31 +796,47 @@ export default function ImageUploader({
             </div>
 
 
-            {
 
+            {/* =========================
+                Media Viewer
+            ========================= */}
+
+            {
 
                 viewerOpen &&
 
-                allMedia.length > 0 && (
+                allViewerMedia.length >
+
+                0 && (
 
 
                     <MediaViewer
 
-                        media={allMedia}
+                        media={
 
-                        initialIndex={viewerIndex}
+                            allViewerMedia
+
+                        }
+
+                        initialIndex={
+
+                            viewerIndex
+
+                        }
 
                         onClose={() =>
 
-                            setViewerOpen(false)
+                            setViewerOpen(
+
+                                false
+
+                            )
 
                         }
 
                     />
 
-
                 )
-
 
             }
 

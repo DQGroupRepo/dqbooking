@@ -2,7 +2,10 @@ const ENDPOINTS = {
 
     LOGIN: "/auth/login",
 
-    PROFILE: "/vendor/profile"
+    PROFILE: "/vendor/profile",
+
+    VENDOR_REGISTER:
+            "/auth/vendor/register"
 
 };
 

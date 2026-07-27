@@ -26,6 +26,8 @@ import ManageBookingSlots from "../pages/vendor/ManageBookingSlots";
 import ManageAvailability from "../pages/vendor/ManageAvailability";
 import VendorServiceBookings from "../pages/vendor/VendorServiceBookings";
 import ServiceSettings from "../pages/vendor/ServiceSettings";
+import ProtectedRoute from "../components/auth/ProtectedRoute";
+import VendorRegister from "../pages/vendor/VendorRegister";
 
 const AppRoutes = () => {
 
@@ -71,11 +73,24 @@ const AppRoutes = () => {
                         element={<Review />}
                     />
 
+                    <Route
+                        path="/vendor/register"
+                        element={<VendorRegister />}
+                    />
+
                 </Route>
 
                 {/* Vendor Portal */}
 
+                <Route
+                    element={
+                        <ProtectedRoute
+                            allowedRoles={["VENDOR"]}
+                        />
+                    }
+                >
                 <Route element={<VendorLayout />}>
+
 
                     <Route
                         path="/vendor/dashboard"
@@ -185,7 +200,7 @@ const AppRoutes = () => {
                         />
 
                     </Route>
-
+                </Route>
 
                 </Route>
 

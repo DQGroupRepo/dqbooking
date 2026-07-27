@@ -1,24 +1,63 @@
+import type { DragEvent } from "react";
+
+export type ExistingMediaItem = {
+
+    id: string;
+
+    kind: "existing";
+
+    url: string;
+
+};
+
+
+export type NewMediaItem = {
+
+    id: string;
+
+    kind: "new";
+
+    file: File;
+
+};
+
+
+export type MediaItem =
+
+    | ExistingMediaItem
+
+    | NewMediaItem;
+
+
 export interface ImageUploaderProps {
 
-    images: File[];
-
-    existingImages?: string[];
+    media: MediaItem[];
 
     maxFiles?: number;
 
-    maxImageSizeMb?: number;
-
-    maxVideoSizeMb?: number;
+    maxSizeMb?: number;
 
     onChange: (
 
-        files: File[]
+        media: MediaItem[]
 
     ) => void;
 
     onRemoveExisting?: (
 
-        url: string
+        item: ExistingMediaItem
+
+    ) => void;
+
+    onDragStart?: (
+
+        index: number
+
+    ) => void;
+
+    onDragOver?: (
+
+        index: number
 
     ) => void;
 

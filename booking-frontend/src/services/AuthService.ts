@@ -1,6 +1,7 @@
 import api from "../api/axios";
 import ENDPOINTS from "../api/endpoints";
 
+
 export interface LoginRequest {
 
     email: string;
@@ -8,6 +9,7 @@ export interface LoginRequest {
     password: string;
 
 }
+
 
 export interface LoginResponse {
 
@@ -21,7 +23,20 @@ export interface LoginResponse {
 
 }
 
+
+export interface RegisterRequest {
+
+    email: string;
+
+    phone: string;
+
+    password: string;
+
+}
+
+
 class AuthService {
+
 
     login(data: LoginRequest) {
 
@@ -35,6 +50,20 @@ class AuthService {
 
     }
 
+
+    register(data: RegisterRequest) {
+
+        return api.post(
+
+            "/auth/register",
+
+            data
+
+        );
+
+    }
+
 }
+
 
 export default new AuthService();

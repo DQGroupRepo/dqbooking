@@ -136,3 +136,26 @@
 
     padding: 30px;
 }
+
+.vendor-register-link {
+
+    text-align: center;
+
+    margin-top: 20px;
+
+    color: #64748b;
+
+}
+
+
+.vendor-register-link a {
+
+    margin-left: 6px;
+
+    color: #2563eb;
+
+    font-weight: 600;
+
+    text-decoration: none;
+
+}

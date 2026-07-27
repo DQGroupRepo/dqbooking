@@ -1,9 +1,16 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+
+import AuthService from "../../services/AuthService";
 
 import "./Register.css";
 
+
 const Register = () => {
+
+  // ✅ Hook must be INSIDE the component
+  const navigate = useNavigate();
+
 
   const [otpVerified, setOtpVerified] =
     useState(false);
@@ -23,6 +30,12 @@ const Register = () => {
   const [confirmPassword, setConfirmPassword] =
     useState("");
 
+  const [loading, setLoading] =
+    useState(false);
+
+  const [error, setError] =
+    useState("");
+
 
   const requestOTP = () => {
 
@@ -38,6 +51,7 @@ const Register = () => {
     alert(
       "OTP sent successfully (Demo Mode)"
     );
+
   };
 
 
@@ -62,7 +76,18 @@ const Register = () => {
   };
 
 
-  const handleRegister = () => {
+  const handleRegister = async () => {
+
+    if (!otpVerified) {
+
+      alert(
+        "Please verify your OTP first"
+      );
+
+      return;
+
+    }
+
 
     if (password.length < 8) {
 
@@ -71,7 +96,9 @@ const Register = () => {
       );
 
       return;
+
     }
+
 
     if (password !== confirmPassword) {
 
@@ -80,11 +107,72 @@ const Register = () => {
       );
 
       return;
+
     }
 
-    alert(
-      "Registration Successful (Demo)"
-    );
+
+    try {
+
+      setLoading(true);
+
+      setError("");
+
+
+      /*
+       * Call backend registration API
+       */
+
+      await AuthService.register({
+
+        email,
+
+        phone,
+
+        password
+
+      });
+
+
+      /*
+       * Registration successful
+       */
+
+      alert(
+        "Registration completed successfully"
+      );
+
+
+      /*
+       * Redirect to login
+       */
+
+      navigate("/login");
+
+
+    } catch (err: any) {
+
+      console.error(
+        "Registration error:",
+        err
+      );
+
+
+      setError(
+
+        err.response?.data?.message ||
+
+        err.response?.data ||
+
+        "Registration failed"
+
+      );
+
+
+    } finally {
+
+      setLoading(false);
+
+    }
 
   };
 
@@ -133,7 +221,7 @@ const Register = () => {
             <input
               type="email"
               value={email}
-              onChange={(e)=>
+              onChange={(e) =>
                 setEmail(e.target.value)
               }
               placeholder="Enter email"
@@ -151,7 +239,7 @@ const Register = () => {
             <input
               type="tel"
               value={phone}
-              onChange={(e)=>
+              onChange={(e) =>
                 setPhone(e.target.value)
               }
               placeholder="10 digit mobile number"
@@ -169,9 +257,7 @@ const Register = () => {
           </button>
 
 
-          <div
-            className="form-group otp-group"
-          >
+          <div className="form-group otp-group">
 
             <label>
               OTP *
@@ -180,7 +266,7 @@ const Register = () => {
             <input
               type="text"
               value={otp}
-              onChange={(e)=>
+              onChange={(e) =>
                 setOtp(e.target.value)
               }
               placeholder="Enter OTP"
@@ -211,7 +297,7 @@ const Register = () => {
               type="password"
               value={password}
               disabled={!otpVerified}
-              onChange={(e)=>
+              onChange={(e) =>
                 setPassword(e.target.value)
               }
             />
@@ -229,22 +315,42 @@ const Register = () => {
               type="password"
               value={confirmPassword}
               disabled={!otpVerified}
-              onChange={(e)=>
-                setConfirmPassword(
-                  e.target.value
-                )
+              onChange={(e) =>
+                setConfirmPassword(e.target.value)
               }
             />
 
           </div>
 
 
+          {error && (
+
+            <p
+              style={{
+                color: "red",
+                marginBottom: "15px"
+              }}
+            >
+              {error}
+            </p>
+
+          )}
+
+
           <button
             className="primary-register"
-            disabled={!otpVerified}
+            disabled={
+              !otpVerified ||
+              loading
+            }
             onClick={handleRegister}
           >
-            Register
+
+            {loading
+              ? "Registering..."
+              : "Register"
+            }
+
           </button>
 
 
@@ -258,6 +364,18 @@ const Register = () => {
 
           </p>
 
+          <p className="vendor-register-link">
+
+              Are you an event professional?
+
+              <Link to="/vendor/register">
+
+                  Register as a Vendor
+
+              </Link>
+
+          </p>
+
         </div>
 
       </div>
@@ -267,5 +385,6 @@ const Register = () => {
   );
 
 };
+
 
 export default Register;

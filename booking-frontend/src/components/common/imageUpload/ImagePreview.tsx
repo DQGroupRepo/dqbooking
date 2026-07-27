@@ -4,11 +4,17 @@ interface ImagePreviewProps {
 
     src: string;
 
-    type?: "image" | "video";
+    type: "image" | "video";
+
+    onClick?: () => void;
 
     onRemove?: () => void;
 
-    onClick?: () => void;
+    draggable?: boolean;
+
+    onDragStart?: () => void;
+
+    onDragOver?: () => void;
 
 }
 
@@ -17,11 +23,17 @@ export default function ImagePreview({
 
     src,
 
-    type = "image",
+    type,
+
+    onClick,
 
     onRemove,
 
-    onClick
+    draggable = false,
+
+    onDragStart,
+
+    onDragOver
 
 }: ImagePreviewProps) {
 
@@ -32,71 +44,114 @@ export default function ImagePreview({
 
             className="image-preview"
 
-            onClick={onClick}
+            draggable={draggable}
+
+            onDragStart={(e) => {
+
+                e.stopPropagation();
+
+                onDragStart?.();
+
+            }}
+
+            onDragOver={(e) => {
+
+                e.preventDefault();
+
+                e.stopPropagation();
+
+                onDragOver?.();
+
+            }}
 
         >
 
 
-            <div className="preview-clickable">
+            {/* =========================
+                Media Preview
+            ========================= */}
 
+            <div
 
-                {type === "video" ? (
+                className="preview-clickable"
 
-                    <video
+                onClick={onClick}
 
-                        src={src}
+            >
 
-                        muted
+                {
 
-                        playsInline
+                    type === "video"
 
-                        className="preview-media"
+                        ? (
 
-                    />
+                            <video
 
-                ) : (
+                                src={src}
 
-                    <img
+                                className="preview-media"
 
-                        src={src}
+                                muted
 
-                        alt="Preview"
+                                playsInline
 
-                        className="preview-media"
+                            />
 
-                    />
+                        )
 
-                )}
+                        : (
 
+                            <img
+
+                                src={src}
+
+                                alt="Service preview"
+
+                                className="preview-media"
+
+                            />
+
+                        )
+
+                }
 
             </div>
 
 
-            {onRemove && (
 
+            {/* =========================
+                Remove Button
+            ========================= */}
 
-                <button
+            {
 
-                    type="button"
+                onRemove && (
 
-                    className="remove-image"
+                    <button
 
-                    onClick={(e) => {
+                        type="button"
 
-                        e.stopPropagation();
+                        className="image-remove-btn"
 
-                        onRemove();
+                        aria-label="Remove media"
 
-                    }}
+                        onClick={(e) => {
 
-                >
+                            e.stopPropagation();
 
-                    ✕
+                            onRemove();
 
-                </button>
+                        }}
 
+                    >
 
-            )}
+                        ×
+
+                    </button>
+
+                )
+
+            }
 
 
         </div>

@@ -1,16 +1,26 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import {
+  Link,
+  useLocation,
+  useNavigate
+} from "react-router-dom";
 
 import AuthService from "../../services/AuthService";
-import { Link } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
 
 import "./Login.css";
 
+
 const Login = () => {
 
-  const [userType, setUserType] =
-    useState<"customer" | "vendor">("customer");
   const navigate = useNavigate();
+
+  const location = useLocation();
+
+  const {
+    login
+  } = useAuth();
+
 
   const [email, setEmail] = useState("");
 
@@ -20,104 +30,173 @@ const Login = () => {
 
   const [error, setError] = useState("");
 
+
+  /*
+   * If the user was redirected to login
+   * from another page, remember that page.
+   *
+   * Example:
+   *
+   * /vendor/dashboard
+   *
+   * Otherwise default to Home.
+   */
+
+  const returnUrl =
+    location.state?.from?.pathname
+      ? location.state.from.pathname
+      : "/";
+
+
   const handleLogin = async (
-      e: React.FormEvent
+    e: React.FormEvent
   ) => {
 
-      e.preventDefault();
+    e.preventDefault();
 
-      setLoading(true);
+    setLoading(true);
 
-      setError("");
+    setError("");
 
-      try {
 
-          const response =
-              await AuthService.login({
+    try {
 
-                  email,
+      const response =
+        await AuthService.login({
+          email,
+          password
+        });
 
-                  password
 
-              });
+      const loginData = response.data;
 
-          localStorage.setItem(
 
-              "token",
+      /*
+       * Create the authenticated user
+       * expected by AuthContext.
+       */
 
-              response.data.token
+      const user = {
 
-          );
+        userId: loginData.userId,
 
-          localStorage.setItem(
+        role: loginData.role,
 
-              "userId",
+        name: loginData.name ?? ""
 
-              response.data.userId
+      };
 
-          );
 
-          localStorage.setItem(
+      /*
+       * Update AuthContext.
+       *
+       * This also stores:
+       *
+       * eventnest_token
+       * eventnest_user
+       */
 
-              "role",
+      login(
+        loginData.token,
+        user
+      );
 
-              response.data.role
 
-          );
+      /*
+       * ============================
+       * ROLE BASED REDIRECTION
+       * ============================
+       */
 
-          localStorage.setItem(
 
-              "name",
+      if (loginData.role === "VENDOR") {
 
-              response.data.name
+        navigate(
+          "/vendor/dashboard",
+          {
+            replace: true
+          }
+        );
 
-          );
-
-         switch (response.data.role) {
-
-             case "ADMIN":
-
-                 navigate("/admin/dashboard");
-
-                 break;
-
-             case "CUSTOMER":
-
-                 navigate("/");
-
-                 break;
-
-             default:
-
-                 navigate("/vendor/dashboard");
-
-         }
-
-      }
-
-      catch (err: any) {
-
-          setError(
-
-              err.response?.data ||
-
-              "Invalid Email or Password"
-
-          );
+        return;
 
       }
 
-      finally {
 
-          setLoading(false);
+      if (loginData.role === "ADMIN") {
+
+        navigate(
+          "/admin/dashboard",
+          {
+            replace: true
+          }
+        );
+
+        return;
 
       }
+
+
+      if (loginData.role === "CUSTOMER") {
+
+        /*
+         * Customer returns to the
+         * previous page if available.
+         *
+         * Otherwise goes Home.
+         */
+
+        navigate(
+          returnUrl,
+          {
+            replace: true
+          }
+        );
+
+        return;
+
+      }
+
+
+      setError(
+        "Invalid user role. Please contact support."
+      );
+
+    }
+
+    catch (err: any) {
+
+      console.error(
+        "Login error:",
+        err
+      );
+
+
+      setError(
+
+        err.response?.data?.message ||
+
+        err.response?.data ||
+
+        "Invalid Email or Password"
+
+      );
+
+    }
+
+    finally {
+
+      setLoading(false);
+
+    }
 
   };
+
 
   return (
 
     <section className="login-wrapper">
+
 
       <div className="login-image">
 
@@ -141,50 +220,19 @@ const Login = () => {
 
         <div className="login-card">
 
+
           <h2>
             Welcome Back
           </h2>
+
 
           <p>
             Login to manage your bookings
           </p>
 
 
-          <div className="login-tabs">
-
-            <button
-              className={
-                userType === "customer"
-                  ? "active"
-                  : ""
-              }
-              onClick={() =>
-                setUserType("customer")
-              }
-              type="button"
-            >
-              Customer
-            </button>
-
-
-            <button
-              className={
-                userType === "vendor"
-                  ? "active"
-                  : ""
-              }
-              onClick={() =>
-                setUserType("vendor")
-              }
-              type="button"
-            >
-              Vendor
-            </button>
-
-          </div>
-
-
           <form onSubmit={handleLogin}>
+
 
             <div className="form-group">
 
@@ -192,11 +240,15 @@ const Login = () => {
                 Email Address
               </label>
 
+
               <input
-                  type="email"
-                  placeholder="Enter email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                type="email"
+                placeholder="Enter email"
+                value={email}
+                onChange={(e) =>
+                  setEmail(e.target.value)
+                }
+                required
               />
 
             </div>
@@ -208,11 +260,15 @@ const Login = () => {
                 Password
               </label>
 
+
               <input
-                  type="password"
-                  placeholder="Enter password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                type="password"
+                placeholder="Enter password"
+                value={password}
+                onChange={(e) =>
+                  setPassword(e.target.value)
+                }
+                required
               />
 
             </div>
@@ -222,7 +278,9 @@ const Login = () => {
 
               <label>
 
-                <input type="checkbox" />
+                <input
+                  type="checkbox"
+                />
 
                 Remember me
 
@@ -235,34 +293,32 @@ const Login = () => {
 
             </div>
 
-            {
-                error &&
 
-                <p
-                    style={{
+            {error && (
 
-                        color: "red",
+              <p
+                style={{
+                  color: "red",
+                  marginBottom: "15px"
+                }}
+              >
+                {error}
+              </p>
 
-                        marginBottom: "15px"
+            )}
 
-                    }}
-                >
-                    {error}
-                </p>
-            }
 
             <button
-                className="primary-login"
-                type="submit"
-                disabled={loading}
+              className="primary-login"
+              type="submit"
+              disabled={loading}
             >
-              {
-                  loading
 
-                      ? "Logging in..."
-
-                      : "Login"
+              {loading
+                ? "Logging in..."
+                : "Login"
               }
+
             </button>
 
 
@@ -287,11 +343,13 @@ const Login = () => {
 
               New to EventNest?
 
+
               <Link to="/register">
                 Create Account
               </Link>
 
             </p>
+
 
           </form>
 
@@ -304,5 +362,6 @@ const Login = () => {
   );
 
 };
+
 
 export default Login;
