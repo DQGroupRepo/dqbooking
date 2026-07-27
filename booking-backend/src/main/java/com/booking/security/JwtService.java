@@ -2,7 +2,6 @@ package com.booking.security;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
@@ -20,15 +19,21 @@ public class JwtService {
     @Value("${jwt.expiration}")
     private long expiration;
 
+
     private SecretKey getSigningKey() {
 
-        byte[] keyBytes = Decoders.BASE64.decode(secret);
+        byte[] keyBytes =
+                Decoders.BASE64.decode(secret);
 
         return Keys.hmacShaKeyFor(keyBytes);
 
     }
 
-    public String generateToken(String userId, String role) {
+
+    public String generateToken(
+            String userId,
+            String role
+    ) {
 
         return Jwts.builder()
 
@@ -38,13 +43,19 @@ public class JwtService {
 
                 .issuedAt(new Date())
 
-                .expiration(new Date(System.currentTimeMillis() + expiration))
+                .expiration(
+                        new Date(
+                                System.currentTimeMillis()
+                                        + expiration
+                        )
+                )
 
                 .signWith(getSigningKey())
 
                 .compact();
 
     }
+
 
     public Claims extractClaims(String token) {
 
@@ -60,11 +71,14 @@ public class JwtService {
 
     }
 
+
     public String extractUserId(String token) {
 
-        return extractClaims(token).getSubject();
+        return extractClaims(token)
+                .getSubject();
 
     }
+
 
     public String extractRole(String token) {
 
@@ -72,6 +86,7 @@ public class JwtService {
                 .get("role", String.class);
 
     }
+
 
     public boolean isTokenValid(String token) {
 

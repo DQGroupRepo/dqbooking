@@ -1,59 +1,60 @@
 .vendor-reviews {
 
-    margin-top:50px;
+    width: 100%;
+
+    box-sizing: border-box;
 
 }
-
 
 
 .vendor-reviews h2 {
 
-    margin-bottom:25px;
+    margin-bottom: 25px;
 
 }
-
 
 
 .review-card {
 
-    background:#fff;
+    width: 100%;
 
-    border:1px solid #eee;
+    background: #fff;
 
-    padding:25px;
+    border: 1px solid #eee;
 
-    margin-bottom:20px;
+    padding: 25px;
+
+    margin-bottom: 20px;
+
+    box-sizing: border-box;
 
 }
-
 
 
 .review-stars {
 
-    color:#dfa974;
+    color: #dfa974;
 
-    font-size:20px;
+    font-size: 20px;
 
-    margin-bottom:12px;
+    margin-bottom: 12px;
 
 }
-
 
 
 .review-card p {
 
-    color:#555;
+    color: #555;
 
-    line-height:1.7;
+    line-height: 1.7;
 
-    margin-bottom:15px;
+    margin-bottom: 15px;
 
 }
 
 
-
 .review-card strong {
 
-    color:#19191a;
+    color: #19191a;
 
 }

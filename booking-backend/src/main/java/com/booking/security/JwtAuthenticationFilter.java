@@ -4,7 +4,8 @@ import com.booking.model.User;
 import com.booking.repository.UserRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
-import jakarta.servlet.http.*;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -18,11 +19,14 @@ import java.util.List;
 
 @Component
 @RequiredArgsConstructor
-public class JwtAuthenticationFilter extends OncePerRequestFilter {
+public class JwtAuthenticationFilter
+        extends OncePerRequestFilter {
+
 
     private final JwtService jwtService;
 
     private final UserRepository userRepository;
+
 
     @Override
     protected void doFilterInternal(
@@ -35,40 +39,62 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     ) throws ServletException, IOException {
 
-        System.out.println(
-                "JWT FILTER -> "
-                        + request.getMethod()
-                        + " "
-                        + request.getRequestURI()
-        );
-        final String authHeader = request.getHeader("Authorization");
 
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+        String authHeader =
+                request.getHeader("Authorization");
 
-            filterChain.doFilter(request, response);
+
+        if (
+                authHeader == null ||
+                        !authHeader.startsWith("Bearer ")
+        ) {
+
+            filterChain.doFilter(
+                    request,
+                    response
+            );
 
             return;
 
         }
 
-        String token = authHeader.substring(7);
+
+        String token =
+                authHeader.substring(7);
+
 
         if (!jwtService.isTokenValid(token)) {
 
-            filterChain.doFilter(request, response);
+            filterChain.doFilter(
+                    request,
+                    response
+            );
 
             return;
 
         }
 
-        String userId = jwtService.extractUserId(token);
 
-        User user = userRepository.findById(userId).orElse(null);
+        String userId =
+                jwtService.extractUserId(token);
 
-        if (user != null &&
-                SecurityContextHolder.getContext().getAuthentication() == null) {
+
+        User user =
+                userRepository
+                        .findById(userId)
+                        .orElse(null);
+
+
+        if (
+                user != null &&
+                        SecurityContextHolder
+                                .getContext()
+                                .getAuthentication() == null
+        ) {
+
 
             UsernamePasswordAuthenticationToken authentication =
+
                     new UsernamePasswordAuthenticationToken(
 
                             user,
@@ -76,10 +102,20 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                             null,
 
                             List.of(
-                                    new SimpleGrantedAuthority("ROLE_" + user.getRole().name())
+
+                                    new SimpleGrantedAuthority(
+
+                                            "ROLE_"
+                                                    + user
+                                                    .getRole()
+                                                    .name()
+
+                                    )
+
                             )
 
                     );
+
 
             authentication.setDetails(
 
@@ -89,6 +125,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
             );
 
+
             SecurityContextHolder
 
                     .getContext()
@@ -97,7 +134,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         }
 
-        filterChain.doFilter(request, response);
+
+        filterChain.doFilter(
+                request,
+                response
+        );
 
     }
 

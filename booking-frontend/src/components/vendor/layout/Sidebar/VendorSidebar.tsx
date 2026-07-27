@@ -1,55 +1,71 @@
 import { NavLink } from "react-router-dom";
 
 import {
+  FaHome,
   FaChartPie,
   FaPlusCircle,
   FaConciergeBell,
   FaCalendarAlt,
   FaStar,
-  FaWallet,
   FaCog,
   FaChartLine
 } from "react-icons/fa";
 
 import "./VendorSidebar.css";
 
+
 const vendorMenu = [
+
+  {
+    label: "Home",
+    path: "/",
+    icon: <FaHome />
+  },
+
   {
     label: "Dashboard",
     path: "/vendor/dashboard",
     icon: <FaChartPie />
   },
+
   {
     label: "Create Listing",
     path: "/vendor/create-listing",
     icon: <FaPlusCircle />
   },
+
   {
     label: "Services",
     path: "/vendor/manage-services",
     icon: <FaConciergeBell />
   },
+
   {
     label: "Bookings",
     path: "/vendor/bookings",
     icon: <FaCalendarAlt />
   },
+
   {
     label: "Reviews",
     path: "/vendor/reviews",
     icon: <FaStar />
   },
+
   {
     label: "Revenue",
     path: "/vendor/revenue",
     icon: <FaChartLine />
   },
+
   {
     label: "Settings",
     path: "/vendor/settings",
     icon: <FaCog />
   }
+
 ];
+
 
 export default function VendorSidebar() {
 
@@ -59,23 +75,29 @@ export default function VendorSidebar() {
 
             <div className="vendor-logo">
 
-                <span className="logo-icon">🎉</span>
+                <span className="logo-icon">
+                    🎉
+                </span>
 
                 <div>
 
-                    <h2>EventNest</h2>
+                    <h2>
+                        EventNest
+                    </h2>
 
-                    <p>Vendor Portal</p>
+                    <p>
+                        Vendor Portal
+                    </p>
 
                 </div>
 
             </div>
 
+
             <nav>
 
                 {
-
-                    vendorMenu.map(item=>(
+                    vendorMenu.map(item => (
 
                         <NavLink
 
@@ -98,7 +120,6 @@ export default function VendorSidebar() {
                         </NavLink>
 
                     ))
-
                 }
 
             </nav>

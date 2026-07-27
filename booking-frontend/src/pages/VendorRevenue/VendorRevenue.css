@@ -1,59 +1,69 @@
-.vendor-revenue{
+.vendor-revenue {
 
-    padding:40px;
+    width: 100%;
 
-    background:#F5F7FB;
+    box-sizing: border-box;
 
-    min-height:100vh;
+    background: #F5F7FB;
 
-}
-
-.page-header{
-
-    margin-bottom:30px;
+    min-height: 100%;
 
 }
 
-.page-header h1{
 
-    margin-bottom:8px;
+.page-header {
 
-}
-
-.page-header p{
-
-    color:#666;
+    margin-bottom: 30px;
 
 }
 
-.summary-grid{
 
-    display:grid;
+.page-header h1 {
 
-    grid-template-columns:repeat(4,1fr);
-
-    gap:20px;
-
-    margin-bottom:30px;
+    margin-bottom: 8px;
 
 }
 
-@media(max-width:900px){
 
-.summary-grid{
+.page-header p {
 
-grid-template-columns:repeat(2,1fr);
-
-}
+    color: #666;
 
 }
 
-@media(max-width:600px){
 
-.summary-grid{
+.summary-grid {
 
-grid-template-columns:1fr;
+    width: 100%;
+
+    display: grid;
+
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+
+    gap: 20px;
+
+    margin-bottom: 30px;
 
 }
+
+
+@media (max-width: 1100px) {
+
+    .summary-grid {
+
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+
+    }
+
+}
+
+
+@media (max-width: 600px) {
+
+    .summary-grid {
+
+        grid-template-columns: 1fr;
+
+    }
 
 }

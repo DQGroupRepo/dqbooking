@@ -1,11 +1,8 @@
-.dashboard{
-
-    display:flex;
-
-    flex-direction:column;
-
-    gap:28px;
-
-    width:100%;
-
+.dashboard {
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+    width: 100%;
+    max-width: none;
+    box-sizing: border-box;
 }

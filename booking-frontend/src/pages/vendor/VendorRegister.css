@@ -1,0 +1,344 @@
+.vendor-register-wrapper {
+
+    min-height: 100vh;
+
+    display: flex;
+
+    background: #f5f7fb;
+
+}
+
+
+.vendor-register-image {
+
+    width: 45%;
+
+    min-height: 100vh;
+
+    background:
+
+        linear-gradient(
+            rgba(15, 23, 42, 0.65),
+            rgba(15, 23, 42, 0.65)
+        ),
+
+        url("/images/vendor-register.jpg");
+
+    background-size: cover;
+
+    background-position: center;
+
+    display: flex;
+
+    align-items: flex-end;
+
+    padding: 60px;
+
+    box-sizing: border-box;
+
+}
+
+
+.vendor-register-overlay {
+
+    color: white;
+
+    max-width: 500px;
+
+}
+
+
+.vendor-register-overlay h1 {
+
+    font-size: 42px;
+
+    margin-bottom: 15px;
+
+}
+
+
+.vendor-register-overlay p {
+
+    font-size: 18px;
+
+    line-height: 1.7;
+
+}
+
+
+.vendor-register-container {
+
+    width: 55%;
+
+    min-height: 100vh;
+
+    display: flex;
+
+    justify-content: center;
+
+    padding: 50px;
+
+    box-sizing: border-box;
+
+    overflow-y: auto;
+
+}
+
+
+.vendor-register-card {
+
+    width: 100%;
+
+    max-width: 650px;
+
+    background: white;
+
+    padding: 40px;
+
+    border-radius: 16px;
+
+    box-shadow:
+        0 10px 40px
+        rgba(0, 0, 0, 0.08);
+
+    box-sizing: border-box;
+
+}
+
+
+.vendor-register-card h2 {
+
+    margin-bottom: 8px;
+
+    color: #1e293b;
+
+}
+
+
+.vendor-register-card > p {
+
+    color: #64748b;
+
+    margin-bottom: 30px;
+
+}
+
+
+.vendor-register-card h3 {
+
+    color: #1e293b;
+
+    margin-top: 25px;
+
+    margin-bottom: 20px;
+
+}
+
+
+.form-group {
+
+    margin-bottom: 20px;
+
+}
+
+
+.form-group label {
+
+    display: block;
+
+    margin-bottom: 8px;
+
+    font-weight: 500;
+
+    color: #334155;
+
+}
+
+
+.form-group input,
+
+.form-group textarea {
+
+    width: 100%;
+
+    padding: 13px 15px;
+
+    border: 1px solid #d1d5db;
+
+    border-radius: 8px;
+
+    font-size: 15px;
+
+    box-sizing: border-box;
+
+    outline: none;
+
+}
+
+
+.form-group input:focus,
+
+.form-group textarea:focus {
+
+    border-color: #2563eb;
+
+    box-shadow:
+        0 0 0 3px
+        rgba(37, 99, 235, 0.1);
+
+}
+
+
+.form-group textarea {
+
+    resize: vertical;
+
+}
+
+
+.vendor-register-card hr {
+
+    border: none;
+
+    border-top:
+        1px solid #e5e7eb;
+
+    margin:
+        30px 0;
+
+}
+
+
+.primary-vendor-register {
+
+    width: 100%;
+
+    padding: 14px;
+
+    background: #2563eb;
+
+    color: white;
+
+    border: none;
+
+    border-radius: 8px;
+
+    font-size: 16px;
+
+    font-weight: 600;
+
+    cursor: pointer;
+
+}
+
+
+.primary-vendor-register:hover {
+
+    background: #1d4ed8;
+
+}
+
+
+.primary-vendor-register:disabled {
+
+    opacity: 0.6;
+
+    cursor: not-allowed;
+
+}
+
+
+.register-error {
+
+    color: #dc2626;
+
+    background: #fef2f2;
+
+    padding: 12px;
+
+    border-radius: 8px;
+
+    margin-bottom: 20px;
+
+}
+
+
+.register-success {
+
+    color: #15803d;
+
+    background: #f0fdf4;
+
+    padding: 12px;
+
+    border-radius: 8px;
+
+    margin-bottom: 20px;
+
+}
+
+
+.vendor-login-link,
+
+.customer-register-link {
+
+    text-align: center;
+
+    color: #64748b;
+
+    margin-top: 20px;
+
+}
+
+
+.vendor-login-link a,
+
+.customer-register-link a {
+
+    margin-left: 6px;
+
+    color: #2563eb;
+
+    font-weight: 600;
+
+    text-decoration: none;
+
+}
+
+
+@media (max-width: 900px) {
+
+    .vendor-register-image {
+
+        display: none;
+
+    }
+
+
+    .vendor-register-container {
+
+        width: 100%;
+
+        padding: 25px;
+
+    }
+
+}
+
+
+@media (max-width: 600px) {
+
+    .vendor-register-container {
+
+        padding: 15px;
+
+    }
+
+
+    .vendor-register-card {
+
+        padding: 25px 20px;
+
+    }
+
+}
