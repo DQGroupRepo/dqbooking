@@ -1,0 +1,5 @@
+interface PricingSummaryProps {
+
+    pricing: BookingPricingResponse;
+
+}

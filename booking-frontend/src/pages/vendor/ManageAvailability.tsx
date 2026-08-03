@@ -22,7 +22,7 @@ import type { BookingSlot } from "../../types/BookingSlot";
 
 export default function ManageAvailability() {
 
-    const { id } = useParams();
+    const { serviceId } = useParams();
 
     const [selectedDate, setSelectedDate] =
         useState<Date>(new Date());
@@ -49,13 +49,13 @@ export default function ManageAvailability() {
 
         loadSlots();
 
-    }, [id]);
+    }, [serviceId]);
 
     useEffect(() => {
 
         loadOverrides();
 
-    }, [id, selectedDate]);
+    }, [serviceId, selectedDate]);
 
     function formatDate(date: Date): string {
 
@@ -65,14 +65,14 @@ export default function ManageAvailability() {
 
     async function loadOverrides() {
 
-        if (!id) return;
+        if (!serviceId) return;
 
         try {
 
             const response =
                 await AvailabilityOverrideService.getOverrides(
 
-                    id,
+                    serviceId,
 
                     formatDate(selectedDate)
 
@@ -108,12 +108,12 @@ export default function ManageAvailability() {
 
     async function loadSlots() {
 
-        if (!id) return;
+        if (!serviceId) return;
 
         try {
 
             const response =
-                await BookingSlotService.getSlots(id);
+                await BookingSlotService.getSlots(serviceId);
 
             response.sort(
 
@@ -209,7 +209,7 @@ export default function ManageAvailability() {
                         open={showModal}
                         onClose={() => setShowModal(false)}
                         onSaved={loadOverrides}
-                        serviceId={id!}
+                        serviceId={serviceId!}
                         selectedDate={selectedDate}
                         slot={selectedSlot}
                         override={selectedOverride}

@@ -432,6 +432,14 @@ const ManageServices = () => {
                                         <div
                                             className="service-actions"
                                         >
+                                            <button
+                                                    onClick={() =>{
+                                                        console.log("Pricing clicked", service.id);
+                                                        navigate(`/vendor/services/${service.id}/pricing`)
+                                                    }}
+                                                >
+                                                    Pricing
+                                            </button>
 
                                             <Button
                                                 variant="secondary"

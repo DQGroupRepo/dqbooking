@@ -1,0 +1,149 @@
+.booking-confirmation-page{
+
+    display:flex;
+    justify-content:center;
+    padding:60px 20px;
+    background:#f6f7fb;
+    min-height:100vh;
+     width:100%;
+
+        max-width:1400px;
+
+        margin:40px auto;
+
+
+
+}
+
+.confirmation-card{
+
+    background:white;
+    width:720px;
+    border-radius:18px;
+    padding:40px;
+    text-align:center;
+    box-shadow:0 15px 45px rgba(0,0,0,.08);
+
+}
+
+.success-icon{
+
+    width:80px;
+    height:80px;
+    margin:auto;
+
+    border-radius:50%;
+    background:#14b86d;
+    color:white;
+
+    display:flex;
+    justify-content:center;
+    align-items:center;
+
+    font-size:42px;
+    margin-bottom:25px;
+
+}
+
+.confirmation-info{
+
+    margin-top:35px;
+
+    display:grid;
+    grid-template-columns:1fr 1fr;
+
+    gap:20px;
+    text-align:left;
+
+}
+
+.confirmation-info div{
+
+    background:#fafafa;
+
+    padding:18px;
+
+    border-radius:12px;
+
+}
+
+.confirmation-info span{
+
+    display:block;
+    color:#777;
+    font-size:13px;
+    margin-bottom:6px;
+
+}
+
+.confirmation-layout{
+
+     display:grid;
+
+        grid-template-columns:2.6fr 1.2fr;
+
+        gap:36px;
+
+        align-items:start;
+
+}
+
+.confirmation-left{
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:25px;
+
+}
+
+.confirmation-right{
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:24px;
+    min-width:345px;
+
+
+}
+
+.confirmation-buttons{
+    display:flex;
+    justify-content:center;
+    flex-wrap:wrap;
+    gap:16px;
+    margin-top:36px;
+}
+
+.confirmation-buttons button{
+    min-width:180px;
+    padding:14px 24px;
+    border-radius:10px;
+    font-size:15px;
+    font-weight:600;
+    cursor:pointer;
+    transition:all .25s ease;
+}
+
+.confirmation-buttons .primary{
+    background:#0f766e;
+    color:#fff;
+    border:none;
+}
+
+.confirmation-buttons .primary:hover{
+    background:#115e59;
+}
+
+.confirmation-buttons .secondary{
+    background:#fff;
+    border:1px solid #d5d5d5;
+    color:#333;
+}
+
+.confirmation-buttons .secondary:hover{
+    background:#f5f5f5;
+}

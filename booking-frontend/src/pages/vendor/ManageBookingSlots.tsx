@@ -14,7 +14,7 @@ import "./ManageBookingSlots.css";
 
 export default function ManageBookingSlots() {
 
-    const { id } = useParams();
+    const { serviceId } = useParams();
 
     const [slots, setSlots] = useState<BookingSlot[]>([]);
 
@@ -29,7 +29,7 @@ export default function ManageBookingSlots() {
 
         loadSlots();
 
-    }, [id]);
+    }, [serviceId]);
 
     const totalSlots = slots.length;
 
@@ -55,12 +55,12 @@ export default function ManageBookingSlots() {
 
     async function loadSlots() {
 
-        if (!id) return;
+        if (!serviceId) return;
 
         try {
 
             const response =
-                await BookingSlotService.getSlots(id);
+                await BookingSlotService.getSlots(serviceId);
 
             response.sort(
 
@@ -92,7 +92,7 @@ export default function ManageBookingSlots() {
         slot: BookingSlot
     ) {
 
-        if (!id) return;
+        if (!serviceId) return;
 
         const action =
             slot.active
@@ -111,7 +111,7 @@ export default function ManageBookingSlots() {
 
             await BookingSlotService.changeStatus(
 
-                id,
+                serviceId,
 
                 slot.id,
 
@@ -159,7 +159,7 @@ export default function ManageBookingSlots() {
 
     async function handleDelete(slot: BookingSlot) {
 
-        if (!id) return;
+        if (!serviceId) return;
 
         const confirmed = window.confirm(
 
@@ -173,7 +173,7 @@ export default function ManageBookingSlots() {
 
             await BookingSlotService.deleteSlot(
 
-                id,
+                serviceId,
 
                 slot.id
 
@@ -316,7 +316,7 @@ export default function ManageBookingSlots() {
             }
         <BookingSlotModal
 
-            serviceId={id!}
+            serviceId={serviceId!}
 
             slot={selectedSlot}
 

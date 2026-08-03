@@ -1,0 +1,37 @@
+.summary-card{
+
+    background:white;
+
+    border-radius:12px;
+
+    padding:25px;
+
+    box-shadow:0 8px 25px rgba(0,0,0,.06);
+
+}
+
+.summary-grid{
+
+    display:grid;
+
+    grid-template-columns:repeat(2,1fr);
+
+    gap:20px;
+
+}
+
+.summary-grid label{
+
+    display:block;
+
+    color:#777;
+
+    margin-bottom:6px;
+
+}
+
+.summary-grid strong{
+
+    font-size:17px;
+
+}

@@ -1,17 +1,20 @@
-.booking-card {
+.vendor-booking-card {
 
     background:white;
 
     padding:30px;
 
-    box-shadow:
-    0 5px 20px rgba(0,0,0,.1);
+    box-shadow:0 5px 20px rgba(0,0,0,.1);
+    position: sticky;
+        top: 100px;
+
+        border-radius: 16px;
 
 }
 
 
 
-.booking-card h2 {
+.vendor-booking-card h2 {
 
     text-align:center;
 
@@ -25,7 +28,7 @@
 
 
 
-.booking-card p {
+.vendor-booking-card p {
 
     text-align:center;
 
@@ -37,7 +40,7 @@
 
 
 
-.booking-card label {
+.vendor-booking-card label {
 
     display:block;
 
@@ -51,8 +54,8 @@
 
 
 
-.booking-card input,
-.booking-card select {
+.vendor-booking-card input,
+.vendor-booking-card select {
 
     width:100%;
 

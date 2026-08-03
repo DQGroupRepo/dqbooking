@@ -1,67 +1,526 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
+
+import api from "../../api/axiosConfig";
+import { createBooking } from "../../services/bookingService";
+
 import "./BookingCheckout.css";
+
+interface VendorData {
+  id: string;
+  businessName: string;
+  city?: string;
+  imageUrl?: string;
+  startingPrice?: number;
+}
+
+interface BookingLocationState {
+  vendor: VendorData | null;
+  serviceId?: string;
+  eventDate: string;
+  guests: number | string;
+}
+
+interface PricingHead {
+  code: string;
+  name: string;
+  calculationType: "FIXED" | "PERCENTAGE" | string;
+  value: number;
+  calculatedAmount: number;
+  displayOrder?: number;
+  active?: boolean;
+}
+
+interface Discount {
+  name: string;
+  discountType: "FIXED" | "PERCENTAGE" | string;
+  value: number;
+  calculatedAmount: number;
+}
+
+interface PricingCalculationResult {
+  pricingId: string;
+  pricingVersion: number;
+
+  baseAmount: number;
+
+  pricingHeads: PricingHead[];
+
+  subtotal: number;
+
+  discounts: Discount[];
+
+  discountAmount: number;
+
+  totalAmount: number;
+
+  advanceAmount: number;
+
+  balanceAmount: number;
+}
+
+interface PricingApiResponse {
+  data?: PricingCalculationResult;
+  message?: string;
+}
 
 const BookingCheckout = () => {
 
   const location = useLocation();
   const navigate = useNavigate();
 
-  const {
-    vendor,
-    eventDate,
-    guests
-  } = location.state || {
-    vendor: null,
-    eventDate: "",
-    guests: ""
-  };
+  const state =
+    location.state as BookingLocationState | null;
 
-  const [fullName, setFullName] = useState("");
-  const [mobileNumber, setMobileNumber] = useState("");
-  const [email, setEmail] = useState("");
-  const [address, setAddress] = useState("");
+  const vendor = state?.vendor ?? null;
 
-  const [paymentPreference, setPaymentPreference] =
-    useState("PAY_AFTER_CONFIRMATION");
+  const serviceId =
+    state?.serviceId ?? "";
 
-  if (!vendor) {
-    return <h2>Booking information not found.</h2>;
-  }
+  const eventDate =
+    state?.eventDate ?? "";
 
-  const venuePrice = vendor.startingPrice;
-  const decoration = 10000;
-  const serviceCharges = 2500;
+  const guests =
+    state?.guests ?? "";
 
-  const gst = Math.round(
-    (venuePrice + decoration + serviceCharges) * 0.18
+  const [eventType, setEventType] =
+    useState("");
+
+  const [specialRequest, setSpecialRequest] =
+    useState("");
+
+  const [
+    paymentPreference,
+    setPaymentPreference
+  ] = useState(
+    "PAY_AFTER_CONFIRMATION"
   );
 
-  const total =
-    venuePrice +
-    decoration +
-    serviceCharges +
-    gst;
+  const [
+    pricing,
+    setPricing
+  ] = useState<PricingCalculationResult | null>(
+    null
+  );
 
-  const handleSubmit = () => {
+  const [
+    pricingLoading,
+    setPricingLoading
+  ] = useState(true);
 
-    const bookingRequest = {
-      vendorId: vendor.id,
-      eventDate,
-      guests,
-      fullName,
-      mobileNumber,
-      email,
-      address,
-      paymentPreference
-    };
+  const [
+    submitting,
+    setSubmitting
+  ] = useState(false);
 
-    console.log("Booking Request", bookingRequest);
-    toast.success("Booking request submitted successfully!");
+  const [
+    error,
+    setError
+  ] = useState<string | null>(null);
+
+
+  /*
+   * =========================================
+   * FORMAT CURRENCY
+   * =========================================
+   */
+
+  const formatCurrency = (
+    amount: number | null | undefined
+  ) => {
+
+    return `₹${(
+      amount ?? 0
+    ).toLocaleString("en-IN")}`;
+
   };
 
+
+  /*
+   * =========================================
+   * LOAD PRICING
+   * =========================================
+   */
+
+  useEffect(() => {
+
+    if (!serviceId || !eventDate) {
+
+      setPricingLoading(false);
+
+      return;
+
+    }
+
+
+    const loadPricing = async () => {
+
+      try {
+
+        setPricingLoading(true);
+
+        setError(null);
+
+
+        /*
+         * Expected backend endpoint:
+         *
+         * GET
+         * /api/pricing/calculate
+         *
+         * Query params:
+         * serviceId
+         * eventDate
+         */
+
+        const response =
+            await api.get<PricingCalculationResult>(
+                `/pricing/services/${serviceId}/calculate`,
+                {
+                    params: {
+                        eventDate
+                    }
+                }
+            );
+
+
+        setPricing(
+          response.data
+        );
+
+
+      } catch (err: any) {
+
+        console.error(
+          "Failed to load pricing:",
+          err
+        );
+
+
+        const message =
+          err?.response?.data?.message ||
+          "Unable to load current pricing for this service.";
+
+
+        setError(message);
+
+
+        toast.error(
+          message
+        );
+
+
+      } finally {
+
+        setPricingLoading(false);
+
+      }
+
+    };
+
+
+    loadPricing();
+
+  }, [
+    serviceId,
+    eventDate
+  ]);
+
+
+  /*
+   * =========================================
+   * PAYMENT PREFERENCE
+   * =========================================
+   *
+   * This is currently UI-only.
+   *
+   * Your current CreateBookingRequest
+   * does not contain paymentPreference.
+   *
+   * Once payment flow is implemented,
+   * this can be connected to the backend.
+   */
+
+  const paymentMessage =
+    useMemo(() => {
+
+      switch (
+        paymentPreference
+      ) {
+
+        case "ADVANCE_PAYMENT":
+
+          return "Advance payment will be required according to the vendor's payment configuration.";
+
+        case "DISCUSS_WITH_VENDOR":
+
+          return "You can discuss payment terms directly with the vendor.";
+
+        default:
+
+          return "Payment will be handled after vendor confirmation.";
+
+      }
+
+    }, [
+      paymentPreference
+    ]);
+
+
+  /*
+   * =========================================
+   * VALIDATION
+   * =========================================
+   */
+
+  if (!vendor) {
+
+    return (
+
+      <section className="checkout-section">
+
+        <div className="container">
+
+          <h2>
+            Booking information not found.
+          </h2>
+
+          <button
+            className="cancel-button"
+            onClick={() =>
+              navigate("/")
+            }
+          >
+            Go To Home
+          </button>
+
+        </div>
+
+      </section>
+
+    );
+
+  }
+
+
+  if (!serviceId) {
+
+    return (
+
+      <section className="checkout-section">
+
+        <div className="container">
+
+          <h2>
+            Service information is missing.
+          </h2>
+
+          <p>
+            Please return to the vendor page
+            and select a service again.
+          </p>
+
+          <button
+            className="cancel-button"
+            onClick={() =>
+              navigate(-1)
+            }
+          >
+            ← Back To Vendor
+          </button>
+
+        </div>
+
+      </section>
+
+    );
+
+  }
+
+
+  /*
+   * =========================================
+   * SUBMIT BOOKING
+   * =========================================
+   */
+
+  const handleSubmit = async () => {
+
+    if (submitting) {
+
+      return;
+
+    }
+
+
+    if (!eventDate) {
+
+      toast.error(
+        "Please select an event date."
+      );
+
+      return;
+
+    }
+
+
+    if (!guests || Number(guests) < 1) {
+
+      toast.error(
+        "Please enter a valid guest count."
+      );
+
+      return;
+
+    }
+
+
+    if (!eventType.trim()) {
+
+      toast.error(
+        "Please enter the event type."
+      );
+
+      return;
+
+    }
+
+
+    try {
+
+      setSubmitting(true);
+
+
+      /*
+       * IMPORTANT:
+       *
+       * Backend expects:
+       *
+       * serviceId
+       * eventDate
+       * guestCount
+       * specialRequest
+       * eventType
+       *
+       * Customer information is obtained
+       * from the authenticated JWT user.
+       */
+
+      const bookingRequest = {
+
+        serviceId,
+
+        eventDate,
+
+        guestCount:
+          Number(guests),
+
+        specialRequest:
+          specialRequest.trim(),
+
+        eventType:
+          eventType.trim()
+
+      };
+
+
+      console.log(
+        "Creating booking:",
+        bookingRequest
+      );
+
+
+      const booking =
+        await createBooking(
+          bookingRequest
+        );
+
+
+      toast.success(
+        `Booking request ${booking.bookingNumber} submitted successfully!`
+      );
+
+
+      /*
+       * Navigate to booking confirmation.
+       *
+       * If this route does not exist yet,
+       * temporarily change this to:
+       *
+       * navigate("/customer-dashboard");
+       */
+
+      navigate(
+        `/booking-confirmation/${booking.id}`,
+        {
+          state: {
+            booking
+          }
+        }
+      );
+
+
+    } catch (err: any) {
+
+      console.error(
+        "Booking creation failed:",
+        err
+      );
+
+
+      const message =
+        err?.response?.data?.message ||
+        "Unable to submit booking request. Please try again.";
+
+
+      toast.error(
+        message
+      );
+
+
+    } finally {
+
+      setSubmitting(false);
+
+    }
+
+  };
+
+
+  /*
+   * =========================================
+   * PRICING DATA
+   * =========================================
+   */
+
+  const baseAmount =
+    pricing?.baseAmount ?? 0;
+
+  const pricingHeads =
+    pricing?.pricingHeads ?? [];
+
+  const discounts =
+    pricing?.discounts ?? [];
+
+  const subtotal =
+    pricing?.subtotal ?? 0;
+
+  const discountAmount =
+    pricing?.discountAmount ?? 0;
+
+  const totalAmount =
+    pricing?.totalAmount ?? 0;
+
+  const advanceAmount =
+    pricing?.advanceAmount ?? 0;
+
+  const balanceAmount =
+    pricing?.balanceAmount ?? 0;
+
+
   return (
+
     <section className="checkout-section">
 
       <div className="container">
@@ -71,114 +530,165 @@ const BookingCheckout = () => {
         </h1>
 
         <p className="checkout-subtitle">
-          Review your event details before sending the booking request.
+
+          Review your event details and
+          submit your booking request.
+
         </p>
+
 
         <div className="checkout-layout">
 
-          {/* Left Side */}
+
+          {/* =================================
+              LEFT SIDE
+          ================================= */}
+
           <div className="checkout-main">
+
+
+            {/* BOOKING SUMMARY */}
 
             <div className="checkout-card">
 
-              <h2>Booking Summary</h2>
+              <h2>
+                Booking Summary
+              </h2>
+
 
               <div className="booking-summary-grid">
 
-                <div className="summary-item">
-                  <label>Event Date</label>
-                  <p>{eventDate || "Not Selected"}</p>
-                </div>
 
                 <div className="summary-item">
-                  <label>Guests</label>
-                  <p>{guests}</p>
+
+                  <label>
+                    Vendor
+                  </label>
+
+                  <p>
+                    {vendor.businessName}
+                  </p>
+
                 </div>
+
+
+                <div className="summary-item">
+
+                  <label>
+                    Event Date
+                  </label>
+
+                  <p>
+                    {eventDate ||
+                      "Not Selected"}
+                  </p>
+
+                </div>
+
+
+                <div className="summary-item">
+
+                  <label>
+                    Guests
+                  </label>
+
+                  <p>
+                    {guests}
+                  </p>
+
+                </div>
+
+
+                <div className="summary-item">
+
+                  <label>
+                    Location
+                  </label>
+
+                  <p>
+                    {vendor.city ||
+                      "Not Available"}
+                  </p>
+
+                </div>
+
 
               </div>
 
+
               <button
                 className="save-button"
-                onClick={() => navigate(-1)}
+                onClick={() =>
+                  navigate(-1)
+                }
               >
                 Modify Booking
               </button>
 
             </div>
 
+
+            {/* EVENT INFORMATION */}
+
             <div className="checkout-card">
 
-              <h2>Contact Information</h2>
+              <h2>
+                Event Information
+              </h2>
 
-              <div className="two-column">
-
-                <div className="form-group">
-
-                  <label>Full Name</label>
-
-                  <input
-                    type="text"
-                    value={fullName}
-                    onChange={(e) =>
-                      setFullName(e.target.value)
-                    }
-                    placeholder="Enter Full Name"
-                  />
-
-                </div>
-
-                <div className="form-group">
-
-                  <label>Mobile Number</label>
-
-                  <input
-                    type="tel"
-                    value={mobileNumber}
-                    onChange={(e) =>
-                      setMobileNumber(e.target.value)
-                    }
-                    placeholder="9876543210"
-                  />
-
-                </div>
-
-              </div>
 
               <div className="form-group">
 
-                <label>Email Address</label>
+                <label>
+                  Event Type
+                </label>
 
                 <input
-                  type="email"
-                  value={email}
+                  type="text"
+                  value={eventType}
                   onChange={(e) =>
-                    setEmail(e.target.value)
+                    setEventType(
+                      e.target.value
+                    )
                   }
-                  placeholder="your@email.com"
+                  placeholder="Wedding, Birthday, Corporate Event..."
                 />
 
               </div>
 
+
               <div className="form-group">
 
-                <label>Address</label>
+                <label>
+                  Special Request
+                </label>
 
                 <textarea
-                  rows={3}
-                  value={address}
-                  onChange={(e) =>
-                    setAddress(e.target.value)
+                  rows={4}
+                  value={
+                    specialRequest
                   }
-                  placeholder="Enter your address"
+                  onChange={(e) =>
+                    setSpecialRequest(
+                      e.target.value
+                    )
+                  }
+                  placeholder="Add any special requirements or instructions for the vendor..."
                 />
 
               </div>
 
             </div>
 
+
+            {/* PAYMENT PREFERENCE */}
+
             <div className="checkout-card">
 
-              <h2>Payment Preference</h2>
+              <h2>
+                Payment Preference
+              </h2>
+
 
               <label className="radio-option">
 
@@ -191,13 +701,16 @@ const BookingCheckout = () => {
                     "ADVANCE_PAYMENT"
                   }
                   onChange={(e) =>
-                    setPaymentPreference(e.target.value)
+                    setPaymentPreference(
+                      e.target.value
+                    )
                   }
                 />
 
                 Pay Advance Now
 
               </label>
+
 
               <label className="radio-option">
 
@@ -210,13 +723,16 @@ const BookingCheckout = () => {
                     "PAY_AFTER_CONFIRMATION"
                   }
                   onChange={(e) =>
-                    setPaymentPreference(e.target.value)
+                    setPaymentPreference(
+                      e.target.value
+                    )
                   }
                 />
 
                 Pay After Vendor Confirmation
 
               </label>
+
 
               <label className="radio-option">
 
@@ -229,7 +745,9 @@ const BookingCheckout = () => {
                     "DISCUSS_WITH_VENDOR"
                   }
                   onChange={(e) =>
-                    setPaymentPreference(e.target.value)
+                    setPaymentPreference(
+                      e.target.value
+                    )
                   }
                 />
 
@@ -237,102 +755,366 @@ const BookingCheckout = () => {
 
               </label>
 
+
+              <p className="payment-message">
+
+                {paymentMessage}
+
+              </p>
+
             </div>
+
 
           </div>
 
-          {/* Right Side */}
+
+          {/* =================================
+              RIGHT SIDE
+          ================================= */}
+
           <div className="checkout-sidebar">
+
 
             <div className="booking-summary">
 
-              <img
-                src={vendor.imageUrl}
-                alt={vendor.businessName}
-              />
+
+              {vendor.imageUrl && (
+
+                <img
+                  src={
+                    vendor.imageUrl
+                  }
+                  alt={
+                    vendor.businessName
+                  }
+                />
+
+              )}
+
 
               <h3>
                 {vendor.businessName}
               </h3>
 
+
               <p>
                 📍 {vendor.city}
               </p>
 
-              <hr />
-
-              <div className="summary-row">
-                <span>Venue Price</span>
-                <strong>
-                  ₹{venuePrice.toLocaleString("en-IN")}
-                </strong>
-              </div>
-
-              <div className="summary-row">
-                <span>Decoration</span>
-                <strong>₹10,000</strong>
-              </div>
-
-              <div className="summary-row">
-                <span>Service Charges</span>
-                <strong>₹2,500</strong>
-              </div>
-
-              <div className="summary-row">
-                <span>GST</span>
-                <strong>
-                  ₹{gst.toLocaleString("en-IN")}
-                </strong>
-              </div>
 
               <hr />
 
-              <div className="summary-row total">
 
-                <span>Total Estimate</span>
+              {/* PRICING LOADING */}
 
-                <strong>
-                  ₹{total.toLocaleString("en-IN")}
-                </strong>
+              {pricingLoading && (
 
-              </div>
+                <div className="pricing-loading">
+
+                  Loading current pricing...
+
+                </div>
+
+              )}
+
+
+              {/* PRICING ERROR */}
+
+              {!pricingLoading &&
+                error && (
+
+                  <div className="pricing-error">
+
+                    <p>
+                      {error}
+                    </p>
+
+                    <button
+                      className="save-button"
+                      onClick={() =>
+                        window.location.reload()
+                      }
+                    >
+                      Retry
+                    </button>
+
+                  </div>
+
+                )}
+
+
+              {/* PRICING */}
+
+              {!pricingLoading &&
+                !error &&
+                pricing && (
+
+                  <>
+
+
+                    {/* BASE AMOUNT */}
+
+                    <div className="summary-row">
+
+                      <span>
+                        Base Amount
+                      </span>
+
+                      <strong>
+                        {formatCurrency(
+                          baseAmount
+                        )}
+                      </strong>
+
+                    </div>
+
+
+                    {/* CONFIGURABLE PRICING HEADS */}
+
+                    {pricingHeads.map(
+                      (head) => (
+
+                        <div
+                          className="summary-row"
+                          key={
+                            head.code
+                          }
+                        >
+
+                          <span>
+                            {head.name}
+                          </span>
+
+                          <strong>
+                            {formatCurrency(
+                              head.calculatedAmount
+                            )}
+                          </strong>
+
+                        </div>
+
+                      )
+                    )}
+
+
+                    <hr />
+
+
+                    {/* SUBTOTAL */}
+
+                    <div className="summary-row">
+
+                      <span>
+                        Subtotal
+                      </span>
+
+                      <strong>
+                        {formatCurrency(
+                          subtotal
+                        )}
+                      </strong>
+
+                    </div>
+
+
+                    {/* DISCOUNTS */}
+
+                    {discounts.map(
+                      (
+                        discount,
+                        index
+                      ) => (
+
+                        <div
+                          className="summary-row discount-row"
+                          key={`${discount.name}-${index}`}
+                        >
+
+                          <span>
+                            {discount.name}
+                          </span>
+
+                          <strong>
+                            -
+                            {formatCurrency(
+                              discount.calculatedAmount
+                            )}
+                          </strong>
+
+                        </div>
+
+                      )
+                    )}
+
+
+                    {discountAmount > 0 && (
+
+                      <div
+                        className="summary-row discount-row"
+                      >
+
+                        <span>
+                          Total Discount
+                        </span>
+
+                        <strong>
+                          -
+                          {formatCurrency(
+                            discountAmount
+                          )}
+                        </strong>
+
+                      </div>
+
+                    )}
+
+
+                    <hr />
+
+
+                    {/* TOTAL */}
+
+                    <div
+                      className="summary-row total"
+                    >
+
+                      <span>
+                        Total Estimate
+                      </span>
+
+                      <strong>
+                        {formatCurrency(
+                          totalAmount
+                        )}
+                      </strong>
+
+                    </div>
+
+
+                    {/* ADVANCE */}
+
+                    {advanceAmount > 0 && (
+
+                      <div
+                        className="summary-row"
+                      >
+
+                        <span>
+                          Advance Required
+                        </span>
+
+                        <strong>
+                          {formatCurrency(
+                            advanceAmount
+                          )}
+                        </strong>
+
+                      </div>
+
+                    )}
+
+
+                    {/* BALANCE */}
+
+                    {advanceAmount > 0 && (
+
+                      <div
+                        className="summary-row"
+                      >
+
+                        <span>
+                          Balance After Advance
+                        </span>
+
+                        <strong>
+                          {formatCurrency(
+                            balanceAmount
+                          )}
+                        </strong>
+
+                      </div>
+
+                    )}
+
+
+                  </>
+
+                )}
+
+
+              {/* ACTIONS */}
 
               <div className="checkout-actions">
 
+
                 <button
                   className="cancel-button"
-                  onClick={() => navigate(-1)}
+                  onClick={() =>
+                    navigate(-1)
+                  }
+                  disabled={submitting}
                 >
                   ← Back To Vendor
                 </button>
 
-                <button className="save-button">
+
+                <button
+                  className="save-button"
+                  disabled={submitting}
+                  onClick={() =>
+                    toast(
+                      "Save For Later will be implemented with the customer booking module."
+                    )
+                  }
+                >
                   Save For Later
                 </button>
 
+
                 <button
                   className="book-button"
-                  onClick={handleSubmit}
+                  onClick={
+                    handleSubmit
+                  }
+                  disabled={
+                    submitting ||
+                    pricingLoading ||
+                    !pricing ||
+                    !!error
+                  }
                 >
-                  Send Booking Request
+
+                  {submitting
+                    ? "Submitting..."
+                    : "Send Booking Request"}
+
                 </button>
 
+
               </div>
 
+
               <div className="booking-note">
-                ✓ No payment required to send request
+
+                ✓ No payment is processed
+                when sending the booking request.
+
               </div>
+
 
             </div>
 
           </div>
+
 
         </div>
 
       </div>
 
     </section>
+
   );
+
 };
 
 export default BookingCheckout;

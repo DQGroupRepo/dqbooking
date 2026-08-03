@@ -207,7 +207,7 @@ const Header = () => {
 
                         {user?.role === "CUSTOMER" && (
 
-                            <Link to="/bookings">
+                            <Link to="/customer/bookings">
                                 My Bookings
                             </Link>
 
