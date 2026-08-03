@@ -1,0 +1,44 @@
+package com.booking.model.embedded;
+
+import lombok.Getter;
+import lombok.Setter;
+
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
+
+@Getter
+@Setter
+public class BookingPricingSnapshot {
+
+    private String pricingId;
+
+    private Integer pricingVersion;
+
+    private BigDecimal baseAmount =
+            BigDecimal.ZERO;
+
+    private List<BookingPricingHeadSnapshot> pricingHeads =
+            new ArrayList<>();
+
+    private BigDecimal subtotal =
+            BigDecimal.ZERO;
+
+    private List<BookingDiscountSnapshot> discounts =
+            new ArrayList<>();
+
+    private BigDecimal discountAmount =
+            BigDecimal.ZERO;
+
+    private BigDecimal totalAmount =
+            BigDecimal.ZERO;
+
+    private BigDecimal advanceAmount =
+            BigDecimal.ZERO;
+
+    private BigDecimal balanceAmount =
+            BigDecimal.ZERO;
+
+    private BigDecimal paidAmount =
+            BigDecimal.ZERO;
+}

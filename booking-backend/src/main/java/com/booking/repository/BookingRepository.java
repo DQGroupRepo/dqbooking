@@ -30,4 +30,8 @@ public interface BookingRepository extends MongoRepository<Booking, String> {
 
     List<Booking> findByServiceId(String serviceId);
 
+    List<Booking> findByCustomerIdOrderByCreatedAtDesc(
+            String customerId
+    );
+
 }

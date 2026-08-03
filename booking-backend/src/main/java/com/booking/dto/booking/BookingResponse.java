@@ -1,5 +1,7 @@
 package com.booking.dto.booking;
 
+import com.booking.dto.pricing.BookingPricingResponse;
+import com.booking.model.BaseEntity;
 import com.booking.model.enums.BookingStatus;
 import com.booking.model.enums.PaymentStatus;
 import lombok.Builder;
@@ -10,7 +12,7 @@ import java.time.LocalDate;
 
 @Getter
 @Builder
-public class BookingResponse {
+public class BookingResponse extends BaseEntity {
 
     private String id;
 
@@ -41,4 +43,14 @@ public class BookingResponse {
     private String venue;
 
     private BigDecimal paidAmount;
+
+    /*
+     * Locked pricing snapshot.
+     *
+     * This represents the pricing that was applicable
+     * when this booking was created.
+     */
+    private BookingPricingResponse pricing;
+
+    private boolean cancellable;
 }

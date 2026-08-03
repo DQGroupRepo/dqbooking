@@ -22,20 +22,28 @@ public class BookingHelperImpl implements BookingHelper {
             Vendor vendor
     ) {
 
-        booking.setVendorId(vendorService.getVendorId());
+        booking.setVendorId(
+                vendorService.getVendorId()
+        );
 
-        booking.setServiceId(vendorService.getId());
+        booking.setServiceId(
+                vendorService.getId()
+        );
+
 
         /*
          * Service snapshot.
          */
+
         booking.setServiceName(
                 vendorService.getServiceName()
         );
 
+
         /*
          * Customer snapshot.
          */
+
         booking.setCustomerName(
                 customer.getFullName()
         );
@@ -48,23 +56,19 @@ public class BookingHelperImpl implements BookingHelper {
                 customer.getEmail()
         );
 
+
         /*
          * Venue snapshot.
          */
+
         booking.setVenue(
                 vendor.getBusinessName()
         );
 
-        /*
-         * Payment snapshot.
-         */
-        booking.setPaidAmount(
-                BigDecimal.ZERO
-        );
 
-        booking.setTotalAmount(
-                vendorService.getPrice()
-        );
+        /*
+         * Booking status.
+         */
 
         booking.setStatus(
                 BookingStatus.PENDING
@@ -72,6 +76,16 @@ public class BookingHelperImpl implements BookingHelper {
 
         booking.setPaymentStatus(
                 PaymentStatus.PENDING
+        );
+
+
+        /*
+         * Payment amounts will now be populated
+         * by the PricingCalculationService.
+         */
+
+        booking.setPaidAmount(
+                BigDecimal.ZERO
         );
 
     }

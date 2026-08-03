@@ -2,6 +2,9 @@ package com.booking.service;
 
 import com.booking.dto.booking.BookingResponse;
 import com.booking.dto.booking.CreateBookingRequest;
+import com.booking.dto.booking.BookingCancellationResponse;
+import com.booking.dto.booking.CustomerBookingDetailsResponse;
+import com.booking.dto.booking.CustomerBookingSummaryResponse;
 
 import java.util.List;
 
@@ -17,4 +20,11 @@ public interface BookingService {
 
     List<BookingResponse> getServiceBookings(String serviceId);
 
+    CustomerBookingDetailsResponse getBookingDetails(
+            String bookingId
+    );
+
+    BookingCancellationResponse cancelBooking(
+            String bookingId
+    );
 }

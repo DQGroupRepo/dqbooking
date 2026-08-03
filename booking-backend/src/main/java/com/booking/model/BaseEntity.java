@@ -17,7 +17,8 @@ public abstract class BaseEntity {
 
     private LocalDateTime updatedAt;
 
-    private boolean active;
-    private boolean deleted;
+    private Boolean active = true;
+
+    private Boolean deleted = false;
 
 }

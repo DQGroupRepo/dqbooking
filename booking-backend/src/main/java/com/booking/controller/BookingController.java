@@ -1,7 +1,9 @@
 package com.booking.controller;
 
+import com.booking.dto.booking.BookingCancellationResponse;
 import com.booking.dto.booking.BookingResponse;
 import com.booking.dto.booking.CreateBookingRequest;
+import com.booking.dto.booking.CustomerBookingDetailsResponse;
 import com.booking.service.BookingService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -42,6 +44,28 @@ public class BookingController {
     public List<BookingResponse> getCustomerBookings() {
 
         return bookingService.getCustomerBookings();
+    }
+
+    @PatchMapping("/{bookingId}/cancel")
+    public BookingCancellationResponse cancelBooking(
+            @PathVariable String bookingId
+    ) {
+
+        return bookingService.cancelBooking(
+                bookingId
+        );
+
+    }
+
+    @GetMapping("/{bookingId}/details")
+    public CustomerBookingDetailsResponse getBookingDetails(
+            @PathVariable String bookingId
+    ) {
+
+        return bookingService.getBookingDetails(
+                bookingId
+        );
+
     }
 
 }

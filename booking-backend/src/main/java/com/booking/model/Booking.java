@@ -1,5 +1,6 @@
 package com.booking.model;
 
+import com.booking.model.embedded.BookingPricingSnapshot;
 import com.booking.model.enums.BookingStatus;
 import com.booking.model.enums.PaymentStatus;
 import lombok.Getter;
@@ -16,49 +17,107 @@ public class Booking extends BaseEntity {
 
     private String bookingNumber;
 
+
+    /*
+     * =========================================
+     * RELATIONSHIP REFERENCES
+     * =========================================
+     */
+
     private String vendorId;
 
     private String customerId;
 
     private String serviceId;
 
+
     /*
-     * Snapshot fields.
-     * Preserve booking history even if the service changes later.
+     * =========================================
+     * SERVICE SNAPSHOT
+     * =========================================
+     *
+     * These values must not change if the
+     * vendor later modifies the service.
      */
+
     private String serviceName;
 
-    private BigDecimal totalAmount;
+
+    /*
+     * =========================================
+     * BOOKING DETAILS
+     * =========================================
+     */
 
     private LocalDate eventDate;
 
     private Integer guestCount;
 
-    private BookingStatus status = BookingStatus.PENDING;
+    private BookingStatus status =
+            BookingStatus.PENDING;
 
-    private PaymentStatus paymentStatus = PaymentStatus.PENDING;
+    private PaymentStatus paymentStatus =
+            PaymentStatus.PENDING;
 
     private String specialRequest;
 
     private String eventType;
 
+
     /*
-     * Customer snapshot.
-     * Preserves customer details even if the profile changes later.
+     * =========================================
+     * CUSTOMER SNAPSHOT
+     * =========================================
+     *
+     * Preserve customer information at the
+     * time of booking.
      */
+
     private String customerName;
 
     private String customerPhone;
 
     private String customerEmail;
 
-    /*
-     * Venue snapshot.
-     */
-    private String venue;
 
     /*
-     * Payment snapshot.
+     * =========================================
+     * VENUE SNAPSHOT
+     * =========================================
      */
-    private BigDecimal paidAmount = BigDecimal.ZERO;
+
+    private String venue;
+
+
+    /*
+     * =========================================
+     * PRICING SNAPSHOT
+     * =========================================
+     *
+     * This is critical.
+     *
+     * The booking must never depend on the
+     * vendor's current pricing configuration.
+     *
+     * If the vendor changes pricing later,
+     * this snapshot remains unchanged.
+     */
+
+    private BookingPricingSnapshot pricingSnapshot;
+
+
+    /*
+     * =========================================
+     * PAYMENT SUMMARY
+     * =========================================
+     *
+     * These are kept at booking level for
+     * easy reporting and dashboard queries.
+     */
+
+    private BigDecimal totalAmount =
+            BigDecimal.ZERO;
+
+    private BigDecimal paidAmount =
+            BigDecimal.ZERO;
 }

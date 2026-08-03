@@ -28,5 +28,4 @@ public class BookingSlot extends BaseEntity {
 
     private Integer displayOrder;
 
-    private Boolean active;
 }

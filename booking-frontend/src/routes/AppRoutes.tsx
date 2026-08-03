@@ -28,6 +28,9 @@ import VendorServiceBookings from "../pages/vendor/VendorServiceBookings";
 import ServiceSettings from "../pages/vendor/ServiceSettings";
 import ProtectedRoute from "../components/auth/ProtectedRoute";
 import VendorRegister from "../pages/vendor/VendorRegister";
+import VendorPricing from "../pages/vendor/pricing/VendorPricing";
+import BookingConfirmation from "../pages/BookingConfirmation/BookingConfirmation"
+import CustomerBookings from "../pages/Customer/CustomerBookings";
 
 const AppRoutes = () => {
 
@@ -77,6 +80,16 @@ const AppRoutes = () => {
                         path="/vendor/register"
                         element={<VendorRegister />}
                     />
+                    <Route
+                        path="/booking-confirmation/:bookingId"
+                        element={<BookingConfirmation />}
+                    />
+
+                    <Route
+                        path="/customer/bookings"
+                        element={<CustomerBookings />}
+                    />
+
 
                 </Route>
 
@@ -122,8 +135,6 @@ const AppRoutes = () => {
                         element={<VendorBookingDetails />}
                     />
 
-
-
                     <Route
 
                         path="/vendor/revenue"
@@ -153,24 +164,18 @@ const AppRoutes = () => {
                         element={<VendorAddService />}
                     />
 
-
-
                     <Route
-                        path="/vendor/services/:id"
-                        element={<VendorServiceWorkspace />}
-                    >
+                        path="/vendor/services/:serviceId"
+                        element={<VendorServiceWorkspace />}>
 
                         <Route
+                            path="pricing"
+                            element={<VendorPricing />}/>
 
-                            index
+                        <Route index
+                            element={<VendorServiceProfile />}/>
 
-                            element={<VendorServiceProfile />}
-
-                        />
-
-                        <Route
-
-                            path="slots"
+                        <Route path="slots"
 
                             element={<ManageBookingSlots />}
 
