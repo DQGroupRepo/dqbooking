@@ -1,26 +1,18 @@
 import {
 
-    useEffect,
-
-    useState
+    useEffect, useState
 
 } from "react";
 
 import {
 
-    useNavigate,
-
-    useParams
+    useNavigate, useParams
 
 } from "react-router-dom";
 
 import "./VendorAddService.css";
 
-import type {
-
-    VendorServiceForm
-
-} from "../../types/VendorServiceForm";
+import type { VendorServiceForm } from "../../types/VendorServiceForm";
 
 import VendorServiceMapper
 
@@ -110,9 +102,7 @@ const AddService = () => {
     const isEditMode = !!id;
 
 
-    const navigate =
-
-        useNavigate();
+    const navigate = useNavigate();
 
 
 
@@ -673,6 +663,7 @@ const AddService = () => {
             true
 
         );
+        let serviceId = "";
 
 
         try {
@@ -868,67 +859,40 @@ const AddService = () => {
              * UPDATE
              * =================================
              */
+            let serviceId = "";
 
             if (isEditMode) {
 
-
-                await VendorServiceService
-
-                    .updateService(
-
+                const updatedService =
+                    await VendorServiceService.updateService(
                         id!,
-
                         request
-
                     );
 
+                serviceId = updatedService.id;
 
                 toast.success(
-
                     "Service updated successfully."
-
                 );
 
             }
-
-
-
-            /*
-             * =================================
-             * CREATE
-             * =================================
-             */
-
             else {
 
-
-                await VendorServiceService
-
-                    .createService(
-
+                const createdService =
+                    await VendorServiceService.createService(
                         request
-
                     );
 
+                serviceId = createdService.id;
 
                 toast.success(
-
                     "Listing published successfully 🎉"
-
                 );
 
             }
 
-
-
-            /*
-             * Redirect.
-             */
-
             navigate(
-
-                "/vendor/manage-services"
-
+                `/vendor/services/${serviceId}/pricing`
             );
 
         }

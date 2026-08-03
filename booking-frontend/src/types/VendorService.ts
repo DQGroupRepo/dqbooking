@@ -23,6 +23,8 @@ export interface VendorService {
 
     featured: boolean;
 
+    pricingConfigured: boolean;
+
     contactInfo: ContactInfo;
 
     availability: Availability;

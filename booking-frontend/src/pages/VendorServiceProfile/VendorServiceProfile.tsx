@@ -28,7 +28,7 @@ import "./VendorServiceProfile.css";
 export default function VendorServiceProfile() {
 
 
-    const { id } = useParams();
+    const { serviceId } = useParams();
 
 
     const navigate = useNavigate();
@@ -66,13 +66,13 @@ export default function VendorServiceProfile() {
 
         loadService();
 
-    }, [id]);
+    }, [serviceId]);
 
 
     const loadService = async () => {
 
 
-        if (!id) return;
+        if (!serviceId) return;
 
 
         try {
@@ -80,7 +80,7 @@ export default function VendorServiceProfile() {
 
             const response =
                 await VendorServiceService
-                    .getServiceById(id);
+                    .getServiceById(serviceId);
 
 
             if (!response) return;
@@ -716,6 +716,13 @@ export default function VendorServiceProfile() {
 
                     <div className="service-actions">
 
+                        <Button
+                                onClick={() =>
+                                    navigate(`/vendor/services/${service.serviceId}/pricing`)
+                                }
+                            >
+                                Pricing
+                        </Button>
 
                         <Button
 
@@ -723,7 +730,7 @@ export default function VendorServiceProfile() {
 
                                 navigate(
 
-                                    `/vendor/services/edit/${service.id}`
+                                    `/vendor/services/edit/${service.serviceId}`
 
                                 )
 
@@ -746,7 +753,7 @@ export default function VendorServiceProfile() {
 
                                 navigate(
 
-                                    `/vendor/services/${service.id}/slots`
+                                    `/vendor/services/${service.serviceId}/slots`
 
                                 )
 

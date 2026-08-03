@@ -4,7 +4,7 @@ import "./VendorServiceWorkspace.css";
 
 export default function VendorServiceWorkspace() {
 
-    const { id } = useParams();
+    const { serviceId } = useParams();
 
     const navigate = useNavigate();
 
@@ -43,38 +43,38 @@ export default function VendorServiceWorkspace() {
             <nav className="workspace-tabs">
 
                 <NavLink
-                    to={`/vendor/services/${id}`}
+                    to={`/vendor/services/${serviceId}`}
                     end
                 >
                     Overview
                 </NavLink>
 
                 <NavLink
-                    to={`/vendor/services/${id}/slots`}
+                    to={`/vendor/services/${serviceId}/slots`}
                 >
                     Booking Slots
                 </NavLink>
 
                 <NavLink
-                    to={`/vendor/services/${id}/availability`}
+                    to={`/vendor/services/${serviceId}/availability`}
                 >
                     Availability
                 </NavLink>
 
                 <NavLink
-                    to={`/vendor/services/${id}/bookings`}
+                    to={`/vendor/services/${serviceId}/bookings`}
                 >
                     Bookings
                 </NavLink>
 
                 <NavLink
-                    to={`/vendor/services/${id}/reviews`}
+                    to={`/vendor/services/${serviceId}/reviews`}
                 >
                     Reviews
                 </NavLink>
 
                 <NavLink
-                    to={`/vendor/services/${id}/settings`}
+                    to={`/vendor/services/${serviceId}/settings`}
                 >
                     Settings
                 </NavLink>

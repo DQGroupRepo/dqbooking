@@ -29,6 +29,9 @@ public class VendorServiceResponse {
 
     private Boolean featured;
 
+    // NEW
+    private Boolean pricingConfigured;
+
     private ContactInfoDto contactInfo;
 
     private AvailabilityDto availability;

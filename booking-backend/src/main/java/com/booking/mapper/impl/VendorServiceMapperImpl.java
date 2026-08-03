@@ -40,7 +40,19 @@ public class VendorServiceMapperImpl implements VendorServiceMapper {
         service.setServiceName(request.getServiceName());
         service.setCategory(request.getCategory());
         service.setDescription(request.getDescription());
-        service.setPrice(request.getPrice());
+        if (request.getPricing() != null) {
+
+            service.setPrice(
+                    request.getPricing().getBaseAmount()
+            );
+
+        } else {
+
+            service.setPrice(
+                    request.getPrice()
+            );
+
+        }
         service.setCapacity(request.getCapacity());
         service.setDurationHours(request.getDurationHours());
 
@@ -87,6 +99,7 @@ public class VendorServiceMapperImpl implements VendorServiceMapper {
 
         response.setActive(service.getActive());
         response.setFeatured(service.getFeatured());
+        response.setPricingConfigured(false);
 
         response.setContactInfo(
                 contactInfoMapper.toDto(service.getContactInfo())
@@ -120,7 +133,19 @@ public class VendorServiceMapperImpl implements VendorServiceMapper {
         entity.setServiceName(request.getServiceName());
         entity.setCategory(request.getCategory());
         entity.setDescription(request.getDescription());
-        entity.setPrice(request.getPrice());
+        if (request.getPricing() != null) {
+
+            entity.setPrice(
+                    request.getPricing().getBaseAmount()
+            );
+
+        } else {
+
+            entity.setPrice(
+                    request.getPrice()
+            );
+
+        }
         entity.setCapacity(request.getCapacity());
         entity.setDurationHours(request.getDurationHours());
 

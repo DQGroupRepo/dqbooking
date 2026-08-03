@@ -18,7 +18,7 @@ import "../VendorReviews/VendorReviews.css";
 
 export default function VendorServiceReviews() {
 
-    const { id } = useParams();
+    const { serviceId } = useParams();
 
     const [reviews, setReviews] = useState<Review[]>([]);
 
@@ -28,13 +28,13 @@ export default function VendorServiceReviews() {
 
     useEffect(() => {
 
-        if (id) {
+        if (serviceId) {
 
-            loadReviews(id);
+            loadReviews(serviceId);
 
         }
 
-    }, [id]);
+    }, [serviceId]);
 
     async function loadReviews(serviceId: string) {
 

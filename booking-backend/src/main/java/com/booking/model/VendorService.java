@@ -31,10 +31,6 @@ public class VendorService extends BaseEntity {
 
     private Integer durationHours;
 
-    private Boolean active = true;
-
-    private Boolean deleted = false;
-
     private Boolean featured = false;
 
     private Integer displayOrder = 0;

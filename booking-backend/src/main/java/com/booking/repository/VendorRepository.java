@@ -9,4 +9,5 @@ public interface VendorRepository extends MongoRepository<Vendor, String> {
 
     Optional<Vendor> findByUserId(String userId);
 
+    Optional<Vendor> findById(String id);
 }

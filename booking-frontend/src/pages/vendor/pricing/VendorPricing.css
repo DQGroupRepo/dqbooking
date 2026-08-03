@@ -1,0 +1,62 @@
+.vendor-pricing-page{
+    display:flex;
+    flex-direction:column;
+    gap:24px;
+}
+
+.pricing-header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+}
+
+.pricing-grid{
+    display:grid;
+    grid-template-columns:2fr 1fr;
+    gap:24px;
+}
+
+.pricing-left{
+    display:flex;
+    flex-direction:column;
+    gap:20px;
+}
+
+.pricing-right{
+    display:flex;
+    flex-direction:column;
+    gap:20px;
+}
+
+.pricing-card{
+    background:#fff;
+    border-radius:12px;
+    padding:20px;
+    box-shadow:0 2px 8px rgba(0,0,0,.08);
+}
+
+.pricing-card h3{
+    margin-bottom:18px;
+}
+
+.table-row{
+    display:grid;
+    grid-template-columns:2fr 1fr 1fr;
+    padding:10px 0;
+    border-bottom:1px solid #eee;
+}
+
+.summary-row{
+    display:flex;
+    justify-content:space-between;
+    margin:12px 0;
+}
+
+.save-btn{
+    padding:10px 22px;
+    border:none;
+    background:#5b63f6;
+    color:#fff;
+    border-radius:8px;
+    cursor:pointer;
+}

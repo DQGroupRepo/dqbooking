@@ -10,19 +10,19 @@ import "./VendorServiceBookings.css";
 
 export default function VendorServiceBookings() {
 
-    const { id } = useParams();
+    const { serviceId } = useParams();
 
     const [bookings, setBookings] = useState<BookingStats[]>([]);
 
     useEffect(() => {
 
-        if (id) {
+        if (serviceId) {
 
-            loadBookings(id);
+            loadBookings(serviceId);
 
         }
 
-    }, [id]);
+    }, [serviceId]);
 
     async function loadBookings(serviceId: string) {
 
