@@ -80,7 +80,8 @@ public class SecurityConfig {
                                 "/api/auth/**",
                                 "/api/customer/services",
                                 "/api/customer/services/**",
-                                "/uploads/**"
+                                "/uploads/**",
+                                "/api/pricing/**"
                         )
                         .permitAll()
 

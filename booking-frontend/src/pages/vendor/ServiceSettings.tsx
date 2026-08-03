@@ -10,20 +10,20 @@ import "./ServiceSettings.css";
 
 export default function ServiceSettings() {
 
-    const { id } = useParams();
+    const { serviceId } = useParams();
 
     const [settings, setSettings] =
         useState<ServiceSettings>();
 
     useEffect(() => {
 
-        if (id) {
+        if (serviceId) {
 
-            loadSettings(id);
+            loadSettings(serviceId);
 
         }
 
-    }, [id]);
+    }, [serviceId]);
 
     async function loadSettings(
         serviceId: string
@@ -60,10 +60,10 @@ export default function ServiceSettings() {
 
     async function handleSave() {
 
-        if (!id || !settings) return;
+        if (!serviceId || !settings) return;
 
         await ServiceSettingsService
-            .updateSettings(id, settings);
+            .updateSettings(serviceId, settings);
 
         toast.success("Settings updated.");
 

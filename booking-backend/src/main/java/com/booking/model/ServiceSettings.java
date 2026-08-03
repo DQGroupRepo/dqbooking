@@ -39,7 +39,7 @@ public class ServiceSettings extends BaseEntity {
     /*
      * Visibility
      */
-    private Boolean active = true;
+  //  private Boolean active = true;
 
     private Boolean instantBooking = false;
 
