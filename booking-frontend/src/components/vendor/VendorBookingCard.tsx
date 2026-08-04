@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 
 import type { VendorDetail } from "../../types/VendorDetail";
 
-import "./BookingCard.css";
+import "./VendorBookingCard.css";
 
 interface Props {
 

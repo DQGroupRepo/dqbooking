@@ -4,7 +4,7 @@ import BookingStatusBadge from "./BookingStatusBadge";
 
 import type { Booking } from "../../types/Booking";
 
-import "./BookingCard.css";
+import "./CustomerBookingCard.css";
 
 interface Props {
 
@@ -18,9 +18,9 @@ const BookingCard = ({ booking }: Props) => {
 
     return (
 
-        <div className="booking-card">
+        <div className="customer-booking-card">
 
-            <div className="booking-card-left">
+            <div className="customer-booking-card-left">
 
                 <img
 
@@ -35,7 +35,7 @@ const BookingCard = ({ booking }: Props) => {
 
             </div>
 
-            <div className="booking-card-center">
+            <div className="customer-booking-card-center">
 
                 <h3>
 
@@ -79,7 +79,7 @@ const BookingCard = ({ booking }: Props) => {
 
             </div>
 
-            <div className="booking-card-right">
+            <div className="customer-booking-card-right">
 
                 <BookingStatusBadge
                     status={booking.status}

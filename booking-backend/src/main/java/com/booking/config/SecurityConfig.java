@@ -112,7 +112,8 @@ public class SecurityConfig {
                         // --------------------------------
 
                         .requestMatchers(
-                                "/api/customer/**"
+                                "/api/customer/**",
+                                "/api/bookings"
                         )
                         .hasRole("CUSTOMER")
 

@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import CustomerBookingService from "../../services/CustomerBookingService";
 
 import type { Booking } from "../../types/Booking";
-import BookingCard from "../../components/customer/BookingCard";
+import BookingCard from "../../components/customer/CustomerBookingCard";
 
 const CustomerBookings = () => {
 

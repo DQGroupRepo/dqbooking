@@ -6,7 +6,7 @@ import VendorInfo from "../../components/vendor/VendorInfo";
 import VendorAmenities from "../../components/vendor/VendorAmenities";
 import VendorPackages from "../../components/vendor/VendorPackages";
 import VendorReviews from "../../components/vendor/VendorReviews";
-import BookingCard from "../../components/vendor/BookingCard";
+import BookingCard from "../../components/vendor/VendorBookingCard";
 
 import VendorDetailService from "../../services/VendorDetailService";
 
