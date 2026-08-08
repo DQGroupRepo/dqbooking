@@ -34,4 +34,6 @@ public interface BookingRepository extends MongoRepository<Booking, String> {
             String customerId
     );
 
+    List<Booking> findTop5ByOrderByCreatedAtDesc();
+
 }

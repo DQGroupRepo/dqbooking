@@ -17,4 +17,5 @@ public interface ReviewRepository
 
     List<Review> findByServiceId(String serviceId);
 
+    long countByDeletedFalse();
 }

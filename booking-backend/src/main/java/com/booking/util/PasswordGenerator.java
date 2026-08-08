@@ -15,7 +15,7 @@ public class PasswordGenerator {
         PasswordEncoder encoder =
                 context.getBean(PasswordEncoder.class);
 
-        System.out.println(encoder.encode("123456"));
+        System.out.println(encoder.encode("Admin@123"));
 
         SpringApplication.exit(context);
     }

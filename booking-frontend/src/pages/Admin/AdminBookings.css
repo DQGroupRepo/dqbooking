@@ -1,0 +1,311 @@
+.admin-bookings {
+    width: 100%;
+}
+
+.admin-bookings-header {
+    margin-bottom: 28px;
+}
+
+.admin-bookings-header h1 {
+    margin: 0 0 8px;
+    font-size: 30px;
+    font-weight: 700;
+}
+
+.admin-bookings-header p {
+    margin: 0;
+    color: #777;
+    font-size: 14px;
+}
+
+
+/* =========================================
+   TOOLBAR
+========================================= */
+
+.admin-bookings-toolbar {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 14px;
+}
+
+.admin-bookings-search {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    padding: 0 15px;
+}
+
+.admin-bookings-search span {
+    font-size: 15px;
+    opacity: .6;
+}
+
+.admin-bookings-search input {
+    flex: 1;
+    border: none;
+    outline: none;
+    padding: 13px 0;
+    font-size: 14px;
+    font-family: inherit;
+}
+
+.admin-bookings-toolbar select {
+    width: 180px;
+    padding: 13px 15px;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    background: white;
+    font-size: 14px;
+    font-family: inherit;
+}
+
+.admin-bookings-search:focus-within,
+.admin-bookings-toolbar select:focus {
+    border-color: #dfa974;
+}
+
+
+/* =========================================
+   SUMMARY
+========================================= */
+
+.admin-bookings-summary {
+    margin-bottom: 14px;
+    color: #777;
+    font-size: 14px;
+}
+
+
+/* =========================================
+   CARD
+========================================= */
+
+.admin-bookings-card {
+    background: white;
+    border-radius: 16px;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+}
+
+
+/* =========================================
+   TABLE
+========================================= */
+
+.admin-bookings-table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+}
+
+.admin-bookings-table {
+    width: 100%;
+    min-width: 1100px;
+    border-collapse: collapse;
+}
+
+.admin-bookings-table th {
+    padding: 16px 18px;
+    text-align: left;
+    background: #fafafa;
+    border-bottom: 1px solid #eee;
+    color: #777;
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.admin-bookings-table td {
+    padding: 17px 18px;
+    border-bottom: 1px solid #f0f0f0;
+    font-size: 13px;
+    vertical-align: middle;
+}
+
+.admin-bookings-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.admin-bookings-table tbody tr:hover {
+    background: #fcfcfc;
+}
+
+
+/* =========================================
+   BOOKING
+========================================= */
+
+.admin-booking-number,
+.admin-booking-customer,
+.admin-booking-service {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.admin-booking-number strong {
+    color: #2d2d2d;
+}
+
+.admin-booking-number span,
+.admin-booking-customer span,
+.admin-booking-service span {
+    color: #999;
+    font-size: 11px;
+}
+
+.admin-booking-customer strong,
+.admin-booking-service strong {
+    font-size: 13px;
+}
+
+
+/* =========================================
+   STATUS
+========================================= */
+
+.admin-booking-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 6px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.admin-booking-status .status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+}
+
+.admin-booking-status.pending {
+    background: #fff6df;
+    color: #b77a18;
+}
+
+.admin-booking-status.confirmed {
+    background: #eaf4ff;
+    color: #3475b9;
+}
+
+.admin-booking-status.completed {
+    background: #eaf8ef;
+    color: #2d8a4d;
+}
+
+.admin-booking-status.cancelled {
+    background: #fbecec;
+    color: #c44c4c;
+}
+
+.admin-booking-status.rejected {
+    background: #f1f1f1;
+    color: #777;
+}
+
+
+/* =========================================
+   PAYMENT
+========================================= */
+
+.admin-payment-badge {
+    display: inline-flex;
+    padding: 5px 9px;
+    border-radius: 15px;
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.admin-payment-badge.pending {
+    background: #fff6df;
+    color: #b77a18;
+}
+
+.admin-payment-badge.paid {
+    background: #eaf8ef;
+    color: #2d8a4d;
+}
+
+.admin-payment-badge.partially_paid {
+    background: #eaf4ff;
+    color: #3475b9;
+}
+
+.admin-payment-badge.refunded {
+    background: #f3edff;
+    color: #7651c9;
+}
+
+.admin-payment-badge.failed {
+    background: #fbecec;
+    color: #c44c4c;
+}
+
+
+/* =========================================
+   EMPTY
+========================================= */
+
+.admin-bookings-empty {
+    padding: 70px 30px;
+    text-align: center;
+}
+
+.admin-bookings-empty-icon {
+    font-size: 38px;
+    margin-bottom: 12px;
+}
+
+.admin-bookings-empty h3 {
+    margin: 0 0 8px;
+}
+
+.admin-bookings-empty p {
+    margin: 0;
+    color: #777;
+    font-size: 14px;
+}
+
+
+/* =========================================
+   LOADING / ERROR
+========================================= */
+
+.admin-bookings-loading,
+.admin-bookings-error {
+    background: white;
+    border-radius: 16px;
+    padding: 70px 30px;
+    text-align: center;
+    box-shadow: var(--shadow);
+}
+
+.admin-bookings-error {
+    color: #c44c4c;
+}
+
+
+/* =========================================
+   RESPONSIVE
+========================================= */
+
+@media (max-width: 700px) {
+
+    .admin-bookings-toolbar {
+        flex-direction: column;
+    }
+
+    .admin-bookings-toolbar select {
+        width: 100%;
+    }
+
+}

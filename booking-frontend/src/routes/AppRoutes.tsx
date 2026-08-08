@@ -35,6 +35,12 @@ import BookingCancellationSuccess from "../pages/Customer/BookingCancellationSuc
 import CustomerBookingDetails from "../pages/customer/CustomerBookingDetails";
 import Review from "../pages/customer/Review";
 
+import AdminLayout from "../layouts/AdminLayout";
+import AdminDashboard from "../pages/Admin/AdminDashboard";
+import AdminUsers from "../pages/admin/AdminUsers";
+import AdminBookings from "../pages/admin/AdminBookings";
+import AdminReviews from "../pages/admin/AdminReviews";
+
 const AppRoutes = () => {
 
     return (
@@ -154,27 +160,18 @@ const AppRoutes = () => {
                     />
 
                     <Route
-
                         path="/vendor/revenue"
-
                         element={<VendorRevenue/>}
-
                     />
 
                     <Route
-
                         path="/vendor/reviews"
-
                         element={<VendorReviews/>}
-
                     />
 
                     <Route
-
                         path="/vendor/settings"
-
                         element={<VendorSettings/>}
-
                     />
 
                     <Route
@@ -186,47 +183,73 @@ const AppRoutes = () => {
                         path="/vendor/services/:serviceId"
                         element={<VendorServiceWorkspace />}>
 
+                    <Route
+                        path="pricing"
+                        element={<VendorPricing />}/>
+
+                    <Route index
+                        element={<VendorServiceProfile />}/>
+
+                    <Route path="slots"
+                        element={<ManageBookingSlots />}/>
+
+                    <Route
+                        path="availability"
+                        element={<ManageAvailability />}
+                    />
+
+                    <Route
+                        path="bookings"
+                        element={<VendorServiceBookings />}
+                    />
+
+                    <Route
+                        path="reviews"
+                        element={<VendorServiceReviews />}
+                    />
+
+                    <Route
+                        path="settings"
+                        element={<ServiceSettings />}
+                    />
+
+                </Route>
+                </Route>
+
+                </Route>
+                {/* Admin Portal */}
+
+                <Route
+                    element={
+                        <ProtectedRoute
+                            allowedRoles={["ADMIN"]}
+                        />
+                    }
+                >
+                    <Route element={<AdminLayout />}>
+
                         <Route
-                            path="pricing"
-                            element={<VendorPricing />}/>
-
-                        <Route index
-                            element={<VendorServiceProfile />}/>
-
-                        <Route path="slots"
-
-                            element={<ManageBookingSlots />}
-
+                            path="/admin/dashboard"
+                            element={<AdminDashboard />}
                         />
 
                         <Route
-
-                            path="availability"
-
-                            element={<ManageAvailability />}
-
+                            path="/admin/users"
+                            element={<AdminUsers />}
                         />
 
                         <Route
-                            path="bookings"
-                            element={<VendorServiceBookings />}
+                            path="/admin/bookings"
+                            element={<AdminBookings />}
                         />
 
                         <Route
-                            path="reviews"
-                            element={<VendorServiceReviews />}
-                        />
-
-                        <Route
-                            path="settings"
-                            element={<ServiceSettings />}
+                            path="/admin/reviews"
+                            element={<AdminReviews />}
                         />
 
                     </Route>
                 </Route>
-
-                </Route>
-
             </Routes>
 
         </BrowserRouter>
