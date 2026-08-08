@@ -1,6 +1,6 @@
 package com.booking.service.impl;
 
-import com.booking.dto.pricing.CreateVendorServicePricingRequest;
+import com.booking.dto.pricing.VendorServicePricingRequest;
 import com.booking.dto.pricing.VendorServicePricingResponse;
 import com.booking.exception.ResourceNotFoundException;
 import com.booking.mapper.PricingMapper;
@@ -49,7 +49,7 @@ public class VendorServicePricingServiceImpl
      */
     @Override
     public VendorServicePricingResponse createPricing(
-            CreateVendorServicePricingRequest request
+            VendorServicePricingRequest request
     ) {
 
         VendorService service =

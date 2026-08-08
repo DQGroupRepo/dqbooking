@@ -27,8 +27,6 @@ public class ReviewServiceImpl
 
     private final BookingRepository bookingRepository;
 
-    private final VendorRepository vendorRepository;
-
     private final VendorServiceRepository vendorServiceRepository;
 
     private final UserRepository userRepository;
@@ -64,12 +62,12 @@ public class ReviewServiceImpl
 
         }
 
-        if (booking.getStatus() == BookingStatus.CANCELLED) {
+        if (booking.getStatus() == BookingStatus.CANCELLED ||
+                booking.getStatus() == BookingStatus.REJECTED) {
 
             throw new ReviewNotAllowedException(
-                    "Cancelled bookings cannot be reviewed."
+                    "Cancelled or rejected bookings cannot be reviewed."
             );
-
         }
 
         if (booking.getEventDate().isAfter(LocalDate.now())) {
@@ -120,8 +118,8 @@ public class ReviewServiceImpl
                 review.getId()
         );
 
-        Vendor vendor =
-                vendorRepository.findById(
+        User vendor =
+                userRepository.findById(
                         booking.getVendorId()
                 ).orElseThrow(() ->
                         new ResourceNotFoundException(
@@ -135,9 +133,7 @@ public class ReviewServiceImpl
                 )
         );
 
-        vendorRepository.save(vendor);
-
-
+        userRepository.save(vendor);
 
         ReviewResponse response =
                 reviewMapper.toResponse(review);
@@ -242,7 +238,7 @@ public class ReviewServiceImpl
             ReviewReplyRequest request
     ) {
 
-        Vendor vendor =
+        User vendor =
                 authenticatedUserService.getCurrentVendor();
 
         Review review =
@@ -274,7 +270,7 @@ public class ReviewServiceImpl
     @Override
     public List<ReviewResponse> getVendorReviews() {
 
-        Vendor vendor =
+        User vendor =
                 authenticatedUserService.getCurrentVendor();
 
         return reviewRepository

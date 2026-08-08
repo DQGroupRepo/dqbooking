@@ -19,4 +19,9 @@ public interface VendorServicePricingRepository
             String serviceId,
             LocalDate eventDate
     );
+
+    Optional<VendorServicePricing>
+    findTopByServiceIdOrderByVersionDesc(
+            String serviceId
+    );
 }

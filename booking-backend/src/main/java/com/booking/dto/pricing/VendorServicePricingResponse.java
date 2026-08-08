@@ -31,5 +31,4 @@ public class VendorServicePricingResponse {
 
     private PaymentConfigurationResponse paymentConfiguration;
 
-    private CancellationPolicyResponse cancellationPolicy;
 }

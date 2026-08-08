@@ -102,7 +102,21 @@ const BookingCard = ({ booking }: Props) => {
                 {
                     booking.cancellable && (
 
-                        <button className="cancel">
+                        <button
+
+                            className="cancel"
+
+                            onClick={() =>
+
+                                navigate(
+
+                                    `/customer/bookings/${booking.id}/cancel`
+
+                                )
+
+                            }
+
+                        >
 
                             Cancel Booking
 

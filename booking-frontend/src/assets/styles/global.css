@@ -1317,57 +1317,6 @@ footer {
 
 
 
-/* =====================================
- BOOKING CARD
-===================================== */
-
-
-.booking-card {
-
-    padding:30px;
-
-    border-radius:20px;
-
-    box-shadow:var(--shadow);
-
-    height:max-content;
-
-    position:sticky;
-
-    top:100px;
-
-}
-
-
-
-.booking-card label {
-
-    display:block;
-
-    margin-top:15px;
-
-}
-
-
-
-.booking-card input,
-
-.booking-card select {
-
-    width:100%;
-
-    padding:12px;
-
-    margin-top:8px;
-
-    border:1px solid var(--border);
-
-    border-radius:8px;
-
-}
-
-
-
 .book-button {
 
     width:100%;
@@ -1845,49 +1794,6 @@ footer {
 
 }
 
-
-
-.star-rating {
-
-    display:flex;
-
-    flex-direction:row-reverse;
-
-    justify-content:flex-end;
-
-}
-
-
-
-.star-rating input {
-
-    display:none;
-
-}
-
-
-
-.star-rating label {
-
-    font-size:35px;
-
-    color:#cbd5e1;
-
-    cursor:pointer;
-
-}
-
-
-
-.star-rating input:checked ~ label {
-
-    color:#f59e0b;
-
-}
-
-
-
-
 .rating-row {
 
     display:flex;
@@ -1990,7 +1896,7 @@ footer {
 
 
 
-.booking-card {
+.1booking-card {
 
     position:relative;
 

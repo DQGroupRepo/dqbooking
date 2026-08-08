@@ -3,7 +3,6 @@ package com.booking.helper.impl;
 import com.booking.helper.BookingHelper;
 import com.booking.model.Booking;
 import com.booking.model.User;
-import com.booking.model.Vendor;
 import com.booking.model.VendorService;
 import com.booking.model.enums.BookingStatus;
 import com.booking.model.enums.PaymentStatus;
@@ -19,7 +18,7 @@ public class BookingHelperImpl implements BookingHelper {
             Booking booking,
             VendorService vendorService,
             User customer,
-            Vendor vendor
+            User vendor
     ) {
 
         booking.setVendorId(

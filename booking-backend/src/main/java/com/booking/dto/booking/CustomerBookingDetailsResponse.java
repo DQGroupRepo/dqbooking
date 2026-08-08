@@ -2,6 +2,8 @@ package com.booking.dto.booking;
 
 import com.booking.dto.pricing.DiscountSnapshot;
 import com.booking.dto.pricing.PricingHeadSnapshot;
+import com.booking.model.embedded.BookingDiscountSnapshot;
+import com.booking.model.embedded.BookingPricingHeadSnapshot;
 import com.booking.model.enums.BookingStatus;
 import com.booking.model.enums.PaymentStatus;
 import lombok.Builder;
@@ -9,6 +11,7 @@ import lombok.Data;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Data
@@ -59,8 +62,17 @@ public class CustomerBookingDetailsResponse {
 
     private BigDecimal paidAmount;
 
-    private List<PricingHeadSnapshot> pricingHeads;
+    private List<BookingPricingHeadSnapshot> pricingHeads;
 
-    private List<DiscountSnapshot> discounts;
+    private List<BookingDiscountSnapshot> discounts;
 
+    private LocalDateTime cancelledAt;
+
+    private Integer refundPercentage;
+
+    private BigDecimal cancellationCharge;
+
+    private BigDecimal refundableAmount;
+
+    private Integer refundProcessingDays;
 }

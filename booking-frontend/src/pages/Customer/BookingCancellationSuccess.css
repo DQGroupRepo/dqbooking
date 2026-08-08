@@ -1,0 +1,113 @@
+.cancel-success-page{
+
+    display:flex;
+
+    justify-content:center;
+
+    padding:60px 20px;
+
+}
+
+.cancel-success-card{
+
+    width:100%;
+
+    max-width:620px;
+
+    background:#fff;
+
+    padding:50px;
+
+    border-radius:18px;
+
+    box-shadow:0 8px 30px rgba(0,0,0,.08);
+
+    text-align:center;
+
+}
+
+.success-icon{
+
+    width:90px;
+
+    height:90px;
+
+    margin:auto;
+
+    border-radius:50%;
+
+    background:#22c55e;
+
+    color:#fff;
+
+    font-size:48px;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    margin-bottom:30px;
+
+}
+
+.cancel-success-card h1{
+
+    margin-bottom:15px;
+
+}
+
+.cancel-success-card p{
+
+    color:#666;
+
+    margin-bottom:35px;
+
+}
+
+.refund-summary{
+
+    background:#f8fafc;
+
+    border-radius:12px;
+
+    padding:25px;
+
+    margin-bottom:35px;
+
+}
+
+.refund-summary div{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    padding:12px 0;
+
+}
+
+.refund-summary strong{
+
+    color:#059669;
+
+}
+
+.cancel-success-card button{
+
+    padding:14px 28px;
+
+    border:none;
+
+    border-radius:10px;
+
+    background:#2563eb;
+
+    color:#fff;
+
+    cursor:pointer;
+
+    font-weight:600;
+
+}

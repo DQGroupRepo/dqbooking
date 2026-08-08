@@ -1,10 +1,9 @@
 import api from "../api/axiosConfig";
 
 import type { Booking } from "../types/Booking";
+import type { CancellationPreview } from "../types/CancellationPreview";
 
-import type {
-    BookingCancellationResponse
-} from "../types/BookingCancellationResponse";
+import type { BookingCancellationResponse } from "../types/BookingCancellationResponse";
 
 const CustomerBookingService = {
 
@@ -22,7 +21,7 @@ const CustomerBookingService = {
     async getBooking(
         bookingId: string
     ) {
-
+        console.log(bookingId);
         const response =
             await api.get<CustomerBookingDetailsResponse>(
                       `/bookings/${bookingId}/details`
@@ -39,6 +38,19 @@ const CustomerBookingService = {
         const response =
             await api.patch<BookingCancellationResponse>(
                 `/bookings/${bookingId}/cancel`
+            );
+
+        return response.data;
+
+    },
+
+    async getCancellationPreview(
+        bookingId: string
+    ): Promise<CancellationPreview> {
+
+        const response =
+            await api.get(
+                `/bookings/${bookingId}/cancellation-preview`
             );
 
         return response.data;

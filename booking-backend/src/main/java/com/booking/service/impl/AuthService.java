@@ -7,11 +7,9 @@ import com.booking.dto.register.VendorRegisterRequest;
 import com.booking.dto.register.VendorRegisterResponse;
 import com.booking.exception.InvalidCredentialsException;
 import com.booking.model.User;
-import com.booking.model.Vendor;
 import com.booking.model.enums.Role;
 import com.booking.model.enums.UserStatus;
 import com.booking.repository.UserRepository;
-import com.booking.repository.VendorRepository;
 import com.booking.security.JwtService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -22,8 +20,6 @@ import org.springframework.stereotype.Service;
 public class AuthService {
 
     private final UserRepository userRepository;
-
-    private final VendorRepository vendorRepository;
 
     private final PasswordEncoder passwordEncoder;
 
@@ -65,8 +61,8 @@ public class AuthService {
 
         if (user.getRole() == Role.VENDOR) {
 
-            Vendor vendor = vendorRepository
-                    .findByUserId(user.getId())
+            User vendor = userRepository
+                    .findById(user.getId())
                     .orElse(null);
 
 
@@ -163,7 +159,9 @@ public class AuthService {
     ) {
 
         /*
-         * Check if email already exists
+         * =========================================
+         * CHECK EMAIL
+         * =========================================
          */
 
         if (userRepository
@@ -173,65 +171,101 @@ public class AuthService {
             throw new RuntimeException(
                     "An account with this email already exists"
             );
-
         }
 
 
         /*
-         * Create User
+         * =========================================
+         * CREATE VENDOR USER
+         * =========================================
+         *
+         * A vendor is now simply a User whose
+         * role is VENDOR.
+         *
+         * We intentionally create only ONE User
+         * document.
          */
 
-        User user = new User();
+        User vendor = new User();
 
-        user.setEmail(
+        /*
+         * Account information
+         */
+
+        vendor.setEmail(
                 request.getEmail()
         );
 
-        user.setPassword(
+        vendor.setPassword(
                 passwordEncoder.encode(
                         request.getPassword()
                 )
         );
 
-        user.setFirstName(
-                request.getFullName()
-        );
-
-        user.setRole(
+        vendor.setRole(
                 Role.VENDOR
         );
 
-        user.setStatus(
+        vendor.setStatus(
                 UserStatus.ACTIVE
         );
 
 
         /*
-         * Save User first
-         * so we get the generated user ID.
+         * =========================================
+         * VENDOR PROFILE
+         * =========================================
          */
-
-        User savedUser =
-                userRepository.save(user);
-
-
-        /*
-         * Create Vendor Profile
-         */
-
-        Vendor vendor = new Vendor();
-
-        vendor.setUserId(
-                savedUser.getId()
-        );
 
         vendor.setBusinessName(
                 request.getBusinessName()
         );
 
-        vendor.setOwnerName(
-                request.getOwnerName()
-        );
+
+        /*
+         * ownerName is stored as
+         * firstName + lastName.
+         */
+
+        String ownerName =
+                request.getOwnerName();
+
+        if (ownerName != null &&
+                !ownerName.isBlank()) {
+
+            String trimmed =
+                    ownerName.trim();
+
+            int spaceIndex =
+                    trimmed.indexOf(" ");
+
+            if (spaceIndex > 0) {
+
+                vendor.setFirstName(
+                        trimmed.substring(
+                                0,
+                                spaceIndex
+                        )
+                );
+
+                vendor.setLastName(
+                        trimmed.substring(
+                                spaceIndex + 1
+                        )
+                );
+
+            } else {
+
+                vendor.setFirstName(
+                        trimmed
+                );
+
+                vendor.setLastName(
+                        ""
+                );
+            }
+        }
+
 
         vendor.setPhone(
                 request.getPhone()
@@ -249,36 +283,39 @@ public class AuthService {
                 request.getDescription()
         );
 
-        vendor.setRating(
-                0.0
-        );
-
-        vendor.setTotalReviews(
-                0
-        );
-
-        vendor.setVerified(
-                false
-        );
-
 
         /*
-         * Save Vendor
+         * Default vendor values
          */
 
-        Vendor savedVendor =
-                vendorRepository.save(vendor);
+        vendor.setRating(0.0);
+
+        vendor.setTotalReviews(0);
+
+        vendor.setVerified(false);
 
 
         /*
-         * Return Registration Response
+         * =========================================
+         * SAVE ONCE
+         * =========================================
+         */
+
+        User savedVendor =
+                userRepository.save(vendor);
+
+
+        /*
+         * =========================================
+         * RESPONSE
+         * =========================================
          */
 
         return VendorRegisterResponse
                 .builder()
 
                 .userId(
-                        savedUser.getId()
+                        savedVendor.getId()
                 )
 
                 .vendorId(
@@ -286,7 +323,7 @@ public class AuthService {
                 )
 
                 .email(
-                        savedUser.getEmail()
+                        savedVendor.getEmail()
                 )
 
                 .businessName(
@@ -298,7 +335,6 @@ public class AuthService {
                 )
 
                 .build();
-
     }
 
 }

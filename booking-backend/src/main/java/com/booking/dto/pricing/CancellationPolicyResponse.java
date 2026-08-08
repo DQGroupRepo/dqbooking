@@ -1,17 +1,23 @@
 package com.booking.dto.pricing;
 
-import lombok.Builder;
+import com.booking.model.enums.RefundOnType;
 import lombok.Getter;
+import lombok.Setter;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Getter
-@Builder
+@Setter
 public class CancellationPolicyResponse {
 
-    private Boolean cancellationAllowed;
+    private Boolean allowCancellation;
 
-    private List<CancellationRuleResponse> rules;
+    private RefundOnType refundOn;
 
-    private Boolean active;
+    private Integer processingDays;
+
+    private List<RefundRuleResponse> refundRules =
+            new ArrayList<>();
+
 }

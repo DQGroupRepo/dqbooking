@@ -13,6 +13,19 @@ interface Props {
 
 }
 
+function getTomorrowDate(): string {
+
+    const tomorrow = new Date();
+
+    tomorrow.setDate(
+        tomorrow.getDate() + 1
+    );
+
+    return tomorrow
+        .toISOString()
+        .split("T")[0];
+}
+
 const BookingCard = ({
 vendor,
 serviceId
@@ -92,6 +105,7 @@ return (
         <input
             type="date"
             value={eventDate}
+            min={getTomorrowDate()}
             onChange={(e) =>
                 setEventDate(
                     e.target.value

@@ -1,7 +1,7 @@
 package com.booking.service;
 
 import com.booking.dto.servicesettings.ServiceSettingsResponse;
-import com.booking.dto.servicesettings.UpdateServiceSettingsRequest;
+import com.booking.dto.servicesettings.ServiceSettingsRequest;
 
 public interface ServiceSettingsService {
 
@@ -9,7 +9,7 @@ public interface ServiceSettingsService {
 
     ServiceSettingsResponse updateSettings(
             String serviceId,
-            UpdateServiceSettingsRequest request
+            ServiceSettingsRequest request
     );
 
 }

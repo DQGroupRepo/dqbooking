@@ -3,7 +3,7 @@ package com.booking.helper.impl;
 import com.booking.dto.review.UpdateReviewRequest;
 import com.booking.helper.ReviewHelper;
 import com.booking.model.Review;
-import com.booking.model.Vendor;
+import com.booking.model.User;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
@@ -40,7 +40,7 @@ public class ReviewHelperImpl
 
     @Override
     public void updateVendorRating(
-            Vendor vendor,
+            User vendor,
             List<Review> reviews
     ) {
 

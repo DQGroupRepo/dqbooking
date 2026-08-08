@@ -1,6 +1,6 @@
 package com.booking.mapper.impl;
 
-import com.booking.dto.pricing.CreateVendorServicePricingRequest;
+import com.booking.dto.pricing.VendorServicePricingRequest;
 import com.booking.dto.vendorservice.ServicePricingDto;
 import com.booking.mapper.PricingRequestMapper;
 import org.springframework.stereotype.Component;
@@ -10,7 +10,7 @@ public class PricingRequestMapperImpl
         implements PricingRequestMapper {
 
     @Override
-    public CreateVendorServicePricingRequest toPricingRequest(
+    public VendorServicePricingRequest toPricingRequest(
             ServicePricingDto dto
     ) {
 
@@ -18,8 +18,8 @@ public class PricingRequestMapperImpl
             return null;
         }
 
-        CreateVendorServicePricingRequest request =
-                new CreateVendorServicePricingRequest();
+        VendorServicePricingRequest request =
+                new VendorServicePricingRequest();
 
         request.setEffectiveFrom(dto.getEffectiveFrom());
         request.setEffectiveUntil(dto.getEffectiveUntil());
@@ -32,10 +32,6 @@ public class PricingRequestMapperImpl
 
         request.setPaymentConfiguration(
                 dto.getPaymentConfiguration()
-        );
-
-        request.setCancellationPolicy(
-                dto.getCancellationPolicy()
         );
 
         return request;

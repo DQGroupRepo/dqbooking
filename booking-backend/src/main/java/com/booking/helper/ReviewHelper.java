@@ -2,7 +2,7 @@ package com.booking.helper;
 
 import com.booking.dto.review.UpdateReviewRequest;
 import com.booking.model.Review;
-import com.booking.model.Vendor;
+import com.booking.model.User;
 
 import java.util.List;
 
@@ -18,7 +18,7 @@ public interface ReviewHelper {
     );
 
     void updateVendorRating(
-            Vendor vendor,
+            User vendor,
             List<Review> reviews
     );
 

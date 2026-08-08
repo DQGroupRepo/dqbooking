@@ -3,7 +3,7 @@ package com.booking.mapper.impl;
 import com.booking.dto.customer.VendorDetailResponse;
 import com.booking.dto.customer.VendorListingResponse;
 import com.booking.mapper.CustomerVendorMapper;
-import com.booking.model.Vendor;
+import com.booking.model.User;
 import com.booking.model.VendorService;
 import org.springframework.stereotype.Component;
 
@@ -13,7 +13,7 @@ public class CustomerVendorMapperImpl
 
     @Override
     public VendorListingResponse toListing(
-            Vendor vendor,
+            User vendor,
             VendorService service
     ) {
 
@@ -42,7 +42,7 @@ public class CustomerVendorMapperImpl
 
     @Override
     public VendorDetailResponse toDetail(
-            Vendor vendor,
+            User vendor,
             VendorService service
     ) {
 

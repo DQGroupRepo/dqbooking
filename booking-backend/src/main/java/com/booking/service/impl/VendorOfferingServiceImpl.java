@@ -1,13 +1,12 @@
 package com.booking.service.impl;
 
-import com.booking.dto.pricing.CancellationPolicyRequest;
-import com.booking.dto.pricing.CreateVendorServicePricingRequest;
+import com.booking.dto.pricing.VendorServicePricingRequest;
 import com.booking.dto.pricing.PaymentConfigurationRequest;
 import com.booking.dto.vendorservice.VendorServiceRequest;
 import com.booking.dto.vendorservice.VendorServiceResponse;
 import com.booking.exception.VendorServiceNotFoundException;
 import com.booking.mapper.VendorServiceMapper;
-import com.booking.model.Vendor;
+import com.booking.model.User;
 import com.booking.model.VendorService;
 import com.booking.repository.VendorServiceRepository;
 import com.booking.service.AuthenticatedUserService;
@@ -36,7 +35,7 @@ public class VendorOfferingServiceImpl implements VendorOfferingService {
     public VendorServiceResponse createService(
             VendorServiceRequest request) {
 
-        Vendor vendor =
+        User vendor =
                 authenticatedUserService.getCurrentVendor();
 
         VendorService vendorService =
@@ -45,8 +44,8 @@ public class VendorOfferingServiceImpl implements VendorOfferingService {
         vendorService =
                 vendorServiceRepository.save(vendorService);
 
-        CreateVendorServicePricingRequest pricing =
-                new CreateVendorServicePricingRequest();
+        VendorServicePricingRequest pricing =
+                new VendorServicePricingRequest();
 
         pricing.setServiceId(vendorService.getId());
 
@@ -62,10 +61,6 @@ public class VendorOfferingServiceImpl implements VendorOfferingService {
                 new PaymentConfigurationRequest()
         );
 
-        pricing.setCancellationPolicy(
-                new CancellationPolicyRequest()
-        );
-
         vendorServicePricingService.createPricing(pricing);
 
         return vendorServiceMapper.toResponse(vendorService);
@@ -75,7 +70,7 @@ public class VendorOfferingServiceImpl implements VendorOfferingService {
     public VendorServiceResponse updateService(String serviceId,
                                                VendorServiceRequest request) {
 
-        Vendor vendor = authenticatedUserService.getCurrentVendor();
+        User vendor = authenticatedUserService.getCurrentVendor();
 
         VendorService vendorService = vendorServiceRepository
                 .findByIdAndVendorIdAndDeletedFalse(serviceId, vendor.getId())
@@ -93,7 +88,7 @@ public class VendorOfferingServiceImpl implements VendorOfferingService {
     @Override
     public void deleteService(String serviceId) {
 
-        Vendor vendor = authenticatedUserService.getCurrentVendor();
+        User vendor = authenticatedUserService.getCurrentVendor();
 
         VendorService vendorService = vendorServiceRepository
                 .findByIdAndVendorIdAndDeletedFalse(serviceId, vendor.getId())
@@ -109,7 +104,7 @@ public class VendorOfferingServiceImpl implements VendorOfferingService {
     @Override
     public VendorServiceResponse getServiceById(String serviceId) {
 
-        Vendor vendor = authenticatedUserService.getCurrentVendor();
+        User vendor = authenticatedUserService.getCurrentVendor();
 
         VendorService vendorService = vendorServiceRepository
                 .findByIdAndVendorIdAndDeletedFalse(serviceId, vendor.getId())
@@ -122,7 +117,7 @@ public class VendorOfferingServiceImpl implements VendorOfferingService {
     @Override
     public List<VendorServiceResponse> getVendorServices() {
 
-        Vendor vendor = authenticatedUserService.getCurrentVendor();
+        User vendor = authenticatedUserService.getCurrentVendor();
 
         return vendorServiceRepository
                 .findByVendorIdAndDeletedFalse(vendor.getId())
@@ -135,7 +130,7 @@ public class VendorOfferingServiceImpl implements VendorOfferingService {
     public VendorServiceResponse changeStatus(String serviceId,
                                               Boolean active) {
 
-        Vendor vendor = authenticatedUserService.getCurrentVendor();
+        User vendor = authenticatedUserService.getCurrentVendor();
 
         VendorService vendorService = vendorServiceRepository
                 .findByIdAndVendorIdAndDeletedFalse(serviceId, vendor.getId())

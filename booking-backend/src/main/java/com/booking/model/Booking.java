@@ -9,6 +9,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Getter
 @Setter
@@ -120,4 +121,24 @@ public class Booking extends BaseEntity {
 
     private BigDecimal paidAmount =
             BigDecimal.ZERO;
+
+    /*
+     * Cancellation date.
+     */
+    private LocalDateTime cancelledAt;
+
+    /*
+     * Refund percentage applied.
+     */
+    private Integer refundPercentage;
+
+    /*
+     * Cancellation charge.
+     */
+    private BigDecimal cancellationCharge;
+
+    /*
+     * Refund amount.
+     */
+    private BigDecimal refundableAmount;
 }

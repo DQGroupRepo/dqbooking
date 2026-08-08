@@ -9,7 +9,6 @@ import VendorDetail from "../pages/VendorDetail/VendorDetail";
 import BookingCheckout from "../pages/BookingCheckout/BookingCheckout";
 import Login from "../pages/Login/Login";
 import Register from "../pages/Register/Register";
-import Review from "../pages/Review/Review";
 import CreateListing from "../pages/CreateListing/CreateListing";
 import VendorAddService from "../pages/VendorAddService/VendorAddService";
 import VendorServiceWorkspace from "../pages/vendor/VendorServiceWorkspace";
@@ -31,6 +30,16 @@ import VendorRegister from "../pages/vendor/VendorRegister";
 import VendorPricing from "../pages/vendor/pricing/VendorPricing";
 import BookingConfirmation from "../pages/BookingConfirmation/BookingConfirmation"
 import CustomerBookings from "../pages/Customer/CustomerBookings";
+import CustomerCancelBooking from "../pages/Customer/CustomerCancelBooking";
+import BookingCancellationSuccess from "../pages/Customer/BookingCancellationSuccess";
+import CustomerBookingDetails from "../pages/customer/CustomerBookingDetails";
+import Review from "../pages/customer/Review";
+
+import AdminLayout from "../layouts/AdminLayout";
+import AdminDashboard from "../pages/Admin/AdminDashboard";
+import AdminUsers from "../pages/admin/AdminUsers";
+import AdminBookings from "../pages/admin/AdminBookings";
+import AdminReviews from "../pages/admin/AdminReviews";
 
 const AppRoutes = () => {
 
@@ -72,7 +81,7 @@ const AppRoutes = () => {
                     />
 
                     <Route
-                        path="/review"
+                        path="/customer/bookings/:bookingId/review"
                         element={<Review />}
                     />
 
@@ -88,6 +97,21 @@ const AppRoutes = () => {
                     <Route
                         path="/customer/bookings"
                         element={<CustomerBookings />}
+                    />
+
+                    <Route
+                        path="/customer/bookings/:bookingId/cancel"
+                        element={<CustomerCancelBooking />}
+                    />
+
+                    <Route
+                        path="/customer/bookings/cancelled"
+                        element={<BookingCancellationSuccess/>}
+                    />
+
+                    <Route
+                        path="/customer/bookings/:bookingId"
+                        element={<CustomerBookingDetails />}
                     />
 
 
@@ -136,27 +160,18 @@ const AppRoutes = () => {
                     />
 
                     <Route
-
                         path="/vendor/revenue"
-
                         element={<VendorRevenue/>}
-
                     />
 
                     <Route
-
                         path="/vendor/reviews"
-
                         element={<VendorReviews/>}
-
                     />
 
                     <Route
-
                         path="/vendor/settings"
-
                         element={<VendorSettings/>}
-
                     />
 
                     <Route
@@ -168,47 +183,73 @@ const AppRoutes = () => {
                         path="/vendor/services/:serviceId"
                         element={<VendorServiceWorkspace />}>
 
+                    <Route
+                        path="pricing"
+                        element={<VendorPricing />}/>
+
+                    <Route index
+                        element={<VendorServiceProfile />}/>
+
+                    <Route path="slots"
+                        element={<ManageBookingSlots />}/>
+
+                    <Route
+                        path="availability"
+                        element={<ManageAvailability />}
+                    />
+
+                    <Route
+                        path="bookings"
+                        element={<VendorServiceBookings />}
+                    />
+
+                    <Route
+                        path="reviews"
+                        element={<VendorServiceReviews />}
+                    />
+
+                    <Route
+                        path="settings"
+                        element={<ServiceSettings />}
+                    />
+
+                </Route>
+                </Route>
+
+                </Route>
+                {/* Admin Portal */}
+
+                <Route
+                    element={
+                        <ProtectedRoute
+                            allowedRoles={["ADMIN"]}
+                        />
+                    }
+                >
+                    <Route element={<AdminLayout />}>
+
                         <Route
-                            path="pricing"
-                            element={<VendorPricing />}/>
-
-                        <Route index
-                            element={<VendorServiceProfile />}/>
-
-                        <Route path="slots"
-
-                            element={<ManageBookingSlots />}
-
+                            path="/admin/dashboard"
+                            element={<AdminDashboard />}
                         />
 
                         <Route
-
-                            path="availability"
-
-                            element={<ManageAvailability />}
-
+                            path="/admin/users"
+                            element={<AdminUsers />}
                         />
 
                         <Route
-                            path="bookings"
-                            element={<VendorServiceBookings />}
+                            path="/admin/bookings"
+                            element={<AdminBookings />}
                         />
 
                         <Route
-                            path="reviews"
-                            element={<VendorServiceReviews />}
-                        />
-
-                        <Route
-                            path="settings"
-                            element={<ServiceSettings />}
+                            path="/admin/reviews"
+                            element={<AdminReviews />}
                         />
 
                     </Route>
                 </Route>
-
-                </Route>
-
             </Routes>
 
         </BrowserRouter>

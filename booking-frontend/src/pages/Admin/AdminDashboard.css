@@ -1,0 +1,375 @@
+.admin-dashboard {
+    width: 100%;
+}
+
+
+/* =========================================
+   HEADER
+========================================= */
+
+.admin-dashboard-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    margin-bottom: 30px;
+}
+
+.admin-dashboard-header h1 {
+    margin: 0;
+
+    font-size: 30px;
+    font-weight: 700;
+
+    color: #222;
+}
+
+.admin-dashboard-header p {
+    margin: 7px 0 0;
+
+    color: #777;
+
+    font-size: 14px;
+}
+
+
+/* =========================================
+   STAT GRID
+========================================= */
+
+.admin-stat-grid {
+    display: grid;
+
+    grid-template-columns:
+        repeat(4, minmax(0, 1fr));
+
+    gap: 20px;
+
+    margin-bottom: 25px;
+}
+
+.admin-stat-card {
+    background: #ffffff;
+
+    border-radius: 16px;
+
+    padding: 22px;
+
+    display: flex;
+    align-items: center;
+
+    gap: 16px;
+
+    border: 1px solid #eeeeee;
+
+    box-shadow:
+        0 3px 12px rgba(0, 0, 0, 0.04);
+}
+
+.admin-stat-icon {
+    width: 50px;
+    height: 50px;
+
+    border-radius: 13px;
+
+    background: #faf1e5;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    font-size: 22px;
+
+    color: #c28d51;
+}
+
+.admin-stat-card span {
+    display: block;
+
+    color: #777;
+
+    font-size: 13px;
+
+    margin-bottom: 6px;
+}
+
+.admin-stat-card strong {
+    display: block;
+
+    font-size: 25px;
+
+    color: #222;
+}
+
+
+/* =========================================
+   DASHBOARD GRID
+========================================= */
+
+.admin-dashboard-grid {
+    display: grid;
+
+    grid-template-columns:
+        1.6fr 1fr;
+
+    gap: 25px;
+
+    margin-bottom: 25px;
+}
+
+
+/* =========================================
+   COMMON CARD
+========================================= */
+
+.admin-dashboard-card {
+    background: #ffffff;
+
+    border-radius: 16px;
+
+    padding: 25px;
+
+    border: 1px solid #eeeeee;
+
+    box-shadow:
+        0 3px 12px rgba(0, 0, 0, 0.04);
+}
+
+.admin-card-header {
+    display: flex;
+
+    align-items: center;
+    justify-content: space-between;
+
+    margin-bottom: 25px;
+}
+
+.admin-card-header h2 {
+    margin: 0;
+
+    font-size: 18px;
+
+    color: #222;
+}
+
+.admin-card-header p {
+    margin: 5px 0 0;
+
+    color: #888;
+
+    font-size: 13px;
+}
+
+
+/* =========================================
+   BOOKING STATS
+========================================= */
+
+.admin-booking-stats {
+    display: grid;
+
+    grid-template-columns:
+        repeat(2, 1fr);
+
+    gap: 18px;
+}
+
+.admin-booking-stat {
+    display: flex;
+
+    align-items: center;
+
+    gap: 12px;
+
+    padding: 15px;
+
+    background: #fafafa;
+
+    border-radius: 12px;
+}
+
+.status-dot {
+    width: 10px;
+    height: 10px;
+
+    border-radius: 50%;
+
+    flex-shrink: 0;
+}
+
+.status-dot.pending {
+    background: #e5ad32;
+}
+
+.status-dot.confirmed {
+    background: #5c9ded;
+}
+
+.status-dot.completed {
+    background: #54a878;
+}
+
+.status-dot.cancelled {
+    background: #d96c6c;
+}
+
+.admin-booking-stat strong {
+    display: block;
+
+    font-size: 20px;
+
+    color: #222;
+}
+
+.admin-booking-stat span:not(.status-dot) {
+    display: block;
+
+    margin-top: 2px;
+
+    color: #888;
+
+    font-size: 12px;
+}
+
+
+/* =========================================
+   PLATFORM SUMMARY
+========================================= */
+
+.admin-summary-list {
+    display: flex;
+
+    flex-direction: column;
+}
+
+.admin-summary-list > div {
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: center;
+
+    padding: 14px 0;
+
+    border-bottom: 1px solid #eeeeee;
+}
+
+.admin-summary-list > div:last-child {
+    border-bottom: none;
+}
+
+.admin-summary-list span {
+    color: #666;
+
+    font-size: 14px;
+}
+
+.admin-summary-list strong {
+    font-size: 17px;
+
+    color: #222;
+}
+
+
+/* =========================================
+   RECENT BOOKINGS
+========================================= */
+
+.admin-recent-bookings {
+    min-height: 280px;
+}
+
+.admin-empty-state {
+    min-height: 180px;
+
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+    justify-content: center;
+
+    text-align: center;
+
+    color: #777;
+}
+
+.admin-empty-icon {
+    width: 55px;
+    height: 55px;
+
+    border-radius: 50%;
+
+    background: #faf1e5;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    font-size: 23px;
+
+    margin-bottom: 12px;
+}
+
+.admin-empty-state h3 {
+    margin: 0 0 7px;
+
+    font-size: 16px;
+
+    color: #444;
+}
+
+.admin-empty-state p {
+    margin: 0;
+
+    max-width: 430px;
+
+    font-size: 13px;
+
+    line-height: 1.6;
+
+    color: #888;
+}
+
+
+/* =========================================
+   RESPONSIVE
+========================================= */
+
+@media (max-width: 1100px) {
+
+    .admin-stat-grid {
+        grid-template-columns:
+            repeat(2, 1fr);
+    }
+
+}
+
+@media (max-width: 850px) {
+
+    .admin-dashboard-grid {
+        grid-template-columns: 1fr;
+    }
+
+}
+
+@media (max-width: 600px) {
+
+    .admin-content {
+        padding: 20px;
+    }
+
+    .admin-stat-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .admin-booking-stats {
+        grid-template-columns: 1fr;
+    }
+
+    .admin-dashboard-header h1 {
+        font-size: 25px;
+    }
+
+}

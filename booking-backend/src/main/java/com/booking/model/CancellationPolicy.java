@@ -1,3 +1,4 @@
+/*
 package com.booking.model;
 
 import lombok.Getter;
@@ -14,4 +15,4 @@ public class CancellationPolicy {
     private List<CancellationRule> rules;
 
     private Boolean active = true;
-}
+}*/

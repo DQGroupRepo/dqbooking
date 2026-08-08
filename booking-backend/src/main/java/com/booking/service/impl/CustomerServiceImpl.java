@@ -5,10 +5,10 @@ import com.booking.dto.customer.VendorListingResponse;
 import com.booking.exception.ServiceNotFoundException;
 import com.booking.exception.VendorNotFoundException;
 import com.booking.mapper.CustomerVendorMapper;
-import com.booking.model.Vendor;
+import com.booking.model.User;
 import com.booking.model.VendorService;
 import com.booking.model.enums.ServiceCategory;
-import com.booking.repository.VendorRepository;
+import com.booking.repository.UserRepository;
 import com.booking.repository.VendorServiceRepository;
 import com.booking.service.CustomerService;
 import lombok.RequiredArgsConstructor;
@@ -22,7 +22,7 @@ public class CustomerServiceImpl implements CustomerService {
 
     private final VendorServiceRepository vendorServiceRepository;
 
-    private final VendorRepository vendorRepository;
+    private final UserRepository vendorRepository;
 
     private final CustomerVendorMapper customerVendorMapper;
 
@@ -37,7 +37,7 @@ public class CustomerServiceImpl implements CustomerService {
                         .orElseThrow(() ->
                                 new ServiceNotFoundException(serviceId));
 
-        Vendor vendor =
+        User vendor =
                 vendorRepository
                         .findById(service.getVendorId())
                         .orElseThrow(() ->
@@ -80,7 +80,7 @@ public class CustomerServiceImpl implements CustomerService {
         return services.stream()
                 .map(service -> {
 
-                    Vendor vendor =
+                    User vendor =
                             vendorRepository
                                     .findById(service.getVendorId())
                                     .orElseThrow(() ->

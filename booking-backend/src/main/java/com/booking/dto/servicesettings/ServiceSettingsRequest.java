@@ -1,11 +1,12 @@
 package com.booking.dto.servicesettings;
 
+import com.booking.dto.pricing.CancellationPolicyRequest;
 import lombok.Getter;
 import lombok.Setter;
 
 @Getter
 @Setter
-public class UpdateServiceSettingsRequest {
+public class ServiceSettingsRequest {
 
     private Integer minimumAdvanceDays;
 
@@ -19,9 +20,7 @@ public class UpdateServiceSettingsRequest {
 
     private Integer balanceDueDays;
 
-    private Integer freeCancellationDays;
-
-    private Integer cancellationFeePercentage;
+    private CancellationPolicyRequest cancellationPolicy;
 
     private Boolean active;
 

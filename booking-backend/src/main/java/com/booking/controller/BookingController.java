@@ -1,9 +1,6 @@
 package com.booking.controller;
 
-import com.booking.dto.booking.BookingCancellationResponse;
-import com.booking.dto.booking.BookingResponse;
-import com.booking.dto.booking.CreateBookingRequest;
-import com.booking.dto.booking.CustomerBookingDetailsResponse;
+import com.booking.dto.booking.*;
 import com.booking.service.BookingService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -63,6 +60,18 @@ public class BookingController {
     ) {
 
         return bookingService.getBookingDetails(
+                bookingId);
+
+    }
+
+    @GetMapping("/{bookingId}/cancellation-preview")
+    public CancellationPreviewResponse getCancellationPreview(
+
+            @PathVariable String bookingId
+
+    ) {
+
+        return bookingService.getCancellationPreview(
                 bookingId
         );
 
