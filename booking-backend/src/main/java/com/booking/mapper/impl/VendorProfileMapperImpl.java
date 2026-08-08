@@ -3,7 +3,7 @@ package com.booking.mapper.impl;
 import com.booking.dto.vendorprofile.UpdateVendorProfileRequest;
 import com.booking.dto.vendorprofile.VendorProfileResponse;
 import com.booking.mapper.VendorProfileMapper;
-import com.booking.model.Vendor;
+import com.booking.model.User;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -12,13 +12,13 @@ public class VendorProfileMapperImpl
 
     @Override
     public VendorProfileResponse toResponse(
-            Vendor vendor
+            User vendor
     ) {
 
         return VendorProfileResponse.builder()
                 .id(vendor.getId())
                 .businessName(vendor.getBusinessName())
-                .ownerName(vendor.getOwnerName())
+                .ownerName(vendor.getFullName())
                 .phone(vendor.getPhone())
                 .city(vendor.getCity())
                 .address(vendor.getAddress())
@@ -32,7 +32,7 @@ public class VendorProfileMapperImpl
 
     @Override
     public void updateEntity(
-            Vendor vendor,
+            User vendor,
             UpdateVendorProfileRequest request
     ) {
 
@@ -40,9 +40,36 @@ public class VendorProfileMapperImpl
                 request.getBusinessName()
         );
 
-        vendor.setOwnerName(
-                request.getOwnerName()
-        );
+        /*
+         * ownerName is represented by
+         * firstName + lastName in User.
+         */
+        String ownerName = request.getOwnerName();
+
+        if (ownerName != null && !ownerName.isBlank()) {
+
+            String trimmed = ownerName.trim();
+
+            int spaceIndex = trimmed.indexOf(" ");
+
+            if (spaceIndex > 0) {
+
+                vendor.setFirstName(
+                        trimmed.substring(0, spaceIndex)
+                );
+
+                vendor.setLastName(
+                        trimmed.substring(spaceIndex + 1)
+                );
+
+            } else {
+
+                vendor.setFirstName(trimmed);
+
+                vendor.setLastName("");
+
+            }
+        }
 
         vendor.setPhone(
                 request.getPhone()

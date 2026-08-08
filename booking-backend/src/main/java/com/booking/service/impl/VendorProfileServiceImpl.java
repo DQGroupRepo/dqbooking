@@ -3,8 +3,8 @@ package com.booking.service.impl;
 import com.booking.dto.vendorprofile.UpdateVendorProfileRequest;
 import com.booking.dto.vendorprofile.VendorProfileResponse;
 import com.booking.mapper.VendorProfileMapper;
-import com.booking.model.Vendor;
-import com.booking.repository.VendorRepository;
+import com.booking.model.User;
+import com.booking.repository.UserRepository;
 import com.booking.service.AuthenticatedUserService;
 import com.booking.service.VendorProfileService;
 import lombok.RequiredArgsConstructor;
@@ -17,25 +17,24 @@ public class VendorProfileServiceImpl
 
     private final AuthenticatedUserService authenticatedUserService;
 
-    private final VendorRepository vendorRepository;
+    private final UserRepository userRepository;
 
     private final VendorProfileMapper mapper;
 
     @Override
     public VendorProfileResponse getProfile() {
 
-        Vendor vendor =
+        User vendor =
                 authenticatedUserService.getCurrentVendor();
 
         return mapper.toResponse(vendor);
-
     }
 
     @Override
     public VendorProfileResponse updateProfile(
             UpdateVendorProfileRequest request) {
 
-        Vendor vendor =
+        User vendor =
                 authenticatedUserService.getCurrentVendor();
 
         mapper.updateEntity(
@@ -44,10 +43,8 @@ public class VendorProfileServiceImpl
         );
 
         vendor =
-                vendorRepository.save(vendor);
+                userRepository.save(vendor);
 
         return mapper.toResponse(vendor);
-
     }
-
 }

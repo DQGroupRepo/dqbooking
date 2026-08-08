@@ -7,7 +7,7 @@ import com.booking.mapper.BookingSettingsMapper;
 import com.booking.mapper.ContactInfoMapper;
 import com.booking.mapper.ServiceAttributeMapper;
 import com.booking.mapper.VendorServiceMapper;
-import com.booking.model.Vendor;
+import com.booking.model.User;
 import com.booking.model.VendorService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -27,7 +27,7 @@ public class VendorServiceMapperImpl implements VendorServiceMapper {
     @Override
     public VendorService toEntity(
             VendorServiceRequest request,
-            Vendor vendor) {
+            User vendor) {
 
         if (request == null) {
             return null;

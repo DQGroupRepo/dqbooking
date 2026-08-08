@@ -2,9 +2,9 @@ package com.booking.service.impl;
 
 import com.booking.dto.customer.VendorListingResponse;
 import com.booking.mapper.CustomerVendorMapper;
-import com.booking.model.Vendor;
+import com.booking.model.User;
 import com.booking.model.VendorService;
-import com.booking.repository.VendorRepository;
+import com.booking.repository.UserRepository;
 import com.booking.repository.VendorServiceRepository;
 import com.booking.service.CustomerVendorService;
 import lombok.RequiredArgsConstructor;
@@ -18,7 +18,7 @@ import java.util.List;
 public class CustomerVendorServiceImpl
         implements CustomerVendorService {
 
-    private final VendorRepository vendorRepository;
+    private final UserRepository vendorRepository;
 
     private final VendorServiceRepository vendorServiceRepository;
 
@@ -36,7 +36,7 @@ public class CustomerVendorServiceImpl
 
         for (VendorService service : services) {
 
-            Vendor vendor =
+            User vendor =
                     vendorRepository
                             .findById(service.getVendorId())
                             .orElse(null);

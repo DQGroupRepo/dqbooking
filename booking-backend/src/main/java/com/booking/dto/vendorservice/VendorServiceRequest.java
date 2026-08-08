@@ -1,6 +1,6 @@
 package com.booking.dto.vendorservice;
 
-import com.booking.dto.pricing.CreateVendorServicePricingRequest;
+import com.booking.dto.pricing.VendorServicePricingRequest;
 import com.booking.model.enums.ServiceCategory;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -56,6 +56,6 @@ public class VendorServiceRequest {
      * will automatically be created.
      */
     @Valid
-    private CreateVendorServicePricingRequest pricing;
+    private VendorServicePricingRequest pricing;
 
 }

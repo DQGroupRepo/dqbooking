@@ -12,7 +12,7 @@ import java.util.List;
 
 @Getter
 @Setter
-public class CreateVendorServicePricingRequest {
+public class VendorServicePricingRequest {
 
     @NotNull(message = "Service ID is required.")
     private String serviceId;
@@ -39,6 +39,4 @@ public class CreateVendorServicePricingRequest {
     @Valid
     private PaymentConfigurationRequest paymentConfiguration;
 
-    @Valid
-    private CancellationPolicyRequest cancellationPolicy;
 }

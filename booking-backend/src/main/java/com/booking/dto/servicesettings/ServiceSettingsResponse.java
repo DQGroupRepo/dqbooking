@@ -1,5 +1,6 @@
 package com.booking.dto.servicesettings;
 
+import com.booking.dto.pricing.CancellationPolicyResponse;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -19,9 +20,7 @@ public class ServiceSettingsResponse {
 
     private Integer balanceDueDays;
 
-    private Integer freeCancellationDays;
-
-    private Integer cancellationFeePercentage;
+    private CancellationPolicyResponse cancellationPolicy;
 
     private Boolean active;
 

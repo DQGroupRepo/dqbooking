@@ -1,10 +1,6 @@
 package com.booking.service;
 
-import com.booking.dto.booking.BookingResponse;
-import com.booking.dto.booking.CreateBookingRequest;
-import com.booking.dto.booking.BookingCancellationResponse;
-import com.booking.dto.booking.CustomerBookingDetailsResponse;
-import com.booking.dto.booking.CustomerBookingSummaryResponse;
+import com.booking.dto.booking.*;
 
 import java.util.List;
 
@@ -25,6 +21,10 @@ public interface BookingService {
     );
 
     BookingCancellationResponse cancelBooking(
+            String bookingId
+    );
+
+    CancellationPreviewResponse getCancellationPreview(
             String bookingId
     );
 }

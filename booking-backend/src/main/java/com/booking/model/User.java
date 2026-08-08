@@ -29,13 +29,41 @@ public class User extends BaseEntity {
 
     private LocalDateTime lastLogin;
 
+    /*
+     * =========================================
+     * VENDOR PROFILE
+     * =========================================
+     *
+     * These fields are populated only when
+     * this User has role VENDOR.
+     */
+
+    private String businessName;
+
+    private String city;
+
+    private String address;
+
+    private String description;
+
+    private Double rating = 0.0;
+
+    private Integer totalReviews = 0;
+
+    private Boolean verified = false;
+
     public String getFullName() {
 
-        String first = firstName == null ? "" : firstName.trim();
-        String last = lastName == null ? "" : lastName.trim();
+        String first =
+                firstName == null
+                        ? ""
+                        : firstName.trim();
+
+        String last =
+                lastName == null
+                        ? ""
+                        : lastName.trim();
 
         return (first + " " + last).trim();
-
     }
-
 }

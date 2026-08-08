@@ -4,10 +4,19 @@ import com.booking.dto.servicesettings.ServiceSettingsResponse;
 import com.booking.mapper.ServiceSettingsMapper;
 import com.booking.model.ServiceSettings;
 import org.springframework.stereotype.Component;
+import com.booking.mapper.CancellationPolicyMapper;
 
 @Component
 public class ServiceSettingsMapperImpl
         implements ServiceSettingsMapper {
+
+    private final CancellationPolicyMapper cancellationPolicyMapper;
+
+    public ServiceSettingsMapperImpl(
+            CancellationPolicyMapper cancellationPolicyMapper
+    ) {
+        this.cancellationPolicyMapper = cancellationPolicyMapper;
+    }
 
     @Override
     public ServiceSettingsResponse toResponse(ServiceSettings settings) {
@@ -24,9 +33,11 @@ public class ServiceSettingsMapperImpl
         response.setDepositPercentage(settings.getDepositPercentage());
         response.setBalanceDueDays(settings.getBalanceDueDays());
 
-        response.setFreeCancellationDays(settings.getFreeCancellationDays());
-        response.setCancellationFeePercentage(settings.getCancellationFeePercentage());
-
+        response.setCancellationPolicy(
+                cancellationPolicyMapper.toResponse(
+                        settings.getCancellationPolicy()
+                )
+        );
         response.setActive(settings.getActive());
         response.setInstantBooking(settings.getInstantBooking());
 

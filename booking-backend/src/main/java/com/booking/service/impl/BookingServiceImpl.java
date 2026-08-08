@@ -1,18 +1,13 @@
 package com.booking.service.impl;
 
-import com.booking.dto.booking.BookingCancellationResponse;
-import com.booking.dto.booking.BookingResponse;
-import com.booking.dto.booking.CreateBookingRequest;
-import com.booking.dto.booking.CustomerBookingDetailsResponse;
+import com.booking.dto.booking.*;
 import com.booking.dto.pricing.PricingCalculationResult;
 import com.booking.exception.BookingNotFoundException;
 import com.booking.exception.ResourceNotFoundException;
 import com.booking.helper.BookingHelper;
 import com.booking.mapper.BookingMapper;
 import com.booking.model.*;
-import com.booking.model.embedded.BookingDiscountSnapshot;
-import com.booking.model.embedded.BookingPricingHeadSnapshot;
-import com.booking.model.embedded.BookingPricingSnapshot;
+import com.booking.model.embedded.*;
 import com.booking.model.enums.BookingStatus;
 import com.booking.model.enums.NotificationType;
 import com.booking.model.enums.PaymentStatus;
@@ -29,6 +24,8 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 @Service
@@ -40,6 +37,8 @@ public class BookingServiceImpl implements BookingService
 
     private final VendorServiceRepository vendorServiceRepository;
 
+    private final UserRepository vendorRepository;
+
     private final AuthenticatedUserService authenticatedUserService;
 
     private final BookingNumberGenerator bookingNumberGenerator;
@@ -48,13 +47,13 @@ public class BookingServiceImpl implements BookingService
 
     private final BookingHelper bookingHelper;
 
-    private final VendorRepository vendorRepository;
-
     private final NotificationService notificationService;
 
     private final PricingCalculationService pricingCalculationService;
 
    private final UserRepository userRepository;
+
+   private final ServiceSettingsRepository serviceSettingsRepository;
 
    private final VendorServicePricingRepository pricingRepository;
 
@@ -98,7 +97,7 @@ public class BookingServiceImpl implements BookingService
                 * =========================================
                 */
 
-               Vendor vendor =
+               User vendor =
                        vendorRepository
                                .findById(
                                        vendorService.getVendorId()
@@ -230,7 +229,7 @@ public class BookingServiceImpl implements BookingService
                        BigDecimal.ZERO
                );
 
-
+               booking.setCreatedAt(LocalDateTime.now());
                /*
                 * =========================================
                 * 8. SAVE BOOKING
@@ -250,7 +249,7 @@ public class BookingServiceImpl implements BookingService
                 */
 
                notificationService.createNotification(
-                       vendor.getUserId(),
+                       vendor.getId(),
 
                        NotificationType.BOOKING,
 
@@ -582,64 +581,16 @@ public class BookingServiceImpl implements BookingService
                                        "Booking not found."
                                ));
 
-       /*
-        * Ownership validation
-        */
-
-       if (!booking.getCustomerId().equals(customer.getId())) {
-
-           throw new AccessDeniedException(
-                   "You cannot cancel this booking."
-           );
-
-       }
+       validateCancellation(booking, customer);
 
        /*
-        * Already cancelled?
-        */
-
-       if (booking.getStatus() == BookingStatus.CANCELLED) {
-
-           throw new IllegalStateException(
-                   "Booking is already cancelled."
-           );
-
-       }
-
-       /*
-        * Completed booking cannot be cancelled
-        */
-
-       if (booking.getStatus() == BookingStatus.COMPLETED) {
-
-           throw new IllegalStateException(
-                   "Completed booking cannot be cancelled."
-           );
-
-       }
-
-       /*
-        * Event already started
-        */
-
-       if (booking.getEventDate().isBefore(LocalDate.now())) {
-
-           throw new IllegalStateException(
-                   "Past bookings cannot be cancelled."
-           );
-
-       }
-
-       /*
-        * TODO
         * Calculate cancellation charges
         */
 
-       BigDecimal cancellationCharge =
-               BigDecimal.ZERO;
-
-       BigDecimal refundableAmount =
-               booking.getPaidAmount();
+       CancellationCalculation calculation =
+               calculateCancellation(
+                       booking
+               );
 
        /*
         * Update booking
@@ -654,8 +605,23 @@ public class BookingServiceImpl implements BookingService
            booking.setPaymentStatus(
                    PaymentStatus.REFUND_PENDING
            );
-
        }
+
+       booking.setCancelledAt(
+               LocalDateTime.now()
+       );
+
+       booking.setRefundPercentage(
+               calculation.getRefundPercentage()
+       );
+
+       booking.setCancellationCharge(
+               calculation.getCancellationCharge()
+       );
+
+       booking.setRefundableAmount(
+               calculation.getRefundableAmount()
+       );
 
        bookingRepository.save(
                booking
@@ -681,11 +647,11 @@ public class BookingServiceImpl implements BookingService
                )
 
                .cancellationCharge(
-                       cancellationCharge
+                       calculation.getCancellationCharge()
                )
 
                .refundableAmount(
-                       refundableAmount
+                       calculation.getRefundableAmount()
                )
 
                .message(
@@ -701,9 +667,340 @@ public class BookingServiceImpl implements BookingService
            String bookingId
    ) {
 
-       throw new UnsupportedOperationException(
-               "Booking details API not implemented yet."
+       String email =
+               SecurityUtil.getCurrentUserEmail();
+
+       User customer =
+               userRepository
+                       .findByEmail(email)
+                       .orElseThrow(() ->
+                               new ResourceNotFoundException(
+                                       "Authenticated user not found."
+                               ));
+
+       Booking booking =
+               bookingRepository
+                       .findById(bookingId)
+                       .orElseThrow(() ->
+                               new ResourceNotFoundException(
+                                       "Booking not found."
+                               ));
+
+       if (!booking.getCustomerId().equals(customer.getId())) {
+
+           throw new AccessDeniedException(
+                   "You cannot view this booking."
+           );
+
+       }
+
+       User vendor =
+               userRepository
+                       .findById(booking.getVendorId())
+                       .orElseThrow(() ->
+                               new ResourceNotFoundException(
+                                       "Vendor not found."
+                               ));
+
+       BookingPricingSnapshot snapshot =
+               booking.getPricingSnapshot();
+
+       return CustomerBookingDetailsResponse
+               .builder()
+
+               .bookingId(booking.getId())
+               .bookingNumber(booking.getBookingNumber())
+
+               .serviceId(booking.getServiceId())
+               .serviceName(booking.getServiceName())
+
+               .vendorId(vendor.getId())
+               .vendorName(vendor.getFullName())
+               .vendorPhone(vendor.getPhone())
+               .vendorEmail(vendor.getEmail())
+
+               .bookingDate(
+                       booking.getCreatedAt().toLocalDate()
+               )
+
+               .eventDate(booking.getEventDate())
+
+               .guestCount(booking.getGuestCount())
+
+               .eventType(booking.getEventType())
+
+               .specialRequest(booking.getSpecialRequest())
+
+               .bookingStatus(booking.getStatus())
+
+               .paymentStatus(booking.getPaymentStatus())
+
+               .baseAmount(snapshot.getBaseAmount())
+               .subtotal(snapshot.getSubtotal())
+               .discountAmount(snapshot.getDiscountAmount())
+               .totalAmount(snapshot.getTotalAmount())
+               .advanceAmount(snapshot.getAdvanceAmount())
+               .balanceAmount(snapshot.getBalanceAmount())
+
+               .paidAmount(booking.getPaidAmount())
+
+               .pricingHeads(snapshot.getPricingHeads())
+               .discounts(snapshot.getDiscounts())
+
+               .cancelledAt(
+                       booking.getCancelledAt()
+               )
+
+               .refundPercentage(
+                       booking.getRefundPercentage()
+               )
+
+               .cancellationCharge(
+                       booking.getCancellationCharge()
+               )
+
+               .refundableAmount(
+                       booking.getRefundableAmount()
+               )
+
+               .build();
+
+   }
+
+   @Override
+   public CancellationPreviewResponse getCancellationPreview(
+           String bookingId
+   ) {
+
+       String email =
+               SecurityUtil.getCurrentUserEmail();
+       System.out.println("Logged in email = " + email);
+       User customer =
+               userRepository
+                       .findByEmail(email)
+                       .orElseThrow(() ->
+                               new ResourceNotFoundException(
+                                       "Authenticated user not found."
+                               ));
+
+       Booking booking =
+               bookingRepository
+                       .findById(bookingId)
+                       .orElseThrow(() ->
+                               new ResourceNotFoundException(
+                                       "Booking not found."
+                               ));
+
+       validateCancellation(
+               booking,
+               customer
        );
+
+       CancellationCalculation calculation =
+               calculateCancellation(
+                       booking
+               );
+
+       return CancellationPreviewResponse
+               .builder()
+
+               .bookingId(
+                       booking.getId()
+               )
+
+               .bookingNumber(
+                       booking.getBookingNumber()
+               )
+
+               .eventDate(
+                       booking.getEventDate()
+               )
+
+               .totalAmount(
+                       booking.getTotalAmount()
+               )
+
+               .paidAmount(
+                       booking.getPaidAmount()
+               )
+
+               .daysBeforeEvent(
+                       calculation.getDaysBeforeEvent()
+               )
+
+               .refundPercentage(
+                       calculation.getRefundPercentage()
+               )
+
+               .refundableAmount(
+                       calculation.getRefundableAmount()
+               )
+
+               .cancellationCharge(
+                       calculation.getCancellationCharge()
+               )
+
+               .processingDays(
+                       calculation.getProcessingDays()
+               )
+
+               .cancellationAllowed(
+                       true
+               )
+
+               .build();
+
+   }
+
+   private CancellationCalculation calculateCancellation(
+           Booking booking
+   ) {
+
+       ServiceSettings settings =
+               serviceSettingsRepository
+                       .findByServiceId(
+                               booking.getServiceId()
+                       )
+                       .orElseThrow(() ->
+                               new ResourceNotFoundException(
+                                       "Service settings not found."
+                               ));
+
+       CancellationPolicy policy =
+               settings.getCancellationPolicy();
+
+       long daysBeforeEvent =
+
+               ChronoUnit.DAYS.between(
+
+                       LocalDate.now(),
+
+                       booking.getEventDate()
+
+               );
+
+       RefundRule matchedRule =
+
+               policy.getRefundRules()
+
+                       .stream()
+
+                       .filter(rule -> {
+
+                           boolean minimum =
+
+                                   daysBeforeEvent >=
+                                           rule.getMinDaysBeforeEvent();
+
+                           boolean maximum =
+
+                                   rule.getMaxDaysBeforeEvent() == null ||
+
+                                           daysBeforeEvent <=
+                                                   rule.getMaxDaysBeforeEvent();
+
+                           return minimum && maximum;
+
+                       })
+
+                       .findFirst()
+
+                       .orElse(null);
+
+       int refundPercentage =
+
+               matchedRule == null
+
+                       ? 0
+
+                       : matchedRule.getRefundPercentage();
+
+       BigDecimal refundableAmount =
+
+               booking.getPaidAmount()
+
+                       .multiply(
+
+                               BigDecimal.valueOf(refundPercentage)
+
+                       )
+
+                       .divide(
+
+                               BigDecimal.valueOf(100)
+
+                       );
+
+       BigDecimal cancellationCharge =
+
+               booking.getPaidAmount()
+
+                       .subtract(refundableAmount);
+
+       return CancellationCalculation
+
+               .builder()
+
+               .daysBeforeEvent(
+                       (int) daysBeforeEvent
+               )
+
+               .refundPercentage(
+                       refundPercentage
+               )
+
+               .refundableAmount(
+                       refundableAmount
+               )
+
+               .cancellationCharge(
+                       cancellationCharge
+               )
+
+               .processingDays(
+                       policy.getProcessingDays()
+               )
+
+               .build();
+
+   }
+
+   private void validateCancellation(
+           Booking booking,
+           User customer
+   ) {
+
+       if (!booking.getCustomerId().equals(customer.getId())) {
+
+           throw new AccessDeniedException(
+                   "You cannot cancel this booking."
+           );
+
+       }
+
+       if (booking.getStatus() == BookingStatus.CANCELLED) {
+
+           throw new IllegalStateException(
+                   "Booking is already cancelled."
+           );
+
+       }
+
+       if (booking.getStatus() == BookingStatus.COMPLETED) {
+
+           throw new IllegalStateException(
+                   "Completed booking cannot be cancelled."
+           );
+
+       }
+
+       if (booking.getEventDate().isBefore(LocalDate.now())) {
+
+           throw new IllegalStateException(
+                   "Past bookings cannot be cancelled."
+           );
+
+       }
 
    }
 }

@@ -4,8 +4,7 @@ import com.booking.dto.revenue.MonthlyRevenueResponse;
 import com.booking.dto.revenue.PaymentHistoryResponse;
 import com.booking.dto.revenue.RevenueSummaryResponse;
 import com.booking.model.Booking;
-import com.booking.model.Vendor;
-import com.booking.model.enums.PaymentStatus;
+import com.booking.model.User;
 import com.booking.repository.BookingRepository;
 import com.booking.service.AuthenticatedUserService;
 import com.booking.service.RevenueService;
@@ -31,7 +30,7 @@ public class RevenueServiceImpl implements RevenueService {
     @Override
     public RevenueSummaryResponse getSummary() {
 
-        Vendor vendor =
+        User vendor =
                 authenticatedUserService.getCurrentVendor();
 
         List<Booking> bookings =
@@ -92,7 +91,7 @@ public class RevenueServiceImpl implements RevenueService {
     @Override
     public List<MonthlyRevenueResponse> getMonthlyRevenue() {
 
-        Vendor vendor =
+        User vendor =
                 authenticatedUserService.getCurrentVendor();
 
         List<Booking> bookings =
@@ -124,7 +123,7 @@ public class RevenueServiceImpl implements RevenueService {
     @Override
     public List<PaymentHistoryResponse> getPaymentHistory() {
 
-        Vendor vendor =
+        User vendor =
                 authenticatedUserService.getCurrentVendor();
 
         return bookingRepository

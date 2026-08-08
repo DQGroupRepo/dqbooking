@@ -2,16 +2,16 @@ package com.booking.mapper;
 
 import com.booking.dto.vendorprofile.UpdateVendorProfileRequest;
 import com.booking.dto.vendorprofile.VendorProfileResponse;
-import com.booking.model.Vendor;
+import com.booking.model.User;
 
 public interface VendorProfileMapper {
 
     VendorProfileResponse toResponse(
-            Vendor vendor
+            User vendor
     );
 
     void updateEntity(
-            Vendor vendor,
+            User vendor,
             UpdateVendorProfileRequest request
     );
 

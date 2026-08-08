@@ -1,7 +1,6 @@
 package com.booking.service;
 
 import com.booking.model.User;
-import com.booking.model.Vendor;
 
 public interface AuthenticatedUserService {
 
@@ -9,6 +8,6 @@ public interface AuthenticatedUserService {
 
     User getCurrentCustomer();
 
-    Vendor getCurrentVendor();
+    User getCurrentVendor();
 
 }

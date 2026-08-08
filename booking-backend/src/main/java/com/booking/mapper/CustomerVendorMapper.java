@@ -2,18 +2,18 @@ package com.booking.mapper;
 
 import com.booking.dto.customer.VendorDetailResponse;
 import com.booking.dto.customer.VendorListingResponse;
-import com.booking.model.Vendor;
+import com.booking.model.User;
 import com.booking.model.VendorService;
 
 public interface CustomerVendorMapper {
 
     VendorListingResponse toListing(
-            Vendor vendor,
+            User vendor,
             VendorService service
     );
 
     VendorDetailResponse toDetail(
-            Vendor vendor,
+            User vendor,
             VendorService service
     );
 

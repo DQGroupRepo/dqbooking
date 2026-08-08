@@ -1,12 +1,9 @@
 package com.booking.service.impl;
 
 import com.booking.exception.ResourceNotFoundException;
-import com.booking.exception.VendorNotFoundException;
 import com.booking.model.User;
-import com.booking.model.Vendor;
 import com.booking.model.enums.Role;
 import com.booking.repository.UserRepository;
-import com.booking.repository.VendorRepository;
 import com.booking.service.AuthenticatedUserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
@@ -18,9 +15,6 @@ import org.springframework.stereotype.Service;
 @Service
 @RequiredArgsConstructor
 public class AuthenticatedUserServiceImpl implements AuthenticatedUserService {
-
-    private final UserRepository userRepository;
-    private final VendorRepository vendorRepository;
 
     @Override
     public User getCurrentUser() {
@@ -50,17 +44,18 @@ public class AuthenticatedUserServiceImpl implements AuthenticatedUserService {
     }
 
     @Override
-    public Vendor getCurrentVendor() {
+    public User getCurrentVendor() {
 
         User user = getCurrentUser();
 
         if (user.getRole() != Role.VENDOR) {
-            throw new AccessDeniedException("Vendor access required.");
+
+            throw new AccessDeniedException(
+                    "Vendor access required."
+            );
         }
 
-        return vendorRepository.findByUserId(user.getId())
-                .orElseThrow(() ->
-                        new VendorNotFoundException(user.getId()));
+        return user;
     }
 
 }

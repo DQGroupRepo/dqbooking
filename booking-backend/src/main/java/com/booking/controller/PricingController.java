@@ -1,6 +1,6 @@
 package com.booking.controller;
 
-import com.booking.dto.pricing.CreateVendorServicePricingRequest;
+import com.booking.dto.pricing.VendorServicePricingRequest;
 import com.booking.dto.pricing.PricingCalculationResult;
 import com.booking.dto.pricing.VendorServicePricingResponse;
 import com.booking.service.PricingCalculationService;
@@ -81,7 +81,7 @@ public class PricingController {
 
             @Valid
             @RequestBody
-            CreateVendorServicePricingRequest request
+            VendorServicePricingRequest request
 
     ) {
 

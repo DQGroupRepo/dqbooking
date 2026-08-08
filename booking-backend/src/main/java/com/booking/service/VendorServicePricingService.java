@@ -1,6 +1,6 @@
 package com.booking.service;
 
-import com.booking.dto.pricing.CreateVendorServicePricingRequest;
+import com.booking.dto.pricing.VendorServicePricingRequest;
 import com.booking.dto.pricing.VendorServicePricingResponse;
 
 public interface VendorServicePricingService {
@@ -9,7 +9,7 @@ public interface VendorServicePricingService {
      * Create a new pricing version.
      */
     VendorServicePricingResponse createPricing(
-            CreateVendorServicePricingRequest request
+            VendorServicePricingRequest request
     );
 
 

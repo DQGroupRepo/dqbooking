@@ -1,7 +1,7 @@
 package com.booking.service.impl;
 
 import com.booking.dto.servicesettings.ServiceSettingsResponse;
-import com.booking.dto.servicesettings.UpdateServiceSettingsRequest;
+import com.booking.dto.servicesettings.ServiceSettingsRequest;
 import com.booking.exception.ResourceNotFoundException;
 import com.booking.mapper.ServiceSettingsMapper;
 import com.booking.model.ServiceSettings;
@@ -13,6 +13,7 @@ import com.booking.service.ServiceSettingsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
+import com.booking.mapper.CancellationPolicyMapper;
 
 @Service
 @RequiredArgsConstructor
@@ -26,6 +27,8 @@ public class ServiceSettingsServiceImpl
     private final ServiceSettingsMapper serviceSettingsMapper;
 
     private final AuthenticatedUserService authenticatedUserService;
+
+    private final CancellationPolicyMapper cancellationPolicyMapper;
 
     @Override
     public ServiceSettingsResponse getSettings(String serviceId) {
@@ -58,7 +61,7 @@ public class ServiceSettingsServiceImpl
     @Override
     public ServiceSettingsResponse updateSettings(
             String serviceId,
-            UpdateServiceSettingsRequest request) {
+            ServiceSettingsRequest request) {
 
         VendorService vendorService =
                 vendorServiceRepository.findById(serviceId)
@@ -89,9 +92,17 @@ public class ServiceSettingsServiceImpl
 
         settings.setDepositPercentage(request.getDepositPercentage());
         settings.setBalanceDueDays(request.getBalanceDueDays());
+        if (request.getCancellationPolicy() != null) {
 
-        settings.setFreeCancellationDays(request.getFreeCancellationDays());
-        settings.setCancellationFeePercentage(request.getCancellationFeePercentage());
+            settings.setCancellationPolicy(
+
+                    cancellationPolicyMapper.toEntity(
+                            request.getCancellationPolicy()
+                    )
+
+            );
+
+        }
 
         settings.setActive(request.getActive());
         settings.setInstantBooking(request.getInstantBooking());
@@ -116,9 +127,9 @@ public class ServiceSettingsServiceImpl
 
         settings.setDepositPercentage(25);
         settings.setBalanceDueDays(7);
-
-        settings.setFreeCancellationDays(15);
-        settings.setCancellationFeePercentage(20);
+        settings.setCancellationPolicy(
+                cancellationPolicyMapper.defaultPolicy()
+        );
 
         settings.setActive(true);
         settings.setInstantBooking(false);

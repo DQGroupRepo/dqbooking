@@ -1,5 +1,6 @@
 package com.booking.model;
 
+import com.booking.model.embedded.CancellationPolicy;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -64,7 +65,8 @@ public class VendorServicePricing extends BaseEntity {
     private PaymentConfiguration paymentConfiguration;
 
     /*
-     * Cancellation policy.
+     * Cancellation policy configured by the vendor.
      */
-    private CancellationPolicy cancellationPolicy;
+    private CancellationPolicy cancellationPolicy =
+            new CancellationPolicy();
 }

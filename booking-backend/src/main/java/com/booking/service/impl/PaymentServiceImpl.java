@@ -6,7 +6,6 @@ import com.booking.mapper.PaymentMapper;
 import com.booking.model.Booking;
 import com.booking.model.PaymentTransaction;
 import com.booking.model.User;
-import com.booking.model.Vendor;
 import com.booking.model.enums.PaymentStatus;
 import com.booking.repository.BookingRepository;
 import com.booking.repository.PaymentTransactionRepository;
@@ -167,7 +166,7 @@ public class PaymentServiceImpl
     @Override
     public List<PaymentResponse> getVendorPayments() {
 
-        Vendor vendor =
+        User vendor =
 
                 authenticatedUserService
 

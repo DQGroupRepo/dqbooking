@@ -1,11 +1,11 @@
 package com.booking.mapper;
 
-import com.booking.dto.pricing.CreateVendorServicePricingRequest;
+import com.booking.dto.pricing.VendorServicePricingRequest;
 import com.booking.dto.vendorservice.ServicePricingDto;
 
 public interface PricingRequestMapper {
 
-    CreateVendorServicePricingRequest toPricingRequest(
+    VendorServicePricingRequest toPricingRequest(
             ServicePricingDto dto
     );
 

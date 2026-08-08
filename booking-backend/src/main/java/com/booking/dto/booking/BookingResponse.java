@@ -9,6 +9,7 @@ import lombok.Getter;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Getter
 @Builder
@@ -53,4 +54,12 @@ public class BookingResponse extends BaseEntity {
     private BookingPricingResponse pricing;
 
     private boolean cancellable;
+
+    private LocalDateTime cancelledAt;
+
+    private Integer refundPercentage;
+
+    private BigDecimal cancellationCharge;
+
+    private BigDecimal refundableAmount;
 }

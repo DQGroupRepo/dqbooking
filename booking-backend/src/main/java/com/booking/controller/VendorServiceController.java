@@ -3,7 +3,7 @@ package com.booking.controller;
 import com.booking.dto.booking.BookingResponse;
 import com.booking.dto.review.ReviewResponse;
 import com.booking.dto.servicesettings.ServiceSettingsResponse;
-import com.booking.dto.servicesettings.UpdateServiceSettingsRequest;
+import com.booking.dto.servicesettings.ServiceSettingsRequest;
 import com.booking.dto.vendorservice.*;
 import com.booking.service.BookingService;
 import com.booking.service.ReviewService;
@@ -123,7 +123,7 @@ public class VendorServiceController {
     @PutMapping("/{serviceId}/settings")
     public ResponseEntity<ServiceSettingsResponse> updateSettings(
             @PathVariable String serviceId,
-            @Valid @RequestBody UpdateServiceSettingsRequest request) {
+            @Valid @RequestBody ServiceSettingsRequest request) {
 
         return ResponseEntity.ok(
                 serviceSettingsService.updateSettings(

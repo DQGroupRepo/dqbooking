@@ -4,11 +4,9 @@ import com.booking.dto.vendorservice.DashboardResponse;
 import com.booking.dto.vendorservice.RecentBookingDto;
 import com.booking.model.Booking;
 import com.booking.model.User;
-import com.booking.model.Vendor;
 import com.booking.model.enums.BookingStatus;
 import com.booking.repository.BookingRepository;
 import com.booking.repository.UserRepository;
-import com.booking.repository.VendorRepository;
 import com.booking.repository.VendorServiceRepository;
 import com.booking.service.AuthenticatedUserService;
 import com.booking.service.VendorDashboardService;
@@ -26,8 +24,6 @@ public class VendorDashboardServiceImpl
 
     private final BookingRepository bookingRepository;
 
-    private final VendorRepository vendorRepository;
-
     private final VendorServiceRepository vendorServiceRepository;
 
     private final UserRepository userRepository;
@@ -37,7 +33,7 @@ public class VendorDashboardServiceImpl
     @Override
     public DashboardResponse getDashboard() {
 
-        Vendor vendor =
+        User vendor =
                 authenticatedUserService.getCurrentVendor();
 
         List<Booking> bookings =

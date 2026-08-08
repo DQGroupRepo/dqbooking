@@ -2,14 +2,14 @@ package com.booking.mapper;
 
 import com.booking.dto.vendorservice.VendorServiceRequest;
 import com.booking.dto.vendorservice.VendorServiceResponse;
-import com.booking.model.Vendor;
+import com.booking.model.User;
 import com.booking.model.VendorService;
 
 public interface VendorServiceMapper {
 
     VendorService toEntity(
             VendorServiceRequest request,
-            Vendor vendor
+            User vendor
     );
 
     VendorServiceResponse toResponse(

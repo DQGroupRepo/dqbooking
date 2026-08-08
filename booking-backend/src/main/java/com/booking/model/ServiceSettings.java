@@ -1,5 +1,6 @@
 package com.booking.model;
 
+import com.booking.model.embedded.CancellationPolicy;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -30,11 +31,13 @@ public class ServiceSettings extends BaseEntity {
     private Integer balanceDueDays;
 
     /*
-     * Cancellation Policy
+     * =========================================
+     * CANCELLATION POLICY
+     * =========================================
      */
-    private Integer freeCancellationDays;
 
-    private Integer cancellationFeePercentage;
+    private CancellationPolicy cancellationPolicy =
+            new CancellationPolicy();
 
     /*
      * Visibility

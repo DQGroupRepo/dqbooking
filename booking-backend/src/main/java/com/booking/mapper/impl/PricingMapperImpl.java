@@ -2,18 +2,26 @@ package com.booking.mapper.impl;
 
 import com.booking.dto.pricing.*;
 import com.booking.mapper.PricingMapper;
+import com.booking.mapper.CancellationPolicyMapper;
 import com.booking.model.*;
 import org.springframework.stereotype.Component;
 
 import java.util.Collections;
-import java.util.List;
 
 @Component
 public class PricingMapperImpl implements PricingMapper {
 
+    private final CancellationPolicyMapper cancellationPolicyMapper;
+
+    public PricingMapperImpl(
+            CancellationPolicyMapper cancellationPolicyMapper
+    ) {
+        this.cancellationPolicyMapper = cancellationPolicyMapper;
+    }
+
     @Override
     public VendorServicePricing toEntity(
-            CreateVendorServicePricingRequest request
+            VendorServicePricingRequest request
     ) {
 
         VendorServicePricing pricing =
@@ -52,12 +60,6 @@ public class PricingMapperImpl implements PricingMapper {
         pricing.setPaymentConfiguration(
                 toPaymentConfiguration(
                         request.getPaymentConfiguration()
-                )
-        );
-
-        pricing.setCancellationPolicy(
-                toCancellationPolicy(
-                        request.getCancellationPolicy()
                 )
         );
 
@@ -167,66 +169,6 @@ public class PricingMapperImpl implements PricingMapper {
         return configuration;
     }
 
-
-    private CancellationPolicy toCancellationPolicy(
-            CancellationPolicyRequest request
-    ) {
-
-        if (request == null) {
-
-            return null;
-
-        }
-
-        CancellationPolicy policy =
-                new CancellationPolicy();
-
-        policy.setCancellationAllowed(
-                request.getCancellationAllowed()
-        );
-
-        policy.setActive(
-                request.getActive()
-        );
-
-        if (request.getRules() != null) {
-
-            policy.setRules(
-
-                    request.getRules()
-                            .stream()
-                            .map(ruleRequest -> {
-
-                                CancellationRule rule =
-                                        new CancellationRule();
-
-                                rule.setMinimumDaysBeforeEvent(
-                                        ruleRequest
-                                                .getMinimumDaysBeforeEvent()
-                                );
-
-                                rule.setChargeType(
-                                        ruleRequest
-                                                .getChargeType()
-                                );
-
-                                rule.setChargeValue(
-                                        ruleRequest
-                                                .getChargeValue()
-                                );
-
-                                return rule;
-
-                            })
-                            .toList()
-            );
-
-        }
-
-        return policy;
-    }
-
-
     @Override
     public VendorServicePricingResponse toResponse(
             VendorServicePricing pricing
@@ -335,6 +277,45 @@ public class PricingMapperImpl implements PricingMapper {
                                 .toList()
                 )
 
+                .paymentConfiguration(
+                        toPaymentConfigurationResponse(
+                                pricing.getPaymentConfiguration()
+                        )
+                )
+
                 .build();
+    }
+
+    private PaymentConfigurationResponse toPaymentConfigurationResponse(
+            PaymentConfiguration configuration
+    ) {
+
+        if (configuration == null) {
+
+            return null;
+
+        }
+
+        return PaymentConfigurationResponse
+                .builder()
+
+                .advancePaymentAllowed(
+                        configuration.getAdvancePaymentAllowed()
+                )
+
+                .advancePercentage(
+                        configuration.getAdvancePercentage()
+                )
+
+                .payAfterConfirmation(
+                        configuration.getPayAfterConfirmation()
+                )
+
+                .discussWithVendor(
+                        configuration.getDiscussWithVendor()
+                )
+
+                .build();
+
     }
 }
