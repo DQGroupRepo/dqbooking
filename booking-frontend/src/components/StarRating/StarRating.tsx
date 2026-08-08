@@ -16,27 +16,33 @@ const StarRating = ({value,onChange}:StarRatingProps)=>{
 
         <div className="star-rating">
 
-            {[1,2,3,4,5].map((star)=>(
+            {[1, 2, 3, 4, 5].map((star) => (
 
                 <span
-
                     key={star}
 
                     className={
                         star <= (hover || value)
-                        ? "active-star"
-                        : ""
+                            ? "active-star"
+                            : ""
                     }
 
-                    onMouseEnter={()=>setHover(star)}
+                    onMouseEnter={() =>
+                        setHover(star)
+                    }
 
-                    onMouseLeave={()=>setHover(0)}
+                    onMouseLeave={() =>
+                        setHover(0)
+                    }
 
-                    onClick={()=>onChange(star)}
-
+                    onClick={() =>
+                        onChange(star)
+                    }
                 >
 
-                    ★
+                    {star <= (hover || value)
+                        ? "★"
+                        : "☆"}
 
                 </span>
 

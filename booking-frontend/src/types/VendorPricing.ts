@@ -35,3 +35,4 @@ export interface VendorServicePricing{
     discounts:VendorDiscount[];
 
 }
+

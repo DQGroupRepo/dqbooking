@@ -3,8 +3,13 @@ import { useParams } from "react-router-dom";
 import toast from "react-hot-toast";
 
 import ServiceSettingsService from "../../services/ServiceSettingsService";
+import BookingSettingsSection from "../../components/vendor/settings/BookingSettingsSection";
+import CancellationPolicySection from "../../components/vendor/settings/CancellationPolicySection";
 
-import type { ServiceSettings } from "../../types/ServiceSettings";
+import type {
+    ServiceSettings,
+    RefundRule
+} from "../../types/ServiceSettings";
 
 import "./ServiceSettings.css";
 
@@ -25,36 +30,13 @@ export default function ServiceSettings() {
 
     }, [serviceId]);
 
-    async function loadSettings(
-        serviceId: string
-    ) {
+    async function loadSettings(id: string) {
 
         const data =
             await ServiceSettingsService
-                .getSettings(serviceId);
+                .getSettings(id);
 
         setSettings(data);
-
-    }
-
-    function handleChange(
-        e: React.ChangeEvent<HTMLInputElement>
-    ) {
-
-        if (!settings) return;
-
-        const { name, value, type, checked } = e.target;
-
-        setSettings({
-
-            ...settings,
-
-            [name]:
-                type === "checkbox"
-                    ? checked
-                    : Number(value)
-
-        });
 
     }
 
@@ -62,12 +44,183 @@ export default function ServiceSettings() {
 
         if (!serviceId || !settings) return;
 
-        await ServiceSettingsService
-            .updateSettings(serviceId, settings);
+        await ServiceSettingsService.updateSettings(
+
+            serviceId,
+
+            settings
+
+        );
 
         toast.success("Settings updated.");
 
     }
+
+    function handleNumberChange(
+
+        e: React.ChangeEvent<HTMLInputElement>
+
+    ) {
+
+        if (!settings) return;
+
+        const { name, value } = e.target;
+
+        setSettings({
+
+            ...settings,
+
+            [name]: Number(value)
+
+        });
+
+    }
+
+    function handleCheckboxChange(
+
+        e: React.ChangeEvent<HTMLInputElement>
+
+    ) {
+
+        if (!settings) return;
+
+        const { name, checked } = e.target;
+
+        setSettings({
+
+            ...settings,
+
+            [name]: checked
+
+        });
+
+    }
+
+    const updateCancellationPolicy = (
+
+        field: keyof ServiceSettings["cancellationPolicy"],
+
+        value: any
+
+    ) => {
+
+        if (!settings) return;
+
+        setSettings({
+
+            ...settings,
+
+            cancellationPolicy: {
+
+                ...settings.cancellationPolicy,
+
+                [field]: value
+
+            }
+
+        });
+
+    };
+
+    const updateRefundRule = (
+
+        index: number,
+
+        field: keyof RefundRule,
+
+        value: number | null
+
+    ) => {
+
+        if (!settings) return;
+
+        const rules = [...settings.cancellationPolicy.refundRules];
+
+        rules[index] = {
+
+            ...rules[index],
+
+            [field]: value
+
+        };
+
+        setSettings({
+
+            ...settings,
+
+            cancellationPolicy: {
+
+                ...settings.cancellationPolicy,
+
+                refundRules: rules
+
+            }
+
+        });
+
+    };
+
+    const addRefundRule = () => {
+
+        if (!settings) return;
+
+        setSettings({
+
+            ...settings,
+
+            cancellationPolicy: {
+
+                ...settings.cancellationPolicy,
+
+                refundRules: [
+
+                    ...settings.cancellationPolicy.refundRules,
+
+                    {
+
+                        minDaysBeforeEvent: 0,
+
+                        maxDaysBeforeEvent: null,
+
+                        refundPercentage: 100
+
+                    }
+
+                ]
+
+            }
+
+        });
+
+    };
+
+    const removeRefundRule = (
+
+        index: number
+
+    ) => {
+
+        if (!settings) return;
+
+        const rules = [...settings.cancellationPolicy.refundRules];
+
+        rules.splice(index, 1);
+
+        setSettings({
+
+            ...settings,
+
+            cancellationPolicy: {
+
+                ...settings.cancellationPolicy,
+
+                refundRules: rules
+
+            }
+
+        });
+
+    };
 
     if (!settings) {
 
@@ -79,152 +232,115 @@ export default function ServiceSettings() {
 
         <section className="service-settings">
 
-            <h1>Service Settings</h1>
+            <h1>
 
-            <div className="settings-grid">
+                Service Settings
 
-                <label>
+            </h1>
 
-                    Minimum Advance Booking
+            {/* ======================================
+                BOOKING RULES
+            ======================================= */}
 
-                    <input
-                        type="number"
-                        name="minimumAdvanceDays"
-                        value={settings.minimumAdvanceDays}
-                        onChange={handleChange}
-                    />
+            <BookingSettingsSection
 
-                </label>
+                settings={settings}
 
-                <label>
+                onNumberChange={handleNumberChange}
 
-                    Maximum Advance Booking
+            />
 
-                    <input
-                        type="number"
-                        name="maximumAdvanceDays"
-                        value={settings.maximumAdvanceDays}
-                        onChange={handleChange}
-                    />
+            {/* ======================================
+                CANCELLATION POLICY
+            ======================================= */}
 
-                </label>
+            <CancellationPolicySection
 
-                <label>
+                policy={settings.cancellationPolicy}
 
-                    Minimum Guests
+                updateCancellationPolicy={updateCancellationPolicy}
 
-                    <input
-                        type="number"
-                        name="minimumGuests"
-                        value={settings.minimumGuests}
-                        onChange={handleChange}
-                    />
+                updateRefundRule={updateRefundRule}
 
-                </label>
+                addRefundRule={addRefundRule}
 
-                <label>
+                removeRefundRule={removeRefundRule}
 
-                    Maximum Guests
+            />
 
-                    <input
-                        type="number"
-                        name="maximumGuests"
-                        value={settings.maximumGuests}
-                        onChange={handleChange}
-                    />
+            {/* ======================================
+                OTHER SETTINGS
+            ======================================= */}
 
-                </label>
+            <div className="settings-section">
 
-                <label>
+                <h2>
 
-                    Deposit %
+                    Other Settings
 
-                    <input
-                        type="number"
-                        name="depositPercentage"
-                        value={settings.depositPercentage}
-                        onChange={handleChange}
-                    />
+                </h2>
 
-                </label>
+                <div className="other-settings">
 
-                <label>
+                    <label className="checkbox-field">
 
-                    Balance Due (Days)
+                        <input
 
-                    <input
-                        type="number"
-                        name="balanceDueDays"
-                        value={settings.balanceDueDays}
-                        onChange={handleChange}
-                    />
+                            type="checkbox"
 
-                </label>
+                            name="active"
 
-                <label>
+                            checked={settings.active}
 
-                    Free Cancellation (Days)
+                            onChange={handleCheckboxChange}
 
-                    <input
-                        type="number"
-                        name="freeCancellationDays"
-                        value={settings.freeCancellationDays}
-                        onChange={handleChange}
-                    />
+                        />
 
-                </label>
+                        Service Active
 
-                <label>
+                    </label>
 
-                    Cancellation Fee %
+                    <label className="checkbox-field">
 
-                    <input
-                        type="number"
-                        name="cancellationFeePercentage"
-                        value={settings.cancellationFeePercentage}
-                        onChange={handleChange}
-                    />
+                        <input
 
-                </label>
+                            type="checkbox"
 
-                <label>
+                            name="instantBooking"
 
-                    <input
-                        type="checkbox"
-                        name="active"
-                        checked={settings.active}
-                        onChange={handleChange}
-                    />
+                            checked={settings.instantBooking}
 
-                    Service Active
+                            onChange={handleCheckboxChange}
 
-                </label>
+                        />
 
-                <label>
+                        Instant Booking
 
-                    <input
-                        type="checkbox"
-                        name="instantBooking"
-                        checked={settings.instantBooking}
-                        onChange={handleChange}
-                    />
+                    </label>
 
-                    Instant Booking
-
-                </label>
+                </div>
 
             </div>
 
-            <button
-                onClick={handleSave}
-            >
+            <div className="settings-actions">
 
-                Save Settings
+                <button
 
-            </button>
+                    className="settings-save-button"
+
+                    onClick={handleSave}
+
+                >
+
+                    Save Settings
+
+                </button>
+
+            </div>
 
         </section>
 
     );
 
 }
+

@@ -1,5 +1,6 @@
 import api from "../api/axiosConfig";
 import type { Booking } from "../types/Booking";
+import type { CancellationPreview } from "../types/CancellationPreview";
 
 export interface CreateBookingRequest {
   serviceId: string;
@@ -154,3 +155,48 @@ export const getPricingPreview = async (
   return response.data;
 };
 
+/*
+ * =========================================
+ * CANCELLATION PREVIEW
+ * =========================================
+ */
+
+export const getCancellationPreview = async (
+
+    bookingId: string
+
+): Promise<CancellationPreview> => {
+
+    const response =
+        await api.get<CancellationPreview>(
+
+            `/bookings/${bookingId}/cancellation-preview`
+
+        );
+
+    return response.data;
+
+};
+
+/*
+ * =========================================
+ * CANCEL BOOKING
+ * =========================================
+ */
+
+export const cancelBooking = async (
+
+    bookingId: string
+
+) => {
+
+    const response =
+        await api.patch(
+
+            `/bookings/${bookingId}/cancel`
+
+        );
+
+    return response.data;
+
+};

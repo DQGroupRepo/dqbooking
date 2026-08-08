@@ -1,19 +1,24 @@
 export interface Review {
 
-    id: number;
+    id: string;
 
-    customerName: string;
+    bookingId: string;
 
     rating: number;
 
     comment: string;
 
-    serviceName?: string;
-
-    date?: string;
-
-    status?: "Pending" | "Replied";
-
     vendorReply?: string;
 
+    reviewDate?: string;
+
+    replyDate?: string;
+
+    customerName?: string;
+
+    customerEmail?: string;
+
+    customerProfileImage?: string;
+
+    serviceName?: string;
 }

@@ -9,7 +9,6 @@ import VendorDetail from "../pages/VendorDetail/VendorDetail";
 import BookingCheckout from "../pages/BookingCheckout/BookingCheckout";
 import Login from "../pages/Login/Login";
 import Register from "../pages/Register/Register";
-import Review from "../pages/Review/Review";
 import CreateListing from "../pages/CreateListing/CreateListing";
 import VendorAddService from "../pages/VendorAddService/VendorAddService";
 import VendorServiceWorkspace from "../pages/vendor/VendorServiceWorkspace";
@@ -31,6 +30,10 @@ import VendorRegister from "../pages/vendor/VendorRegister";
 import VendorPricing from "../pages/vendor/pricing/VendorPricing";
 import BookingConfirmation from "../pages/BookingConfirmation/BookingConfirmation"
 import CustomerBookings from "../pages/Customer/CustomerBookings";
+import CustomerCancelBooking from "../pages/Customer/CustomerCancelBooking";
+import BookingCancellationSuccess from "../pages/Customer/BookingCancellationSuccess";
+import CustomerBookingDetails from "../pages/customer/CustomerBookingDetails";
+import Review from "../pages/customer/Review";
 
 const AppRoutes = () => {
 
@@ -72,7 +75,7 @@ const AppRoutes = () => {
                     />
 
                     <Route
-                        path="/review"
+                        path="/customer/bookings/:bookingId/review"
                         element={<Review />}
                     />
 
@@ -88,6 +91,21 @@ const AppRoutes = () => {
                     <Route
                         path="/customer/bookings"
                         element={<CustomerBookings />}
+                    />
+
+                    <Route
+                        path="/customer/bookings/:bookingId/cancel"
+                        element={<CustomerCancelBooking />}
+                    />
+
+                    <Route
+                        path="/customer/bookings/cancelled"
+                        element={<BookingCancellationSuccess/>}
+                    />
+
+                    <Route
+                        path="/customer/bookings/:bookingId"
+                        element={<CustomerBookingDetails />}
                     />
 
 
