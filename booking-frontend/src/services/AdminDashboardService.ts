@@ -27,6 +27,26 @@ export interface AdminDashboardData {
     totalReviews: number;
 
     recentBookings: AdminRecentBooking[];
+    bookingTrend: AdminBookingTrend[];
+
+    revenueTrend: AdminRevenueTrend[];
+    pendingActions: AdminPendingActions;
+}
+
+export interface AdminPendingActions {
+    pendingVendorVerifications: number;
+    pendingServiceModerations: number;
+    pendingBookings: number;
+}
+
+export interface AdminBookingTrend {
+    period: string;
+    bookings: number;
+}
+
+export interface AdminRevenueTrend {
+    period: string;
+    revenue: number;
 }
 
 class AdminDashboardService {

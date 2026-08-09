@@ -7,6 +7,7 @@ import com.booking.model.enums.ServiceCategory;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.data.mongodb.core.mapping.Document;
+import com.booking.model.enums.ServiceModerationStatus;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -48,5 +49,8 @@ public class VendorService extends BaseEntity {
     private List<ServiceAttribute> attributes;
 
     private String location;
+
+    private ServiceModerationStatus moderationStatus =
+            ServiceModerationStatus.PENDING;
 
 }

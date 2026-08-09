@@ -114,7 +114,7 @@ const Header = () => {
                                         to="/admin/dashboard"
                                         className="header-dashboard-link"
                                     >
-                                        Admin
+                                        Dashboard
                                     </Link>
 
                                 )}

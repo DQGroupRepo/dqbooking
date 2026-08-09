@@ -20,6 +20,14 @@ const AdminSidebar = () => {
             <nav className="admin-navigation">
 
                 <NavLink
+                    to="/"
+                    className="admin-nav-link"
+                >
+                    <span>⌂</span>
+                    Home
+                </NavLink>
+
+                <NavLink
                     to="/admin/dashboard"
                     end
                     className={({ isActive }) =>
@@ -68,6 +76,18 @@ const AdminSidebar = () => {
                 >
                     <span>★</span>
                     Reviews
+                </NavLink>
+
+                <NavLink
+                    to="/admin/vendors"
+                    className={({ isActive }) =>
+                        isActive
+                            ? "admin-nav-link active"
+                            : "admin-nav-link"
+                    }
+                >
+                    <span>◆</span>
+                    Vendor Verification
                 </NavLink>
 
             </nav>
