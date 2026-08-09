@@ -4,6 +4,8 @@ import com.booking.dto.customer.VendorListingResponse;
 import com.booking.mapper.CustomerVendorMapper;
 import com.booking.model.User;
 import com.booking.model.VendorService;
+import com.booking.model.enums.ServiceModerationStatus;
+import com.booking.model.enums.VendorVerificationStatus;
 import com.booking.repository.UserRepository;
 import com.booking.repository.VendorServiceRepository;
 import com.booking.service.CustomerVendorService;
@@ -32,7 +34,13 @@ public class CustomerVendorServiceImpl
 
         List<VendorService> services =
                 vendorServiceRepository
-                        .findByActiveTrueAndDeletedFalse();
+                        .findByActiveTrueAndDeletedFalse()
+                        .stream()
+                        .filter(service ->
+                                service.getModerationStatus()
+                                        == ServiceModerationStatus.APPROVED
+                        )
+                        .toList();
 
         for (VendorService service : services) {
 
@@ -45,13 +53,31 @@ public class CustomerVendorServiceImpl
                 continue;
             }
 
+            /*
+             * =========================================
+             * VENDOR VERIFICATION
+             * =========================================
+             *
+             * Only approved vendors can appear
+             * in the customer marketplace.
+             *
+             * PENDING and REJECTED vendors are hidden.
+             */
+
+            if (vendor.getVerificationStatus()
+                    != VendorVerificationStatus.APPROVED) {
+
+                continue;
+            }
+
             response.add(
-                    mapper.toListing(vendor, service)
+                    mapper.toListing(
+                            vendor,
+                            service
+                    )
             );
         }
 
         return response;
-
     }
-
 }

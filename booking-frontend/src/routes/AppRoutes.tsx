@@ -40,6 +40,7 @@ import AdminDashboard from "../pages/Admin/AdminDashboard";
 import AdminUsers from "../pages/admin/AdminUsers";
 import AdminBookings from "../pages/admin/AdminBookings";
 import AdminReviews from "../pages/admin/AdminReviews";
+import AdminVendorVerification from "../pages/admin/AdminVendorVerification";
 
 const AppRoutes = () => {
 
@@ -246,6 +247,11 @@ const AppRoutes = () => {
                         <Route
                             path="/admin/reviews"
                             element={<AdminReviews />}
+                        />
+
+                        <Route
+                            path="/admin/vendors"
+                            element={<AdminVendorVerification />}
                         />
 
                     </Route>

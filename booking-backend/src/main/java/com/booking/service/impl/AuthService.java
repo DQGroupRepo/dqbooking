@@ -9,6 +9,7 @@ import com.booking.exception.InvalidCredentialsException;
 import com.booking.model.User;
 import com.booking.model.enums.Role;
 import com.booking.model.enums.UserStatus;
+import com.booking.model.enums.VendorVerificationStatus;
 import com.booking.repository.UserRepository;
 import com.booking.security.JwtService;
 import lombok.RequiredArgsConstructor;
@@ -293,6 +294,10 @@ public class AuthService {
         vendor.setTotalReviews(0);
 
         vendor.setVerified(false);
+
+        vendor.setVerificationStatus(
+                VendorVerificationStatus.PENDING
+        );
 
 
         /*

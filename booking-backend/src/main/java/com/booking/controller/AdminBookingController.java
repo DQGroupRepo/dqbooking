@@ -1,4 +1,4 @@
-package com.booking.controller.admin;
+package com.booking.controller;
 
 import com.booking.dto.admin.AdminBookingResponse;
 import com.booking.service.AdminBookingService;

@@ -2,6 +2,7 @@ package com.booking.model;
 
 import com.booking.model.enums.Role;
 import com.booking.model.enums.UserStatus;
+import com.booking.model.enums.VendorVerificationStatus;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -51,6 +52,9 @@ public class User extends BaseEntity {
     private Integer totalReviews = 0;
 
     private Boolean verified = false;
+
+    private VendorVerificationStatus verificationStatus =
+            VendorVerificationStatus.PENDING;
 
     public String getFullName() {
 

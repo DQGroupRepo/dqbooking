@@ -36,7 +36,12 @@ public class AdminDashboardResponse {
 
     private long totalReviews;
 
-
     private List<AdminRecentBookingResponse> recentBookings;
+
+    private List<AdminBookingTrendResponse> bookingTrend;
+
+    private List<AdminRevenueTrendResponse> revenueTrend;
+
+    private AdminPendingActionsResponse pendingActions;
 
 }

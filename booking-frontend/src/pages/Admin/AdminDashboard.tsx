@@ -23,6 +23,20 @@ const AdminDashboard = () => {
         loadDashboard();
 
     }, []);
+    const formatMonth = (period: string) => {
+
+        const [year, month] = period.split("-");
+
+        const date = new Date(
+            Number(year),
+            Number(month) - 1,
+            1
+        );
+
+        return date.toLocaleString("en-US", {
+            month: "short"
+        });
+    };
 
 
     async function loadDashboard() {
@@ -95,6 +109,27 @@ const AdminDashboard = () => {
         );
 
     }
+
+    /* =========================================
+       ANALYTICS HELPERS
+    ========================================= */
+
+    const maxBookings =
+        Math.max(
+            ...dashboard.bookingTrend.map(
+                item => item.bookings
+            ),
+            1
+        );
+
+
+    const maxRevenue =
+        Math.max(
+            ...dashboard.revenueTrend.map(
+                item => item.revenue
+            ),
+            1
+        );
 
 
     return (
@@ -407,6 +442,334 @@ const AdminDashboard = () => {
 
             </div>
 
+            {/* =========================================
+                ANALYTICS
+            ========================================= */}
+
+            <div className="admin-analytics-grid">
+
+                {/* BOOKING TREND */}
+
+                <div className="admin-dashboard-card">
+
+                    <div className="admin-card-header">
+
+                        <div>
+
+                            <h2>
+                                Booking Trend
+                            </h2>
+
+                            <p>
+                                Booking activity over the last six months.
+                            </p>
+
+                        </div>
+
+                    </div>
+
+
+                    {dashboard.bookingTrend.length === 0 ? (
+
+                        <div className="admin-empty-state">
+
+                            <div className="admin-empty-icon">
+                                📊
+                            </div>
+
+                            <h3>
+                                No booking trend data
+                            </h3>
+
+                            <p>
+                                Booking activity will appear here
+                                once bookings are created.
+                            </p>
+
+                        </div>
+
+                    ) : (
+
+                        <div className="admin-trend-chart">
+
+                            {dashboard.bookingTrend.map(
+                                (item) => {
+
+                                    const height =
+                                        Math.max(
+                                            (item.bookings /
+                                                maxBookings) * 100,
+                                            5
+                                        );
+
+                                    return (
+
+                                        <div
+                                            key={item.period}
+                                            className="admin-trend-column"
+                                        >
+
+                                            <div className="admin-trend-value">
+                                                {item.bookings}
+                                            </div>
+
+                                            <div className="admin-trend-bar-wrapper">
+
+                                                <div
+                                                    className="admin-trend-bar booking-bar"
+                                                    style={{
+                                                        height:
+                                                            `${height}%`
+                                                    }}
+                                                />
+
+                                            </div>
+
+                                            <span>
+                                                {formatMonth(
+                                                    item.period
+                                                )}
+                                            </span>
+
+                                        </div>
+
+                                    );
+
+                                }
+                            )}
+
+                        </div>
+
+                    )}
+
+                </div>
+
+
+                {/* REVENUE TREND */}
+
+                <div className="admin-dashboard-card">
+
+                    <div className="admin-card-header">
+
+                        <div>
+
+                            <h2>
+                                Revenue Trend
+                            </h2>
+
+                            <p>
+                                Revenue generated over the last six months.
+                            </p>
+
+                        </div>
+
+                    </div>
+
+
+                    {dashboard.revenueTrend.length === 0 ? (
+
+                        <div className="admin-empty-state">
+
+                            <div className="admin-empty-icon">
+                                ₹
+                            </div>
+
+                            <h3>
+                                No revenue trend data
+                            </h3>
+
+                            <p>
+                                Revenue information will appear here
+                                once bookings are completed.
+                            </p>
+
+                        </div>
+
+                    ) : (
+
+                        <div className="admin-trend-chart">
+
+                            {dashboard.revenueTrend.map(
+                                (item) => {
+
+                                    const height =
+                                        Math.max(
+                                            (item.revenue /
+                                                maxRevenue) * 100,
+                                            5
+                                        );
+
+                                    return (
+
+                                        <div
+                                            key={item.period}
+                                            className="admin-trend-column"
+                                        >
+
+                                            <div className="admin-trend-value">
+
+                                                ₹
+                                                {item.revenue
+                                                    .toLocaleString()}
+
+                                            </div>
+
+                                            <div className="admin-trend-bar-wrapper">
+
+                                                <div
+                                                    className="admin-trend-bar revenue-bar"
+                                                    style={{
+                                                        height:
+                                                            `${height}%`
+                                                    }}
+                                                />
+
+                                            </div>
+
+                                            <span>
+                                                {formatMonth(
+                                                    item.period
+                                                )}
+                                            </span>
+
+                                        </div>
+
+                                    );
+
+                                }
+                            )}
+
+                        </div>
+
+                    )}
+
+                </div>
+
+            </div>
+
+            {/* =========================================
+                PENDING ACTIONS
+            ========================================= */}
+
+            <div className="admin-dashboard-card admin-pending-actions">
+
+                <div className="admin-card-header">
+
+                    <div>
+
+                        <h2>
+                            Pending Actions
+                        </h2>
+
+                        <p>
+                            Items that require administrator attention.
+                        </p>
+
+                    </div>
+
+                </div>
+
+                <div className="admin-pending-actions-list">
+
+                    <div className="admin-pending-action-row">
+
+                        <div>
+
+                            <div className="admin-pending-action-icon">
+                                🏢
+                            </div>
+
+                            <div>
+
+                                <strong>
+                                    Pending Vendor Verifications
+                                </strong>
+
+                                <span>
+                                    Vendors waiting for approval.
+                                </span>
+
+                            </div>
+
+                        </div>
+
+                        <strong className="admin-pending-count">
+                            {dashboard.pendingActions.pendingVendorVerifications}
+                        </strong>
+
+                        <a href="/admin/vendors">
+                            Review
+                        </a>
+
+                    </div>
+
+                    <div className="admin-pending-action-row">
+
+                        <div>
+
+                            <div className="admin-pending-action-icon">
+                                📋
+                            </div>
+
+                            <div>
+
+                                <strong>
+                                    Pending Service Moderation
+                                </strong>
+
+                                <span>
+                                    Services waiting for approval.
+                                </span>
+
+                            </div>
+
+                        </div>
+
+                        <strong className="admin-pending-count">
+                            {dashboard.pendingActions.pendingServiceModerations}
+                        </strong>
+
+                        <a href="/admin/vendors">
+                            Review
+                        </a>
+
+                    </div>
+
+                    <div className="admin-pending-action-row">
+
+                        <div>
+
+                            <div className="admin-pending-action-icon">
+                                📅
+                            </div>
+
+                            <div>
+
+                                <strong>
+                                    Pending Bookings
+                                </strong>
+
+                                <span>
+                                    Bookings awaiting action.
+                                </span>
+
+                            </div>
+
+                        </div>
+
+                        <strong className="admin-pending-count">
+                            {dashboard.pendingActions.pendingBookings}
+                        </strong>
+
+                        <a href="/admin/bookings">
+                            View
+                        </a>
+
+                    </div>
+
+                </div>
+
+            </div>
 
             {/* =========================================
                 RECENT BOOKINGS
