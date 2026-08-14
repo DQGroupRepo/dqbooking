@@ -1,32 +1,23 @@
 package com.booking.dto.booking;
 
-import jakarta.validation.constraints.Future;
-import jakarta.validation.constraints.Min;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotEmpty;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.time.LocalDate;
+import java.util.List;
 
 @Getter
 @Setter
 public class CreateBookingRequest {
 
-    @NotBlank
-    private String serviceId;
+    private List<BookingBundleItemRequest> bundles;
 
-    @NotNull
-    @Future
-    private LocalDate eventDate;
-
-    @NotNull
-    @Min(1)
-    private Integer guestCount;
+    private List<BookingServiceItemRequest> services;
 
     private String specialRequest;
 
     @NotBlank
     private String eventType;
-
 }

@@ -1,1120 +1,2008 @@
-import { useEffect, useMemo, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import {
+    useEffect,
+    useMemo,
+    useState
+} from "react";
+
+import {
+    useLocation,
+    useNavigate
+} from "react-router-dom";
+
 import toast from "react-hot-toast";
 
 import api from "../../api/axiosConfig";
-import { createBooking } from "../../services/bookingService";
+
+import CartService from "../../services/CartService";
+
+import {
+    createBooking
+} from "../../services/bookingService";
+
+import type {
+    CartItem
+} from "../../types/CartItem";
 
 import "./BookingCheckout.css";
 
+
 interface VendorData {
-  id: string;
-  businessName: string;
-  city?: string;
-  imageUrl?: string;
-  startingPrice?: number;
+
+    id: string;
+
+    businessName: string;
+
+    city?: string;
+
+    imageUrl?: string;
+
+    startingPrice?: number;
+
 }
+
 
 interface BookingLocationState {
-  vendor: VendorData | null;
-  serviceId?: string;
-  eventDate: string;
-  guests: number | string;
+
+    vendor?: VendorData | null;
+
+    serviceId?: string;
+
+    eventDate?: string;
+
+    guests?: number | string;
+
+    cart?: CartItem[];
+
 }
+
 
 interface PricingHead {
-  code: string;
-  name: string;
-  calculationType: "FIXED" | "PERCENTAGE" | string;
-  value: number;
-  calculatedAmount: number;
-  displayOrder?: number;
-  active?: boolean;
+
+    code: string;
+
+    name: string;
+
+    calculationType:
+        | "FIXED"
+        | "PERCENTAGE"
+        | string;
+
+    value: number;
+
+    calculatedAmount: number;
+
+    displayOrder?: number;
+
+    active?: boolean;
+
 }
+
 
 interface Discount {
-  name: string;
-  discountType: "FIXED" | "PERCENTAGE" | string;
-  value: number;
-  calculatedAmount: number;
+
+    name: string;
+
+    discountType:
+        | "FIXED"
+        | "PERCENTAGE"
+        | string;
+
+    value: number;
+
+    calculatedAmount: number;
+
 }
+
 
 interface PricingCalculationResult {
-  pricingId: string;
-  pricingVersion: number;
 
-  baseAmount: number;
+    pricingId: string;
 
-  pricingHeads: PricingHead[];
+    pricingVersion: number;
 
-  subtotal: number;
+    baseAmount: number;
 
-  discounts: Discount[];
+    pricingHeads: PricingHead[];
 
-  discountAmount: number;
+    subtotal: number;
 
-  totalAmount: number;
+    discounts: Discount[];
 
-  advanceAmount: number;
+    discountAmount: number;
 
-  balanceAmount: number;
+    totalAmount: number;
+
+    advanceAmount: number;
+
+    balanceAmount: number;
+
 }
 
-interface PricingApiResponse {
-  data?: PricingCalculationResult;
-  message?: string;
+
+interface BundleBookingResponse {
+
+    id: string;
+
+    bookingNumber?: string;
+
+    status?: string;
+
+    totalAmount?: number;
+
 }
+
+
+interface CartDisplayItem {
+
+    item: CartItem;
+
+    originalAmount: number;
+
+    discountAmount: number;
+
+    finalAmount: number;
+
+}
+
 
 const BookingCheckout = () => {
 
-  const location = useLocation();
-  const navigate = useNavigate();
+    const location =
+        useLocation();
 
-  const state =
-    location.state as BookingLocationState | null;
-
-  const vendor = state?.vendor ?? null;
-
-  const serviceId =
-    state?.serviceId ?? "";
-
-  const eventDate =
-    state?.eventDate ?? "";
-
-  const guests =
-    state?.guests ?? "";
-
-  const [eventType, setEventType] =
-    useState("");
-
-  const [specialRequest, setSpecialRequest] =
-    useState("");
-
-  const [
-    paymentPreference,
-    setPaymentPreference
-  ] = useState(
-    "PAY_AFTER_CONFIRMATION"
-  );
-
-  const [
-    pricing,
-    setPricing
-  ] = useState<PricingCalculationResult | null>(
-    null
-  );
-
-  const [
-    pricingLoading,
-    setPricingLoading
-  ] = useState(true);
-
-  const [
-    submitting,
-    setSubmitting
-  ] = useState(false);
-
-  const [
-    error,
-    setError
-  ] = useState<string | null>(null);
+    const navigate =
+        useNavigate();
 
 
-  /*
-   * =========================================
-   * FORMAT CURRENCY
-   * =========================================
-   */
-
-  const formatCurrency = (
-    amount: number | null | undefined
-  ) => {
-
-    return `₹${(
-      amount ?? 0
-    ).toLocaleString("en-IN")}`;
-
-  };
+    const state =
+        location.state as BookingLocationState | null;
 
 
-  /*
-   * =========================================
-   * LOAD PRICING
-   * =========================================
-   */
-
-  useEffect(() => {
-
-    if (!serviceId || !eventDate) {
-
-      setPricingLoading(false);
-
-      return;
-
-    }
+    const cart =
+        state?.cart ?? [];
 
 
-    const loadPricing = async () => {
-
-      try {
-
-        setPricingLoading(true);
-
-        setError(null);
+    const isCartCheckout =
+        cart.length > 0;
 
 
-        /*
-         * Expected backend endpoint:
-         *
-         * GET
-         * /api/pricing/calculate
-         *
-         * Query params:
-         * serviceId
-         * eventDate
-         */
-
-        const response =
-            await api.get<PricingCalculationResult>(
-                `/pricing/services/${serviceId}/calculate`,
-                {
-                    params: {
-                        eventDate
-                    }
-                }
-            );
+    const vendor =
+        state?.vendor ?? null;
 
 
-        setPricing(
-          response.data
-        );
+    const serviceId =
+        state?.serviceId ?? "";
 
 
-      } catch (err: any) {
-
-        console.error(
-          "Failed to load pricing:",
-          err
-        );
+    const initialEventDate =
+        state?.eventDate ?? "";
 
 
-        const message =
-          err?.response?.data?.message ||
-          "Unable to load current pricing for this service.";
+    const initialGuests =
+        state?.guests ?? "";
 
 
-        setError(message);
+    const [
+        eventDate,
+        setEventDate
+    ] = useState(
+        initialEventDate
+    );
 
 
-        toast.error(
-          message
-        );
+    const [
+        guests,
+        setGuests
+    ] = useState<number | string>(
+        initialGuests
+    );
 
 
-      } finally {
+    const [
+        eventType,
+        setEventType
+    ] = useState("");
 
-        setPricingLoading(false);
 
-      }
+    const [
+        specialRequest,
+        setSpecialRequest
+    ] = useState("");
+
+
+    const [
+        paymentPreference,
+        setPaymentPreference
+    ] = useState(
+        "PAY_AFTER_CONFIRMATION"
+    );
+
+
+    const [
+        pricing,
+        setPricing
+    ] = useState<PricingCalculationResult | null>(
+        null
+    );
+
+
+    const [
+        pricingLoading,
+        setPricingLoading
+    ] = useState(
+        !isCartCheckout
+    );
+
+
+    const [
+        submitting,
+        setSubmitting
+    ] = useState(false);
+
+
+    const [
+        error,
+        setError
+    ] = useState<string | null>(
+        null
+    );
+
+
+    const formatCurrency = (
+        amount:
+            | number
+            | null
+            | undefined
+    ) => {
+
+        return `₹${(
+            amount ?? 0
+        ).toLocaleString(
+            "en-IN"
+        )}`;
 
     };
 
 
-    loadPricing();
+    const cartSubtotal =
+        useMemo(() => {
 
-  }, [
-    serviceId,
-    eventDate
-  ]);
+            return cart.reduce(
+                (
+                    total,
+                    item
+                ) =>
+                    total +
+                    Number(
+                        item.price
+                    ),
+                0
+            );
+
+        }, [cart]);
 
 
-  /*
-   * =========================================
-   * PAYMENT PREFERENCE
-   * =========================================
-   *
-   * This is currently UI-only.
-   *
-   * Your current CreateBookingRequest
-   * does not contain paymentPreference.
-   *
-   * Once payment flow is implemented,
-   * this can be connected to the backend.
-   */
+    const cartDisplayItems =
+        useMemo<CartDisplayItem[]>(() => {
 
-  const paymentMessage =
-    useMemo(() => {
+            const result:
+                CartDisplayItem[] = [];
 
-      switch (
-        paymentPreference
-      ) {
+            const processedBundles =
+                new Set<string>();
 
-        case "ADVANCE_PAYMENT":
 
-          return "Advance payment will be required according to the vendor's payment configuration.";
+            cart.forEach(
+                item => {
 
-        case "DISCUSS_WITH_VENDOR":
+                    const originalAmount =
+                        Number(
+                            item.price
+                        );
 
-          return "You can discuss payment terms directly with the vendor.";
 
-        default:
+                    if (
+                        !item.bundleId
+                    ) {
 
-          return "Payment will be handled after vendor confirmation.";
+                        result.push({
 
-      }
+                            item,
+
+                            originalAmount,
+
+                            discountAmount: 0,
+
+                            finalAmount:
+                                originalAmount
+
+                        });
+
+                        return;
+
+                    }
+
+
+                    const bundleId =
+                        item.bundleId;
+
+
+                    if (
+                        processedBundles.has(
+                            bundleId
+                        )
+                    ) {
+
+                        result.push({
+
+                            item,
+
+                            originalAmount,
+
+                            discountAmount: 0,
+
+                            finalAmount:
+                                originalAmount
+
+                        });
+
+                        return;
+
+                    }
+
+
+                    processedBundles.add(
+                        bundleId
+                    );
+
+
+                    const bundleItems =
+                        cart.filter(
+                            cartItem =>
+                                cartItem.bundleId ===
+                                bundleId
+                        );
+
+
+                    const requiredServiceIds =
+                        item.bundleServiceIds ??
+                        [];
+
+
+                    const isComplete =
+                        requiredServiceIds.length >
+                            0 &&
+                        requiredServiceIds.every(
+                            requiredServiceId =>
+                                bundleItems.some(
+                                    bundleItem =>
+                                        bundleItem.serviceId ===
+                                            requiredServiceId &&
+                                        bundleItem.bundleId ===
+                                            bundleId
+                                )
+                        );
+
+
+                    if (
+                        !isComplete
+                    ) {
+
+                        bundleItems.forEach(
+                            bundleItem => {
+
+                                result.push({
+
+                                    item: bundleItem,
+
+                                    originalAmount:
+                                        Number(
+                                            bundleItem.price
+                                        ),
+
+                                    discountAmount: 0,
+
+                                    finalAmount:
+                                        Number(
+                                            bundleItem.price
+                                        )
+
+                                });
+
+                            }
+                        );
+
+                        return;
+
+                    }
+
+
+                    const bundleOriginalTotal =
+                        bundleItems.reduce(
+                            (
+                                total,
+                                bundleItem
+                            ) =>
+                                total +
+                                Number(
+                                    bundleItem.price
+                                ),
+                            0
+                        );
+
+
+                    let bundleDiscount =
+                        0;
+
+
+                    if (
+                        item.bundleDiscountType ===
+                        "PERCENTAGE"
+                    ) {
+
+                        bundleDiscount =
+                            bundleOriginalTotal *
+                            (
+                                Number(
+                                    item.bundleDiscountValue ??
+                                    0
+                                ) / 100
+                            );
+
+                    }
+
+
+                    if (
+                        item.bundleDiscountType ===
+                        "FIXED"
+                    ) {
+
+                        bundleDiscount =
+                            Math.min(
+                                Number(
+                                    item.bundleDiscountValue ??
+                                    0
+                                ),
+                                bundleOriginalTotal
+                            );
+
+                    }
+
+
+                    bundleItems.forEach(
+                        bundleItem => {
+
+                            const itemOriginalAmount =
+                                Number(
+                                    bundleItem.price
+                                );
+
+
+                            const proportion =
+                                bundleOriginalTotal >
+                                0
+
+                                    ? itemOriginalAmount /
+                                      bundleOriginalTotal
+
+                                    : 0;
+
+
+                            const itemDiscount =
+                                bundleDiscount *
+                                proportion;
+
+
+                            result.push({
+
+                                item:
+                                    bundleItem,
+
+                                originalAmount:
+                                    itemOriginalAmount,
+
+                                discountAmount:
+                                    itemDiscount,
+
+                                finalAmount:
+                                    Math.max(
+                                        0,
+                                        itemOriginalAmount -
+                                        itemDiscount
+                                    )
+
+                            });
+
+                        }
+                    );
+
+                }
+            );
+
+
+            return result;
+
+        }, [cart]);
+
+
+    const totalBundleDiscount =
+        useMemo(() => {
+
+            return cartDisplayItems.reduce(
+                (
+                    total,
+                    displayItem
+                ) =>
+                    total +
+                    displayItem.discountAmount,
+                0
+            );
+
+        }, [cartDisplayItems]);
+
+
+    const finalCartTotal =
+        useMemo(() => {
+
+            return Math.max(
+                0,
+                cartSubtotal -
+                totalBundleDiscount
+            );
+
+        }, [
+            cartSubtotal,
+            totalBundleDiscount
+        ]);
+
+
+    const paymentMessage =
+        useMemo(() => {
+
+            switch (
+                paymentPreference
+            ) {
+
+                case "ADVANCE_PAYMENT":
+
+                    return "Advance payment will be required according to the vendor's payment configuration.";
+
+                case "DISCUSS_WITH_VENDOR":
+
+                    return "You can discuss payment terms directly with the vendor.";
+
+                default:
+
+                    return "Payment will be handled after vendor confirmation.";
+
+            }
+
+        }, [
+            paymentPreference
+        ]);
+
+
+    useEffect(() => {
+
+        if (
+            isCartCheckout ||
+            !serviceId ||
+            !eventDate
+        ) {
+
+            if (
+                isCartCheckout
+            ) {
+
+                setPricingLoading(
+                    false
+                );
+
+            }
+
+            return;
+
+        }
+
+
+        const loadPricing =
+            async () => {
+
+                try {
+
+                    setPricingLoading(
+                        true
+                    );
+
+                    setError(
+                        null
+                    );
+
+
+                    const response =
+                        await api.get<PricingCalculationResult>(
+                            `/pricing/services/${serviceId}/calculate`,
+                            {
+                                params: {
+                                    eventDate
+                                }
+                            }
+                        );
+
+
+                    setPricing(
+                        response.data
+                    );
+
+                } catch (
+                    err: any
+                ) {
+
+                    console.error(
+                        "Failed to load pricing:",
+                        err
+                    );
+
+
+                    const message =
+                        err?.response?.data?.message ||
+                        "Unable to load current pricing for this service.";
+
+
+                    setError(
+                        message
+                    );
+
+
+                    toast.error(
+                        message
+                    );
+
+                } finally {
+
+                    setPricingLoading(
+                        false
+                    );
+
+                }
+
+            };
+
+
+        loadPricing();
 
     }, [
-      paymentPreference
+        serviceId,
+        eventDate,
+        isCartCheckout
     ]);
 
 
-  /*
-   * =========================================
-   * VALIDATION
-   * =========================================
-   */
+    if (
+        !isCartCheckout &&
+        !vendor
+    ) {
 
-  if (!vendor) {
+        return (
 
-    return (
+            <section className="checkout-section">
 
-      <section className="checkout-section">
+                <div className="container">
 
-        <div className="container">
+                    <h2>
+                        Booking information not found.
+                    </h2>
 
-          <h2>
-            Booking information not found.
-          </h2>
+                    <button
+                        className="cancel-button"
+                        onClick={() =>
+                            navigate("/")
+                        }
+                    >
+                        Go To Home
+                    </button>
 
-          <button
-            className="cancel-button"
-            onClick={() =>
-              navigate("/")
-            }
-          >
-            Go To Home
-          </button>
+                </div>
 
-        </div>
+            </section>
 
-      </section>
-
-    );
-
-  }
-
-
-  if (!serviceId) {
-
-    return (
-
-      <section className="checkout-section">
-
-        <div className="container">
-
-          <h2>
-            Service information is missing.
-          </h2>
-
-          <p>
-            Please return to the vendor page
-            and select a service again.
-          </p>
-
-          <button
-            className="cancel-button"
-            onClick={() =>
-              navigate(-1)
-            }
-          >
-            ← Back To Vendor
-          </button>
-
-        </div>
-
-      </section>
-
-    );
-
-  }
-
-
-  /*
-   * =========================================
-   * SUBMIT BOOKING
-   * =========================================
-   */
-
-  const handleSubmit = async () => {
-
-    if (submitting) {
-
-      return;
-
-    }
-
-
-    if (!eventDate) {
-
-      toast.error(
-        "Please select an event date."
-      );
-
-      return;
-
-    }
-
-
-    if (!guests || Number(guests) < 1) {
-
-      toast.error(
-        "Please enter a valid guest count."
-      );
-
-      return;
-
-    }
-
-
-    if (!eventType.trim()) {
-
-      toast.error(
-        "Please enter the event type."
-      );
-
-      return;
-
-    }
-
-
-    try {
-
-      setSubmitting(true);
-
-
-      /*
-       * IMPORTANT:
-       *
-       * Backend expects:
-       *
-       * serviceId
-       * eventDate
-       * guestCount
-       * specialRequest
-       * eventType
-       *
-       * Customer information is obtained
-       * from the authenticated JWT user.
-       */
-
-      const bookingRequest = {
-
-        serviceId,
-
-        eventDate,
-
-        guestCount:
-          Number(guests),
-
-        specialRequest:
-          specialRequest.trim(),
-
-        eventType:
-          eventType.trim()
-
-      };
-
-
-      console.log(
-        "Creating booking:",
-        bookingRequest
-      );
-
-
-      const booking =
-        await createBooking(
-          bookingRequest
         );
 
-
-      toast.success(
-        `Booking request ${booking.bookingNumber} submitted successfully!`
-      );
-
-
-      /*
-       * Navigate to booking confirmation.
-       *
-       * If this route does not exist yet,
-       * temporarily change this to:
-       *
-       * navigate("/customer-dashboard");
-       */
-
-      navigate(
-        `/booking-confirmation/${booking.id}`,
-        {
-          state: {
-            booking
-          }
-        }
-      );
-
-
-    } catch (err: any) {
-
-      console.error(
-        "Booking creation failed:",
-        err
-      );
-
-
-      const message =
-        err?.response?.data?.message ||
-        "Unable to submit booking request. Please try again.";
-
-
-      toast.error(
-        message
-      );
-
-
-    } finally {
-
-      setSubmitting(false);
-
     }
 
-  };
 
+    if (
+        !isCartCheckout &&
+        !serviceId
+    ) {
 
-  /*
-   * =========================================
-   * PRICING DATA
-   * =========================================
-   */
+        return (
 
-  const baseAmount =
-    pricing?.baseAmount ?? 0;
+            <section className="checkout-section">
 
-  const pricingHeads =
-    pricing?.pricingHeads ?? [];
+                <div className="container">
 
-  const discounts =
-    pricing?.discounts ?? [];
-
-  const subtotal =
-    pricing?.subtotal ?? 0;
-
-  const discountAmount =
-    pricing?.discountAmount ?? 0;
-
-  const totalAmount =
-    pricing?.totalAmount ?? 0;
-
-  const advanceAmount =
-    pricing?.advanceAmount ?? 0;
-
-  const balanceAmount =
-    pricing?.balanceAmount ?? 0;
-
-
-  return (
-
-    <section className="checkout-section">
-
-      <div className="container">
-
-        <h1>
-          Complete Your Booking
-        </h1>
-
-        <p className="checkout-subtitle">
-
-          Review your event details and
-          submit your booking request.
-
-        </p>
-
-
-        <div className="checkout-layout">
-
-
-          {/* =================================
-              LEFT SIDE
-          ================================= */}
-
-          <div className="checkout-main">
-
-
-            {/* BOOKING SUMMARY */}
-
-            <div className="checkout-card">
-
-              <h2>
-                Booking Summary
-              </h2>
-
-
-              <div className="booking-summary-grid">
-
-
-                <div className="summary-item">
-
-                  <label>
-                    Vendor
-                  </label>
-
-                  <p>
-                    {vendor.businessName}
-                  </p>
-
-                </div>
-
-
-                <div className="summary-item">
-
-                  <label>
-                    Event Date
-                  </label>
-
-                  <p>
-                    {eventDate ||
-                      "Not Selected"}
-                  </p>
-
-                </div>
-
-
-                <div className="summary-item">
-
-                  <label>
-                    Guests
-                  </label>
-
-                  <p>
-                    {guests}
-                  </p>
-
-                </div>
-
-
-                <div className="summary-item">
-
-                  <label>
-                    Location
-                  </label>
-
-                  <p>
-                    {vendor.city ||
-                      "Not Available"}
-                  </p>
-
-                </div>
-
-
-              </div>
-
-
-              <button
-                className="save-button"
-                onClick={() =>
-                  navigate(-1)
-                }
-              >
-                Modify Booking
-              </button>
-
-            </div>
-
-
-            {/* EVENT INFORMATION */}
-
-            <div className="checkout-card">
-
-              <h2>
-                Event Information
-              </h2>
-
-
-              <div className="form-group">
-
-                <label>
-                  Event Type
-                </label>
-
-                <input
-                  type="text"
-                  value={eventType}
-                  onChange={(e) =>
-                    setEventType(
-                      e.target.value
-                    )
-                  }
-                  placeholder="Wedding, Birthday, Corporate Event..."
-                />
-
-              </div>
-
-
-              <div className="form-group">
-
-                <label>
-                  Special Request
-                </label>
-
-                <textarea
-                  rows={4}
-                  value={
-                    specialRequest
-                  }
-                  onChange={(e) =>
-                    setSpecialRequest(
-                      e.target.value
-                    )
-                  }
-                  placeholder="Add any special requirements or instructions for the vendor..."
-                />
-
-              </div>
-
-            </div>
-
-
-            {/* PAYMENT PREFERENCE */}
-
-            <div className="checkout-card">
-
-              <h2>
-                Payment Preference
-              </h2>
-
-
-              <label className="radio-option">
-
-                <input
-                  type="radio"
-                  name="payment"
-                  value="ADVANCE_PAYMENT"
-                  checked={
-                    paymentPreference ===
-                    "ADVANCE_PAYMENT"
-                  }
-                  onChange={(e) =>
-                    setPaymentPreference(
-                      e.target.value
-                    )
-                  }
-                />
-
-                Pay Advance Now
-
-              </label>
-
-
-              <label className="radio-option">
-
-                <input
-                  type="radio"
-                  name="payment"
-                  value="PAY_AFTER_CONFIRMATION"
-                  checked={
-                    paymentPreference ===
-                    "PAY_AFTER_CONFIRMATION"
-                  }
-                  onChange={(e) =>
-                    setPaymentPreference(
-                      e.target.value
-                    )
-                  }
-                />
-
-                Pay After Vendor Confirmation
-
-              </label>
-
-
-              <label className="radio-option">
-
-                <input
-                  type="radio"
-                  name="payment"
-                  value="DISCUSS_WITH_VENDOR"
-                  checked={
-                    paymentPreference ===
-                    "DISCUSS_WITH_VENDOR"
-                  }
-                  onChange={(e) =>
-                    setPaymentPreference(
-                      e.target.value
-                    )
-                  }
-                />
-
-                Discuss With Vendor
-
-              </label>
-
-
-              <p className="payment-message">
-
-                {paymentMessage}
-
-              </p>
-
-            </div>
-
-
-          </div>
-
-
-          {/* =================================
-              RIGHT SIDE
-          ================================= */}
-
-          <div className="checkout-sidebar">
-
-
-            <div className="booking-summary">
-
-
-              {vendor.imageUrl && (
-
-                <img
-                  src={
-                    vendor.imageUrl
-                  }
-                  alt={
-                    vendor.businessName
-                  }
-                />
-
-              )}
-
-
-              <h3>
-                {vendor.businessName}
-              </h3>
-
-
-              <p>
-                📍 {vendor.city}
-              </p>
-
-
-              <hr />
-
-
-              {/* PRICING LOADING */}
-
-              {pricingLoading && (
-
-                <div className="pricing-loading">
-
-                  Loading current pricing...
-
-                </div>
-
-              )}
-
-
-              {/* PRICING ERROR */}
-
-              {!pricingLoading &&
-                error && (
-
-                  <div className="pricing-error">
+                    <h2>
+                        Service information is missing.
+                    </h2>
 
                     <p>
-                      {error}
+                        Please return to the vendor page
+                        and select a service again.
                     </p>
 
                     <button
-                      className="save-button"
-                      onClick={() =>
-                        window.location.reload()
-                      }
+                        className="cancel-button"
+                        onClick={() =>
+                            navigate(-1)
+                        }
                     >
-                      Retry
+                        ← Back To Vendor
                     </button>
 
-                  </div>
+                </div>
 
-                )}
+            </section>
 
+        );
 
-              {/* PRICING */}
-
-              {!pricingLoading &&
-                !error &&
-                pricing && (
-
-                  <>
+    }
 
 
-                    {/* BASE AMOUNT */}
+    if (
+        isCartCheckout &&
+        cart.length === 0
+    ) {
 
-                    <div className="summary-row">
+        return (
 
-                      <span>
-                        Base Amount
-                      </span>
+            <section className="checkout-section">
 
-                      <strong>
-                        {formatCurrency(
-                          baseAmount
-                        )}
-                      </strong>
+                <div className="container">
 
-                    </div>
+                    <h2>
+                        Your cart is empty.
+                    </h2>
 
-
-                    {/* CONFIGURABLE PRICING HEADS */}
-
-                    {pricingHeads.map(
-                      (head) => (
-
-                        <div
-                          className="summary-row"
-                          key={
-                            head.code
-                          }
-                        >
-
-                          <span>
-                            {head.name}
-                          </span>
-
-                          <strong>
-                            {formatCurrency(
-                              head.calculatedAmount
-                            )}
-                          </strong>
-
-                        </div>
-
-                      )
-                    )}
-
-
-                    <hr />
-
-
-                    {/* SUBTOTAL */}
-
-                    <div className="summary-row">
-
-                      <span>
-                        Subtotal
-                      </span>
-
-                      <strong>
-                        {formatCurrency(
-                          subtotal
-                        )}
-                      </strong>
-
-                    </div>
-
-
-                    {/* DISCOUNTS */}
-
-                    {discounts.map(
-                      (
-                        discount,
-                        index
-                      ) => (
-
-                        <div
-                          className="summary-row discount-row"
-                          key={`${discount.name}-${index}`}
-                        >
-
-                          <span>
-                            {discount.name}
-                          </span>
-
-                          <strong>
-                            -
-                            {formatCurrency(
-                              discount.calculatedAmount
-                            )}
-                          </strong>
-
-                        </div>
-
-                      )
-                    )}
-
-
-                    {discountAmount > 0 && (
-
-                      <div
-                        className="summary-row discount-row"
-                      >
-
-                        <span>
-                          Total Discount
-                        </span>
-
-                        <strong>
-                          -
-                          {formatCurrency(
-                            discountAmount
-                          )}
-                        </strong>
-
-                      </div>
-
-                    )}
-
-
-                    <hr />
-
-
-                    {/* TOTAL */}
-
-                    <div
-                      className="summary-row total"
+                    <button
+                        className="cancel-button"
+                        onClick={() =>
+                            navigate("/cart")
+                        }
                     >
+                        ← Back To Cart
+                    </button>
 
-                      <span>
-                        Total Estimate
-                      </span>
+                </div>
 
-                      <strong>
-                        {formatCurrency(
-                          totalAmount
+            </section>
+
+        );
+
+    }
+
+
+    const handleSubmit =
+        async () => {
+
+            if (
+                submitting
+            ) {
+
+                return;
+
+            }
+
+
+            if (
+                isCartCheckout
+            ) {
+
+                const missingEventDetails =
+                    cart.some(
+                        item =>
+                            !item.eventDate ||
+                            !item.guestCount ||
+                            Number(
+                                item.guestCount
+                            ) < 1
+                    );
+
+
+                if (
+                    missingEventDetails
+                ) {
+
+                    toast.error(
+                        "Event date and guest count are missing for one or more selected services."
+                    );
+
+                    return;
+
+                }
+
+            } else {
+
+                if (
+                    !eventDate
+                ) {
+
+                    toast.error(
+                        "Please select an event date."
+                    );
+
+                    return;
+
+                }
+
+
+                if (
+                    !guests ||
+                    Number(
+                        guests
+                    ) < 1
+                ) {
+
+                    toast.error(
+                        "Please enter a valid guest count."
+                    );
+
+                    return;
+
+                }
+
+            }
+
+
+            if (
+                !eventType.trim()
+            ) {
+
+                toast.error(
+                    "Please enter the event type."
+                );
+
+                return;
+
+            }
+
+
+            if (
+                isCartCheckout
+            ) {
+
+                try {
+
+                    setSubmitting(
+                        true
+                    );
+
+
+                    const request = {
+
+                        serviceIds:
+                            cart.map(
+                                item =>
+                                    item.serviceId
+                            ),
+
+                        eventDate:
+                            cart[0]?.eventDate ||
+                            "",
+
+                        guestCount:
+                            Number(
+                                cart[0]?.guestCount ||
+                                0
+                            ),
+
+                        specialRequest:
+                            specialRequest.trim(),
+
+                        eventType:
+                            eventType.trim()
+
+                    };
+
+
+                    console.log(
+                        "Creating bundle booking:",
+                        request
+                    );
+
+
+                    const response =
+                        await api.post<BundleBookingResponse>(
+                            "/bookings/bundle",
+                            request
+                        );
+
+
+                    const booking =
+                        response.data;
+
+
+                    CartService.clearCart();
+
+
+                    toast.success(
+                        booking.bookingNumber
+                            ? `Booking request ${booking.bookingNumber} submitted successfully!`
+                            : "Bundle booking submitted successfully!"
+                    );
+
+
+                    navigate(
+                        `/booking-confirmation/${booking.id}`,
+                        {
+                            state: {
+                                booking
+                            }
+                        }
+                    );
+
+                } catch (
+                    err: any
+                ) {
+
+                    console.error(
+                        "Bundle booking creation failed:",
+                        err
+                    );
+
+
+                    const message =
+                        err?.response?.data?.message ||
+                        "Unable to submit bundle booking request. Please try again.";
+
+
+                    toast.error(
+                        message
+                    );
+
+                } finally {
+
+                    setSubmitting(
+                        false
+                    );
+
+                }
+
+
+                return;
+
+            }
+
+
+            try {
+
+                setSubmitting(
+                    true
+                );
+
+
+                const bookingRequest = {
+
+                    serviceId,
+
+                    eventDate,
+
+                    guestCount:
+                        Number(
+                            guests
+                        ),
+
+                    specialRequest:
+                        specialRequest.trim(),
+
+                    eventType:
+                        eventType.trim()
+
+                };
+
+
+                console.log(
+                    "Creating booking:",
+                    bookingRequest
+                );
+
+
+                const booking =
+                    await createBooking(
+                        bookingRequest
+                    );
+
+
+                toast.success(
+                    `Booking request ${booking.bookingNumber} submitted successfully!`
+                );
+
+
+                navigate(
+                    `/booking-confirmation/${booking.id}`,
+                    {
+                        state: {
+                            booking
+                        }
+                    }
+                );
+
+            } catch (
+                err: any
+            ) {
+
+                console.error(
+                    "Booking creation failed:",
+                    err
+                );
+
+
+                const message =
+                    err?.response?.data?.message ||
+                    "Unable to submit booking request. Please try again.";
+
+
+                toast.error(
+                    message
+                );
+
+            } finally {
+
+                setSubmitting(
+                    false
+                );
+
+            }
+
+        };
+
+
+    const baseAmount =
+        pricing?.baseAmount ??
+        0;
+
+
+    const pricingHeads =
+        pricing?.pricingHeads ??
+        [];
+
+
+    const discounts =
+        pricing?.discounts ??
+        [];
+
+
+    const subtotal =
+        pricing?.subtotal ??
+        0;
+
+
+    const discountAmount =
+        pricing?.discountAmount ??
+        0;
+
+
+    const totalAmount =
+        pricing?.totalAmount ??
+        0;
+
+
+    const advanceAmount =
+        pricing?.advanceAmount ??
+        0;
+
+
+    const balanceAmount =
+        pricing?.balanceAmount ??
+        0;
+
+
+    return (
+
+        <section className="checkout-section">
+
+            <div className="container">
+
+                <h1>
+                    Complete Your Booking
+                </h1>
+
+
+                <p className="checkout-subtitle">
+
+                    {isCartCheckout
+                        ? "Review your selected services and event details before checkout."
+                        : "Review your event details and submit your booking request."
+                    }
+
+                </p>
+
+
+                <div className="checkout-layout">
+
+
+                    <div className="checkout-main">
+
+
+                        {isCartCheckout && (
+
+                            <div className="checkout-card">
+
+                                <h2>
+                                    Selected Services
+                                </h2>
+
+
+                                <p>
+                                    Services selected for this checkout.
+                                </p>
+
+
+                                <div className="checkout-cart-items">
+
+                                    {cartDisplayItems.map(
+                                        (
+                                            displayItem
+                                        ) => {
+
+                                            const item =
+                                                displayItem.item;
+
+
+                                            return (
+
+                                                <div
+                                                    key={
+                                                        item.serviceId
+                                                    }
+                                                    className="checkout-cart-item"
+                                                >
+
+                                                    <div>
+
+                                                        <strong>
+                                                            {
+                                                                item.serviceName
+                                                            }
+                                                        </strong>
+
+
+                                                        <span>
+                                                            {
+                                                                item.vendorName
+                                                            }
+                                                        </span>
+
+
+                                                        {item.category && (
+
+                                                            <small>
+                                                                {
+                                                                    item.category
+                                                                }
+                                                            </small>
+
+                                                        )}
+
+
+                                                        <small>
+                                                            Event Date:{" "}
+                                                            {
+                                                                item.eventDate ||
+                                                                "Not selected"
+                                                            }
+                                                        </small>
+
+
+                                                        <small>
+                                                            Guests:{" "}
+                                                            {
+                                                                item.guestCount ??
+                                                                "-"
+                                                            }
+                                                        </small>
+
+                                                    </div>
+
+
+                                                    <div>
+
+                                                        <strong>
+                                                            Final:{" "}
+                                                            {formatCurrency(
+                                                                displayItem.finalAmount
+                                                            )}
+                                                        </strong>
+
+
+                                                        {displayItem.discountAmount >
+                                                            0 && (
+
+                                                            <small className="discount-row">
+
+                                                                Original:{" "}
+                                                                {formatCurrency(
+                                                                    displayItem.originalAmount
+                                                                )}
+
+
+                                                                {" • "}
+
+
+                                                                Bundle Discount: -{" "}
+                                                                {formatCurrency(
+                                                                    displayItem.discountAmount
+                                                                )}
+
+                                                            </small>
+
+                                                        )}
+
+
+                                                        {displayItem.discountAmount ===
+                                                            0 && (
+
+                                                            <small>
+
+                                                                Original:{" "}
+                                                                {formatCurrency(
+                                                                    displayItem.originalAmount
+                                                                )}
+
+                                                            </small>
+
+                                                        )}
+
+                                                    </div>
+
+                                                </div>
+
+                                            );
+
+                                        }
+                                    )}
+
+                                </div>
+
+
+                                {totalBundleDiscount >
+                                    0 && (
+
+                                    <div className="summary-row discount-row">
+
+                                        <span>
+                                            Total Bundle Discount
+                                        </span>
+
+                                        <strong>
+                                            -
+                                            {formatCurrency(
+                                                totalBundleDiscount
+                                            )}
+                                        </strong>
+
+                                    </div>
+
+                                )}
+
+                            </div>
+
                         )}
-                      </strong>
+
+
+                        {!isCartCheckout &&
+                            vendor && (
+
+                            <div className="checkout-card">
+
+                                <h2>
+                                    Booking Summary
+                                </h2>
+
+
+                                <div className="booking-summary-grid">
+
+                                    <div className="summary-item">
+
+                                        <label>
+                                            Vendor
+                                        </label>
+
+                                        <p>
+                                            {
+                                                vendor.businessName
+                                            }
+                                        </p>
+
+                                    </div>
+
+
+                                    <div className="summary-item">
+
+                                        <label>
+                                            Event Date
+                                        </label>
+
+                                        <p>
+                                            {
+                                                eventDate ||
+                                                "Not Selected"
+                                            }
+                                        </p>
+
+                                    </div>
+
+
+                                    <div className="summary-item">
+
+                                        <label>
+                                            Guests
+                                        </label>
+
+                                        <p>
+                                            {
+                                                guests
+                                            }
+                                        </p>
+
+                                    </div>
+
+
+                                    <div className="summary-item">
+
+                                        <label>
+                                            Location
+                                        </label>
+
+                                        <p>
+                                            {
+                                                vendor.city ||
+                                                "Not Available"
+                                            }
+                                        </p>
+
+                                    </div>
+
+                                </div>
+
+
+                                <button
+                                    className="save-button"
+                                    onClick={() =>
+                                        navigate(-1)
+                                    }
+                                >
+                                    Modify Booking
+                                </button>
+
+                            </div>
+
+                        )}
+
+
+                        <div className="checkout-card">
+
+                            <h2>
+                                Event Information
+                            </h2>
+
+
+                            <div className="form-group">
+
+                                <label>
+                                    Event Type
+                                </label>
+
+
+                                <input
+                                    type="text"
+                                    value={
+                                        eventType
+                                    }
+                                    onChange={(e) =>
+                                        setEventType(
+                                            e.target.value
+                                        )
+                                    }
+                                    placeholder="Wedding, Birthday, Corporate Event..."
+                                />
+
+                            </div>
+
+
+                            <div className="form-group">
+
+                                <label>
+                                    Special Request
+                                </label>
+
+
+                                <textarea
+                                    rows={4}
+                                    value={
+                                        specialRequest
+                                    }
+                                    onChange={(e) =>
+                                        setSpecialRequest(
+                                            e.target.value
+                                        )
+                                    }
+                                    placeholder="Add any special requirements or instructions for the vendor..."
+                                />
+
+                            </div>
+
+                        </div>
+
+
+                        <div className="checkout-card">
+
+                            <h2>
+                                Payment Preference
+                            </h2>
+
+
+                            <label className="radio-option">
+
+                                <input
+                                    type="radio"
+                                    name="payment"
+                                    value="ADVANCE_PAYMENT"
+                                    checked={
+                                        paymentPreference ===
+                                        "ADVANCE_PAYMENT"
+                                    }
+                                    onChange={(e) =>
+                                        setPaymentPreference(
+                                            e.target.value
+                                        )
+                                    }
+                                />
+
+                                Pay Advance Now
+
+                            </label>
+
+
+                            <label className="radio-option">
+
+                                <input
+                                    type="radio"
+                                    name="payment"
+                                    value="PAY_AFTER_CONFIRMATION"
+                                    checked={
+                                        paymentPreference ===
+                                        "PAY_AFTER_CONFIRMATION"
+                                    }
+                                    onChange={(e) =>
+                                        setPaymentPreference(
+                                            e.target.value
+                                        )
+                                    }
+                                />
+
+                                Pay After Vendor Confirmation
+
+                            </label>
+
+
+                            <label className="radio-option">
+
+                                <input
+                                    type="radio"
+                                    name="payment"
+                                    value="DISCUSS_WITH_VENDOR"
+                                    checked={
+                                        paymentPreference ===
+                                        "DISCUSS_WITH_VENDOR"
+                                    }
+                                    onChange={(e) =>
+                                        setPaymentPreference(
+                                            e.target.value
+                                        )
+                                    }
+                                />
+
+                                Discuss With Vendor
+
+                            </label>
+
+
+                            <p className="payment-message">
+
+                                {
+                                    paymentMessage
+                                }
+
+                            </p>
+
+                        </div>
 
                     </div>
 
 
-                    {/* ADVANCE */}
+                    <div className="checkout-sidebar">
 
-                    {advanceAmount > 0 && (
-
-                      <div
-                        className="summary-row"
-                      >
-
-                        <span>
-                          Advance Required
-                        </span>
-
-                        <strong>
-                          {formatCurrency(
-                            advanceAmount
-                          )}
-                        </strong>
-
-                      </div>
-
-                    )}
+                        <div className="booking-summary">
 
 
-                    {/* BALANCE */}
+                            {isCartCheckout ? (
 
-                    {advanceAmount > 0 && (
+                                <>
 
-                      <div
-                        className="summary-row"
-                      >
-
-                        <span>
-                          Balance After Advance
-                        </span>
-
-                        <strong>
-                          {formatCurrency(
-                            balanceAmount
-                          )}
-                        </strong>
-
-                      </div>
-
-                    )}
+                                    <h3>
+                                        Order Summary
+                                    </h3>
 
 
-                  </>
-
-                )}
-
-
-              {/* ACTIONS */}
-
-              <div className="checkout-actions">
-
-
-                <button
-                  className="cancel-button"
-                  onClick={() =>
-                    navigate(-1)
-                  }
-                  disabled={submitting}
-                >
-                  ← Back To Vendor
-                </button>
+                                    <p>
+                                        {
+                                            cart.length
+                                        }{" "}
+                                        service
+                                        {
+                                            cart.length !==
+                                            1
+                                                ? "s"
+                                                : ""
+                                        }
+                                    </p>
 
 
-                <button
-                  className="save-button"
-                  disabled={submitting}
-                  onClick={() =>
-                    toast(
-                      "Save For Later will be implemented with the customer booking module."
-                    )
-                  }
-                >
-                  Save For Later
-                </button>
+                                    <hr />
 
 
-                <button
-                  className="book-button"
-                  onClick={
-                    handleSubmit
-                  }
-                  disabled={
-                    submitting ||
-                    pricingLoading ||
-                    !pricing ||
-                    !!error
-                  }
-                >
+                                    {cartDisplayItems.map(
+                                        (
+                                            displayItem
+                                        ) => (
 
-                  {submitting
-                    ? "Submitting..."
-                    : "Send Booking Request"}
+                                            <div
+                                                className="summary-row"
+                                                key={
+                                                    displayItem.item.serviceId
+                                                }
+                                            >
 
-                </button>
-
-
-              </div>
+                                                <span>
+                                                    {
+                                                        displayItem.item.serviceName
+                                                    }
+                                                </span>
 
 
-              <div className="booking-note">
+                                                <strong>
+                                                    {formatCurrency(
+                                                        displayItem.finalAmount
+                                                    )}
+                                                </strong>
 
-                ✓ No payment is processed
-                when sending the booking request.
+                                            </div>
 
-              </div>
+                                        )
+                                    )}
 
+
+                                    <hr />
+
+
+                                    <div className="summary-row">
+
+                                        <span>
+                                            Original Total
+                                        </span>
+
+
+                                        <strong>
+                                            {formatCurrency(
+                                                cartSubtotal
+                                            )}
+                                        </strong>
+
+                                    </div>
+
+
+                                    <div className="summary-row discount-row">
+
+                                        <span>
+                                            Bundle Discount
+                                        </span>
+
+
+                                        <strong>
+                                            -
+                                            {formatCurrency(
+                                                totalBundleDiscount
+                                            )}
+                                        </strong>
+
+                                    </div>
+
+
+                                    <hr />
+
+
+                                    <div className="summary-row total">
+
+                                        <span>
+                                            Final Total
+                                        </span>
+
+
+                                        <strong>
+                                            {formatCurrency(
+                                                finalCartTotal
+                                            )}
+                                        </strong>
+
+                                    </div>
+
+
+                                    {totalBundleDiscount ===
+                                        0 && (
+
+                                        <p className="payment-message">
+
+                                            No bundle discount applies
+                                            to the selected services.
+
+                                        </p>
+
+                                    )}
+
+                                </>
+
+                            ) : (
+
+                                <>
+
+                                    {vendor?.imageUrl && (
+
+                                        <img
+                                            src={
+                                                vendor.imageUrl
+                                            }
+                                            alt={
+                                                vendor.businessName
+                                            }
+                                        />
+
+                                    )}
+
+
+                                    <h3>
+                                        {
+                                            vendor?.businessName
+                                        }
+                                    </h3>
+
+
+                                    <p>
+                                        📍{" "}
+                                        {
+                                            vendor?.city
+                                        }
+                                    </p>
+
+
+                                    <hr />
+
+
+                                    {pricingLoading && (
+
+                                        <div className="pricing-loading">
+
+                                            Loading current pricing...
+
+                                        </div>
+
+                                    )}
+
+
+                                    {!pricingLoading &&
+                                        error && (
+
+                                        <div className="pricing-error">
+
+                                            <p>
+                                                {
+                                                    error
+                                                }
+                                            </p>
+
+
+                                            <button
+                                                className="save-button"
+                                                onClick={() =>
+                                                    window.location.reload()
+                                                }
+                                            >
+                                                Retry
+                                            </button>
+
+                                        </div>
+
+                                    )}
+
+
+                                    {!pricingLoading &&
+                                        !error &&
+                                        pricing && (
+
+                                        <>
+
+                                            <div className="summary-row">
+
+                                                <span>
+                                                    Base Amount
+                                                </span>
+
+
+                                                <strong>
+                                                    {formatCurrency(
+                                                        baseAmount
+                                                    )}
+                                                </strong>
+
+                                            </div>
+
+
+                                            {pricingHeads.map(
+                                                head => (
+
+                                                    <div
+                                                        className="summary-row"
+                                                        key={
+                                                            head.code
+                                                        }
+                                                    >
+
+                                                        <span>
+                                                            {
+                                                                head.name
+                                                            }
+                                                        </span>
+
+
+                                                        <strong>
+                                                            {formatCurrency(
+                                                                head.calculatedAmount
+                                                            )}
+                                                        </strong>
+
+                                                    </div>
+
+                                                )
+                                            )}
+
+
+                                            <hr />
+
+
+                                            <div className="summary-row">
+
+                                                <span>
+                                                    Subtotal
+                                                </span>
+
+
+                                                <strong>
+                                                    {formatCurrency(
+                                                        subtotal
+                                                    )}
+                                                </strong>
+
+                                            </div>
+
+
+                                            {discounts.map(
+                                                (
+                                                    discount,
+                                                    index
+                                                ) => (
+
+                                                    <div
+                                                        className="summary-row discount-row"
+                                                        key={
+                                                            `${discount.name}-${index}`
+                                                        }
+                                                    >
+
+                                                        <span>
+                                                            {
+                                                                discount.name
+                                                            }
+                                                        </span>
+
+
+                                                        <strong>
+                                                            -
+                                                            {formatCurrency(
+                                                                discount.calculatedAmount
+                                                            )}
+                                                        </strong>
+
+                                                    </div>
+
+                                                )
+                                            )}
+
+
+                                            {discountAmount >
+                                                0 && (
+
+                                                <div className="summary-row discount-row">
+
+                                                    <span>
+                                                        Total Discount
+                                                    </span>
+
+
+                                                    <strong>
+                                                        -
+                                                        {formatCurrency(
+                                                            discountAmount
+                                                        )}
+                                                    </strong>
+
+                                                </div>
+
+                                            )}
+
+
+                                            <hr />
+
+
+                                            <div className="summary-row total">
+
+                                                <span>
+                                                    Total Estimate
+                                                </span>
+
+
+                                                <strong>
+                                                    {formatCurrency(
+                                                        totalAmount
+                                                    )}
+                                                </strong>
+
+                                            </div>
+
+
+                                            {advanceAmount >
+                                                0 && (
+
+                                                <div className="summary-row">
+
+                                                    <span>
+                                                        Advance Required
+                                                    </span>
+
+
+                                                    <strong>
+                                                        {formatCurrency(
+                                                            advanceAmount
+                                                        )}
+                                                    </strong>
+
+                                                </div>
+
+                                            )}
+
+
+                                            {advanceAmount >
+                                                0 && (
+
+                                                <div className="summary-row">
+
+                                                    <span>
+                                                        Balance After Advance
+                                                    </span>
+
+
+                                                    <strong>
+                                                        {formatCurrency(
+                                                            balanceAmount
+                                                        )}
+                                                    </strong>
+
+                                                </div>
+
+                                            )}
+
+                                        </>
+
+                                    )}
+
+                                </>
+
+                            )}
+
+
+                            <div className="checkout-actions">
+
+                                <button
+                                    className="cancel-button"
+                                    onClick={() =>
+                                        navigate(-1)
+                                    }
+                                    disabled={
+                                        submitting
+                                    }
+                                >
+                                    {isCartCheckout
+                                        ? "← Back To Cart"
+                                        : "← Back To Vendor"
+                                    }
+                                </button>
+
+
+                                <button
+                                    className="save-button"
+                                    disabled={
+                                        submitting
+                                    }
+                                    onClick={() =>
+                                        toast(
+                                            "Save For Later will be implemented with the customer booking module."
+                                        )
+                                    }
+                                >
+                                    Save For Later
+                                </button>
+
+
+                                <button
+                                    className="book-button"
+                                    onClick={
+                                        handleSubmit
+                                    }
+                                    disabled={
+                                        submitting ||
+                                        pricingLoading ||
+                                        (
+                                            !isCartCheckout &&
+                                            (
+                                                !pricing ||
+                                                !!error
+                                            )
+                                        )
+                                    }
+                                >
+
+                                    {
+                                        submitting
+                                            ? "Submitting..."
+                                            : isCartCheckout
+                                                ? "Continue To Checkout"
+                                                : "Send Booking Request"
+                                    }
+
+                                </button>
+
+                            </div>
+
+
+                            <div className="booking-note">
+
+                                ✓ No payment is processed
+                                when sending the booking request.
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
 
             </div>
 
-          </div>
+        </section>
 
-
-        </div>
-
-      </div>
-
-    </section>
-
-  );
+    );
 
 };
+
 
 export default BookingCheckout;

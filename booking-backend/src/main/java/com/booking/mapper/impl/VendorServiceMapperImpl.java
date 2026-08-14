@@ -40,6 +40,7 @@ public class VendorServiceMapperImpl implements VendorServiceMapper {
         service.setServiceName(request.getServiceName());
         service.setCategory(request.getCategory());
         service.setDescription(request.getDescription());
+
         if (request.getPricing() != null) {
 
             service.setPrice(
@@ -53,6 +54,7 @@ public class VendorServiceMapperImpl implements VendorServiceMapper {
             );
 
         }
+
         service.setCapacity(request.getCapacity());
         service.setDurationHours(request.getDurationHours());
 
@@ -73,9 +75,17 @@ public class VendorServiceMapperImpl implements VendorServiceMapper {
         service.setAmenities(request.getAmenities());
 
         service.setAttributes(
-                serviceAttributeMapper.toEntityList(request.getAttributes())
+                serviceAttributeMapper.toEntityList(
+                        request.getAttributes()
+                )
         );
+
         service.setLocation(request.getLocation());
+
+        /* * ========================================= * BUNDLE CONFIGURATION * ========================================= */
+        service.setBundleEnabled( request.getBundleEnabled() );
+        service.setBundleDiscountType( request.getBundleDiscountType() );
+        service.setBundleDiscountValue( request.getBundleDiscountValue() );
 
         return service;
     }
@@ -121,6 +131,10 @@ public class VendorServiceMapperImpl implements VendorServiceMapper {
                 serviceAttributeMapper.toDtoList(service.getAttributes())
         );
         response.setLocation(service.getLocation());
+
+        response.setBundleEnabled( service.getBundleEnabled() );
+        response.setBundleDiscountType( service.getBundleDiscountType() );
+        response.setBundleDiscountValue( service.getBundleDiscountValue() );
 
         return response;
     }
@@ -168,5 +182,9 @@ public class VendorServiceMapperImpl implements VendorServiceMapper {
         entity.setAttributes(
                 serviceAttributeMapper.toEntityList(request.getAttributes())
         );
+        /* * ========================================= * BUNDLE CONFIGURATION * ========================================= */
+        entity.setBundleEnabled( request.getBundleEnabled() );
+        entity.setBundleDiscountType( request.getBundleDiscountType() );
+        entity.setBundleDiscountValue( request.getBundleDiscountValue() );
     }
 }

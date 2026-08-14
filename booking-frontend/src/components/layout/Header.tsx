@@ -1,22 +1,103 @@
 import {
-    Link
+    useEffect,
+    useState
+} from "react";
+
+import {
+    Link,
+    useNavigate
 } from "react-router-dom";
 
 import {
     useAuth
 } from "../../context/AuthContext";
 
+import CartService from "../../services/CartService";
+
 import "./Header.css";
 
 
 const Header = () => {
-
 
     const {
         user,
         isAuthenticated,
         logout
     } = useAuth();
+
+
+    const navigate =
+        useNavigate();
+
+
+    /*
+     * =========================================
+     * CART COUNT
+     * =========================================
+     */
+
+    const [
+        cartCount,
+        setCartCount
+    ] = useState(
+        CartService.getItemCount()
+    );
+
+
+    /*
+     * =========================================
+     * LISTEN FOR CART CHANGES
+     * =========================================
+     */
+
+    useEffect(() => {
+
+        const updateCartCount = () => {
+
+            setCartCount(
+                CartService.getItemCount()
+            );
+
+        };
+
+
+        /*
+         * Update immediately when another
+         * component changes the cart.
+         */
+
+        window.addEventListener(
+            "cartUpdated",
+            updateCartCount
+        );
+
+
+        /*
+         * Also refresh when user returns
+         * to the browser/tab.
+         */
+
+        window.addEventListener(
+            "storage",
+            updateCartCount
+        );
+
+
+        return () => {
+
+            window.removeEventListener(
+                "cartUpdated",
+                updateCartCount
+            );
+
+            window.removeEventListener(
+                "storage",
+                updateCartCount
+            );
+
+        };
+
+    }, []);
 
 
     return (
@@ -51,7 +132,37 @@ const Header = () => {
 
                             <>
 
-                                {/* Notification */}
+                                {/* =================================
+                                    CART
+                                ================================= */}
+
+                                <button
+                                    type="button"
+                                    className="header-cart-button"
+                                    onClick={() =>
+                                        navigate("/cart")
+                                    }
+                                    title="View Cart"
+                                >
+
+                                    <span className="header-cart-icon">
+                                        🛒
+                                    </span>
+
+                                    <span>
+                                        Cart
+                                    </span>
+
+                                    <span className="header-cart-badge">
+                                        {cartCount}
+                                    </span>
+
+                                </button>
+
+
+                                {/* =================================
+                                    NOTIFICATION
+                                ================================= */}
 
                                 <button
                                     className="notification-btn"
@@ -67,7 +178,9 @@ const Header = () => {
                                 </button>
 
 
-                                {/* User Profile */}
+                                {/* =================================
+                                    USER PROFILE
+                                ================================= */}
 
                                 <div className="user-profile">
 
@@ -92,7 +205,9 @@ const Header = () => {
                                 </div>
 
 
-                                {/* Vendor Dashboard */}
+                                {/* =================================
+                                    VENDOR DASHBOARD
+                                ================================= */}
 
                                 {user.role === "VENDOR" && (
 
@@ -106,7 +221,9 @@ const Header = () => {
                                 )}
 
 
-                                {/* Admin */}
+                                {/* =================================
+                                    ADMIN DASHBOARD
+                                ================================= */}
 
                                 {user.role === "ADMIN" && (
 
@@ -120,7 +237,9 @@ const Header = () => {
                                 )}
 
 
-                                {/* Logout */}
+                                {/* =================================
+                                    LOGOUT
+                                ================================= */}
 
                                 <button
                                     className="logout-btn"
@@ -167,6 +286,10 @@ const Header = () => {
             </div>
 
 
+            {/* =========================================
+                MAIN HEADER
+            ========================================= */}
+
             <header className="main-header">
 
                 <div className="container header-container">
@@ -212,7 +335,6 @@ const Header = () => {
                             </Link>
 
                         )}
-
 
                     </nav>
 

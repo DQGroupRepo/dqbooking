@@ -1,5 +1,9 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import {
+    useLocation,
+    useNavigate,
+    useParams
+} from "react-router-dom";
 
 import VendorGallery from "../../components/vendor/VendorGallery";
 import VendorInfo from "../../components/vendor/VendorInfo";
@@ -9,95 +13,355 @@ import VendorReviews from "../../components/vendor/VendorReviews";
 import BookingCard from "../../components/vendor/VendorBookingCard";
 
 import VendorDetailService from "../../services/VendorDetailService";
+import BundleService from "../../services/BundleService";
 
-import type { VendorDetail as VendorDetailType } from "../../types/VendorDetail";
+import type {
+    VendorDetail as VendorDetailType
+} from "../../types/VendorDetail";
+
+import type { Bundle } from "../../types/Bundle";
 
 import "./VendorDetail.css";
 
 const VendorDetail = () => {
 
-const { serviceId } = useParams();
+    const { serviceId } = useParams();
 
-const [vendor, setVendor] =
-    useState<VendorDetailType>();
+    const location = useLocation();
 
-useEffect(() => {
+    const navigate = useNavigate();
 
-    if (serviceId) {
-        loadVendor(serviceId);
-    }
 
-}, [serviceId]);
+    /*
+     * =========================================
+     * BUNDLE NAVIGATION STATE
+     * =========================================
+     */
 
-const loadVendor = async (id: string) => {
+    const bundleState =
+        location.state;
 
-    try {
 
-        const data =
-            await VendorDetailService.getById(id);
+    const fromBundle =
+        bundleState?.fromBundle === true;
 
-        setVendor(data);
 
-    } catch (error) {
+    /*
+     * =========================================
+     * VENDOR
+     * =========================================
+     */
 
-        console.error(
-            "Failed to load vendor details:",
-            error
+    const [vendor, setVendor] =
+        useState<VendorDetailType | null>(null);
+
+
+    /*
+     * =========================================
+     * BUNDLE OFFERS
+     * =========================================
+     */
+
+    const [bundles, setBundles] =
+        useState<Bundle[]>([]);
+
+
+    /*
+     * =========================================
+     * LOAD DATA
+     * =========================================
+     */
+
+    useEffect(() => {
+
+        if (serviceId) {
+
+            loadVendor(serviceId);
+
+            loadBundles(serviceId);
+
+        }
+
+    }, [serviceId]);
+
+
+    /*
+     * =========================================
+     * LOAD VENDOR
+     * =========================================
+     */
+
+    const loadVendor = async (
+        id: string
+    ) => {
+
+        try {
+
+            const data =
+                await VendorDetailService.getById(
+                    id
+                );
+
+            setVendor(data);
+
+        } catch (error) {
+
+            console.error(
+                "Failed to load vendor details:",
+                error
+            );
+
+        }
+
+    };
+
+
+    /*
+     * =========================================
+     * LOAD BUNDLES
+     * =========================================
+     */
+
+    const loadBundles = async (
+        id: string
+    ) => {
+
+        try {
+
+            /*
+             * =========================================
+             * CONTINUING EXISTING BUNDLE
+             * =========================================
+             */
+
+            if (
+                bundleState?.bundleId &&
+                bundleState?.bundleServiceIds
+            ) {
+
+                /*
+                 * We are currently travelling
+                 * through a selected bundle.
+                 *
+                 * Do not replace the selected
+                 * bundle with all available bundles.
+                 */
+
+                const selectedBundle: Bundle = {
+
+                    id:
+                        bundleState.bundleId,
+
+                    vendorId:
+                        "",
+
+                    name:
+                        bundleState.bundleName ||
+                        "Selected Bundle",
+
+                    description:
+                        bundleState.bundleDescription,
+
+                    serviceIds:
+                        bundleState.bundleServiceIds,
+
+                    discountType:
+                        bundleState.bundleDiscountType,
+
+                    discountValue:
+                        bundleState.bundleDiscountValue,
+
+                    active: true
+
+                };
+
+
+                setBundles([
+                    selectedBundle
+                ]);
+
+                return;
+
+            }
+
+
+            /*
+             * =========================================
+             * NORMAL SERVICE PAGE
+             * =========================================
+             *
+             * Fetch all active bundles containing
+             * this service.
+             */
+
+            const data =
+                await BundleService
+                    .getBundlesForService(
+                        id
+                    );
+
+
+            setBundles(data);
+
+        } catch (error) {
+
+            console.error(
+                "Failed to load bundle offers:",
+                error
+            );
+
+            setBundles([]);
+
+        }
+
+    };
+
+    /*
+     * =========================================
+     * BACK TO BUNDLE
+     * =========================================
+     *
+     * This button is available ONLY when the
+     * customer reached this service through
+     * the bundle-selection flow.
+     */
+
+    const handleBackToBundle =
+        () => {
+
+            if (!fromBundle) {
+                return;
+            }
+
+
+            const rootServiceId =
+                bundleState?.bundleRootServiceId;
+
+
+            if (!rootServiceId) {
+
+                /*
+                 * Safety fallback.
+                 */
+
+                navigate(
+                    "/cart"
+                );
+
+                return;
+
+            }
+
+
+            navigate(
+                `/bundles/available/${rootServiceId}`,
+                {
+                    state: bundleState
+                }
+            );
+
+        };
+
+
+    /*
+     * =========================================
+     * LOADING
+     * =========================================
+     */
+
+    if (!vendor) {
+
+        return (
+            <h2>Loading...</h2>
         );
 
     }
 
-};
 
-if (!vendor) {
+    /*
+     * =========================================
+     * UI
+     * =========================================
+     */
 
     return (
-        <h2>Loading...</h2>
-    );
 
-}
+        <>
 
-return (
+            {fromBundle && bundleState?.bundleId && (
 
-    <>
+                <div className="bundle-back-container">
 
-        <VendorGallery
-            vendor={vendor}
-        />
-
-        <section className="section">
-
-            <div className="container vendor-layout">
-
-                <div className="vendor-detail-main">
-
-                    <VendorInfo
-                        vendor={vendor}
-                    />
-
-                    <VendorAmenities
-                        vendor={vendor}
-                    />
-
-                    <VendorPackages />
-
-                    <VendorReviews />
+                    <button
+                        type="button"
+                        className="bundle-back-button"
+                        onClick={handleBackToBundle}
+                    >
+                        ← Back to Bundle
+                    </button>
 
                 </div>
 
-                <BookingCard
-                    vendor={vendor}
-                    serviceId={serviceId}
-                />
+            )}
 
-            </div>
 
-        </section>
+            <VendorGallery
+                vendor={vendor}
+            />
 
-    </>
 
-);
+            <section className="section">
 
+                <div className="container vendor-layout">
+
+                    <div className="vendor-detail-main">
+
+                        <VendorInfo
+                            vendor={vendor}
+                        />
+
+
+                        <VendorAmenities
+                            vendor={vendor}
+                        />
+
+
+                        <VendorPackages />
+
+
+                        <VendorReviews />
+
+                    </div>
+
+
+                    <BookingCard
+                        vendor={vendor}
+
+                        serviceId={
+                            serviceId
+                        }
+
+                        bundles={
+                            bundles
+                        }
+
+                        fromBundle={
+                            fromBundle
+                        }
+
+                        bundleState={
+                            bundleState
+                        }
+
+                    />
+
+                </div>
+
+            </section>
+
+        </>
+
+    );
 
 };
 

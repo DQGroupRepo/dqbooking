@@ -25,4 +25,6 @@ public interface VendorOfferingService {
 
     void deleteService(
             String serviceId);
+
+    List<VendorServiceResponse> getBundleServices(String serviceId);
 }

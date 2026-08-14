@@ -16,20 +16,53 @@ public class BookingController {
 
     private final BookingService bookingService;
 
+
+    /*
+     * =========================================
+     * CREATE BOOKING GROUP
+     * =========================================
+     *
+     * Handles all checkout scenarios:
+     *
+     * - Single service
+     * - Multiple services
+     * - Bundle
+     * - Mixed bundle + normal services
+     */
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public BookingResponse createBooking(
-            @Valid @RequestBody CreateBookingRequest request) {
+    public BookingGroupResponse createBooking(
+            @Valid @RequestBody CreateBookingRequest request
+    ) {
 
-        return bookingService.createBooking(request);
+        return bookingService.createBooking(
+                request
+        );
     }
+
+
+    /*
+     * =========================================
+     * GET BOOKING
+     * =========================================
+     */
 
     @GetMapping("/{bookingId}")
     public BookingResponse getBooking(
-            @PathVariable String bookingId) {
+            @PathVariable String bookingId
+    ) {
 
-        return bookingService.getBooking(bookingId);
+        return bookingService.getBooking(
+                bookingId
+        );
     }
+
+
+    /*
+     * =========================================
+     * VENDOR BOOKINGS
+     * =========================================
+     */
 
     @GetMapping("/vendor")
     public List<BookingResponse> getVendorBookings() {
@@ -37,11 +70,25 @@ public class BookingController {
         return bookingService.getVendorBookings();
     }
 
+
+    /*
+     * =========================================
+     * CUSTOMER BOOKINGS
+     * =========================================
+     */
+
     @GetMapping("/customer")
     public List<BookingResponse> getCustomerBookings() {
 
         return bookingService.getCustomerBookings();
     }
+
+
+    /*
+     * =========================================
+     * CANCEL BOOKING
+     * =========================================
+     */
 
     @PatchMapping("/{bookingId}/cancel")
     public BookingCancellationResponse cancelBooking(
@@ -51,8 +98,14 @@ public class BookingController {
         return bookingService.cancelBooking(
                 bookingId
         );
-
     }
+
+
+    /*
+     * =========================================
+     * BOOKING DETAILS
+     * =========================================
+     */
 
     @GetMapping("/{bookingId}/details")
     public CustomerBookingDetailsResponse getBookingDetails(
@@ -60,21 +113,25 @@ public class BookingController {
     ) {
 
         return bookingService.getBookingDetails(
-                bookingId);
-
+                bookingId
+        );
     }
+
+
+    /*
+     * =========================================
+     * CANCELLATION PREVIEW
+     * =========================================
+     */
 
     @GetMapping("/{bookingId}/cancellation-preview")
     public CancellationPreviewResponse getCancellationPreview(
-
             @PathVariable String bookingId
-
     ) {
 
         return bookingService.getCancellationPreview(
                 bookingId
         );
-
     }
 
 }

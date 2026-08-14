@@ -1,0 +1,193 @@
+.vendor-create-bundle {
+padding: 32px 40px;
+max-width: 1100px;
+margin: 0 auto;
+}
+
+.create-bundle-header {
+margin-bottom: 30px;
+}
+
+.create-bundle-header h1 {
+margin: 0 0 8px;
+font-size: 28px;
+font-weight: 700;
+}
+
+.create-bundle-header p {
+margin: 0;
+color: #6b7280;
+}
+
+.bundle-form {
+background: #ffffff;
+border-radius: 12px;
+padding: 30px;
+box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+}
+
+.form-section {
+margin-bottom: 25px;
+}
+
+.form-section label {
+display: block;
+margin-bottom: 8px;
+font-weight: 600;
+color: #1f2937;
+}
+
+.form-help {
+margin: -2px 0 15px;
+color: #6b7280;
+font-size: 14px;
+}
+
+.form-section input,
+.form-section textarea,
+.form-section select {
+width: 100%;
+box-sizing: border-box;
+padding: 11px 13px;
+border: 1px solid #d1d5db;
+border-radius: 8px;
+font-size: 14px;
+font-family: inherit;
+outline: none;
+}
+
+.form-section input:focus,
+.form-section textarea:focus,
+.form-section select:focus {
+border-color: #2563eb;
+}
+
+.form-section textarea {
+resize: vertical;
+}
+
+.service-selection-grid {
+display: grid;
+grid-template-columns: repeat(2, minmax(0, 1fr));
+gap: 12px;
+}
+
+.service-selection-card {
+display: flex;
+align-items: center;
+gap: 12px;
+text-align: left;
+padding: 16px;
+background: #ffffff;
+border: 1px solid #d1d5db;
+border-radius: 10px;
+cursor: pointer;
+transition: 0.2s ease;
+}
+
+.service-selection-card:hover {
+border-color: #2563eb;
+}
+
+.service-selection-card.selected {
+border-color: #2563eb;
+background: #eff6ff;
+}
+
+.service-check {
+width: 22px;
+height: 22px;
+min-width: 22px;
+display: flex;
+align-items: center;
+justify-content: center;
+border: 1px solid #9ca3af;
+border-radius: 5px;
+font-size: 14px;
+font-weight: 700;
+}
+
+.service-selection-card.selected .service-check {
+border-color: #2563eb;
+background: #2563eb;
+color: #ffffff;
+}
+
+.services-loading,
+.services-empty {
+padding: 20px;
+border: 1px dashed #d1d5db;
+border-radius: 8px;
+color: #6b7280;
+text-align: center;
+}
+
+.bundle-form-error {
+margin-bottom: 20px;
+padding: 12px 15px;
+background: #fef2f2;
+border: 1px solid #fecaca;
+border-radius: 8px;
+color: #b91c1c;
+}
+
+.bundle-form-actions {
+display: flex;
+justify-content: flex-end;
+gap: 12px;
+padding-top: 10px;
+border-top: 1px solid #e5e7eb;
+}
+
+.cancel-button,
+.save-bundle-button {
+padding: 11px 20px;
+border-radius: 8px;
+font-size: 14px;
+font-weight: 600;
+cursor: pointer;
+}
+
+.cancel-button {
+background: #ffffff;
+border: 1px solid #d1d5db;
+color: #374151;
+}
+
+.save-bundle-button {
+background: #2563eb;
+border: 1px solid #2563eb;
+color: #ffffff;
+}
+
+.save-bundle-button:disabled,
+.cancel-button:disabled {
+opacity: 0.6;
+cursor: not-allowed;
+}
+
+@media (max-width: 768px) {
+
+```
+.vendor-create-bundle {
+    padding: 24px 20px;
+}
+
+.bundle-form {
+    padding: 20px;
+}
+
+.service-selection-grid {
+    grid-template-columns: 1fr;
+}
+
+.bundle-form-actions {
+    flex-direction: column-reverse;
+}
+
+.cancel-button,
+.save-bundle-button {
+    width: 100%;
+}
+
+}
