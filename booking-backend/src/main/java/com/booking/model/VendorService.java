@@ -3,6 +3,7 @@ package com.booking.model;
 import com.booking.model.embedded.Availability;
 import com.booking.model.embedded.BookingSettings;
 import com.booking.model.embedded.ContactInfo;
+import com.booking.model.enums.DiscountType;
 import com.booking.model.enums.ServiceCategory;
 import lombok.Getter;
 import lombok.Setter;
@@ -52,5 +53,10 @@ public class VendorService extends BaseEntity {
 
     private ServiceModerationStatus moderationStatus =
             ServiceModerationStatus.PENDING;
+
+    private Boolean bundleEnabled = false;
+    private DiscountType bundleDiscountType;
+
+    private BigDecimal bundleDiscountValue;
 
 }

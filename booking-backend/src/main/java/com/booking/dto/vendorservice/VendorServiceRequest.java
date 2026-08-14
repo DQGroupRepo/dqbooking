@@ -1,6 +1,7 @@
 package com.booking.dto.vendorservice;
 
 import com.booking.dto.pricing.VendorServicePricingRequest;
+import com.booking.model.enums.DiscountType;
 import com.booking.model.enums.ServiceCategory;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -57,5 +58,10 @@ public class VendorServiceRequest {
      */
     @Valid
     private VendorServicePricingRequest pricing;
+
+    private Boolean bundleEnabled = false;
+    private DiscountType bundleDiscountType;
+
+    private BigDecimal bundleDiscountValue;
 
 }

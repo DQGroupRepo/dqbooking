@@ -17,6 +17,19 @@ import java.time.LocalDateTime;
 public class Booking extends BaseEntity {
 
     private String bookingNumber;
+    /*
+     * Groups multiple service bookings created
+     * from the same cart checkout.
+     *
+     * Example:
+     *
+     * Catering
+     * Decoration
+     * Transport
+     *
+     * can all belong to the same bookingGroupId.
+     */
+    private String bookingGroupId;
 
 
     /*

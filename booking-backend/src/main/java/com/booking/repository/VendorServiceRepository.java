@@ -43,4 +43,12 @@ public interface VendorServiceRepository extends MongoRepository<VendorService, 
     long countByModerationStatusAndDeletedFalse(
             ServiceModerationStatus moderationStatus
     );
+
+    List<VendorService> findByVendorIdAndBundleEnabledTrueAndActiveTrueAndDeletedFalse(
+            String vendorId
+    );
+
+    Optional<VendorService> findByIdAndDeletedFalse(
+            String serviceId
+    );
 }

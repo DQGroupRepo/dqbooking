@@ -8,7 +8,8 @@ import {
   FaCalendarAlt,
   FaStar,
   FaCog,
-  FaChartLine
+  FaChartLine,
+  FaLayerGroup
 } from "react-icons/fa";
 
 import "./VendorSidebar.css";
@@ -38,6 +39,11 @@ const vendorMenu = [
     label: "Services",
     path: "/vendor/manage-services",
     icon: <FaConciergeBell />
+  },
+  {
+      label: "Bundles",
+      path: "/vendor/bundles",
+      icon: <FaLayerGroup />
   },
 
   {

@@ -1,0 +1,166 @@
+.bundle-selection-page {
+    min-height: 100vh;
+    padding: 50px 20px;
+    background: #f7f8fc;
+}
+
+.bundle-selection-container {
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+.bundle-selection-header {
+    margin-bottom: 30px;
+}
+
+.bundle-selection-header h1 {
+    margin-bottom: 8px;
+}
+
+.bundle-selection-header p {
+    color: #666;
+}
+
+.bundle-card {
+    background: #fff;
+    border-radius: 14px;
+    padding: 25px;
+    margin-bottom: 25px;
+    border: 1px solid #e5e7eb;
+}
+
+.bundle-card-header {
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+    align-items: flex-start;
+}
+
+.bundle-card-header h2 {
+    margin: 0 0 8px;
+}
+
+.bundle-card-header p {
+    margin: 0;
+    color: #666;
+}
+
+.bundle-discount {
+    padding: 8px 14px;
+    border-radius: 20px;
+    background: #e8f7ee;
+    color: #16803c;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.bundle-services {
+    margin-top: 25px;
+}
+
+.bundle-services h3,
+.bundle-remaining h3 {
+    margin-bottom: 15px;
+}
+
+.bundle-service-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.bundle-service {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 12px 15px;
+    border-radius: 8px;
+    background: #f7f8fc;
+}
+
+.bundle-service span:nth-child(1) {
+    color: #777;
+    font-size: 14px;
+}
+
+.bundle-service span:nth-child(2) {
+    font-weight: 600;
+}
+
+.bundle-service.already-added {
+    background: #eef8f1;
+}
+
+.service-status {
+    margin-left: auto;
+    color: #16803c;
+    font-weight: 600;
+}
+
+.bundle-select-button,
+.remaining-service-button {
+    border: none;
+    cursor: pointer;
+    border-radius: 8px;
+    padding: 12px 20px;
+    font-weight: 600;
+}
+
+.bundle-select-button {
+    margin-top: 25px;
+    background: #111827;
+    color: #fff;
+}
+
+.bundle-remaining {
+    margin-top: 25px;
+    padding-top: 20px;
+    border-top: 1px solid #eee;
+}
+
+.bundle-remaining p {
+    color: #666;
+}
+
+.remaining-services {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.remaining-service-button {
+    background: #f0f2f7;
+    color: #222;
+}
+
+.bundle-complete {
+    color: #16803c !important;
+    font-weight: 600;
+}
+
+.skip-bundle-button {
+    display: block;
+    margin: 35px auto 0;
+    background: transparent;
+    border: none;
+    color: #666;
+    cursor: pointer;
+    text-decoration: underline;
+    font-size: 15px;
+}
+
+@media (max-width: 700px) {
+
+    .bundle-card-header {
+        flex-direction: column;
+    }
+
+    .bundle-discount {
+        align-self: flex-start;
+    }
+
+    .bundle-service {
+        flex-wrap: wrap;
+    }
+
+}

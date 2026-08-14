@@ -1,5 +1,6 @@
 package com.booking.dto.vendorservice;
 
+import com.booking.model.enums.DiscountType;
 import com.booking.model.enums.ServiceCategory;
 import lombok.Getter;
 import lombok.Setter;
@@ -46,4 +47,8 @@ public class VendorServiceResponse {
 
     private String location;
 
+    private Boolean bundleEnabled;
+    private DiscountType bundleDiscountType;
+
+    private BigDecimal bundleDiscountValue;
 }

@@ -41,6 +41,12 @@ import AdminUsers from "../pages/admin/AdminUsers";
 import AdminBookings from "../pages/admin/AdminBookings";
 import AdminReviews from "../pages/admin/AdminReviews";
 import AdminVendorVerification from "../pages/admin/AdminVendorVerification";
+import Cart from "../pages/cart/Cart";
+import VendorBundles from "../pages/VendorBundles/VendorBundles";
+
+import VendorBundleManagement from "../pages/vendor/VendorBundleManagement";
+import VendorCreateBundle from "../pages/vendor/VendorCreateBundle";
+import BundleSelection from "../pages/BundleSelection/BundleSelection";
 
 const AppRoutes = () => {
 
@@ -72,6 +78,11 @@ const AppRoutes = () => {
                     />
 
                     <Route
+                        path="/bundles/available/:serviceId"
+                        element={<BundleSelection />}
+                    />
+
+                    <Route
                         path="/login"
                         element={<Login />}
                     />
@@ -79,6 +90,11 @@ const AppRoutes = () => {
                     <Route
                         path="/register"
                         element={<Register />}
+                    />
+
+                    <Route
+                        path="/cart"
+                        element={<Cart />}
                     />
 
                     <Route
@@ -148,6 +164,21 @@ const AppRoutes = () => {
                     <Route
                         path="/vendor/manage-services"
                         element={<ManageServices />}
+                    />
+
+                    <Route
+                        path="/vendor/bundles"
+                        element={<VendorBundles />}
+                    />
+
+                    <Route
+                        path="/vendor/bundles"
+                        element={<VendorBundleManagement />}
+                    />
+
+                    <Route
+                        path="/vendor/bundles/create"
+                        element={<VendorCreateBundle />}
                     />
 
                     <Route

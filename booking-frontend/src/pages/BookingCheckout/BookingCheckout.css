@@ -257,3 +257,18 @@
         font-size: 1.6rem;
     }
 }
+
+.checkout-service-event-details {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-top: 8px;
+}
+
+.checkout-service-event-details small {
+    font-size: 0.85rem;
+}
+
+.cart-checkout-event-summary {
+    margin: 12px 0;
+}

@@ -133,4 +133,13 @@ public class VendorServiceController {
         );
 
     }
+
+    @GetMapping("/{serviceId}/bundle-services")
+    public ResponseEntity<List<VendorServiceResponse>> getBundleServices(
+            @PathVariable String serviceId) {
+
+        return ResponseEntity.ok(
+                vendorOfferingService.getBundleServices(serviceId)
+        );
+    }
 }

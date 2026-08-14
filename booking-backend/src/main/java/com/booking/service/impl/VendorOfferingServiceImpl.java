@@ -144,4 +144,28 @@ public class VendorOfferingServiceImpl implements VendorOfferingService {
         return vendorServiceMapper.toResponse(vendorService);
     }
 
+    @Override
+    public List<VendorServiceResponse> getBundleServices(
+            String serviceId) {
+
+        VendorService selectedService =
+                vendorServiceRepository
+                        .findByIdAndDeletedFalse(serviceId)
+                        .orElseThrow(() ->
+                                new VendorServiceNotFoundException(
+                                        "Service not found"
+                                )
+                        );
+
+        return vendorServiceRepository
+                .findByVendorIdAndBundleEnabledTrueAndActiveTrueAndDeletedFalse(
+                        selectedService.getVendorId()
+                )
+                .stream()
+                .filter(service ->
+                        !service.getId().equals(serviceId)
+                )
+                .map(vendorServiceMapper::toResponse)
+                .toList();
+    }
 }

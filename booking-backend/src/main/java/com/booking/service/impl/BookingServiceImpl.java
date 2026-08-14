@@ -1,6 +1,9 @@
 package com.booking.service.impl;
 
 import com.booking.dto.booking.*;
+import com.booking.dto.bundle.BundleCalculationRequest;
+import com.booking.dto.bundle.BundleCalculationResponse;
+import com.booking.dto.bundle.BundleDiscountItem;
 import com.booking.dto.pricing.PricingCalculationResult;
 import com.booking.exception.BookingNotFoundException;
 import com.booking.exception.ResourceNotFoundException;
@@ -12,10 +15,7 @@ import com.booking.model.enums.BookingStatus;
 import com.booking.model.enums.NotificationType;
 import com.booking.model.enums.PaymentStatus;
 import com.booking.repository.*;
-import com.booking.service.AuthenticatedUserService;
-import com.booking.service.BookingService;
-import com.booking.service.NotificationService;
-import com.booking.service.PricingCalculationService;
+import com.booking.service.*;
 import com.booking.util.BookingNumberGenerator;
 import com.booking.util.SecurityUtil;
 import lombok.RequiredArgsConstructor;
@@ -57,222 +57,512 @@ public class BookingServiceImpl implements BookingService
 
    private final VendorServicePricingRepository pricingRepository;
 
-           @Override
-           public BookingResponse createBooking(
-                   CreateBookingRequest request
-           ) {
+   private final BundleCalculationService bundleCalculationService;
 
-               /*
-                * =========================================
-                * 1. GET AUTHENTICATED CUSTOMER
-                * =========================================
-                */
+   @Override
+   public BookingGroupResponse createBooking(
+           CreateBookingRequest request
+   ) {
 
-               User customer =
-                       authenticatedUserService
-                               .getCurrentCustomer();
+       /*
+        * =========================================
+        * 1. GET AUTHENTICATED CUSTOMER
+        * =========================================
+        */
+
+       User customer =
+               authenticatedUserService
+                       .getCurrentCustomer();
 
 
-               /*
-                * =========================================
-                * 2. FIND ACTIVE SERVICE
-                * =========================================
-                */
+       /*
+        * =========================================
+        * 2. GENERATE BOOKING GROUP
+        * =========================================
+        *
+        * Every service selected during one checkout
+        * belongs to the same booking group.
+        */
 
-               VendorService vendorService =
-                       vendorServiceRepository
-                               .findByIdAndActiveTrueAndDeletedFalse(
-                                       request.getServiceId()
+       String bookingGroupId =
+               java.util.UUID.randomUUID()
+                       .toString();
+
+
+       /*
+        * =========================================
+        * 3. DISTINCT SERVICE ITEMS
+        * =========================================
+        */
+
+       List<BookingServiceItemRequest> serviceItems =
+               request.getServices()
+                       .stream()
+                       .collect(
+                               java.util.stream.Collectors.toMap(
+                                       BookingServiceItemRequest::getServiceId,
+                                       item -> item,
+                                       (first, second) -> first
                                )
-                               .orElseThrow(() ->
-                                       new ResourceNotFoundException(
-                                               "Service not found"
+                       )
+                       .values()
+                       .stream()
+                       .toList();
+
+
+       if (serviceItems.isEmpty()) {
+
+           throw new IllegalArgumentException(
+                   "At least one service is required."
+           );
+       }
+
+
+       /*
+        * =========================================
+        * 4. FIND SERVICES
+        * =========================================
+        */
+
+       List<VendorService> services =
+               serviceItems
+                       .stream()
+                       .map(item ->
+                               vendorServiceRepository
+                                       .findByIdAndActiveTrueAndDeletedFalse(
+                                               item.getServiceId()
                                        )
+                                       .orElseThrow(() ->
+                                               new ResourceNotFoundException(
+                                                       "Service not found: "
+                                                               + item.getServiceId()
+                                               )
+                                       )
+                       )
+                       .toList();
+
+
+       /*
+        * =========================================
+        * 5. PREPARE RESPONSE DATA
+        * =========================================
+        */
+
+       List<BookingResponse> bookingResponses =
+               new java.util.ArrayList<>();
+
+
+       BigDecimal originalTotal =
+               BigDecimal.ZERO;
+
+       BigDecimal totalDiscount =
+               BigDecimal.ZERO;
+
+       BigDecimal finalTotal =
+               BigDecimal.ZERO;
+
+
+       boolean bundleApplied =
+               false;
+
+       int qualifyingServiceCount =
+               0;
+
+
+       /*
+        * =========================================
+        * 6. PROCESS EACH SERVICE
+        * =========================================
+        */
+
+       for (VendorService vendorService : services) {
+
+           /*
+            * Find request information for this service.
+            */
+
+           BookingServiceItemRequest item =
+                   serviceItems
+                           .stream()
+                           .filter(serviceItem ->
+                                   serviceItem
+                                           .getServiceId()
+                                           .equals(
+                                                   vendorService.getId()
+                                           )
+                           )
+                           .findFirst()
+                           .orElseThrow(() ->
+                                   new IllegalArgumentException(
+                                           "Booking information missing for service."
+                                   )
+                           );
+
+
+           /*
+            * =========================================
+            * FIND VENDOR
+            * =========================================
+            */
+
+           User vendor =
+                   vendorRepository
+                           .findById(
+                                   vendorService.getVendorId()
+                           )
+                           .orElseThrow(() ->
+                                   new ResourceNotFoundException(
+                                           "Vendor not found."
+                                   )
+                           );
+
+
+           /*
+            * =========================================
+            * CALCULATE SERVICE PRICING
+            * =========================================
+            */
+
+           PricingCalculationResult pricingResult =
+                   pricingCalculationService.calculatePrice(
+                           vendorService.getId(),
+                           item.getEventDate()
+                   );
+
+
+           BigDecimal serviceTotal =
+                   safe(
+                           pricingResult.getTotalAmount()
+                   );
+
+
+           /*
+            * =========================================
+            * BUNDLE DISCOUNT
+            * =========================================
+            *
+            * Only services belonging to the same vendor
+            * are considered together for bundle pricing.
+            */
+
+           List<String> vendorServiceIds =
+                   services
+                           .stream()
+                           .filter(service ->
+                                   service.getVendorId()
+                                           .equals(
+                                                   vendorService.getVendorId()
+                                           )
+                           )
+                           .map(VendorService::getId)
+                           .toList();
+
+
+           BigDecimal bundleDiscount =
+                   BigDecimal.ZERO;
+
+
+           if (vendorServiceIds.size() > 1) {
+
+               BundleCalculationRequest bundleRequest =
+                       new BundleCalculationRequest();
+
+               bundleRequest.setServiceIds(
+                       vendorServiceIds
+               );
+
+
+               BundleCalculationResponse bundleResult =
+                       bundleCalculationService
+                               .calculateBundle(
+                                       bundleRequest
                                );
 
 
-               /*
-                * =========================================
-                * 3. FIND VENDOR
-                * =========================================
-                */
-
-               User vendor =
-                       vendorRepository
-                               .findById(
-                                       vendorService.getVendorId()
+               BundleDiscountItem bundleItem =
+                       bundleResult
+                               .getItems()
+                               .stream()
+                               .filter(bundle ->
+                                       bundle.getServiceId()
+                                               .equals(
+                                                       vendorService.getId()
+                                               )
                                )
-                               .orElseThrow(() ->
-                                       new ResourceNotFoundException(
-                                               "Vendor not found"
-                                       )
-                               );
+                               .findFirst()
+                               .orElse(null);
 
 
-               /*
-                * =========================================
-                * 4. CALCULATE PRICING
-                * =========================================
-                *
-                * The pricing engine finds the applicable
-                * pricing version based on:
-                *
-                * serviceId
-                * eventDate
-                *
-                * It calculates:
-                *
-                * Base Amount
-                * Pricing Heads
-                * Subtotal
-                * Discounts
-                * Total
-                * Advance
-                * Balance
-                */
+               if (bundleItem != null) {
 
-               PricingCalculationResult pricingResult =
-                       pricingCalculationService.calculatePrice(
-                               request.getServiceId(),
-                               request.getEventDate()
+                   bundleDiscount =
+                           safe(
+                                   bundleItem.getDiscountAmount()
+                           );
+
+                   if (bundleDiscount.compareTo(
+                           BigDecimal.ZERO
+                   ) > 0) {
+
+                       bundleApplied = true;
+                   }
+               }
+
+
+               qualifyingServiceCount =
+                       Math.max(
+                               qualifyingServiceCount,
+                               vendorServiceIds.size()
                        );
-
-
-               /*
-                * =========================================
-                * 5. CREATE BOOKING
-                * =========================================
-                */
-
-               Booking booking =
-                       new Booking();
-
-
-               booking.setBookingNumber(
-                       bookingNumberGenerator.generate()
-               );
-
-
-               booking.setCustomerId(
-                       customer.getId()
-               );
-
-
-               booking.setEventDate(
-                       request.getEventDate()
-               );
-
-
-               booking.setGuestCount(
-                       request.getGuestCount()
-               );
-
-
-               booking.setSpecialRequest(
-                       request.getSpecialRequest()
-               );
-
-
-               booking.setEventType(
-                       request.getEventType()
-               );
-
-
-               /*
-                * =========================================
-                * 6. PREPARE BOOKING SNAPSHOTS
-                * =========================================
-                */
-
-               bookingHelper.prepareBooking(
-                       booking,
-                       vendorService,
-                       customer,
-                       vendor
-               );
-
-
-               /*
-                * =========================================
-                * 7. CREATE PRICING SNAPSHOT
-                * =========================================
-                *
-                * The pricing result is converted into a
-                * permanent snapshot.
-                *
-                * Future vendor pricing changes will NOT
-                * affect this booking.
-                */
-
-               BookingPricingSnapshot pricingSnapshot =
-                       createPricingSnapshot(
-                               pricingResult
-                       );
-
-
-               booking.setPricingSnapshot(
-                       pricingSnapshot
-               );
-
-
-               /*
-                * Keep these top-level values for
-                * existing dashboard/revenue logic.
-                */
-
-               booking.setTotalAmount(
-                       pricingResult.getTotalAmount()
-               );
-
-
-               booking.setPaidAmount(
-                       BigDecimal.ZERO
-               );
-
-               booking.setCreatedAt(LocalDateTime.now());
-               /*
-                * =========================================
-                * 8. SAVE BOOKING
-                * =========================================
-                */
-
-               booking =
-                       bookingRepository.save(
-                               booking
-                       );
-
-
-               /*
-                * =========================================
-                * 9. CREATE VENDOR NOTIFICATION
-                * =========================================
-                */
-
-               notificationService.createNotification(
-                       vendor.getId(),
-
-                       NotificationType.BOOKING,
-
-                       "New Booking",
-
-                       customer.getFullName()
-                               + " booked "
-                               + booking.getServiceName(),
-
-                       booking.getId()
-               );
-
-
-               /*
-                * =========================================
-                * 10. RETURN RESPONSE
-                * =========================================
-                */
-
-               return bookingMapper.toResponse(
-                       booking
-               );
            }
+
+
+           /*
+            * =========================================
+            * FINAL SERVICE AMOUNT
+            * =========================================
+            */
+
+           BigDecimal finalServiceAmount =
+                   serviceTotal
+                           .subtract(bundleDiscount)
+                           .max(BigDecimal.ZERO);
+
+
+           /*
+            * =========================================
+            * CREATE BOOKING
+            * =========================================
+            */
+
+           Booking booking =
+                   new Booking();
+
+
+           booking.setBookingNumber(
+                   bookingNumberGenerator.generate()
+           );
+
+
+           booking.setBookingGroupId(
+                   bookingGroupId
+           );
+
+
+           booking.setCustomerId(
+                   customer.getId()
+           );
+
+
+           booking.setEventDate(
+                   item.getEventDate()
+           );
+
+
+           booking.setGuestCount(
+                   item.getGuestCount()
+           );
+
+
+           booking.setSpecialRequest(
+                   request.getSpecialRequest()
+           );
+
+
+           booking.setEventType(
+                   request.getEventType()
+           );
+
+
+           /*
+            * =========================================
+            * SNAPSHOTS
+            * =========================================
+            */
+
+           bookingHelper.prepareBooking(
+                   booking,
+                   vendorService,
+                   customer,
+                   vendor
+           );
+
+
+           BookingPricingSnapshot pricingSnapshot =
+                   createPricingSnapshot(
+                           pricingResult
+                   );
+
+
+           /*
+            * Add bundle discount to snapshot.
+            */
+
+           BigDecimal existingDiscount =
+                   safe(
+                           pricingSnapshot
+                                   .getDiscountAmount()
+                   );
+
+
+           pricingSnapshot.setDiscountAmount(
+                   existingDiscount
+                           .add(bundleDiscount)
+           );
+
+
+           pricingSnapshot.setTotalAmount(
+                   finalServiceAmount
+           );
+
+
+           booking.setPricingSnapshot(
+                   pricingSnapshot
+           );
+
+
+           /*
+            * Top-level totals.
+            */
+
+           booking.setTotalAmount(
+                   finalServiceAmount
+           );
+
+
+           booking.setPaidAmount(
+                   BigDecimal.ZERO
+           );
+
+
+           booking.setCreatedAt(
+                   LocalDateTime.now()
+           );
+
+
+           /*
+            * =========================================
+            * SAVE BOOKING
+            * =========================================
+            */
+
+           booking =
+                   bookingRepository.save(
+                           booking
+                   );
+
+
+           /*
+            * =========================================
+            * VENDOR NOTIFICATION
+            * =========================================
+            */
+
+           notificationService.createNotification(
+
+                   vendor.getId(),
+
+                   NotificationType.BOOKING,
+
+                   "New Booking",
+
+                   customer.getFullName()
+                           + " booked "
+                           + booking.getServiceName(),
+
+                   booking.getId()
+           );
+
+
+           /*
+            * =========================================
+            * RESPONSE
+            * =========================================
+            */
+
+           bookingResponses.add(
+                   bookingMapper.toResponse(
+                           booking
+                   )
+           );
+
+
+           /*
+            * =========================================
+            * GROUP TOTALS
+            * =========================================
+            */
+
+           originalTotal =
+                   originalTotal.add(
+                           serviceTotal
+                   );
+
+
+           totalDiscount =
+                   totalDiscount.add(
+                           bundleDiscount
+                   );
+
+
+           finalTotal =
+                   finalTotal.add(
+                           finalServiceAmount
+                   );
+       }
+
+
+       /*
+        * =========================================
+        * RETURN BOOKING GROUP
+        * =========================================
+        */
+
+       return BookingGroupResponse
+               .builder()
+
+               .bookingGroupId(
+                       bookingGroupId
+               )
+
+               .customerId(
+                       customer.getId()
+               )
+
+               .eventType(
+                       request.getEventType()
+               )
+
+               .specialRequest(
+                       request.getSpecialRequest()
+               )
+
+               .originalTotal(
+                       originalTotal
+               )
+
+               .totalDiscount(
+                       totalDiscount
+               )
+
+               .finalTotal(
+                       finalTotal
+               )
+
+               .bundleApplied(
+                       bundleApplied
+               )
+
+               .qualifyingServiceCount(
+                       qualifyingServiceCount
+               )
+
+               .bookings(
+                       bookingResponses
+               )
+
+               .build();
+   }
 
     @Override
     public BookingResponse getBooking(String bookingId) {
@@ -1003,4 +1293,6 @@ public class BookingServiceImpl implements BookingService
        }
 
    }
+
+
 }

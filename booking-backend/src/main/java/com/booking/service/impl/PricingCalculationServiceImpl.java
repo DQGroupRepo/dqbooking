@@ -5,10 +5,12 @@ import com.booking.dto.pricing.PricingCalculationResult;
 import com.booking.dto.pricing.PricingHeadSnapshot;
 import com.booking.model.VendorDiscount;
 import com.booking.model.VendorPricingHead;
+import com.booking.model.VendorService;
 import com.booking.model.VendorServicePricing;
 import com.booking.model.enums.DiscountType;
 import com.booking.model.enums.PricingCalculationType;
 import com.booking.repository.VendorServicePricingRepository;
+import com.booking.repository.VendorServiceRepository;
 import com.booking.service.PricingCalculationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -16,6 +18,7 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
@@ -27,12 +30,37 @@ public class PricingCalculationServiceImpl
     private final VendorServicePricingRepository
             vendorServicePricingRepository;
 
+    private final VendorServiceRepository
+            vendorServiceRepository;
+
 
     @Override
     public PricingCalculationResult calculatePrice(
             String serviceId,
             LocalDate eventDate
     ) {
+
+        /*
+         * =========================================
+         * LOAD SERVICE
+         * =========================================
+         */
+
+        VendorService service =
+                vendorServiceRepository
+                        .findByIdAndDeletedFalse(serviceId)
+                        .orElseThrow(() ->
+                                new IllegalStateException(
+                                        "Service not found."
+                                )
+                        );
+
+
+        /*
+         * =========================================
+         * LOAD APPLICABLE PRICING
+         * =========================================
+         */
 
         VendorServicePricing pricing =
                 vendorServicePricingRepository
@@ -71,26 +99,6 @@ public class PricingCalculationServiceImpl
          * =========================================
          * PRICING HEADS
          * =========================================
-         */
-
-        /*
-         * =========================================
-         * PRICING HEADS
-         * =========================================
-         *
-         * Each pricing head is currently calculated
-         * against the base amount.
-         *
-         * Example:
-         *
-         * Base Amount = 1000
-         * Decoration  = 10% of Base = 100
-         * Service Fee = 5% of Base = 50
-         *
-         * Subtotal = 1150
-         *
-         * This prevents the Java lambda from capturing
-         * a variable that is later modified.
          */
 
         List<PricingHeadSnapshot> headSnapshots =
@@ -182,71 +190,151 @@ public class PricingCalculationServiceImpl
          * =========================================
          * DISCOUNTS
          * =========================================
+         *
+         * There are now TWO possible sources:
+         *
+         * 1. Normal pricing discounts
+         *    configured inside VendorServicePricing
+         *
+         * 2. Bundle discount
+         *    configured directly on VendorService
+         *
+         * Bundle discount belongs to THIS service only.
+         *
+         * Therefore:
+         *
+         * Catering    -> its own bundle discount
+         * Decoration  -> its own bundle discount
+         * Transport   -> its own bundle discount
+         *
+         * When multiple services are selected later,
+         * each service will be calculated independently.
          */
+
+        final BigDecimal discountBase =
+                subtotal;
+
+
+        List<DiscountSnapshot> discountSnapshots =
+                new ArrayList<>();
+
 
         /*
          * =========================================
-         * DISCOUNTS
+         * NORMAL PRICING DISCOUNTS
          * =========================================
-         *
-         * Discounts are calculated against the completed
-         * subtotal after all active pricing heads.
-         *
-         * subtotal is no longer modified after this point,
-         * so it can safely be used inside the lambda.
          */
 
-        final BigDecimal discountBase = subtotal;
+        if (pricing.getDiscounts() != null) {
 
-        List<DiscountSnapshot> discountSnapshots =
+            pricing.getDiscounts()
+                    .stream()
 
-                pricing.getDiscounts() == null
-
-                        ? List.of()
-
-                        : pricing.getDiscounts()
-                        .stream()
-
-                        .filter(
-                                discount ->
-                                        isDiscountApplicable(
-                                                discount,
-                                                eventDate
-                                        )
-                        )
-
-                        .map(discount -> {
-
-                            BigDecimal calculatedAmount =
-                                    calculateDiscount(
-                                            discountBase,
-                                            discount
-                                    );
-
-                            return DiscountSnapshot
-                                    .builder()
-
-                                    .name(
-                                            discount.getName()
+                    .filter(
+                            discount ->
+                                    isDiscountApplicable(
+                                            discount,
+                                            eventDate
                                     )
+                    )
 
-                                    .discountType(
-                                            discount.getDiscountType()
-                                    )
+                    .map(discount -> {
 
-                                    .value(
-                                            discount.getValue()
-                                    )
+                        BigDecimal calculatedAmount =
+                                calculateDiscount(
+                                        discountBase,
+                                        discount
+                                );
 
-                                    .calculatedAmount(
-                                            calculatedAmount
-                                    )
+                        return DiscountSnapshot
+                                .builder()
 
-                                    .build();
+                                .name(
+                                        discount.getName()
+                                )
 
-                        })
+                                .discountType(
+                                        discount.getDiscountType()
+                                )
 
-                        .toList();
+                                .value(
+                                        discount.getValue()
+                                )
+
+                                .calculatedAmount(
+                                        calculatedAmount
+                                )
+
+                                .build();
+
+                    })
+
+                    .forEach(
+                            discountSnapshots::add
+                    );
+
+        }
+
+
+        /*
+         * =========================================
+         * BUNDLE DISCOUNT
+         * =========================================
+         *
+         * Only apply when bundleEnabled = true.
+         */
+
+        if (
+                Boolean.TRUE.equals(
+                        service.getBundleEnabled()
+                )
+        ) {
+
+            BigDecimal bundleDiscount =
+                    calculateBundleDiscount(
+                            discountBase,
+                            service
+                    );
+
+
+            if (
+                    bundleDiscount.compareTo(
+                            BigDecimal.ZERO
+                    ) > 0
+            ) {
+
+                DiscountSnapshot bundleSnapshot =
+                        DiscountSnapshot
+                                .builder()
+
+                                .name(
+                                        "Bundle Discount"
+                                )
+
+                                .discountType(
+                                        service
+                                                .getBundleDiscountType()
+                                )
+
+                                .value(
+                                        service
+                                                .getBundleDiscountValue()
+                                )
+
+                                .calculatedAmount(
+                                        bundleDiscount
+                                )
+
+                                .build();
+
+
+                discountSnapshots.add(
+                        bundleSnapshot
+                );
+
+            }
+
+        }
 
 
         /*
@@ -277,7 +365,7 @@ public class PricingCalculationServiceImpl
          * DISCOUNT LIMIT
          * =========================================
          *
-         * Never allow total discount to exceed
+         * Never allow total discounts to exceed
          * the subtotal.
          */
 
@@ -407,11 +495,8 @@ public class PricingCalculationServiceImpl
      */
 
     private BigDecimal calculateHeadAmount(
-
             BigDecimal currentSubtotal,
-
             VendorPricingHead head
-
     ) {
 
         BigDecimal value =
@@ -457,16 +542,13 @@ public class PricingCalculationServiceImpl
 
     /*
      * =========================================
-     * DISCOUNT CALCULATION
+     * NORMAL DISCOUNT CALCULATION
      * =========================================
      */
 
     private BigDecimal calculateDiscount(
-
             BigDecimal subtotal,
-
             VendorDiscount discount
-
     ) {
 
         BigDecimal value =
@@ -512,16 +594,75 @@ public class PricingCalculationServiceImpl
 
     /*
      * =========================================
+     * BUNDLE DISCOUNT CALCULATION
+     * =========================================
+     */
+
+    private BigDecimal calculateBundleDiscount(
+            BigDecimal subtotal,
+            VendorService service
+    ) {
+
+        if (
+                service.getBundleDiscountType()
+                        == null
+        ) {
+
+            return BigDecimal.ZERO;
+
+        }
+
+
+        BigDecimal value =
+                safe(
+                        service.getBundleDiscountValue()
+                );
+
+
+        if (
+                service.getBundleDiscountType()
+                        ==
+                        DiscountType.FIXED
+        ) {
+
+            return value;
+
+        }
+
+
+        if (
+                service.getBundleDiscountType()
+                        ==
+                        DiscountType.PERCENTAGE
+        ) {
+
+            return subtotal
+
+                    .multiply(value)
+
+                    .divide(
+                            BigDecimal.valueOf(100),
+                            2,
+                            RoundingMode.HALF_UP
+                    );
+
+        }
+
+
+        return BigDecimal.ZERO;
+
+    }
+
+
+    /*
+     * =========================================
      * ADVANCE CALCULATION
      * =========================================
      */
 
     private BigDecimal calculateAdvance(
-
             BigDecimal totalAmount,
-
             VendorServicePricing pricing
-
     ) {
 
         if (
@@ -573,16 +714,13 @@ public class PricingCalculationServiceImpl
 
     /*
      * =========================================
-     * DISCOUNT VALIDATION
+     * NORMAL DISCOUNT VALIDATION
      * =========================================
      */
 
     private boolean isDiscountApplicable(
-
             VendorDiscount discount,
-
             LocalDate eventDate
-
     ) {
 
         if (
@@ -598,9 +736,7 @@ public class PricingCalculationServiceImpl
 
         if (
                 discount.getValidFrom() != null
-
                         &&
-
                         eventDate.isBefore(
                                 discount.getValidFrom()
                         )
@@ -613,9 +749,7 @@ public class PricingCalculationServiceImpl
 
         if (
                 discount.getValidUntil() != null
-
                         &&
-
                         eventDate.isAfter(
                                 discount.getValidUntil()
                         )
@@ -632,9 +766,7 @@ public class PricingCalculationServiceImpl
 
 
     private boolean isActive(
-
             VendorPricingHead head
-
     ) {
 
         return Boolean.TRUE.equals(
@@ -645,9 +777,7 @@ public class PricingCalculationServiceImpl
 
 
     private BigDecimal safe(
-
             BigDecimal value
-
     ) {
 
         return value == null
@@ -660,9 +790,7 @@ public class PricingCalculationServiceImpl
 
 
     private int safeOrder(
-
             Integer order
-
     ) {
 
         return order == null
@@ -673,12 +801,10 @@ public class PricingCalculationServiceImpl
 
     }
 
+
     private boolean isPricingApplicable(
-
             VendorServicePricing pricing,
-
             LocalDate eventDate
-
     ) {
 
         if (
