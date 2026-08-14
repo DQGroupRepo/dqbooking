@@ -106,6 +106,12 @@ class CartService {
             cart
         );
 
+        // Notify Header and other components
+        // that the cart has changed.
+        window.dispatchEvent(
+            new Event("cartUpdated")
+        );
+
 
         return cart;
 
@@ -135,6 +141,11 @@ class CartService {
             cart
         );
 
+        // Notify Header that cart changed.
+        window.dispatchEvent(
+            new Event("cartUpdated")
+        );
+
 
         return cart;
 
@@ -151,6 +162,11 @@ class CartService {
 
         localStorage.removeItem(
             CART_STORAGE_KEY
+        );
+
+        // Notify Header that cart changed.
+        window.dispatchEvent(
+            new Event("cartUpdated")
         );
 
     }

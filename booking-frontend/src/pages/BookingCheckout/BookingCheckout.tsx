@@ -1,15 +1,27 @@
-import { useEffect, useMemo, useState } from "react";
+import {
+    useEffect,
+    useMemo,
+    useState
+} from "react";
+
 import {
     useLocation,
     useNavigate
 } from "react-router-dom";
+
 import toast from "react-hot-toast";
 
 import api from "../../api/axiosConfig";
-import CartService from "../../services/CartService";
-import { createBooking } from "../../services/bookingService";
 
-import type { CartItem } from "../../types/CartItem";
+import CartService from "../../services/CartService";
+
+import {
+    createBooking
+} from "../../services/bookingService";
+
+import type {
+    CartItem
+} from "../../types/CartItem";
 
 import "./BookingCheckout.css";
 
@@ -120,6 +132,19 @@ interface BundleBookingResponse {
 }
 
 
+interface CartDisplayItem {
+
+    item: CartItem;
+
+    originalAmount: number;
+
+    discountAmount: number;
+
+    finalAmount: number;
+
+}
+
+
 const BookingCheckout = () => {
 
     const location =
@@ -130,15 +155,8 @@ const BookingCheckout = () => {
 
 
     const state =
-        location.state as
-        BookingLocationState | null;
+        location.state as BookingLocationState | null;
 
-
-    /*
-     * =========================================
-     * CHECKOUT SOURCE
-     * =========================================
-     */
 
     const cart =
         state?.cart ?? [];
@@ -147,12 +165,6 @@ const BookingCheckout = () => {
     const isCartCheckout =
         cart.length > 0;
 
-
-    /*
-     * =========================================
-     * DIRECT BOOKING DATA
-     * =========================================
-     */
 
     const vendor =
         state?.vendor ?? null;
@@ -170,39 +182,32 @@ const BookingCheckout = () => {
         state?.guests ?? "";
 
 
-    /*
-     * =========================================
-     * SINGLE SERVICE EVENT DATA
-     * =========================================
-     *
-     * Cart checkout does NOT edit these values.
-     * They already belong to each CartItem.
-     */
-
-    const [eventDate, setEventDate] =
-        useState(
-            initialEventDate
-        );
+    const [
+        eventDate,
+        setEventDate
+    ] = useState(
+        initialEventDate
+    );
 
 
-    const [guests, setGuests] =
-        useState<number | string>(
-            initialGuests
-        );
+    const [
+        guests,
+        setGuests
+    ] = useState<number | string>(
+        initialGuests
+    );
 
 
-    /*
-     * =========================================
-     * OTHER BOOKING INFORMATION
-     * =========================================
-     */
-
-    const [eventType, setEventType] =
-        useState("");
+    const [
+        eventType,
+        setEventType
+    ] = useState("");
 
 
-    const [specialRequest, setSpecialRequest] =
-        useState("");
+    const [
+        specialRequest,
+        setSpecialRequest
+    ] = useState("");
 
 
     const [
@@ -213,206 +218,369 @@ const BookingCheckout = () => {
     );
 
 
-    /*
-     * =========================================
-     * SINGLE SERVICE PRICING
-     * =========================================
-     */
-
     const [
         pricing,
         setPricing
-    ] =
-        useState<PricingCalculationResult | null>(
-            null
-        );
+    ] = useState<PricingCalculationResult | null>(
+        null
+    );
 
 
     const [
         pricingLoading,
         setPricingLoading
-    ] =
-        useState(
-            !isCartCheckout
-        );
+    ] = useState(
+        !isCartCheckout
+    );
 
 
     const [
         submitting,
         setSubmitting
-    ] =
-        useState(false);
+    ] = useState(false);
 
 
     const [
         error,
         setError
-    ] =
-        useState<string | null>(
-            null
-        );
+    ] = useState<string | null>(
+        null
+    );
 
 
-    /*
-     * =========================================
-     * CART PRICING
-     * =========================================
-     *
-     * IMPORTANT:
-     *
-     * Bundle pricing is now calculated
-     * directly from CartService.
-     *
-     * We do NOT call /bundles/calculate
-     * for displaying the checkout prices.
-     */
+    const formatCurrency = (
+        amount:
+            | number
+            | null
+            | undefined
+    ) => {
 
-    const cartPricing =
+        return `₹${(
+            amount ?? 0
+        ).toLocaleString(
+            "en-IN"
+        )}`;
+
+    };
+
+
+    const cartSubtotal =
         useMemo(() => {
 
-            if (!isCartCheckout) {
-                return [];
-            }
+            return cart.reduce(
+                (
+                    total,
+                    item
+                ) =>
+                    total +
+                    Number(
+                        item.price
+                    ),
+                0
+            );
+
+        }, [cart]);
 
 
-            return cart.map(
+    const cartDisplayItems =
+        useMemo<CartDisplayItem[]>(() => {
+
+            const result:
+                CartDisplayItem[] = [];
+
+            const processedBundles =
+                new Set<string>();
+
+
+            cart.forEach(
                 item => {
 
-                    const itemPricing =
-                        CartService.getItemPricing(
-                            item
+                    const originalAmount =
+                        Number(
+                            item.price
                         );
 
 
-                    return {
+                    if (
+                        !item.bundleId
+                    ) {
 
-                        item,
+                        result.push({
 
-                        ...itemPricing
+                            item,
 
-                    };
+                            originalAmount,
+
+                            discountAmount: 0,
+
+                            finalAmount:
+                                originalAmount
+
+                        });
+
+                        return;
+
+                    }
+
+
+                    const bundleId =
+                        item.bundleId;
+
+
+                    if (
+                        processedBundles.has(
+                            bundleId
+                        )
+                    ) {
+
+                        result.push({
+
+                            item,
+
+                            originalAmount,
+
+                            discountAmount: 0,
+
+                            finalAmount:
+                                originalAmount
+
+                        });
+
+                        return;
+
+                    }
+
+
+                    processedBundles.add(
+                        bundleId
+                    );
+
+
+                    const bundleItems =
+                        cart.filter(
+                            cartItem =>
+                                cartItem.bundleId ===
+                                bundleId
+                        );
+
+
+                    const requiredServiceIds =
+                        item.bundleServiceIds ??
+                        [];
+
+
+                    const isComplete =
+                        requiredServiceIds.length >
+                            0 &&
+                        requiredServiceIds.every(
+                            requiredServiceId =>
+                                bundleItems.some(
+                                    bundleItem =>
+                                        bundleItem.serviceId ===
+                                            requiredServiceId &&
+                                        bundleItem.bundleId ===
+                                            bundleId
+                                )
+                        );
+
+
+                    if (
+                        !isComplete
+                    ) {
+
+                        bundleItems.forEach(
+                            bundleItem => {
+
+                                result.push({
+
+                                    item: bundleItem,
+
+                                    originalAmount:
+                                        Number(
+                                            bundleItem.price
+                                        ),
+
+                                    discountAmount: 0,
+
+                                    finalAmount:
+                                        Number(
+                                            bundleItem.price
+                                        )
+
+                                });
+
+                            }
+                        );
+
+                        return;
+
+                    }
+
+
+                    const bundleOriginalTotal =
+                        bundleItems.reduce(
+                            (
+                                total,
+                                bundleItem
+                            ) =>
+                                total +
+                                Number(
+                                    bundleItem.price
+                                ),
+                            0
+                        );
+
+
+                    let bundleDiscount =
+                        0;
+
+
+                    if (
+                        item.bundleDiscountType ===
+                        "PERCENTAGE"
+                    ) {
+
+                        bundleDiscount =
+                            bundleOriginalTotal *
+                            (
+                                Number(
+                                    item.bundleDiscountValue ??
+                                    0
+                                ) / 100
+                            );
+
+                    }
+
+
+                    if (
+                        item.bundleDiscountType ===
+                        "FIXED"
+                    ) {
+
+                        bundleDiscount =
+                            Math.min(
+                                Number(
+                                    item.bundleDiscountValue ??
+                                    0
+                                ),
+                                bundleOriginalTotal
+                            );
+
+                    }
+
+
+                    bundleItems.forEach(
+                        bundleItem => {
+
+                            const itemOriginalAmount =
+                                Number(
+                                    bundleItem.price
+                                );
+
+
+                            const proportion =
+                                bundleOriginalTotal >
+                                0
+
+                                    ? itemOriginalAmount /
+                                      bundleOriginalTotal
+
+                                    : 0;
+
+
+                            const itemDiscount =
+                                bundleDiscount *
+                                proportion;
+
+
+                            result.push({
+
+                                item:
+                                    bundleItem,
+
+                                originalAmount:
+                                    itemOriginalAmount,
+
+                                discountAmount:
+                                    itemDiscount,
+
+                                finalAmount:
+                                    Math.max(
+                                        0,
+                                        itemOriginalAmount -
+                                        itemDiscount
+                                    )
+
+                            });
+
+                        }
+                    );
 
                 }
             );
 
-        }, [
-            cart,
-            isCartCheckout
-        ]);
+
+            return result;
+
+        }, [cart]);
 
 
-    /*
-     * =========================================
-     * CART TOTALS
-     * =========================================
-     */
-
-    const cartOriginalTotal =
+    const totalBundleDiscount =
         useMemo(() => {
 
-            return cartPricing.reduce(
+            return cartDisplayItems.reduce(
                 (
                     total,
-                    item
+                    displayItem
                 ) =>
                     total +
-                    item.originalPrice,
+                    displayItem.discountAmount,
                 0
             );
 
-        }, [
-            cartPricing
-        ]);
+        }, [cartDisplayItems]);
 
 
-    const cartBundleDiscount =
+    const finalCartTotal =
         useMemo(() => {
 
-            return cartPricing.reduce(
-                (
-                    total,
-                    item
-                ) =>
-                    total +
-                    item.discount,
-                0
+            return Math.max(
+                0,
+                cartSubtotal -
+                totalBundleDiscount
             );
 
         }, [
-            cartPricing
+            cartSubtotal,
+            totalBundleDiscount
         ]);
 
 
-    const cartFinalTotal =
+    const paymentMessage =
         useMemo(() => {
 
-            return cartPricing.reduce(
-                (
-                    total,
-                    item
-                ) =>
-                    total +
-                    item.finalPrice,
-                0
-            );
+            switch (
+                paymentPreference
+            ) {
+
+                case "ADVANCE_PAYMENT":
+
+                    return "Advance payment will be required according to the vendor's payment configuration.";
+
+                case "DISCUSS_WITH_VENDOR":
+
+                    return "You can discuss payment terms directly with the vendor.";
+
+                default:
+
+                    return "Payment will be handled after vendor confirmation.";
+
+            }
 
         }, [
-            cartPricing
+            paymentPreference
         ]);
 
-
-    /*
-     * =========================================
-     * FORMAT CURRENCY
-     * =========================================
-     */
-
-    const formatCurrency =
-        (
-            amount:
-                number |
-                null |
-                undefined
-        ) => {
-
-            return `₹${(
-                amount ?? 0
-            ).toLocaleString(
-                "en-IN"
-            )}`;
-
-        };
-
-
-    /*
-     * =========================================
-     * GET MINIMUM DATE
-     * =========================================
-     */
-
-    const getTomorrowDate =
-        (): string => {
-
-            const tomorrow =
-                new Date();
-
-            tomorrow.setDate(
-                tomorrow.getDate() + 1
-            );
-
-
-            return tomorrow
-                .toISOString()
-                .split("T")[0];
-
-        };
-
-
-    /*
-     * =========================================
-     * LOAD SINGLE SERVICE PRICING
-     * =========================================
-     */
 
     useEffect(() => {
 
@@ -422,7 +590,9 @@ const BookingCheckout = () => {
             !eventDate
         ) {
 
-            if (isCartCheckout) {
+            if (
+                isCartCheckout
+            ) {
 
                 setPricingLoading(
                     false
@@ -464,8 +634,9 @@ const BookingCheckout = () => {
                         response.data
                     );
 
-
-                } catch (err: any) {
+                } catch (
+                    err: any
+                ) {
 
                     console.error(
                         "Failed to load pricing:",
@@ -487,7 +658,6 @@ const BookingCheckout = () => {
                         message
                     );
 
-
                 } finally {
 
                     setPricingLoading(
@@ -508,44 +678,6 @@ const BookingCheckout = () => {
     ]);
 
 
-    /*
-     * =========================================
-     * PAYMENT MESSAGE
-     * =========================================
-     */
-
-    const paymentMessage =
-        useMemo(() => {
-
-            switch (
-                paymentPreference
-            ) {
-
-                case "ADVANCE_PAYMENT":
-
-                    return "Advance payment will be required according to the vendor's payment configuration.";
-
-                case "DISCUSS_WITH_VENDOR":
-
-                    return "You can discuss payment terms directly with the vendor.";
-
-                default:
-
-                    return "Payment will be handled after vendor confirmation.";
-
-            }
-
-        }, [
-            paymentPreference
-        ]);
-
-
-    /*
-     * =========================================
-     * VALIDATION
-     * =========================================
-     */
-
     if (
         !isCartCheckout &&
         !vendor
@@ -560,7 +692,6 @@ const BookingCheckout = () => {
                     <h2>
                         Booking information not found.
                     </h2>
-
 
                     <button
                         className="cancel-button"
@@ -595,12 +726,10 @@ const BookingCheckout = () => {
                         Service information is missing.
                     </h2>
 
-
                     <p>
                         Please return to the vendor page
                         and select a service again.
                     </p>
-
 
                     <button
                         className="cancel-button"
@@ -635,7 +764,6 @@ const BookingCheckout = () => {
                         Your cart is empty.
                     </h2>
 
-
                     <button
                         className="cancel-button"
                         onClick={() =>
@@ -654,57 +782,26 @@ const BookingCheckout = () => {
     }
 
 
-    /*
-     * =========================================
-     * SUBMIT BOOKING
-     * =========================================
-     */
-
     const handleSubmit =
         async () => {
 
-            if (submitting) {
+            if (
+                submitting
+            ) {
+
                 return;
+
             }
 
 
-            /*
-             * =========================================
-             * CART BOOKING
-             * =========================================
-             *
-             * Event date and guest count are taken
-             * from the selected CartItems.
-             */
+            if (
+                isCartCheckout
+            ) {
 
-            if (isCartCheckout) {
-
-                /*
-                 * Make sure every service has
-                 * event details.
-                 */
-
-                const missingDate =
+                const missingEventDetails =
                     cart.some(
                         item =>
-                            !item.eventDate
-                    );
-
-
-                if (missingDate) {
-
-                    toast.error(
-                        "One or more selected services do not have an event date."
-                    );
-
-                    return;
-
-                }
-
-
-                const invalidGuests =
-                    cart.some(
-                        item =>
+                            !item.eventDate ||
                             !item.guestCount ||
                             Number(
                                 item.guestCount
@@ -712,10 +809,26 @@ const BookingCheckout = () => {
                     );
 
 
-                if (invalidGuests) {
+                if (
+                    missingEventDetails
+                ) {
 
                     toast.error(
-                        "One or more selected services do not have a valid guest count."
+                        "Event date and guest count are missing for one or more selected services."
+                    );
+
+                    return;
+
+                }
+
+            } else {
+
+                if (
+                    !eventDate
+                ) {
+
+                    toast.error(
+                        "Please select an event date."
                     );
 
                     return;
@@ -723,39 +836,46 @@ const BookingCheckout = () => {
                 }
 
 
-                if (!eventType.trim()) {
+                if (
+                    !guests ||
+                    Number(
+                        guests
+                    ) < 1
+                ) {
 
                     toast.error(
-                        "Please enter the event type."
+                        "Please enter a valid guest count."
                     );
 
                     return;
 
                 }
 
+            }
+
+
+            if (
+                !eventType.trim()
+            ) {
+
+                toast.error(
+                    "Please enter the event type."
+                );
+
+                return;
+
+            }
+
+
+            if (
+                isCartCheckout
+            ) {
 
                 try {
 
                     setSubmitting(
                         true
                     );
-
-
-                    /*
-                     * =========================================
-                     * IMPORTANT
-                     * =========================================
-                     *
-                     * The bundle booking API currently
-                     * accepts one eventDate and one guestCount.
-                     *
-                     * Since the bundle services were selected
-                     * with the same booking details, use the
-                     * first cart item's values.
-                     */
-
-                    const firstItem =
-                        cart[0];
 
 
                     const request = {
@@ -767,11 +887,13 @@ const BookingCheckout = () => {
                             ),
 
                         eventDate:
-                            firstItem.eventDate,
+                            cart[0]?.eventDate ||
+                            "",
 
                         guestCount:
                             Number(
-                                firstItem.guestCount
+                                cart[0]?.guestCount ||
+                                0
                             ),
 
                         specialRequest:
@@ -800,11 +922,6 @@ const BookingCheckout = () => {
                         response.data;
 
 
-                    /*
-                     * Clear cart only after
-                     * successful booking.
-                     */
-
                     CartService.clearCart();
 
 
@@ -824,8 +941,9 @@ const BookingCheckout = () => {
                         }
                     );
 
-
-                } catch (err: any) {
+                } catch (
+                    err: any
+                ) {
 
                     console.error(
                         "Bundle booking creation failed:",
@@ -842,7 +960,6 @@ const BookingCheckout = () => {
                         message
                     );
 
-
                 } finally {
 
                     setSubmitting(
@@ -851,48 +968,6 @@ const BookingCheckout = () => {
 
                 }
 
-
-                return;
-
-            }
-
-
-            /*
-             * =========================================
-             * DIRECT SINGLE SERVICE BOOKING
-             * =========================================
-             */
-
-            if (!eventDate) {
-
-                toast.error(
-                    "Please select an event date."
-                );
-
-                return;
-
-            }
-
-
-            if (
-                !guests ||
-                Number(guests) < 1
-            ) {
-
-                toast.error(
-                    "Please enter a valid guest count."
-                );
-
-                return;
-
-            }
-
-
-            if (!eventType.trim()) {
-
-                toast.error(
-                    "Please enter the event type."
-                );
 
                 return;
 
@@ -952,8 +1027,9 @@ const BookingCheckout = () => {
                     }
                 );
 
-
-            } catch (err: any) {
+            } catch (
+                err: any
+            ) {
 
                 console.error(
                     "Booking creation failed:",
@@ -970,7 +1046,6 @@ const BookingCheckout = () => {
                     message
                 );
 
-
             } finally {
 
                 setSubmitting(
@@ -982,49 +1057,45 @@ const BookingCheckout = () => {
         };
 
 
-    /*
-     * =========================================
-     * SINGLE SERVICE PRICING DATA
-     * =========================================
-     */
-
     const baseAmount =
-        pricing?.baseAmount ?? 0;
+        pricing?.baseAmount ??
+        0;
 
 
     const pricingHeads =
-        pricing?.pricingHeads ?? [];
+        pricing?.pricingHeads ??
+        [];
 
 
     const discounts =
-        pricing?.discounts ?? [];
+        pricing?.discounts ??
+        [];
 
 
     const subtotal =
-        pricing?.subtotal ?? 0;
+        pricing?.subtotal ??
+        0;
 
 
     const discountAmount =
-        pricing?.discountAmount ?? 0;
+        pricing?.discountAmount ??
+        0;
 
 
     const totalAmount =
-        pricing?.totalAmount ?? 0;
+        pricing?.totalAmount ??
+        0;
 
 
     const advanceAmount =
-        pricing?.advanceAmount ?? 0;
+        pricing?.advanceAmount ??
+        0;
 
 
     const balanceAmount =
-        pricing?.balanceAmount ?? 0;
+        pricing?.balanceAmount ??
+        0;
 
-
-    /*
-     * =========================================
-     * RENDER
-     * =========================================
-     */
 
     return (
 
@@ -1050,16 +1121,8 @@ const BookingCheckout = () => {
                 <div className="checkout-layout">
 
 
-                    {/* =================================
-                        LEFT SIDE
-                    ================================= */}
-
                     <div className="checkout-main">
 
-
-                        {/* =================================
-                            SELECTED SERVICES
-                        ================================= */}
 
                         {isCartCheckout && (
 
@@ -1071,178 +1134,152 @@ const BookingCheckout = () => {
 
 
                                 <p>
-                                    Review your selected
-                                    services and bundle
-                                    pricing.
+                                    Services selected for this checkout.
                                 </p>
 
 
-                                <div
-                                    className="checkout-cart-items"
-                                >
+                                <div className="checkout-cart-items">
 
-                                    {cartPricing.map(
-                                        ({
-                                            item,
-                                            originalPrice,
-                                            discount,
-                                            finalPrice,
-                                            bundleApplied
-                                        }) => (
+                                    {cartDisplayItems.map(
+                                        (
+                                            displayItem
+                                        ) => {
 
-                                            <div
-                                                key={
-                                                    item.serviceId
-                                                }
-                                                className="checkout-cart-item"
-                                            >
-
-                                                {/* SERVICE DETAILS */}
-
-                                                <div>
-
-                                                    <strong>
-                                                        {
-                                                            item.serviceName
-                                                        }
-                                                    </strong>
+                                            const item =
+                                                displayItem.item;
 
 
-                                                    <span>
-                                                        {
-                                                            item.vendorName
-                                                        }
-                                                    </span>
-
-
-                                                    {item.category && (
-
-                                                        <small>
-                                                            {
-                                                                item.category
-                                                            }
-                                                        </small>
-
-                                                    )}
-
-
-                                                    <small>
-                                                        Event Date:{" "}
-                                                        {
-                                                            item.eventDate ||
-                                                            "Not Available"
-                                                        }
-                                                    </small>
-
-
-                                                    <small>
-                                                        Guests:{" "}
-                                                        {
-                                                            item.guestCount ||
-                                                            "Not Available"
-                                                        }
-                                                    </small>
-
-                                                </div>
-
-
-                                                {/* PRICE DETAILS */}
+                                            return (
 
                                                 <div
-                                                    className="checkout-service-pricing"
+                                                    key={
+                                                        item.serviceId
+                                                    }
+                                                    className="checkout-cart-item"
                                                 >
 
                                                     <div>
 
-                                                        <span>
-                                                            Original
-                                                        </span>
-
                                                         <strong>
                                                             {
-                                                                formatCurrency(
-                                                                    originalPrice
-                                                                )
+                                                                item.serviceName
                                                             }
                                                         </strong>
+
+
+                                                        <span>
+                                                            {
+                                                                item.vendorName
+                                                            }
+                                                        </span>
+
+
+                                                        {item.category && (
+
+                                                            <small>
+                                                                {
+                                                                    item.category
+                                                                }
+                                                            </small>
+
+                                                        )}
+
+
+                                                        <small>
+                                                            Event Date:{" "}
+                                                            {
+                                                                item.eventDate ||
+                                                                "Not selected"
+                                                            }
+                                                        </small>
+
+
+                                                        <small>
+                                                            Guests:{" "}
+                                                            {
+                                                                item.guestCount ??
+                                                                "-"
+                                                            }
+                                                        </small>
 
                                                     </div>
 
 
-                                                    {bundleApplied && (
-
-                                                        <div
-                                                            className="discount-row"
-                                                        >
-
-                                                            <span>
-                                                                Bundle Discount
-                                                            </span>
-
-                                                            <strong>
-                                                                -
-                                                                {
-                                                                    formatCurrency(
-                                                                        discount
-                                                                    )
-                                                                }
-                                                            </strong>
-
-                                                        </div>
-
-                                                    )}
-
-
                                                     <div>
 
-                                                        <span>
-                                                            Final
-                                                        </span>
-
                                                         <strong>
-                                                            {
-                                                                formatCurrency(
-                                                                    finalPrice
-                                                                )
-                                                            }
+                                                            Final:{" "}
+                                                            {formatCurrency(
+                                                                displayItem.finalAmount
+                                                            )}
                                                         </strong>
+
+
+                                                        {displayItem.discountAmount >
+                                                            0 && (
+
+                                                            <small className="discount-row">
+
+                                                                Original:{" "}
+                                                                {formatCurrency(
+                                                                    displayItem.originalAmount
+                                                                )}
+
+
+                                                                {" • "}
+
+
+                                                                Bundle Discount: -{" "}
+                                                                {formatCurrency(
+                                                                    displayItem.discountAmount
+                                                                )}
+
+                                                            </small>
+
+                                                        )}
+
+
+                                                        {displayItem.discountAmount ===
+                                                            0 && (
+
+                                                            <small>
+
+                                                                Original:{" "}
+                                                                {formatCurrency(
+                                                                    displayItem.originalAmount
+                                                                )}
+
+                                                            </small>
+
+                                                        )}
 
                                                     </div>
 
                                                 </div>
 
-                                            </div>
+                                            );
 
-                                        )
+                                        }
                                     )}
 
                                 </div>
 
 
-                                {/* =================================
-                                    BUNDLE DISCOUNT MESSAGE
-                                ================================= */}
+                                {totalBundleDiscount >
+                                    0 && (
 
-                                {cartBundleDiscount > 0 && (
-
-                                    <div
-                                        className="bundle-discount-summary"
-                                    >
-
-                                        <strong>
-                                            🎉 Bundle Discount Applied
-                                        </strong>
-
+                                    <div className="summary-row discount-row">
 
                                         <span>
-                                            You saved{" "}
-                                            {
-                                                formatCurrency(
-                                                    cartBundleDiscount
-                                                )
-                                            }{" "}
-                                            on this bundle.
+                                            Total Bundle Discount
                                         </span>
+
+                                        <strong>
+                                            -
+                                            {formatCurrency(
+                                                totalBundleDiscount
+                                            )}
+                                        </strong>
 
                                     </div>
 
@@ -1253,11 +1290,8 @@ const BookingCheckout = () => {
                         )}
 
 
-                        {/* =================================
-                            SINGLE SERVICE BOOKING SUMMARY
-                        ================================= */}
-
-                        {!isCartCheckout && vendor && (
+                        {!isCartCheckout &&
+                            vendor && (
 
                             <div className="checkout-card">
 
@@ -1266,13 +1300,9 @@ const BookingCheckout = () => {
                                 </h2>
 
 
-                                <div
-                                    className="booking-summary-grid"
-                                >
+                                <div className="booking-summary-grid">
 
-                                    <div
-                                        className="summary-item"
-                                    >
+                                    <div className="summary-item">
 
                                         <label>
                                             Vendor
@@ -1287,9 +1317,7 @@ const BookingCheckout = () => {
                                     </div>
 
 
-                                    <div
-                                        className="summary-item"
-                                    >
+                                    <div className="summary-item">
 
                                         <label>
                                             Event Date
@@ -1305,9 +1333,7 @@ const BookingCheckout = () => {
                                     </div>
 
 
-                                    <div
-                                        className="summary-item"
-                                    >
+                                    <div className="summary-item">
 
                                         <label>
                                             Guests
@@ -1322,9 +1348,7 @@ const BookingCheckout = () => {
                                     </div>
 
 
-                                    <div
-                                        className="summary-item"
-                                    >
+                                    <div className="summary-item">
 
                                         <label>
                                             Location
@@ -1355,10 +1379,6 @@ const BookingCheckout = () => {
 
                         )}
 
-
-                        {/* =================================
-                            EVENT INFORMATION
-                        ================================= */}
 
                         <div className="checkout-card">
 
@@ -1415,10 +1435,6 @@ const BookingCheckout = () => {
                         </div>
 
 
-                        {/* =================================
-                            PAYMENT PREFERENCE
-                        ================================= */}
-
                         <div className="checkout-card">
 
                             <h2>
@@ -1426,9 +1442,7 @@ const BookingCheckout = () => {
                             </h2>
 
 
-                            <label
-                                className="radio-option"
-                            >
+                            <label className="radio-option">
 
                                 <input
                                     type="radio"
@@ -1450,9 +1464,7 @@ const BookingCheckout = () => {
                             </label>
 
 
-                            <label
-                                className="radio-option"
-                            >
+                            <label className="radio-option">
 
                                 <input
                                     type="radio"
@@ -1474,9 +1486,7 @@ const BookingCheckout = () => {
                             </label>
 
 
-                            <label
-                                className="radio-option"
-                            >
+                            <label className="radio-option">
 
                                 <input
                                     type="radio"
@@ -1498,32 +1508,23 @@ const BookingCheckout = () => {
                             </label>
 
 
-                            <p
-                                className="payment-message"
-                            >
+                            <p className="payment-message">
+
                                 {
                                     paymentMessage
                                 }
+
                             </p>
 
                         </div>
 
-
                     </div>
 
-
-                    {/* =================================
-                        RIGHT SIDE
-                    ================================= */}
 
                     <div className="checkout-sidebar">
 
                         <div className="booking-summary">
 
-
-                            {/* =================================
-                                CART SUMMARY
-                            ================================= */}
 
                             {isCartCheckout ? (
 
@@ -1540,7 +1541,8 @@ const BookingCheckout = () => {
                                         }{" "}
                                         service
                                         {
-                                            cart.length !== 1
+                                            cart.length !==
+                                            1
                                                 ? "s"
                                                 : ""
                                         }
@@ -1550,67 +1552,30 @@ const BookingCheckout = () => {
                                     <hr />
 
 
-                                    {cartPricing.map(
-                                        ({
-                                            item,
-                                            originalPrice,
-                                            discount,
-                                            finalPrice,
-                                            bundleApplied
-                                        }) => (
+                                    {cartDisplayItems.map(
+                                        (
+                                            displayItem
+                                        ) => (
 
                                             <div
-                                                className="summary-service"
+                                                className="summary-row"
                                                 key={
-                                                    item.serviceId
+                                                    displayItem.item.serviceId
                                                 }
                                             >
 
-                                                <div
-                                                    className="summary-row"
-                                                >
-
-                                                    <span>
-                                                        {
-                                                            item.serviceName
-                                                        }
-                                                    </span>
+                                                <span>
+                                                    {
+                                                        displayItem.item.serviceName
+                                                    }
+                                                </span>
 
 
-                                                    <strong>
-                                                        {
-                                                            formatCurrency(
-                                                                finalPrice
-                                                            )
-                                                        }
-                                                    </strong>
-
-                                                </div>
-
-
-                                                {bundleApplied && (
-
-                                                    <div
-                                                        className="summary-row discount-row"
-                                                    >
-
-                                                        <span>
-                                                            Bundle Discount
-                                                        </span>
-
-
-                                                        <strong>
-                                                            -
-                                                            {
-                                                                formatCurrency(
-                                                                    discount
-                                                                )
-                                                            }
-                                                        </strong>
-
-                                                    </div>
-
-                                                )}
+                                                <strong>
+                                                    {formatCurrency(
+                                                        displayItem.finalAmount
+                                                    )}
+                                                </strong>
 
                                             </div>
 
@@ -1621,9 +1586,7 @@ const BookingCheckout = () => {
                                     <hr />
 
 
-                                    <div
-                                        className="summary-row"
-                                    >
+                                    <div className="summary-row">
 
                                         <span>
                                             Original Total
@@ -1631,47 +1594,35 @@ const BookingCheckout = () => {
 
 
                                         <strong>
-                                            {
-                                                formatCurrency(
-                                                    cartOriginalTotal
-                                                )
-                                            }
+                                            {formatCurrency(
+                                                cartSubtotal
+                                            )}
                                         </strong>
 
                                     </div>
 
 
-                                    {cartBundleDiscount > 0 && (
+                                    <div className="summary-row discount-row">
 
-                                        <div
-                                            className="summary-row discount-row"
-                                        >
-
-                                            <span>
-                                                Bundle Discount
-                                            </span>
+                                        <span>
+                                            Bundle Discount
+                                        </span>
 
 
-                                            <strong>
-                                                -
-                                                {
-                                                    formatCurrency(
-                                                        cartBundleDiscount
-                                                    )
-                                                }
-                                            </strong>
+                                        <strong>
+                                            -
+                                            {formatCurrency(
+                                                totalBundleDiscount
+                                            )}
+                                        </strong>
 
-                                        </div>
-
-                                    )}
+                                    </div>
 
 
                                     <hr />
 
 
-                                    <div
-                                        className="summary-row total"
-                                    >
+                                    <div className="summary-row total">
 
                                         <span>
                                             Final Total
@@ -1679,24 +1630,21 @@ const BookingCheckout = () => {
 
 
                                         <strong>
-                                            {
-                                                formatCurrency(
-                                                    cartFinalTotal
-                                                )
-                                            }
+                                            {formatCurrency(
+                                                finalCartTotal
+                                            )}
                                         </strong>
 
                                     </div>
 
 
-                                    {cartBundleDiscount === 0 && (
+                                    {totalBundleDiscount ===
+                                        0 && (
 
-                                        <p
-                                            className="payment-message"
-                                        >
+                                        <p className="payment-message">
 
-                                            No bundle discount
-                                            is currently applied.
+                                            No bundle discount applies
+                                            to the selected services.
 
                                         </p>
 
@@ -1705,10 +1653,6 @@ const BookingCheckout = () => {
                                 </>
 
                             ) : (
-
-                                /* =================================
-                                   SINGLE SERVICE SUMMARY
-                                ================================= */
 
                                 <>
 
@@ -1746,12 +1690,9 @@ const BookingCheckout = () => {
 
                                     {pricingLoading && (
 
-                                        <div
-                                            className="pricing-loading"
-                                        >
+                                        <div className="pricing-loading">
 
-                                            Loading current
-                                            pricing...
+                                            Loading current pricing...
 
                                         </div>
 
@@ -1761,257 +1702,224 @@ const BookingCheckout = () => {
                                     {!pricingLoading &&
                                         error && (
 
-                                            <div
-                                                className="pricing-error"
+                                        <div className="pricing-error">
+
+                                            <p>
+                                                {
+                                                    error
+                                                }
+                                            </p>
+
+
+                                            <button
+                                                className="save-button"
+                                                onClick={() =>
+                                                    window.location.reload()
+                                                }
                                             >
+                                                Retry
+                                            </button>
 
-                                                <p>
-                                                    {
-                                                        error
-                                                    }
-                                                </p>
+                                        </div>
 
-
-                                                <button
-                                                    className="save-button"
-                                                    onClick={() =>
-                                                        window.location.reload()
-                                                    }
-                                                >
-                                                    Retry
-                                                </button>
-
-                                            </div>
-
-                                        )}
+                                    )}
 
 
                                     {!pricingLoading &&
                                         !error &&
                                         pricing && (
 
-                                            <>
+                                        <>
 
-                                                <div
-                                                    className="summary-row"
-                                                >
+                                            <div className="summary-row">
 
-                                                    <span>
-                                                        Base Amount
-                                                    </span>
+                                                <span>
+                                                    Base Amount
+                                                </span>
 
 
-                                                    <strong>
-                                                        {
-                                                            formatCurrency(
-                                                                baseAmount
-                                                            )
-                                                        }
-                                                    </strong>
+                                                <strong>
+                                                    {formatCurrency(
+                                                        baseAmount
+                                                    )}
+                                                </strong>
 
-                                                </div>
+                                            </div>
 
 
-                                                {pricingHeads.map(
-                                                    head => (
-
-                                                        <div
-                                                            className="summary-row"
-                                                            key={
-                                                                head.code
-                                                            }
-                                                        >
-
-                                                            <span>
-                                                                {
-                                                                    head.name
-                                                                }
-                                                            </span>
-
-
-                                                            <strong>
-                                                                {
-                                                                    formatCurrency(
-                                                                        head.calculatedAmount
-                                                                    )
-                                                                }
-                                                            </strong>
-
-                                                        </div>
-
-                                                    )
-                                                )}
-
-
-                                                <hr />
-
-
-                                                <div
-                                                    className="summary-row"
-                                                >
-
-                                                    <span>
-                                                        Subtotal
-                                                    </span>
-
-
-                                                    <strong>
-                                                        {
-                                                            formatCurrency(
-                                                                subtotal
-                                                            )
-                                                        }
-                                                    </strong>
-
-                                                </div>
-
-
-                                                {discounts.map(
-                                                    (
-                                                        discount,
-                                                        index
-                                                    ) => (
-
-                                                        <div
-                                                            className="summary-row discount-row"
-                                                            key={
-                                                                `${discount.name}-${index}`
-                                                            }
-                                                        >
-
-                                                            <span>
-                                                                {
-                                                                    discount.name
-                                                                }
-                                                            </span>
-
-
-                                                            <strong>
-                                                                -
-                                                                {
-                                                                    formatCurrency(
-                                                                        discount.calculatedAmount
-                                                                    )
-                                                                }
-                                                            </strong>
-
-                                                        </div>
-
-                                                    )
-                                                )}
-
-
-                                                {discountAmount > 0 && (
+                                            {pricingHeads.map(
+                                                head => (
 
                                                     <div
-                                                        className="summary-row discount-row"
+                                                        className="summary-row"
+                                                        key={
+                                                            head.code
+                                                        }
                                                     >
 
                                                         <span>
-                                                            Total Discount
+                                                            {
+                                                                head.name
+                                                            }
+                                                        </span>
+
+
+                                                        <strong>
+                                                            {formatCurrency(
+                                                                head.calculatedAmount
+                                                            )}
+                                                        </strong>
+
+                                                    </div>
+
+                                                )
+                                            )}
+
+
+                                            <hr />
+
+
+                                            <div className="summary-row">
+
+                                                <span>
+                                                    Subtotal
+                                                </span>
+
+
+                                                <strong>
+                                                    {formatCurrency(
+                                                        subtotal
+                                                    )}
+                                                </strong>
+
+                                            </div>
+
+
+                                            {discounts.map(
+                                                (
+                                                    discount,
+                                                    index
+                                                ) => (
+
+                                                    <div
+                                                        className="summary-row discount-row"
+                                                        key={
+                                                            `${discount.name}-${index}`
+                                                        }
+                                                    >
+
+                                                        <span>
+                                                            {
+                                                                discount.name
+                                                            }
                                                         </span>
 
 
                                                         <strong>
                                                             -
-                                                            {
-                                                                formatCurrency(
-                                                                    discountAmount
-                                                                )
-                                                            }
+                                                            {formatCurrency(
+                                                                discount.calculatedAmount
+                                                            )}
                                                         </strong>
 
                                                     </div>
 
-                                                )}
+                                                )
+                                            )}
 
 
-                                                <hr />
+                                            {discountAmount >
+                                                0 && (
 
-
-                                                <div
-                                                    className="summary-row total"
-                                                >
+                                                <div className="summary-row discount-row">
 
                                                     <span>
-                                                        Total Estimate
+                                                        Total Discount
                                                     </span>
 
 
                                                     <strong>
-                                                        {
-                                                            formatCurrency(
-                                                                totalAmount
-                                                            )
-                                                        }
+                                                        -
+                                                        {formatCurrency(
+                                                            discountAmount
+                                                        )}
                                                     </strong>
 
                                                 </div>
 
-
-                                                {advanceAmount > 0 && (
-
-                                                    <div
-                                                        className="summary-row"
-                                                    >
-
-                                                        <span>
-                                                            Advance Required
-                                                        </span>
+                                            )}
 
 
-                                                        <strong>
-                                                            {
-                                                                formatCurrency(
-                                                                    advanceAmount
-                                                                )
-                                                            }
-                                                        </strong>
-
-                                                    </div>
-
-                                                )}
+                                            <hr />
 
 
-                                                {advanceAmount > 0 && (
+                                            <div className="summary-row total">
 
-                                                    <div
-                                                        className="summary-row"
-                                                    >
-
-                                                        <span>
-                                                            Balance After Advance
-                                                        </span>
+                                                <span>
+                                                    Total Estimate
+                                                </span>
 
 
-                                                        <strong>
-                                                            {
-                                                                formatCurrency(
-                                                                    balanceAmount
-                                                                )
-                                                            }
-                                                        </strong>
+                                                <strong>
+                                                    {formatCurrency(
+                                                        totalAmount
+                                                    )}
+                                                </strong>
 
-                                                    </div>
+                                            </div>
 
-                                                )}
 
-                                            </>
+                                            {advanceAmount >
+                                                0 && (
 
-                                        )}
+                                                <div className="summary-row">
+
+                                                    <span>
+                                                        Advance Required
+                                                    </span>
+
+
+                                                    <strong>
+                                                        {formatCurrency(
+                                                            advanceAmount
+                                                        )}
+                                                    </strong>
+
+                                                </div>
+
+                                            )}
+
+
+                                            {advanceAmount >
+                                                0 && (
+
+                                                <div className="summary-row">
+
+                                                    <span>
+                                                        Balance After Advance
+                                                    </span>
+
+
+                                                    <strong>
+                                                        {formatCurrency(
+                                                            balanceAmount
+                                                        )}
+                                                    </strong>
+
+                                                </div>
+
+                                            )}
+
+                                        </>
+
+                                    )}
 
                                 </>
 
                             )}
 
 
-                            {/* =================================
-                                ACTIONS
-                            ================================= */}
-
-                            <div
-                                className="checkout-actions"
-                            >
+                            <div className="checkout-actions">
 
                                 <button
                                     className="cancel-button"
@@ -2022,12 +1930,10 @@ const BookingCheckout = () => {
                                         submitting
                                     }
                                 >
-
                                     {isCartCheckout
                                         ? "← Back To Cart"
                                         : "← Back To Vendor"
                                     }
-
                                 </button>
 
 
@@ -2077,15 +1983,12 @@ const BookingCheckout = () => {
                             </div>
 
 
-                            <div
-                                className="booking-note"
-                            >
+                            <div className="booking-note">
 
                                 ✓ No payment is processed
                                 when sending the booking request.
 
                             </div>
-
 
                         </div>
 
