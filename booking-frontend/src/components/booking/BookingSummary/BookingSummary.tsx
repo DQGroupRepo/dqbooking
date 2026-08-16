@@ -1,61 +1,85 @@
-import "./BookingSummary.css";
+import type { Booking } from "../../../types/Booking";
 
-import type { Booking } from "../../types/Booking";
+interface Props {
 
-interface Props{
-
-    booking:Booking;
+    bookings: Booking[];
 
 }
 
-const BookingSummary=({booking}:Props)=>{
 
-    return(
+const BookingSummary = ({
+    bookings
+}: Props) => {
 
-        <div className="summary-card">
+    return (
 
-            <h3>Booking Details</h3>
+        <div className="booking-summary">
 
-            <div className="summary-grid">
+            <h2>
+                Services Booked
+            </h2>
 
-                <div>
 
-                    <label>Service</label>
+            {
+                bookings.map(
+                    booking => (
 
-                    <strong>{booking.serviceName}</strong>
+                        <div
+                            className="booking-service-summary"
+                            key={booking.id}
+                        >
 
-                </div>
+                            <h3>
+                                {booking.serviceName}
+                            </h3>
 
-                <div>
 
-                    <label>Event Date</label>
+                            <p>
+                                Booking Number:{" "}
+                                {booking.bookingNumber}
+                            </p>
 
-                    <strong>{booking.eventDate}</strong>
 
-                </div>
+                            <p>
+                                Event Date:{" "}
+                                {booking.eventDate}
+                            </p>
 
-                <div>
 
-                    <label>Guests</label>
+                            <p>
+                                Guests:{" "}
+                                {booking.guestCount}
+                            </p>
 
-                    <strong>{booking.guestCount}</strong>
 
-                </div>
+                            <p>
+                                Amount: ₹
+                                {
+                                    Number(
+                                        booking.totalAmount
+                                    ).toLocaleString(
+                                        "en-IN"
+                                    )
+                                }
+                            </p>
 
-                <div>
 
-                    <label>Event Type</label>
+                            <p>
+                                Status:{" "}
+                                {booking.status}
+                            </p>
 
-                    <strong>{booking.eventType}</strong>
+                        </div>
 
-                </div>
-
-            </div>
+                    )
+                )
+            }
 
         </div>
 
     );
 
 };
+
 
 export default BookingSummary;

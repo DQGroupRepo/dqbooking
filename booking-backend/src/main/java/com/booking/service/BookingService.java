@@ -10,8 +10,6 @@ public interface BookingService {
             CreateBookingRequest request
     );
 
-    BookingResponse getBooking(String bookingId);
-
     List<BookingResponse> getVendorBookings();
 
     List<BookingResponse> getCustomerBookings();
@@ -28,5 +26,9 @@ public interface BookingService {
 
     CancellationPreviewResponse getCancellationPreview(
             String bookingId
+    );
+
+    BookingGroupResponse getBookingGroup(
+            String bookingGroupId
     );
 }

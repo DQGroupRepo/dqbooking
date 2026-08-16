@@ -19,6 +19,28 @@ const CustomerBookings = () => {
 
     }, []);
 
+    const groupedBookings = bookings.reduce(
+        (
+            groups: Record<string, Booking[]>,
+            booking
+        ) => {
+
+            const groupId =
+                booking.bookingGroupId ||
+                booking.id;
+
+            if (!groups[groupId]) {
+                groups[groupId] = [];
+            }
+
+            groups[groupId].push(booking);
+
+            return groups;
+
+        },
+        {}
+    );
+
     async function loadBookings() {
 
         try {
@@ -53,14 +75,58 @@ const CustomerBookings = () => {
 
             <br/>
                 {
-                    bookings.map(booking => (
+                    Object.entries(
+                        bookings.reduce(
+                            (
+                                groups: Record<string, Booking[]>,
+                                booking
+                            ) => {
 
-                        <BookingCard
-                            key={booking.id}
-                            booking={booking}
-                        />
+                                const groupId =
+                                    booking.bookingGroupId ||
+                                    booking.id;
 
-                    ))
+
+                                if (!groups[groupId]) {
+
+                                    groups[groupId] = [];
+
+                                }
+
+
+                                groups[groupId].push(
+                                    booking
+                                );
+
+
+                                return groups;
+
+                            },
+                            {}
+                        )
+                    ).map(
+                        (
+                            [
+                                groupId,
+                                groupBookings
+                            ]
+                        ) => (
+
+                            <BookingCard
+                                key={groupId}
+
+                                bookingGroupId={
+                                    groupId
+                                }
+
+                                bookings={
+                                    groupBookings
+                                }
+
+                            />
+
+                        )
+                    )
                 }
 
 

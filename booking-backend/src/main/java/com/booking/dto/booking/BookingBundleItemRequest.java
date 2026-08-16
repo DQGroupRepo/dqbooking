@@ -8,6 +8,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @Getter
 @Setter
@@ -16,11 +17,5 @@ public class BookingBundleItemRequest {
     @NotBlank
     private String bundleId;
 
-    @NotNull
-    @Future
-    private LocalDate eventDate;
-
-    @NotNull
-    @Min(1)
-    private Integer guestCount;
+    private List<BookingServiceItemRequest> items;
 }

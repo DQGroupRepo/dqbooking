@@ -1,6 +1,8 @@
 import api from "../api/axiosConfig";
 import type { Booking } from "../types/Booking";
 import type { CancellationPreview } from "../types/CancellationPreview";
+import type { BookingGroup } from "../types/BookingGroup";
+import type { BookingGroupResponse } from "../types/BookingGroupResponse";
 
 export interface CreateBookingRequest {
   serviceId: string;
@@ -72,23 +74,22 @@ export const createBooking = async (
   return response.data;
 };
 
-
 /*
  * =========================================
- * GET BOOKING
+ * GET BOOKING GROUP
  * =========================================
  */
 
-export const getBookingById = async (
-  id: string
-): Promise<Booking> => {
+export const getBookingGroupById = async (
+    bookingGroupId: string
+): Promise<BookingGroup> => {
 
-  const response =
-    await api.get<Booking>(
-      `/bookings/${id}`
-    );
+    const response =
+        await api.get<BookingGroup>(
+            `/bookings/${bookingGroupId}`
+        );
 
-  return response.data;
+    return response.data;
 };
 
 

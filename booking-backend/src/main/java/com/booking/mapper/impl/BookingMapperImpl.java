@@ -27,6 +27,10 @@ public class BookingMapperImpl implements BookingMapper {
                         booking.getId()
                 )
 
+                .bookingGroupId(
+                        booking.getBookingGroupId()
+                )
+
                 .bookingNumber(
                         booking.getBookingNumber()
                 )

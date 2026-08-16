@@ -1,16 +1,7 @@
-import {
-    useEffect,
-    useState
-} from "react";
+import { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 
-import {
-    Link,
-    useNavigate
-} from "react-router-dom";
-
-import {
-    useAuth
-} from "../../context/AuthContext";
+import { useAuth } from "../../context/AuthContext";
 
 import CartService from "../../services/CartService";
 
@@ -25,10 +16,7 @@ const Header = () => {
         logout
     } = useAuth();
 
-
-    const navigate =
-        useNavigate();
-
+    const navigate = useNavigate();
 
     /*
      * =========================================
@@ -243,7 +231,10 @@ const Header = () => {
 
                                 <button
                                     className="logout-btn"
-                                    onClick={logout}
+                                    onClick={() => {
+                                        logout();
+                                        navigate("/");
+                                    }}
                                 >
                                     Logout
                                 </button>

@@ -581,78 +581,92 @@ const BookingCard = ({
      * =========================================
      */
 
-    const handleAcceptBundle =
-        (bundle: Bundle) => {
+    const handleAcceptBundle = (
+        bundle: Bundle
+    ) => {
 
-            if (!serviceId) {
-                return;
-            }
-
-
-            /*
-             * Add the currently selected service
-             * to the cart first.
-             */
-            addCurrentServiceToCart(
-                bundle
-            );
+        if (!serviceId) {
+            return;
+        }
 
 
-            setShowBundlePopup(false);
-
-
-            /*
+         /*
              * =========================================
-             * GO TO SELECTED BUNDLE PAGE
+             * ADD CURRENT SERVICE TO CART
              * =========================================
              *
              * IMPORTANT:
              *
-             * Do NOT navigate directly to the next
-             * service here.
+             * This is the FIRST service selected from
+             * the bundle.
              *
-             * The bundle page is now responsible for
-             * showing the remaining services and allowing
-             * the customer to choose which one to open.
+             * We MUST pass the selected bundle here so
+             * that the cart item receives:
+             *
+             * bundleId
+             * bundleName
+             * bundleServiceIds
+             * bundleDiscountType
+             * bundleDiscountValue
+             *
+             * Previously this was:
+             *
+             *     addCurrentServiceToCart();
+             *
+             * which caused bundle to be undefined.
              */
+        addCurrentServiceToCart(bundle);
 
-            navigate(
-                `/bundles/available/${serviceId}`,
-                {
-                    state: {
 
-                        fromBundle: true,
+        /*
+         * Close the bundle popup.
+         */
+        setShowBundlePopup(false);
 
-                        /*
-                         * The service which originally
-                         * started this bundle.
-                         */
-                        bundleRootServiceId:
-                            serviceId,
 
-                        bundleId:
-                            bundle.id,
+        /*
+         * IMPORTANT:
+         *
+         * Do NOT navigate directly to the
+         * next service.
+         *
+         * First go to the bundle details page.
+         * The customer will choose the next
+         * service from there.
+         */
+        navigate(
+            `/bundles/available/${serviceId}`,
+            {
+                state: {
 
-                        bundleName:
-                            bundle.name,
+                    fromBundle: true,
 
-                        bundleDescription:
-                            bundle.description,
+                    bundleRootServiceId:
+                        serviceId,
 
-                        bundleServiceIds:
-                            bundle.serviceIds,
+                    bundleId:
+                        bundle.id,
 
-                        bundleDiscountType:
-                            bundle.discountType,
+                    bundleName:
+                        bundle.name,
 
-                        bundleDiscountValue:
-                            bundle.discountValue
+                    bundleDescription:
+                        bundle.description,
 
-                    }
+                    bundleServiceIds:
+                        bundle.serviceIds,
+
+                    bundleDiscountType:
+                        bundle.discountType,
+
+                    bundleDiscountValue:
+                        bundle.discountValue
+
                 }
-            );
+            }
+        );
 
-        };
+    };
 
 
     /*

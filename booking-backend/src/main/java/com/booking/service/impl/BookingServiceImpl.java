@@ -26,7 +26,9 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -91,17 +93,157 @@ public class BookingServiceImpl implements BookingService
 
        /*
         * =========================================
-        * 3. DISTINCT SERVICE ITEMS
+        * 3. PREPARE ALL SERVICE ITEMS
+        * =========================================
+        *
+        * Both:
+        *
+        * request.services
+        *
+        * and
+        *
+        * request.bundles[].items
+        *
+        * use the same BookingServiceItemRequest.
+        */
+
+       List<BookingServiceItemRequest> allServiceItems =
+               new java.util.ArrayList<>();
+
+
+       /*
+        * =========================================
+        * 3A. SERVICE ITEM -> BUNDLE MAP
+        * =========================================
+        *
+        * Key:
+        *
+        *     serviceId + eventDate
+        *
+        * Value:
+        *
+        *     bundleId
+        *
+        * We use both serviceId and eventDate because
+        * the same service can be booked on different
+        * dates.
+        */
+
+       Map<String, String> serviceItemBundleMap =
+               new java.util.HashMap<>();
+
+
+       /*
+        * =========================================
+        * 3B. PROCESS BUNDLES
         * =========================================
         */
 
+       if (request.getBundles() != null) {
+
+           for (
+                   BookingBundleItemRequest bundleRequest :
+                   request.getBundles()
+           ) {
+
+               if (
+                       bundleRequest.getItems() == null ||
+                               bundleRequest.getItems().isEmpty()
+               ) {
+
+                   continue;
+               }
+
+
+               String bundleId =
+                       bundleRequest.getBundleId();
+
+
+               /*
+                * Add every service from this bundle.
+                */
+
+               for (
+                       BookingServiceItemRequest item :
+                       bundleRequest.getItems()
+               ) {
+
+                   allServiceItems.add(item);
+
+
+                   /*
+                    * Create unique key for this booking item.
+                    *
+                    * Example:
+                    *
+                    * service123_2026-09-20
+                    */
+
+                   String key =
+                           item.getServiceId()
+                                   + "_"
+                                   + item.getEventDate();
+
+
+                   /*
+                    * Remember which bundle this
+                    * service/date belongs to.
+                    */
+
+                   serviceItemBundleMap.put(
+                           key,
+                           bundleId
+                   );
+               }
+           }
+       }
+
+
+       /*
+        * =========================================
+        * 3C. PROCESS INDIVIDUAL SERVICES
+        * =========================================
+        */
+
+       if (request.getServices() != null) {
+
+           allServiceItems.addAll(
+                   request.getServices()
+           );
+       }
+
+
+       /*
+        * =========================================
+        * 4. DISTINCT SERVICE ITEMS
+        * =========================================
+        *
+        * IMPORTANT:
+        *
+        * We cannot use only serviceId.
+        *
+        * The same service can be booked on
+        * different dates.
+        *
+        * Therefore:
+        *
+        *     serviceId + eventDate
+        *
+        * identifies a booking item.
+        */
+
        List<BookingServiceItemRequest> serviceItems =
-               request.getServices()
+               allServiceItems
                        .stream()
                        .collect(
                                java.util.stream.Collectors.toMap(
-                                       BookingServiceItemRequest::getServiceId,
+                                       item ->
+                                               item.getServiceId()
+                                                       + "_"
+                                                       + item.getEventDate(),
+
                                        item -> item,
+
                                        (first, second) -> first
                                )
                        )
@@ -120,31 +262,44 @@ public class BookingServiceImpl implements BookingService
 
        /*
         * =========================================
-        * 4. FIND SERVICES
+        * 5. FIND SERVICES
         * =========================================
+        *
+        * Fetch each actual VendorService only once.
         */
 
-       List<VendorService> services =
+       Map<String, VendorService> serviceMap =
                serviceItems
                        .stream()
-                       .map(item ->
-                               vendorServiceRepository
-                                       .findByIdAndActiveTrueAndDeletedFalse(
-                                               item.getServiceId()
-                                       )
-                                       .orElseThrow(() ->
-                                               new ResourceNotFoundException(
-                                                       "Service not found: "
-                                                               + item.getServiceId()
-                                               )
-                                       )
+                       .map(
+                               BookingServiceItemRequest
+                                       ::getServiceId
                        )
-                       .toList();
+                       .distinct()
+                       .map(
+                               serviceId ->
+                                       vendorServiceRepository
+                                               .findByIdAndActiveTrueAndDeletedFalse(
+                                                       serviceId
+                                               )
+                                               .orElseThrow(() ->
+                                                       new ResourceNotFoundException(
+                                                               "Service not found: "
+                                                                       + serviceId
+                                                       )
+                                               )
+                       )
+                       .collect(
+                               java.util.stream.Collectors.toMap(
+                                       VendorService::getId,
+                                       service -> service
+                               )
+                       );
 
 
        /*
         * =========================================
-        * 5. PREPARE RESPONSE DATA
+        * 6. PREPARE RESPONSE DATA
         * =========================================
         */
 
@@ -155,8 +310,10 @@ public class BookingServiceImpl implements BookingService
        BigDecimal originalTotal =
                BigDecimal.ZERO;
 
+
        BigDecimal totalDiscount =
                BigDecimal.ZERO;
+
 
        BigDecimal finalTotal =
                BigDecimal.ZERO;
@@ -165,38 +322,233 @@ public class BookingServiceImpl implements BookingService
        boolean bundleApplied =
                false;
 
+
        int qualifyingServiceCount =
                0;
 
 
        /*
         * =========================================
-        * 6. PROCESS EACH SERVICE
+        * 7. PREPARE BUNDLE REQUESTS
         * =========================================
         */
 
-       for (VendorService vendorService : services) {
+       List<BookingBundleItemRequest> bundleRequests =
+               request.getBundles() != null
+                       ? request.getBundles()
+                       : java.util.Collections.emptyList();
+
+
+       /*
+        * =========================================
+        * 8. PRE-CALCULATE BUNDLE DISCOUNTS
+        * =========================================
+        *
+        * Each bundle is calculated once.
+        *
+        * Bundle discount is stored against the
+        * individual service ID.
+        */
+
+       Map<String, BigDecimal> bundleDiscountMap =
+               new java.util.HashMap<>();
+
+
+       for (
+               BookingBundleItemRequest bundleRequest :
+               bundleRequests
+       ) {
+
+           if (
+                   bundleRequest.getItems() == null ||
+                           bundleRequest.getItems().isEmpty()
+           ) {
+
+               continue;
+           }
+
 
            /*
-            * Find request information for this service.
+            * Get unique service IDs belonging
+            * to this bundle.
             */
 
-           BookingServiceItemRequest item =
-                   serviceItems
+           List<String> bundleServiceIds =
+                   bundleRequest
+                           .getItems()
                            .stream()
-                           .filter(serviceItem ->
-                                   serviceItem
-                                           .getServiceId()
-                                           .equals(
-                                                   vendorService.getId()
-                                           )
+                           .map(
+                                   BookingServiceItemRequest
+                                           ::getServiceId
                            )
-                           .findFirst()
-                           .orElseThrow(() ->
-                                   new IllegalArgumentException(
-                                           "Booking information missing for service."
-                                   )
+                           .distinct()
+                           .toList();
+
+
+           /*
+            * Need at least two services for
+            * a bundle.
+            */
+
+           if (bundleServiceIds.size() < 2) {
+
+               continue;
+           }
+
+
+           /*
+            * =========================================
+            * VERIFY SAME VENDOR
+            * =========================================
+            */
+
+           List<VendorService> bundleServices =
+                   bundleServiceIds
+                           .stream()
+                           .map(serviceMap::get)
+                           .filter(
+                                   java.util.Objects::nonNull
+                           )
+                           .toList();
+
+
+           if (bundleServices.isEmpty()) {
+
+               continue;
+           }
+
+
+           String firstVendorId =
+                   bundleServices
+                           .get(0)
+                           .getVendorId();
+
+
+           boolean sameVendor =
+                   bundleServices
+                           .stream()
+                           .allMatch(
+                                   service ->
+                                           service
+                                                   .getVendorId()
+                                                   .equals(
+                                                           firstVendorId
+                                                   )
                            );
+
+
+           if (!sameVendor) {
+
+               continue;
+           }
+
+
+           /*
+            * =========================================
+            * CALCULATE BUNDLE
+            * =========================================
+            */
+
+           BundleCalculationRequest bundleCalculationRequest =
+                   new BundleCalculationRequest();
+
+
+           bundleCalculationRequest.setServiceIds(
+                   bundleServiceIds
+           );
+
+
+           BundleCalculationResponse bundleResult =
+                   bundleCalculationService
+                           .calculateBundle(
+                                   bundleCalculationRequest
+                           );
+
+
+           if (
+                   bundleResult == null ||
+                           bundleResult.getItems() == null
+           ) {
+
+               continue;
+           }
+
+
+           /*
+            * =========================================
+            * STORE BUNDLE DISCOUNTS
+            * =========================================
+            */
+
+           for (
+                   BundleDiscountItem bundleItem :
+                   bundleResult.getItems()
+           ) {
+
+               BigDecimal discount =
+                       safe(
+                               bundleItem
+                                       .getDiscountAmount()
+                       );
+
+
+               if (
+                       discount.compareTo(
+                               BigDecimal.ZERO
+                       ) > 0
+               ) {
+
+                   bundleDiscountMap.merge(
+                           bundleItem.getServiceId(),
+                           discount,
+                           BigDecimal::add
+                   );
+
+
+                   bundleApplied = true;
+               }
+           }
+
+
+           qualifyingServiceCount =
+                   Math.max(
+                           qualifyingServiceCount,
+                           bundleResult
+                                   .getQualifyingServiceCount()
+                   );
+       }
+
+
+       /*
+        * =========================================
+        * 9. CREATE BOOKINGS
+        * =========================================
+        */
+
+       for (
+               BookingServiceItemRequest item :
+               serviceItems
+       ) {
+
+           /*
+            * =========================================
+            * FIND ACTUAL VENDOR SERVICE
+            * =========================================
+            */
+
+           VendorService vendorService =
+                   serviceMap.get(
+                           item.getServiceId()
+                   );
+
+
+           if (vendorService == null) {
+
+               throw new ResourceNotFoundException(
+                       "Service not found: "
+                               + item.getServiceId()
+               );
+           }
 
 
            /*
@@ -221,6 +573,8 @@ public class BookingServiceImpl implements BookingService
             * =========================================
             * CALCULATE SERVICE PRICING
             * =========================================
+            *
+            * Each service item has its own date.
             */
 
            PricingCalculationResult pricingResult =
@@ -238,83 +592,47 @@ public class BookingServiceImpl implements BookingService
 
            /*
             * =========================================
-            * BUNDLE DISCOUNT
+            * FIND BUNDLE ID FOR THIS BOOKING
             * =========================================
             *
-            * Only services belonging to the same vendor
-            * are considered together for bundle pricing.
+            * IMPORTANT:
+            *
+            * Use serviceId + eventDate.
+            *
+            * This allows:
+            *
+            * service123 + 2026-09-20
+            *
+            * to belong to one bundle while
+            *
+            * service123 + 2026-09-22
+            *
+            * can belong to another bundle.
             */
 
-           List<String> vendorServiceIds =
-                   services
-                           .stream()
-                           .filter(service ->
-                                   service.getVendorId()
-                                           .equals(
-                                                   vendorService.getVendorId()
-                                           )
-                           )
-                           .map(VendorService::getId)
-                           .toList();
+           String serviceItemKey =
+                   item.getServiceId()
+                           + "_"
+                           + item.getEventDate();
 
+
+           String bundleId =
+                   serviceItemBundleMap.get(
+                           serviceItemKey
+                   );
+
+
+           /*
+            * =========================================
+            * BUNDLE DISCOUNT
+            * =========================================
+            */
 
            BigDecimal bundleDiscount =
-                   BigDecimal.ZERO;
-
-
-           if (vendorServiceIds.size() > 1) {
-
-               BundleCalculationRequest bundleRequest =
-                       new BundleCalculationRequest();
-
-               bundleRequest.setServiceIds(
-                       vendorServiceIds
-               );
-
-
-               BundleCalculationResponse bundleResult =
-                       bundleCalculationService
-                               .calculateBundle(
-                                       bundleRequest
-                               );
-
-
-               BundleDiscountItem bundleItem =
-                       bundleResult
-                               .getItems()
-                               .stream()
-                               .filter(bundle ->
-                                       bundle.getServiceId()
-                                               .equals(
-                                                       vendorService.getId()
-                                               )
-                               )
-                               .findFirst()
-                               .orElse(null);
-
-
-               if (bundleItem != null) {
-
-                   bundleDiscount =
-                           safe(
-                                   bundleItem.getDiscountAmount()
-                           );
-
-                   if (bundleDiscount.compareTo(
+                   bundleDiscountMap.getOrDefault(
+                           vendorService.getId(),
                            BigDecimal.ZERO
-                   ) > 0) {
-
-                       bundleApplied = true;
-                   }
-               }
-
-
-               qualifyingServiceCount =
-                       Math.max(
-                               qualifyingServiceCount,
-                               vendorServiceIds.size()
-                       );
-           }
+                   );
 
 
            /*
@@ -325,8 +643,12 @@ public class BookingServiceImpl implements BookingService
 
            BigDecimal finalServiceAmount =
                    serviceTotal
-                           .subtract(bundleDiscount)
-                           .max(BigDecimal.ZERO);
+                           .subtract(
+                                   bundleDiscount
+                           )
+                           .max(
+                                   BigDecimal.ZERO
+                           );
 
 
            /*
@@ -376,6 +698,22 @@ public class BookingServiceImpl implements BookingService
 
            /*
             * =========================================
+            * BUNDLE ID
+            * =========================================
+            *
+            * null  -> individual service
+            *
+            * value -> service booked as part
+            *          of this bundle
+            */
+
+           booking.setBundleId(
+                   bundleId
+           );
+
+
+           /*
+            * =========================================
             * SNAPSHOTS
             * =========================================
             */
@@ -395,7 +733,8 @@ public class BookingServiceImpl implements BookingService
 
 
            /*
-            * Add bundle discount to snapshot.
+            * Add bundle discount to the
+            * existing pricing discount.
             */
 
            BigDecimal existingDiscount =
@@ -411,6 +750,11 @@ public class BookingServiceImpl implements BookingService
            );
 
 
+           /*
+            * Store final amount after
+            * bundle discount.
+            */
+
            pricingSnapshot.setTotalAmount(
                    finalServiceAmount
            );
@@ -422,7 +766,9 @@ public class BookingServiceImpl implements BookingService
 
 
            /*
-            * Top-level totals.
+            * =========================================
+            * TOP LEVEL TOTALS
+            * =========================================
             */
 
            booking.setTotalAmount(
@@ -514,7 +860,7 @@ public class BookingServiceImpl implements BookingService
 
        /*
         * =========================================
-        * RETURN BOOKING GROUP
+        * 10. RETURN BOOKING GROUP
         * =========================================
         */
 
@@ -563,17 +909,6 @@ public class BookingServiceImpl implements BookingService
 
                .build();
    }
-
-    @Override
-    public BookingResponse getBooking(String bookingId) {
-
-        Booking booking = bookingRepository.findById(bookingId)
-                .orElseThrow(() ->
-                        new BookingNotFoundException("Booking not found"));
-
-        return bookingMapper.toResponse(booking);
-
-    }
 
     @Override
     public List<BookingResponse> getVendorBookings() {
@@ -1292,6 +1627,106 @@ public class BookingServiceImpl implements BookingService
 
        }
 
+   }
+
+   @Override
+   public BookingGroupResponse getBookingGroup(
+           String bookingGroupId
+   ) {
+
+       List<Booking> bookings =
+               bookingRepository.findByBookingGroupId(
+                       bookingGroupId
+               );
+
+       if (
+               bookings == null ||
+                       bookings.isEmpty()
+       ) {
+
+           throw new BookingNotFoundException(
+                   "Booking group not found"
+           );
+
+       }
+
+       List<BookingResponse> bookingResponses =
+               bookings.stream()
+                       .map(
+                               bookingMapper::toResponse
+                       )
+                       .toList();
+
+       BigDecimal originalTotal =
+               bookings.stream()
+                       .map(Booking::getTotalAmount)
+                       .reduce(
+                               BigDecimal.ZERO,
+                               BigDecimal::add
+                       );
+
+       /*
+        * For now calculate these from the group.
+        *
+        * If your Booking model already stores these
+        * group-level values, use those instead.
+        */
+
+       BigDecimal totalDiscount =
+               BigDecimal.ZERO;
+
+       BigDecimal finalTotal =
+               originalTotal.subtract(
+                       totalDiscount
+               );
+
+       Booking firstBooking =
+               bookings.get(0);
+
+       return BookingGroupResponse
+               .builder()
+
+               .bookingGroupId(
+                       bookingGroupId
+               )
+
+               .customerId(
+                       firstBooking.getCustomerId()
+               )
+
+               .eventType(
+                       firstBooking.getEventType()
+               )
+
+               .specialRequest(
+                       firstBooking.getSpecialRequest()
+               )
+
+               .originalTotal(
+                       originalTotal
+               )
+
+               .totalDiscount(
+                       totalDiscount
+               )
+
+               .finalTotal(
+                       finalTotal
+               )
+
+               .bundleApplied(
+                       false
+               )
+
+               .qualifyingServiceCount(
+                       0
+               )
+
+               .bookings(
+                       bookingResponses
+               )
+
+               .build();
    }
 
 

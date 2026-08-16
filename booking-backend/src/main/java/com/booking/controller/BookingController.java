@@ -38,6 +38,7 @@ public class BookingController {
         return bookingService.createBooking(
                 request
         );
+
     }
 
 
@@ -47,13 +48,13 @@ public class BookingController {
      * =========================================
      */
 
-    @GetMapping("/{bookingId}")
-    public BookingResponse getBooking(
-            @PathVariable String bookingId
+    @GetMapping("/{bookingGroupId}")
+    public BookingGroupResponse getBooking(
+            @PathVariable String bookingGroupId
     ) {
 
-        return bookingService.getBooking(
-                bookingId
+        return bookingService.getBookingGroup(
+                bookingGroupId
         );
     }
 
