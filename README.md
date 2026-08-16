@@ -41,6 +41,7 @@ After Register, login and go to vendor Dashboard(top near login). There vendor c
 Admin
 ------
 Run the below query:
+
 db.users.insertOne({
   email: "admin@test.com",
   password: "$2a$10$U33CQfBSQHWHKrKfBRDEdew3BuqiRMLIda02nOkq5Ax2o6zBzRiFi",
