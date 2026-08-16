@@ -17,6 +17,8 @@ public class BookingResponse extends BaseEntity {
 
     private String id;
 
+    private String bookingGroupId;
+
     private String bookingNumber;
 
     private String serviceName;

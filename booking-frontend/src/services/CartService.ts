@@ -1,11 +1,8 @@
 import type { CartItem } from "../types/CartItem";
 
-const CART_STORAGE_KEY =
-    "eventnest_cart";
-
+const CART_STORAGE_KEY = "eventnest_cart";
 
 class CartService {
-
 
     /*
      * =========================================
@@ -20,11 +17,9 @@ class CartService {
                 CART_STORAGE_KEY
             );
 
-
         if (!storedCart) {
             return [];
         }
-
 
         try {
 
@@ -33,11 +28,9 @@ class CartService {
                     storedCart
                 );
 
-
             if (!Array.isArray(cart)) {
                 return [];
             }
-
 
             return cart;
 
@@ -63,8 +56,9 @@ class CartService {
 
     saveCart(
         cart: CartItem[]
-    ): void {
 
+    ): void {
+console.log("saveCart:", cart);
         localStorage.setItem(
             CART_STORAGE_KEY,
             JSON.stringify(cart)
@@ -82,10 +76,9 @@ class CartService {
     addItem(
         item: CartItem
     ): CartItem[] {
-
+console.log("addItem:", item);
         const cart =
             this.getCart();
-
 
         const alreadyExists =
             cart.some(
@@ -94,24 +87,15 @@ class CartService {
                     item.serviceId
             );
 
-
         if (!alreadyExists) {
 
             cart.push(item);
 
         }
 
-
         this.saveCart(
             cart
         );
-
-        // Notify Header and other components
-        // that the cart has changed.
-        window.dispatchEvent(
-            new Event("cartUpdated")
-        );
-
 
         return cart;
 
@@ -122,6 +106,13 @@ class CartService {
      * =========================================
      * REMOVE ITEM
      * =========================================
+     *
+     * Removes only one service.
+     *
+     * If that service belongs to a bundle,
+     * the caller can separately remove the
+     * bundle association from the remaining
+     * services.
      */
 
     removeItem(
@@ -136,16 +127,121 @@ class CartService {
                         serviceId
                 );
 
+        this.saveCart(
+            cart
+        );
+
+        return cart;
+
+    }
+
+
+    /*
+     * =========================================
+     * REMOVE ITEM FROM BUNDLE
+     * =========================================
+     *
+     * Removes one service and removes the
+     * bundle association from all remaining
+     * services belonging to that bundle.
+     *
+     * This means:
+     *
+     * Service A -> removed
+     * Service B -> normal service
+     * Service C -> normal service
+     *
+     * Bundle discount -> removed
+     */
+
+    removeItemFromBundle(
+        serviceId: string,
+        bundleId: string
+    ): CartItem[] {
+
+        const cart =
+            this.getCart()
+                .filter(
+                    item =>
+                        item.serviceId !==
+                        serviceId
+                )
+                .map(
+                    item => {
+
+                        if (
+                            item.bundleId !==
+                            bundleId
+                        ) {
+
+                            return item;
+
+                        }
+
+                        const {
+                            bundleId:
+                                _bundleId,
+
+                            bundleName:
+                                _bundleName,
+
+                            bundleDescription:
+                                _bundleDescription,
+
+                            bundleServiceIds:
+                                _bundleServiceIds,
+
+                            bundleDiscountType:
+                                _bundleDiscountType,
+
+                            bundleDiscountValue:
+                                _bundleDiscountValue,
+
+                            bundleEnabled:
+                                _bundleEnabled,
+
+                            ...normalItem
+
+                        } = item;
+
+                        return normalItem;
+
+                    }
+                );
 
         this.saveCart(
             cart
         );
 
-        // Notify Header that cart changed.
-        window.dispatchEvent(
-            new Event("cartUpdated")
-        );
+        return cart;
 
+    }
+
+
+    /*
+     * =========================================
+     * REMOVE ENTIRE BUNDLE
+     * =========================================
+     *
+     * Removes every service belonging to
+     * the specified bundle.
+     */
+
+    removeBundle(
+        bundleId: string
+    ): CartItem[] {
+
+        const cart =
+            this.getCart()
+                .filter(
+                    item =>
+                        item.bundleId !==
+                        bundleId
+                );
+
+        this.saveCart(
+            cart
+        );
 
         return cart;
 
@@ -162,11 +258,6 @@ class CartService {
 
         localStorage.removeItem(
             CART_STORAGE_KEY
-        );
-
-        // Notify Header that cart changed.
-        window.dispatchEvent(
-            new Event("cartUpdated")
         );
 
     }
@@ -235,19 +326,14 @@ class CartService {
      * =========================================
      * GET ACTIVE BUNDLES
      * =========================================
-     *
-     * Returns one representative cart item
-     * for each unique bundle.
      */
 
     getCartBundles(): CartItem[] {
 
         const cart =
             this.getCart();
-
-
+console.log("getCartBundles:", cart);
         const bundles: CartItem[] = [];
-
 
         cart.forEach(
             item => {
@@ -255,9 +341,10 @@ class CartService {
                 if (
                     !item.bundleId
                 ) {
-                    return;
-                }
 
+                    return;
+
+                }
 
                 const alreadyExists =
                     bundles.some(
@@ -265,7 +352,6 @@ class CartService {
                             bundle.bundleId ===
                             item.bundleId
                     );
-
 
                 if (!alreadyExists) {
 
@@ -277,7 +363,6 @@ class CartService {
 
             }
         );
-
 
         return bundles;
 
@@ -296,15 +381,13 @@ class CartService {
 
         const cart =
             this.getCart();
-
-
+console.log("isBundleComplete:", cart);
         const bundleItems =
             cart.filter(
                 item =>
                     item.bundleId ===
                     bundleId
             );
-
 
         if (
             bundleItems.length === 0
@@ -314,11 +397,9 @@ class CartService {
 
         }
 
-
         const requiredServiceIds =
             bundleItems[0]
                 .bundleServiceIds;
-
 
         if (
             !requiredServiceIds ||
@@ -328,7 +409,6 @@ class CartService {
             return false;
 
         }
-
 
         return requiredServiceIds.every(
             serviceId =>
@@ -346,26 +426,6 @@ class CartService {
 
     /*
      * =========================================
-     * GET BUNDLE ITEMS
-     * =========================================
-     */
-
-    getBundleItems(
-        bundleId: string
-    ): CartItem[] {
-
-        return this.getCart()
-            .filter(
-                item =>
-                    item.bundleId ===
-                    bundleId
-            );
-
-    }
-
-
-    /*
-     * =========================================
      * GET BUNDLE ORIGINAL PRICE
      * =========================================
      */
@@ -374,9 +434,12 @@ class CartService {
         bundleId: string
     ): number {
 
-        return this.getBundleItems(
-            bundleId
-        )
+        return this.getCart()
+            .filter(
+                item =>
+                    item.bundleId ===
+                    bundleId
+            )
             .reduce(
                 (
                     total,
@@ -396,20 +459,21 @@ class CartService {
      * =========================================
      * GET BUNDLE DISCOUNT
      * =========================================
-     *
-     * Discount is applied ONLY when the
-     * complete bundle is present.
      */
 
     getBundleDiscount(
         bundleId: string
     ): number {
 
-        const bundleItems =
-            this.getBundleItems(
-                bundleId
-            );
+        const cart =
+            this.getCart();
 
+        const bundleItems =
+            cart.filter(
+                item =>
+                    item.bundleId ===
+                    bundleId
+            );
 
         if (
             bundleItems.length === 0
@@ -419,10 +483,9 @@ class CartService {
 
         }
 
-
         /*
-         * Do not apply discount until
-         * every required service exists.
+         * Discount is applied only when
+         * the complete bundle exists.
          */
 
         if (
@@ -435,23 +498,13 @@ class CartService {
 
         }
 
-
         const firstItem =
             bundleItems[0];
-
 
         const originalPrice =
             this.getBundleOriginalPrice(
                 bundleId
             );
-
-
-        const discountValue =
-            Number(
-                firstItem.bundleDiscountValue ||
-                0
-            );
-
 
         if (
             firstItem.bundleDiscountType ===
@@ -461,13 +514,14 @@ class CartService {
             return (
                 originalPrice *
                 (
-                    discountValue /
-                    100
+                    Number(
+                        firstItem.bundleDiscountValue ||
+                        0
+                    ) / 100
                 )
             );
 
         }
-
 
         if (
             firstItem.bundleDiscountType ===
@@ -475,12 +529,14 @@ class CartService {
         ) {
 
             return Math.min(
-                discountValue,
+                Number(
+                    firstItem.bundleDiscountValue ||
+                    0
+                ),
                 originalPrice
             );
 
         }
-
 
         return 0;
 
@@ -502,189 +558,15 @@ class CartService {
                 bundleId
             );
 
-
         const discount =
             this.getBundleDiscount(
                 bundleId
             );
 
-
-        return Math.max(
-            0,
+        return (
             originalPrice -
             discount
         );
-
-    }
-
-
-    /*
-     * =========================================
-     * GET ITEM BUNDLE DISCOUNT
-     * =========================================
-     *
-     * Calculates how much of the bundle
-     * discount belongs to one service.
-     *
-     * The discount is distributed
-     * proportionally according to each
-     * service's original price.
-     */
-
-    getItemBundleDiscount(
-        item: CartItem
-    ): number {
-
-        if (
-            !item.bundleId
-        ) {
-
-            return 0;
-
-        }
-
-
-        if (
-            !this.isBundleComplete(
-                item.bundleId
-            )
-        ) {
-
-            return 0;
-
-        }
-
-
-        const bundleItems =
-            this.getBundleItems(
-                item.bundleId
-            );
-
-
-        const bundleOriginalPrice =
-            this.getBundleOriginalPrice(
-                item.bundleId
-            );
-
-
-        if (
-            bundleOriginalPrice <= 0
-        ) {
-
-            return 0;
-
-        }
-
-
-        const totalBundleDiscount =
-            this.getBundleDiscount(
-                item.bundleId
-            );
-
-
-        const itemOriginalPrice =
-            Number(
-                item.price
-            );
-
-
-        /*
-         * Allocate the bundle discount
-         * proportionally to this service.
-         */
-
-        const itemDiscount =
-            totalBundleDiscount *
-            (
-                itemOriginalPrice /
-                bundleOriginalPrice
-            );
-
-
-        /*
-         * Avoid floating-point display
-         * issues such as 2499.999999.
-         */
-
-        return Number(
-            itemDiscount.toFixed(2)
-        );
-
-    }
-
-
-    /*
-     * =========================================
-     * GET ITEM FINAL PRICE
-     * =========================================
-     */
-
-    getItemFinalPrice(
-        item: CartItem
-    ): number {
-
-        const discount =
-            this.getItemBundleDiscount(
-                item
-            );
-
-
-        return Math.max(
-            0,
-            Number(
-                item.price
-            ) -
-            discount
-        );
-
-    }
-
-
-    /*
-     * =========================================
-     * GET ITEM PRICING DETAILS
-     * =========================================
-     *
-     * Convenient helper for the Cart page
-     * and Checkout page.
-     */
-
-    getItemPricing(
-        item: CartItem
-    ) {
-
-        const originalPrice =
-            Number(
-                item.price
-            );
-
-
-        const discount =
-            this.getItemBundleDiscount(
-                item
-            );
-
-
-        const finalPrice =
-            Math.max(
-                0,
-                originalPrice -
-                discount
-            );
-
-
-        return {
-
-            originalPrice,
-
-            discount,
-
-            finalPrice,
-
-            bundleApplied:
-                discount > 0
-
-        };
 
     }
 
@@ -699,7 +581,6 @@ class CartService {
 
         const bundles =
             this.getCartBundles();
-
 
         return bundles.reduce(
             (
@@ -724,8 +605,7 @@ class CartService {
 
     getFinalTotal(): number {
 
-        return Math.max(
-            0,
+        return (
             this.getSubtotal() -
             this.getTotalDiscount()
         );
@@ -737,11 +617,6 @@ class CartService {
      * =========================================
      * REMOVE BUNDLE ASSOCIATION
      * =========================================
-     *
-     * Used when switching bundles.
-     *
-     * Services remain in the cart but
-     * lose their old bundle association.
      */
 
     removeBundleAssociation(
@@ -762,34 +637,40 @@ class CartService {
 
                         }
 
-
                         const {
                             bundleId:
                                 _bundleId,
+
                             bundleName:
                                 _bundleName,
+
                             bundleDescription:
                                 _bundleDescription,
+
                             bundleServiceIds:
                                 _bundleServiceIds,
+
                             bundleDiscountType:
                                 _bundleDiscountType,
+
                             bundleDiscountValue:
                                 _bundleDiscountValue,
-                            ...normalItem
-                        } = item;
 
+                            bundleEnabled:
+                                _bundleEnabled,
+
+                            ...normalItem
+
+                        } = item;
 
                         return normalItem;
 
                     }
                 );
 
-
         this.saveCart(
             cart
         );
-
 
         return cart;
 

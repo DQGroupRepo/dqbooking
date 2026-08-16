@@ -31,6 +31,8 @@ public class Booking extends BaseEntity {
      */
     private String bookingGroupId;
 
+    private String bundleId;
+
 
     /*
      * =========================================

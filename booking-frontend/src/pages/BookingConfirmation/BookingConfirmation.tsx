@@ -1,56 +1,107 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import {
+    useNavigate,
+    useParams
+} from "react-router-dom";
 
 import "./BookingConfirmation.css";
 
-import { getBookingById } from "../../services/BookingService";
+import {
+    getBookingGroupById
+} from "../../services/BookingService";
 
-import type { Booking } from "../../types/Booking";
-import BookingHeader from "../../components/booking/BookingHeader/BookingHeader";
-import BookingSummary from "../../components/booking/BookingSummary/BookingSummary";
-import CustomerSummary from "../../components/booking/CustomerSummary/CustomerSummary";
-import PaymentSummary from "../../components/booking/PaymentSummary/PaymentSummary";
-import PricingSummary from "../../components/booking/PricingSummary/PricingSummary";
+import type {
+    BookingGroup
+} from "../../types/BookingGroup";
+
+import BookingHeader
+    from "../../components/booking/BookingHeader/BookingHeader";
+
+import BookingSummary
+    from "../../components/booking/BookingSummary/BookingSummary";
+
+import CustomerSummary
+    from "../../components/booking/CustomerSummary/CustomerSummary";
+
 
 const BookingConfirmation = () => {
 
-    const { bookingId } = useParams();
+    const {
+        bookingGroupId
+    } = useParams();
 
-    const navigate = useNavigate();
 
-    const [booking, setBooking] =
-        useState<Booking>();
+    const navigate =
+        useNavigate();
 
-    const [loading, setLoading] =
+
+    const [
+        bookingGroup,
+        setBookingGroup
+    ] =
+        useState<BookingGroup>();
+
+
+    const [
+        loading,
+        setLoading
+    ] =
         useState(true);
+
 
     useEffect(() => {
 
-        if (!bookingId) return;
+        if (!bookingGroupId) {
 
-        loadBooking();
+            setLoading(false);
 
-    }, [bookingId]);
+            return;
 
-    async function loadBooking() {
+        }
+
+
+        loadBookingGroup(
+            bookingGroupId
+        );
+
+    }, [bookingGroupId]);
+
+
+    async function loadBookingGroup(
+        groupId: string
+    ) {
 
         try {
 
             const response =
-                await getBookingById(
-                    bookingId!
+                await getBookingGroupById(
+                    groupId
                 );
 
-            setBooking(response);
 
-        }
-        finally {
+            setBookingGroup(
+                response
+            );
+
+        } catch (error) {
+
+            console.error(
+                "Failed to load booking group:",
+                error
+            );
+
+            setBookingGroup(
+                undefined
+            );
+
+        } finally {
 
             setLoading(false);
 
         }
 
     }
+
 
     if (loading) {
 
@@ -66,7 +117,11 @@ const BookingConfirmation = () => {
 
     }
 
-    if (!booking) {
+
+    if (
+        !bookingGroup ||
+        bookingGroup.bookings.length === 0
+    ) {
 
         return (
 
@@ -80,66 +135,135 @@ const BookingConfirmation = () => {
 
     }
 
+
+    const firstBooking =
+        bookingGroup.bookings[0];
+
+
     return (
 
         <section className="booking-confirmation-page">
 
             <div className="confirmation-card">
 
+
                 <BookingHeader
 
-                    bookingNumber={booking.bookingNumber}
+                    bookingNumber={
+                        bookingGroup.bookingGroupId
+                    }
 
-                    status={booking.status}
+                    status={
+                        firstBooking.status
+                    }
 
                 />
 
+
                 <div className="confirmation-layout">
+
 
                     <div className="confirmation-left">
 
+
                         <BookingSummary
-
-                            booking={booking}
-
+                            bookings={
+                                bookingGroup.bookings
+                            }
                         />
+
 
                         <CustomerSummary
 
-                            name={booking.customerName}
+                            name={
+                                firstBooking.customerName
+                            }
 
-                            phone={booking.customerPhone}
+                            phone={
+                                firstBooking.customerPhone
+                            }
 
-                            email={booking.customerEmail}
+                            email={
+                                firstBooking.customerEmail
+                            }
 
                         />
+
 
                     </div>
 
+
                     <div className="confirmation-right">
 
-                        <PricingSummary
+                        <div className="booking-group-pricing">
 
-                            pricing={booking.pricing}
+                            <h3>
+                                Booking Summary
+                            </h3>
 
-                        />
+                            <div className="pricing-row">
+                                <span>
+                                    Original Total
+                                </span>
 
+                                <strong>
+                                    ₹
+                                    {Number(
+                                        bookingGroup.originalTotal
+                                    ).toLocaleString("en-IN")}
+                                </strong>
+                            </div>
+
+
+                            <div className="pricing-row discount-row">
+                                <span>
+                                    Bundle Discount
+                                </span>
+
+                                <strong>
+                                    - ₹
+                                    {Number(
+                                        bookingGroup.totalDiscount
+                                    ).toLocaleString("en-IN")}
+                                </strong>
+                            </div>
+
+
+                            <div className="pricing-row total">
+                                <span>
+                                    Final Total
+                                </span>
+
+                                <strong>
+                                    ₹
+                                    {Number(
+                                        bookingGroup.finalTotal
+                                    ).toLocaleString("en-IN")}
+                                </strong>
+                            </div>
+
+                        </div>
 
 
                     </div>
 
                 </div>
 
+
                 <div className="confirmation-buttons">
+
 
                     <button
                         className="primary"
                         onClick={() =>
-                            navigate("/customer/bookings")
+                            navigate(
+                                "/customer/bookings"
+                            )
                         }
                     >
                         My Bookings
                     </button>
+
 
                     <button
                         className="secondary"
@@ -151,6 +275,7 @@ const BookingConfirmation = () => {
                         Download PDF
                     </button>
 
+
                     <button
                         className="secondary"
                         onClick={() =>
@@ -160,7 +285,9 @@ const BookingConfirmation = () => {
                         Back to Home
                     </button>
 
+
                 </div>
+
 
             </div>
 
@@ -169,5 +296,6 @@ const BookingConfirmation = () => {
     );
 
 };
+
 
 export default BookingConfirmation;

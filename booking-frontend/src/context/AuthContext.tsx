@@ -128,17 +128,13 @@ export const AuthProvider = ({
             "eventnest_token"
         );
 
-
         localStorage.removeItem(
             "eventnest_user"
         );
 
-
         setToken(null);
 
         setUser(null);
-        setIsAuthenticated(false);
-
 
     };
 

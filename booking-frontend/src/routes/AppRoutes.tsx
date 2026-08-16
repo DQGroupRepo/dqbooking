@@ -107,7 +107,7 @@ const AppRoutes = () => {
                         element={<VendorRegister />}
                     />
                     <Route
-                        path="/booking-confirmation/:bookingId"
+                        path="/booking-confirmation/:bookingGroupId"
                         element={<BookingConfirmation />}
                     />
 

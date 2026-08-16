@@ -38,6 +38,9 @@ public interface BookingRepository extends MongoRepository<Booking, String> {
 
     List<Booking> findTop5ByOrderByCreatedAtDesc();
 
+    List<Booking> findByBookingGroupId(
+            String bookingGroupId
+    );
     /*
      * =========================================
      * ADMIN DASHBOARD ANALYTICS

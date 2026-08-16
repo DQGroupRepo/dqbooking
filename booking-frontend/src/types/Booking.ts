@@ -4,6 +4,8 @@ export interface Booking {
 
     id: string;
 
+    bookingGroupId?: string;
+
     bookingNumber: string;
 
     serviceName: string;

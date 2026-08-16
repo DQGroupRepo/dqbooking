@@ -1,114 +1,171 @@
-.booking-confirmation-page{
+/* =========================================
+   CONFIRMATION PAGE
+   ========================================= */
 
-    display:flex;
-    justify-content:center;
-    padding:60px 20px;
-    background:#f6f7fb;
-    min-height:100vh;
-     width:100%;
-
-        max-width:1400px;
-
-        margin:40px auto;
-
-
-
+.booking-confirmation-page {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 40px 24px;
 }
 
-.confirmation-card{
 
-    background:white;
-    width:720px;
-    border-radius:18px;
-    padding:40px;
-    text-align:center;
-    box-shadow:0 15px 45px rgba(0,0,0,.08);
+/* =========================================
+   MAIN CARD
+   ========================================= */
 
+.confirmation-card {
+    width: 100%;
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 36px 44px;
+    box-sizing: border-box;
 }
 
-.success-icon{
 
-    width:80px;
-    height:80px;
-    margin:auto;
+/* =========================================
+   MAIN TWO-COLUMN LAYOUT
+   ========================================= */
 
-    border-radius:50%;
-    background:#14b86d;
-    color:white;
+.confirmation-layout {
+    display: grid;
+    grid-template-columns:
+        minmax(0, 1.15fr)
+        minmax(320px, 0.85fr);
 
-    display:flex;
-    justify-content:center;
-    align-items:center;
+    gap: 42px;
 
-    font-size:42px;
-    margin-bottom:25px;
-
+    width: 100%;
+    align-items: start;
 }
 
-.confirmation-info{
 
-    margin-top:35px;
+/* =========================================
+   LEFT / RIGHT COLUMNS
+   ========================================= */
 
-    display:grid;
-    grid-template-columns:1fr 1fr;
-
-    gap:20px;
-    text-align:left;
-
+.confirmation-left,
+.confirmation-right {
+    min-width: 0;
+    width: 100%;
+    box-sizing: border-box;
 }
 
-.confirmation-info div{
 
-    background:#fafafa;
+/*
+ * IMPORTANT:
+ *
+ * Prevent the booking summary/services from
+ * sticking while the page scrolls.
+ */
 
-    padding:18px;
-
-    border-radius:12px;
-
+.confirmation-left,
+.confirmation-right,
+.confirmation-left > *,
+.confirmation-right > * {
+    position: static !important;
 }
 
-.confirmation-info span{
 
-    display:block;
-    color:#777;
-    font-size:13px;
-    margin-bottom:6px;
+/* =========================================
+   SERVICE SUMMARY
+   ========================================= */
 
+.booking-summary {
+    width: 100%;
+    box-sizing: border-box;
+    position: static !important;
 }
 
-.confirmation-layout{
 
-     display:grid;
+/* =========================================
+   INDIVIDUAL SERVICE BLOCKS
+   ========================================= */
 
-        grid-template-columns:2.6fr 1.2fr;
+.booking-service-summary {
+    width: 100%;
+    box-sizing: border-box;
 
-        gap:36px;
+    padding: 20px 24px;
+    margin-bottom: 18px;
 
-        align-items:start;
-
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    background: #ffffff;
 }
 
-.confirmation-left{
 
-    display:flex;
+/* =========================================
+   GROUP PRICING
+   ========================================= */
 
-    flex-direction:column;
+.booking-group-pricing {
+    width: 100%;
+    box-sizing: border-box;
 
-    gap:25px;
+    padding: 28px;
+    margin-bottom: 24px;
 
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    background: #ffffff;
 }
 
-.confirmation-right{
 
-    display:flex;
+/* =========================================
+   PRICING ROWS
+   ========================================= */
 
-    flex-direction:column;
+.pricing-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 
-    gap:24px;
-    min-width:345px;
+    gap: 20px;
 
-
+    padding: 12px 0;
 }
+
+
+.pricing-row.total {
+    margin-top: 12px;
+    padding-top: 18px;
+
+    border-top: 1px solid #e5e7eb;
+
+    font-size: 1.15rem;
+    font-weight: 700;
+}
+
+
+.pricing-row.discount-row {
+    color: #059669;
+}
+
+
+/* =========================================
+   CUSTOMER SUMMARY
+   ========================================= */
+
+.confirmation-left .customer-summary {
+    width: 100%;
+    box-sizing: border-box;
+    margin-top: 24px;
+}
+
+
+/* =========================================
+   RIGHT SIDE SPACING
+   ========================================= */
+
+.confirmation-right {
+    padding-left: 10px;
+    padding-right: 10px;
+}
+
+
+/* =========================================
+   BUTTONS
+   ========================================= */
 
 .confirmation-buttons{
     display:flex;
@@ -146,4 +203,52 @@
 
 .confirmation-buttons .secondary:hover{
     background:#f5f5f5;
+}
+
+
+/* =========================================
+   RESPONSIVE
+   ========================================= */
+
+@media (max-width: 900px) {
+
+    .confirmation-card {
+        padding: 28px 24px;
+    }
+
+    .confirmation-layout {
+        grid-template-columns: 1fr;
+        gap: 28px;
+    }
+
+    .confirmation-right {
+        padding-left: 0;
+        padding-right: 0;
+    }
+
+}
+
+
+@media (max-width: 600px) {
+
+    .booking-confirmation-page {
+        padding: 20px 12px;
+    }
+
+    .confirmation-card {
+        padding: 22px 16px;
+    }
+
+    .booking-group-pricing {
+        padding: 20px;
+    }
+
+    .booking-service-summary {
+        padding: 18px;
+    }
+
+    .pricing-row {
+        font-size: 0.95rem;
+    }
+
 }
