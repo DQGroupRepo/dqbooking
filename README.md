@@ -51,6 +51,8 @@ First step -> Create a vendor
 
 Click on Register -> Register as Vendor(at the bottom)
 
+OTP: **123456**
+
 After Register, login and go to vendor Dashboard(top near login). There vendor can create a service. Make sure Price is also added with each service.
 
 Admin
