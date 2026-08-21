@@ -84,6 +84,8 @@ public class CustomerVendorMapperImpl
 
                 .location(service.getLocation())
 
+                .packages(service.getPackages())
+
                 .build();
 
     }

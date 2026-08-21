@@ -1,6 +1,6 @@
 import type { VendorService } from "../types/VendorService";
 import type { VendorServiceForm } from "../types/VendorServiceForm";
-import type { CreateVendorServiceRequest } from "../types/CreateVendorServiceRequest";
+import type { VendorServiceRequest } from "../types/VendorServiceRequest";
 
 export default class VendorServiceMapper {
 
@@ -89,7 +89,7 @@ export default class VendorServiceMapper {
 
     static formToRequest(
         form: VendorServiceForm
-    ): CreateVendorServiceRequest {
+    ): VendorServiceRequest {
 
         return {
 
@@ -151,7 +151,7 @@ export default class VendorServiceMapper {
     ) {
 
         const attributes:
-            CreateVendorServiceRequest["attributes"] = [];
+            VendorServiceRequest["attributes"] = [];
 
         if (form.category.toLowerCase() === "hall") {
 
@@ -184,7 +184,7 @@ export default class VendorServiceMapper {
     private static add(
 
         attributes:
-            CreateVendorServiceRequest["attributes"],
+            VendorServiceRequest["attributes"],
 
         key: string,
 

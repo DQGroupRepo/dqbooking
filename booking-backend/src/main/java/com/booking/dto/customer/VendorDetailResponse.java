@@ -4,6 +4,7 @@ import com.booking.model.ServiceAttribute;
 import com.booking.model.embedded.Availability;
 import com.booking.model.embedded.BookingSettings;
 import com.booking.model.embedded.ContactInfo;
+import com.booking.model.embedded.ServicePackage;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -49,5 +50,7 @@ public class VendorDetailResponse {
     private Availability availability;
 
     private String location;
+
+    private List<ServicePackage> packages;
 
 }

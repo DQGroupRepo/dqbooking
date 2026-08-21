@@ -1,5 +1,6 @@
 package com.booking.service;
 
+import com.booking.dto.service.ServicePackageRequest;
 import com.booking.dto.vendorservice.VendorServiceRequest;
 import com.booking.dto.vendorservice.VendorServiceResponse;
 
@@ -27,4 +28,9 @@ public interface VendorOfferingService {
             String serviceId);
 
     List<VendorServiceResponse> getBundleServices(String serviceId);
+
+    VendorServiceResponse updatePackages(
+            String serviceId,
+            List<ServicePackageRequest> packages
+    );
 }

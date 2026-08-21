@@ -1,16 +1,22 @@
 import api from "../api/axiosConfig";
 import type { VendorService } from "../types/VendorService";
-import type { CreateVendorServiceRequest } from "../types/CreateVendorServiceRequest";
+import type { VendorServiceRequest } from "../types/VendorServiceRequest";
+import type { ServicePackage } from "../types/ServicePackage";
 
 class VendorServiceService {
+
 
     async getServices(): Promise<VendorService[]> {
 
         const response =
-            await api.get<VendorService[]>("/vendor/services");
+            await api.get<VendorService[]>(
+                "/vendor/services"
+            );
 
         return response.data;
+
     }
+
 
     async getServiceById(
         id: string
@@ -22,10 +28,12 @@ class VendorServiceService {
             );
 
         return response.data;
+
     }
 
+
     async createService(
-        request: CreateVendorServiceRequest
+        request: VendorServiceRequest
     ): Promise<VendorService> {
 
         const response =
@@ -35,27 +43,25 @@ class VendorServiceService {
             );
 
         return response.data;
+
     }
 
+
     async updateService(
-
         id: string,
-
-        request: CreateVendorServiceRequest
-
+        request: VendorServiceRequest
     ): Promise<VendorService> {
 
-        const response = await api.put<VendorService>(
-
-            `/vendor/services/${id}`,
-
-            request
-
-        );
+        const response =
+            await api.put<VendorService>(
+                `/vendor/services/${id}`,
+                request
+            );
 
         return response.data;
 
     }
+
 
     async deleteService(
         id: string
@@ -64,7 +70,9 @@ class VendorServiceService {
         await api.delete(
             `/vendor/services/${id}`
         );
+
     }
+
 
     async changeStatus(
         id: string,
@@ -78,8 +86,23 @@ class VendorServiceService {
             );
 
         return response.data;
+
     }
 
+    async updatePackages(
+        serviceId: string,
+        packages: ServicePackage[]
+    ): Promise<VendorService> {
+
+        const response =
+            await api.put<VendorService>(
+                `/vendor/services/${serviceId}/packages`,
+                packages
+            );
+
+        return response.data;
+    }
 }
+
 
 export default new VendorServiceService();

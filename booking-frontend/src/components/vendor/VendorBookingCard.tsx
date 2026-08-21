@@ -6,6 +6,7 @@ import {
 
 import type { VendorDetail } from "../../types/VendorDetail";
 import type { Bundle } from "../../types/Bundle";
+import type { ServicePackage } from "../../types/ServicePackage";
 
 import CartService from "../../services/CartService";
 import VendorDetailService from "../../services/VendorDetailService";
@@ -21,10 +22,7 @@ interface Props {
 
     bundles?: Bundle[];
 
-    fromBundle?: boolean;
-
-    bundleState?: any;
-
+    selectedPackage?: ServicePackage | null;
 }
 
 
@@ -46,7 +44,8 @@ function getTomorrowDate(): string {
 const BookingCard = ({
     vendor,
     serviceId,
-    bundles = []
+    bundles = [],
+    selectedPackage
 }: Props) => {
 
     const navigate =
@@ -339,9 +338,13 @@ const BookingCard = ({
                     vendor.category,
 
                 price:
-                    Number(
-                        vendor.startingPrice
-                    ),
+                    selectedPackage
+                        ? Number(
+                            selectedPackage.price
+                        )
+                        : Number(
+                            vendor.startingPrice
+                        ),
 
                 quantity: 1,
 
@@ -353,8 +356,27 @@ const BookingCard = ({
                 guestCount:
                     Number(guests),
 
-                bundleEnabled:
-                    !!bundle,
+                /*
+                 * =========================================
+                 * PACKAGE
+                 * =========================================
+                 */
+
+                packageId:
+                    selectedPackage?.id,
+
+                packageType:
+                    selectedPackage?.type,
+
+                packagePrice:
+                    selectedPackage
+                        ? Number(
+                            selectedPackage.price
+                        )
+                        : undefined,
+
+                packageFeatures:
+                    selectedPackage?.features,
 
                 /*
                  * =========================================
@@ -362,6 +384,8 @@ const BookingCard = ({
                  * =========================================
                  */
 
+                 bundleEnabled:
+                    !!bundle,
                 bundleId:
                     bundle?.id,
 
@@ -748,15 +772,21 @@ const BookingCard = ({
             <aside className="vendor-booking-card">
 
                 <h2>
-
                     ₹
                     {Number(
-                        vendor.startingPrice
-                    ).toLocaleString(
-                        "en-IN"
-                    )}
-
+                        selectedPackage
+                            ? selectedPackage.price
+                            : vendor.startingPrice
+                    ).toLocaleString("en-IN")}
                 </h2>
+
+                <p>
+                    {
+                        selectedPackage
+                            ? `${selectedPackage.type} Package`
+                            : "Starting Price"
+                    }
+                </p>
 
 
                 <p>

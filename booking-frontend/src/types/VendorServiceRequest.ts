@@ -2,8 +2,9 @@ import type { ContactInfo } from "./ContactInfo";
 import type { Availability } from "./Availability";
 import type { BookingSettings } from "./BookingSettings";
 import type { ServiceAttribute } from "./ServiceAttribute";
+import type { ServicePackageRequest } from "./ServicePackageRequest";
 
-export interface CreateVendorServiceRequest {
+export interface VendorServiceRequest {
 
     serviceName: string;
 
@@ -30,5 +31,7 @@ export interface CreateVendorServiceRequest {
     amenities: string[];
 
     attributes: ServiceAttribute[];
+
+    packages?: ServicePackageRequest[];
 
 }
