@@ -40,4 +40,15 @@ export interface CartItem {
 
     bundleDiscountValue?: number;
 
+    packageId?: string;
+
+    packageType?:
+        | "SILVER"
+        | "GOLD"
+        | "PREMIUM";
+
+    packagePrice?: number;
+
+    packageFeatures?: string[];
+
 }

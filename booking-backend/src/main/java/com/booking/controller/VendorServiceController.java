@@ -2,6 +2,7 @@ package com.booking.controller;
 
 import com.booking.dto.booking.BookingResponse;
 import com.booking.dto.review.ReviewResponse;
+import com.booking.dto.service.ServicePackageRequest;
 import com.booking.dto.servicesettings.ServiceSettingsResponse;
 import com.booking.dto.servicesettings.ServiceSettingsRequest;
 import com.booking.dto.vendorservice.*;
@@ -140,6 +141,18 @@ public class VendorServiceController {
 
         return ResponseEntity.ok(
                 vendorOfferingService.getBundleServices(serviceId)
+        );
+    }
+
+    @PutMapping("/{serviceId}/packages")
+    public VendorServiceResponse updatePackages(
+            @PathVariable String serviceId,
+            @Valid @RequestBody List<ServicePackageRequest> packages
+    ) {
+
+        return vendorOfferingService.updatePackages(
+                serviceId,
+                packages
         );
     }
 }

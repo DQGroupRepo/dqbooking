@@ -1,13 +1,11 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
+import type { ServicePackage, ServicePackageType } from "../../../types/ServicePackage";
 import VendorPricingService from "../../../services/VendorPricingService";
 import toast from "react-hot-toast";
-import type {
-    VendorServicePricing,
-    VendorPricingHead,
-    VendorDiscount
-} from "../../../types/VendorPricing";
+import type { VendorServicePricing, VendorPricingHead, VendorDiscount } from "../../../types/VendorPricing";
+import VendorServiceService from "../../../services/VendorServiceService";
 
 import "./VendorPricing.css";
 
@@ -56,6 +54,8 @@ const VendorPricing = () => {
     const [pricing, setPricing] =
         useState<VendorServicePricing>(emptyPricing);
 
+    const [ packages, setPackages ] = useState<ServicePackage[]>([]);
+
     useEffect(() => {
         if (!serviceId) {
 
@@ -66,6 +66,22 @@ const VendorPricing = () => {
         loadPricing();
 
     }, [serviceId]);
+
+    updateServicePackages: async (
+        serviceId: string,
+        packages: ServicePackage[]
+    ) => {
+
+        const response =
+            await api.put(
+                `/vendor/services/${serviceId}/packages`,
+                {
+                    packages
+                }
+            );
+
+        return response.data;
+    }
 
     async function loadPricing() {
         try {
@@ -90,6 +106,14 @@ const VendorPricing = () => {
                 });
 
             }
+            const service =
+                        await VendorServiceService.getServiceById(
+                            serviceId!
+                        );
+
+            setPackages(
+                service.packages ?? []
+            );
 
         } catch {
             setPricing({
@@ -374,38 +398,286 @@ const VendorPricing = () => {
 
     }
 
-    async function save() {
+    function addPackage(
+        type: ServicePackageType
+    ) {
+
+        if (
+            packages.some(
+                pkg =>
+                    pkg.type === type
+            )
+        ) {
+            return;
+        }
+
+
+        setPackages([
+            ...packages,
+            {
+                id: undefined,
+                type,
+                price: 0,
+                features: [],
+                active: true
+            }
+        ]);
+
+    }
+
+    function updatePackage(
+        index: number,
+        field: keyof ServicePackage,
+        value: any
+    ) {
+
+        const updated =
+            [...packages];
+
+        updated[index] = {
+            ...updated[index],
+            [field]: value
+        };
+
+        setPackages(
+            updated
+        );
+
+    }
+
+    function removePackage(
+        index: number
+    ) {
+
+        setPackages(
+            packages.filter(
+                (_, i) =>
+                    i !== index
+            )
+        );
+
+    }
+
+    function addFeature(
+        packageIndex: number
+    ) {
+
+        const updated =
+            [...packages];
+
+        updated[
+            packageIndex
+        ] = {
+
+            ...updated[packageIndex],
+
+            features: [
+                ...updated[packageIndex].features,
+                ""
+            ]
+
+        };
+
+        setPackages(
+            updated
+        );
+
+    }
+
+    function updateFeature(
+        packageIndex: number,
+        featureIndex: number,
+        value: string
+    ) {
+
+        const updated =
+            [...packages];
+
+        const features =
+            [
+                ...updated[
+                    packageIndex
+                ].features
+            ];
+
+        features[
+            featureIndex
+        ] = value;
+
+        updated[
+            packageIndex
+        ] = {
+
+            ...updated[
+                packageIndex
+            ],
+
+            features
+
+        };
+
+        setPackages(
+            updated
+        );
+
+    }
+
+    function removeFeature(
+        packageIndex: number,
+        featureIndex: number
+    ) {
+
+        const updated =
+            [...packages];
+
+        updated[
+            packageIndex
+        ] = {
+
+            ...updated[
+                packageIndex
+            ],
+
+            features:
+                updated[
+                    packageIndex
+                ].features.filter(
+                    (_, index) =>
+                        index !== featureIndex
+                )
+
+        };
+
+        setPackages(
+            updated
+        );
+
+    }
+
+    async function savePackages() {
 
         if (!serviceId) {
-                return;
+            return;
         }
-        try {
-            if (!pricing.baseAmount || pricing.baseAmount <= 0) {
-                toast.error("Enter a valid base amount.");
-                return;
-            }
 
-            if (!pricing.effectiveFrom) {
-                toast.error("Select Effective From date.");
-                return;
-            }
+
+        try {
 
             setSaving(true);
 
-            await VendorPricingService.savePricing({...pricing, serviceId});
 
-            toast.success("Pricing saved successfully.");
+            await VendorServiceService.updatePackages(
+                serviceId,
+                packages
+            );
 
-            navigate("/vendor/manage-services");
+
+            toast.success(
+                "Packages saved successfully."
+            );
+
+        } catch (error) {
+
+            console.error(
+                "Failed to save packages:",
+                error
+            );
+
+            toast.error(
+                "Unable to save packages."
+            );
+
+        } finally {
+
+            setSaving(false);
 
         }
 
-        catch {
+    }
 
-            alert("Unable to save pricing.");
+    async function save() {
+
+        if (!serviceId) {
+            return;
+        }
+
+
+        if (
+            !pricing.baseAmount ||
+            pricing.baseAmount <= 0
+        ) {
+
+            toast.error(
+                "Enter a valid base amount."
+            );
+
+            return;
 
         }
 
+
+        if (!pricing.effectiveFrom) {
+
+            toast.error(
+                "Select Effective From date."
+            );
+
+            return;
+
+        }
+
+
+        try {
+
+            setSaving(true);
+
+
+            /*
+             * =========================================
+             * SAVE PACKAGES
+             * =========================================
+             */
+
+            await VendorServiceService.updatePackages(
+                serviceId,
+                packages
+            );
+
+
+            /*
+             * =========================================
+             * SAVE NORMAL PRICING
+             * =========================================
+             */
+
+            await VendorPricingService.savePricing({
+                ...pricing,
+                serviceId
+            });
+
+
+            toast.success(
+                "Pricing and packages saved successfully."
+            );
+
+
+            navigate(
+                "/vendor/manage-services"
+            );
+
+        }
+        catch (error) {
+
+            console.error(
+                "Failed to save pricing/packages:",
+                error
+            );
+
+            toast.error(
+                "Unable to save pricing."
+            );
+
+        }
         finally {
 
             setSaving(false);
@@ -478,592 +750,812 @@ const VendorPricing = () => {
 
                 <div className="pricing-left">
 
-                                    <section className="pricing-card">
+                       <section className="pricing-card">
+
+                           <div className="section-header">
+
+                               <div>
+
+                                   <h3>
+                                       Service Packages
+                                   </h3>
+
+                                   <p>
+                                       Choose the package tiers you want
+                                       to offer to customers.
+                                   </p>
+
+                               </div>
 
-                                        <h3>Base Pricing</h3>
-
-                                        <div className="form-grid">
-
-                                            <div className="form-group">
-
-                                                <label>
-
-                                                    Base Amount
-
-                                                </label>
-
-                                                <input
-
-                                                    type="number"
-
-                                                    value={pricing.baseAmount}
-
-                                                    onChange={(e) =>
-                                                        updateBaseAmount(
-                                                            e.target.value
-                                                        )
-                                                    }
-
-                                                />
-
-                                            </div>
-
-                                            <div className="form-group">
-
-                                                <label>
-
-                                                    Effective From
-
-                                                </label>
-
-                                                <input
-
-                                                    type="date"
-
-                                                    value={pricing.effectiveFrom ?? ""}
-
-                                                    onChange={(e) =>
-                                                        updateEffectiveFrom(
-                                                            e.target.value
-                                                        )
-                                                    }
-
-                                                />
-
-                                            </div>
-
-                                            <div className="form-group">
-
-                                                <label>
-
-                                                    Effective Until
-
-                                                </label>
-
-                                                <input
-
-                                                    type="date"
-
-                                                    value={pricing.effectiveUntil ?? ""}
-
-                                                    onChange={(e) =>
-                                                        updateEffectiveUntil(
-                                                            e.target.value
-                                                        )
-                                                    }
-
-                                                />
-
-                                            </div>
-
-                                        </div>
-
-                                    </section>
-
-
-                                    <section className="pricing-card">
-
-                                        <div className="section-header">
-
-                                            <h3>
-
-                                                Pricing Heads
-
-                                            </h3>
-
-                                            <button
-                                                onClick={addPricingHead}
-                                            >
-
-                                                + Add
-
-                                            </button>
-
-                                        </div>
-
-                                        {
-
-                                            pricing.pricingHeads.map((head, index) => (
-
-                                                <div
-                                                    className="pricing-row"
-                                                    key={index}
-                                                >
-
-                                                    <input
-
-                                                        placeholder="Code"
-
-                                                        value={head.code}
-
-                                                        onChange={(e) =>
-                                                            updatePricingHead(
-                                                                index,
-                                                                "code",
-                                                                e.target.value
-                                                            )
-                                                        }
-
-                                                    />
-
-                                                    <input
-
-                                                        placeholder="Name"
-
-                                                        value={head.name}
-
-                                                        onChange={(e) =>
-                                                            updatePricingHead(
-                                                                index,
-                                                                "name",
-                                                                e.target.value
-                                                            )
-                                                        }
-
-                                                    />
-
-                                                    <select
-
-                                                        value={head.calculationType}
-
-                                                        onChange={(e) =>
-                                                            updatePricingHead(
-                                                                index,
-                                                                "calculationType",
-                                                                e.target.value
-                                                            )
-                                                        }
-
-                                                    >
-
-                                                        <option value="FIXED">
-
-                                                            Fixed
-
-                                                        </option>
-
-                                                        <option value="PERCENTAGE">
-
-                                                            Percentage
-
-                                                        </option>
-
-                                                    </select>
-
-                                                    <input
-
-                                                        type="number"
-
-                                                        value={head.value}
-
-                                                        onChange={(e) =>
-                                                            updatePricingHead(
-                                                                index,
-                                                                "value",
-                                                                Number(e.target.value)
-                                                            )
-                                                        }
-
-                                                    />
-
-                                                    <button
-
-                                                        className="delete-btn"
-
-                                                        onClick={() =>
-                                                            removePricingHead(index)
-                                                        }
-
-                                                    >
-
-                                                        Remove
-
-                                                    </button>
-
-                                                </div>
-
-                                            ))
-
+                           </div>
+
+
+                           <div className="package-tier-buttons">
+
+                               {
+                                   (
+                                       [
+                                           "SILVER",
+                                           "GOLD",
+                                           "PREMIUM"
+                                       ] as ServicePackageType[]
+                                   ).map(type => (
+
+                                       !packages.some(
+                                           pkg =>
+                                               pkg.type === type
+                                       ) && (
+
+                                           <button
+                                               key={type}
+                                               type="button"
+                                               onClick={() =>
+                                                   addPackage(
+                                                       type
+                                                   )
+                                               }
+                                           >
+                                               + {type}
+                                           </button>
+
+                                       )
+
+                                   ))
+                               }
+
+                           </div>
+
+
+                           {
+                               packages
+                                   .sort(
+                                       (a, b) => {
+
+                                           const order: Record<
+                                               ServicePackageType,
+                                               number
+                                           > = {
+
+                                               SILVER: 1,
+                                               GOLD: 2,
+                                               PREMIUM: 3
+
+                                           };
+
+                                           return (
+                                               order[a.type] -
+                                               order[b.type]
+                                           );
+
+                                       }
+                                   )
+                                   .map(
+                                       (
+                                           pkg,
+                                           packageIndex
+                                       ) => (
+
+                                           <div
+                                               className="service-package-editor"
+                                               key={
+                                                   pkg.id ??
+                                                   pkg.type
+                                               }
+                                           >
+
+                                               <div className="package-header">
+
+                                                   <h4>
+                                                       {pkg.type}
+                                                   </h4>
+
+                                                   <button
+                                                       type="button"
+                                                       className="delete-btn"
+                                                       onClick={() =>
+                                                           removePackage(
+                                                               packageIndex
+                                                           )
+                                                       }
+                                                   >
+                                                       Remove
+                                                   </button>
+
+                                               </div>
+
+
+                                               <div className="form-group">
+
+                                                   <label>
+                                                       Package Price
+                                                   </label>
+
+                                                   <input
+                                                       type="number"
+                                                       min="0"
+                                                       value={
+                                                           pkg.price
+                                                       }
+                                                       onChange={(e) =>
+                                                           updatePackage(
+                                                               packageIndex,
+                                                               "price",
+                                                               Number(
+                                                                   e.target.value
+                                                               )
+                                                           )
+                                                       }
+                                                   />
+
+                                               </div>
+
+
+                                               <div className="package-features">
+
+                                                   <div className="section-header">
+
+                                                       <h4>
+                                                           Features
+                                                       </h4>
+
+                                                       <button
+                                                           type="button"
+                                                           onClick={() =>
+                                                               addFeature(
+                                                                   packageIndex
+                                                               )
+                                                           }
+                                                       >
+                                                           + Add Feature
+                                                       </button>
+
+                                                   </div>
+
+
+                                                   {
+                                                       pkg.features.map(
+                                                           (
+                                                               feature,
+                                                               featureIndex
+                                                           ) => (
+
+                                                               <div
+                                                                   className="package-feature-row"
+                                                                   key={
+                                                                       featureIndex
+                                                                   }
+                                                               >
+
+                                                                   <input
+                                                                       type="text"
+                                                                       value={
+                                                                           feature
+                                                                       }
+                                                                       placeholder="Enter feature"
+                                                                       onChange={(e) =>
+                                                                           updateFeature(
+                                                                               packageIndex,
+                                                                               featureIndex,
+                                                                               e.target.value
+                                                                           )
+                                                                       }
+                                                                   />
+
+                                                                   <button
+                                                                       type="button"
+                                                                       className="delete-btn"
+                                                                       onClick={() =>
+                                                                           removeFeature(
+                                                                               packageIndex,
+                                                                               featureIndex
+                                                                           )
+                                                                       }
+                                                                   >
+                                                                       Remove
+                                                                   </button>
+
+                                                               </div>
+
+                                                           )
+                                                       )
+                                                   }
+
+                                               </div>
+
+                                           </div>
+
+                                       )
+                                   )
+                           }
+
+                       </section>
+
+                        <section className="pricing-card">
+
+                            <h3>Base Pricing</h3>
+
+                            <div className="form-grid">
+
+                                <div className="form-group">
+
+                                    <label>
+
+                                        Base Amount
+
+                                    </label>
+
+                                    <input
+
+                                        type="number"
+
+                                        value={pricing.baseAmount}
+
+                                        onChange={(e) =>
+                                            updateBaseAmount(
+                                                e.target.value
+                                            )
                                         }
 
-                                    </section>
+                                    />
 
-                                                        <section className="pricing-card">
+                                </div>
 
-                                                            <div className="section-header">
+                                <div className="form-group">
 
-                                                                <h3>
+                                    <label>
 
-                                                                    Discounts
+                                        Effective From
 
-                                                                </h3>
+                                    </label>
 
-                                                                <button
-                                                                    onClick={addDiscount}
-                                                                >
+                                    <input
 
-                                                                    + Add
+                                        type="date"
 
-                                                                </button>
+                                        value={pricing.effectiveFrom ?? ""}
 
-                                                            </div>
+                                        onChange={(e) =>
+                                            updateEffectiveFrom(
+                                                e.target.value
+                                            )
+                                        }
 
-                                                            {
+                                    />
 
-                                                                pricing.discounts.map((discount, index) => (
+                                </div>
 
-                                                                    <div
-                                                                        className="pricing-row"
-                                                                        key={index}
-                                                                    >
+                                <div className="form-group">
 
-                                                                        <input
+                                    <label>
 
-                                                                            placeholder="Discount Name"
+                                        Effective Until
 
-                                                                            value={discount.name}
+                                    </label>
 
-                                                                            onChange={(e) =>
-                                                                                updateDiscount(
-                                                                                    index,
-                                                                                    "name",
-                                                                                    e.target.value
-                                                                                )
-                                                                            }
+                                    <input
 
-                                                                        />
+                                        type="date"
 
-                                                                        <select
+                                        value={pricing.effectiveUntil ?? ""}
 
-                                                                            value={discount.discountType}
+                                        onChange={(e) =>
+                                            updateEffectiveUntil(
+                                                e.target.value
+                                            )
+                                        }
 
-                                                                            onChange={(e) =>
-                                                                                updateDiscount(
-                                                                                    index,
-                                                                                    "discountType",
-                                                                                    e.target.value
-                                                                                )
-                                                                            }
+                                    />
 
-                                                                        >
+                                </div>
 
-                                                                            <option value="FIXED">
+                            </div>
 
-                                                                                Fixed
+                        </section>
 
-                                                                            </option>
 
-                                                                            <option value="PERCENTAGE">
+                        <section className="pricing-card">
 
-                                                                                Percentage
+                            <div className="section-header">
 
-                                                                            </option>
+                                <h3>
 
-                                                                        </select>
+                                    Pricing Heads
 
-                                                                        <input
+                                </h3>
 
-                                                                            type="number"
+                                <button
+                                    onClick={addPricingHead}
+                                >
 
-                                                                            value={discount.value}
+                                    + Add
 
-                                                                            onChange={(e) =>
-                                                                                updateDiscount(
-                                                                                    index,
-                                                                                    "value",
-                                                                                    Number(e.target.value)
-                                                                                )
-                                                                            }
+                                </button>
 
-                                                                        />
+                            </div>
 
-                                                                        <button
+                            {
 
-                                                                            className="delete-btn"
+                                pricing.pricingHeads.map((head, index) => (
 
-                                                                            onClick={() =>
-                                                                                removeDiscount(index)
-                                                                            }
+                                    <div
+                                        className="pricing-row"
+                                        key={index}
+                                    >
 
-                                                                        >
+                                        <input
 
-                                                                            Remove
+                                            placeholder="Code"
 
-                                                                        </button>
+                                            value={head.code}
 
-                                                                    </div>
+                                            onChange={(e) =>
+                                                updatePricingHead(
+                                                    index,
+                                                    "code",
+                                                    e.target.value
+                                                )
+                                            }
 
-                                                                ))
+                                        />
 
-                                                            }
+                                        <input
 
-                                                        </section>
+                                            placeholder="Name"
 
+                                            value={head.name}
 
-                                                        <section className="pricing-card">
+                                            onChange={(e) =>
+                                                updatePricingHead(
+                                                    index,
+                                                    "name",
+                                                    e.target.value
+                                                )
+                                            }
 
-                                                            <h3>
+                                        />
 
-                                                                Payment Configuration
+                                        <select
 
-                                                            </h3>
+                                            value={head.calculationType}
 
-                                                            <label className="checkbox">
+                                            onChange={(e) =>
+                                                updatePricingHead(
+                                                    index,
+                                                    "calculationType",
+                                                    e.target.value
+                                                )
+                                            }
 
-                                                                <input
+                                        >
 
-                                                                    type="checkbox"
+                                            <option value="FIXED">
 
-                                                                    checked={
-                                                                        pricing.paymentConfiguration
-                                                                            ?.advancePaymentAllowed
-                                                                    }
+                                                Fixed
 
-                                                                    onChange={(e) =>
-                                                                        updateAdvanceAllowed(
-                                                                            e.target.checked
-                                                                        )
-                                                                    }
+                                            </option>
 
-                                                                />
+                                            <option value="PERCENTAGE">
 
-                                                                Allow Advance Payment
+                                                Percentage
 
-                                                            </label>
+                                            </option>
 
-                                                            <div className="form-group">
+                                        </select>
 
-                                                                <label>
+                                        <input
 
-                                                                    Advance Percentage
+                                            type="number"
 
-                                                                </label>
+                                            value={head.value}
 
-                                                                <input
+                                            onChange={(e) =>
+                                                updatePricingHead(
+                                                    index,
+                                                    "value",
+                                                    Number(e.target.value)
+                                                )
+                                            }
 
-                                                                    type="number"
+                                        />
 
-                                                                    value={
-                                                                        pricing.paymentConfiguration
-                                                                            ?.advancePercentage
-                                                                    }
+                                        <button
 
-                                                                    onChange={(e) =>
-                                                                        updateAdvancePercentage(
-                                                                            e.target.value
-                                                                        )
-                                                                    }
+                                            className="delete-btn"
 
-                                                                />
+                                            onClick={() =>
+                                                removePricingHead(index)
+                                            }
 
-                                                            </div>
+                                        >
 
-                                                        </section>
+                                            Remove
 
+                                        </button>
 
-                                                        <section className="pricing-card">
+                                    </div>
 
-                                                            <h3>
+                                ))
 
-                                                                Cancellation Policy
+                            }
 
-                                                            </h3>
+                        </section>
 
-                                                            <div className="form-group">
+                        <section className="pricing-card">
 
-                                                                <label>
+                            <div className="section-header">
 
-                                                                    Refund Percentage
+                                <h3>
 
-                                                                </label>
+                                    Discounts
 
-                                                                <input
+                                </h3>
 
-                                                                    type="number"
+                                <button
+                                    onClick={addDiscount}
+                                >
 
-                                                                    value={
-                                                                        pricing.cancellationPolicy
-                                                                            ?.refundPercentage
-                                                                    }
+                                    + Add
 
-                                                                    onChange={(e) =>
-                                                                        updateRefundPercentage(
-                                                                            e.target.value
-                                                                        )
-                                                                    }
+                                </button>
 
-                                                                />
+                            </div>
 
-                                                            </div>
+                            {
 
-                                                            <div className="form-group">
+                                pricing.discounts.map((discount, index) => (
 
-                                                                <label>
+                                    <div
+                                        className="pricing-row"
+                                        key={index}
+                                    >
 
-                                                                    Cancellation Before (Days)
+                                        <input
 
-                                                                </label>
+                                            placeholder="Discount Name"
 
-                                                                <input
+                                            value={discount.name}
 
-                                                                    type="number"
+                                            onChange={(e) =>
+                                                updateDiscount(
+                                                    index,
+                                                    "name",
+                                                    e.target.value
+                                                )
+                                            }
 
-                                                                    value={
-                                                                        pricing.cancellationPolicy
-                                                                            ?.cancelBeforeDays
-                                                                    }
+                                        />
 
-                                                                    onChange={(e) =>
-                                                                        updateCancelBeforeDays(
-                                                                            e.target.value
-                                                                        )
-                                                                    }
+                                        <select
 
-                                                                />
+                                            value={discount.discountType}
 
-                                                            </div>
+                                            onChange={(e) =>
+                                                updateDiscount(
+                                                    index,
+                                                    "discountType",
+                                                    e.target.value
+                                                )
+                                            }
 
-                                                        </section>
+                                        >
 
-                                                    </div>
-                                                                <div className="pricing-right">
+                                            <option value="FIXED">
 
-                                                                    <section className="pricing-card">
+                                                Fixed
 
-                                                                        <h3>
+                                            </option>
 
-                                                                            Pricing Summary
+                                            <option value="PERCENTAGE">
 
-                                                                        </h3>
+                                                Percentage
 
-                                                                        <div className="summary-row">
+                                            </option>
 
-                                                                            <span>
+                                        </select>
 
-                                                                                Base Amount
+                                        <input
 
-                                                                            </span>
+                                            type="number"
 
-                                                                            <strong>
+                                            value={discount.value}
 
-                                                                                ₹{pricing.baseAmount.toLocaleString("en-IN")}
+                                            onChange={(e) =>
+                                                updateDiscount(
+                                                    index,
+                                                    "value",
+                                                    Number(e.target.value)
+                                                )
+                                            }
 
-                                                                            </strong>
+                                        />
 
-                                                                        </div>
+                                        <button
 
-                                                                        {
+                                            className="delete-btn"
 
-                                                                            pricing.pricingHeads.map((head, index) => (
+                                            onClick={() =>
+                                                removeDiscount(index)
+                                            }
 
-                                                                                <div
-                                                                                    key={index}
-                                                                                    className="summary-row"
-                                                                                >
+                                        >
 
-                                                                                    <span>
+                                            Remove
 
-                                                                                        {head.name || "Pricing Head"}
+                                        </button>
 
-                                                                                    </span>
+                                    </div>
 
-                                                                                    <strong>
+                                ))
 
-                                                                                        {head.calculationType === "FIXED"
+                            }
 
-                                                                                            ? `₹${head.value}`
+                        </section>
 
-                                                                                            : `${head.value}%`
-                                                                                        }
 
-                                                                                    </strong>
+                        <section className="pricing-card">
 
-                                                                                </div>
+                            <h3>
 
-                                                                            ))
+                                Payment Configuration
 
-                                                                        }
+                            </h3>
 
-                                                                        {
+                            <label className="checkbox">
 
-                                                                            pricing.discounts.map((discount, index) => (
+                                <input
 
-                                                                                <div
-                                                                                    key={index}
-                                                                                    className="summary-row discount"
-                                                                                >
+                                    type="checkbox"
 
-                                                                                    <span>
+                                    checked={
+                                        pricing.paymentConfiguration
+                                            ?.advancePaymentAllowed
+                                    }
 
-                                                                                        {discount.name || "Discount"}
+                                    onChange={(e) =>
+                                        updateAdvanceAllowed(
+                                            e.target.checked
+                                        )
+                                    }
 
-                                                                                    </span>
+                                />
 
-                                                                                    <strong>
+                                Allow Advance Payment
 
-                                                                                        {discount.discountType === "FIXED"
+                            </label>
 
-                                                                                            ? `- ₹${discount.value}`
+                            <div className="form-group">
 
-                                                                                            : `- ${discount.value}%`
-                                                                                        }
+                                <label>
 
-                                                                                    </strong>
+                                    Advance Percentage
 
-                                                                                </div>
+                                </label>
 
-                                                                            ))
+                                <input
 
-                                                                        }
+                                    type="number"
 
-                                                                        <hr />
+                                    value={
+                                        pricing.paymentConfiguration
+                                            ?.advancePercentage
+                                    }
 
-                                                                        <div className="summary-row">
+                                    onChange={(e) =>
+                                        updateAdvancePercentage(
+                                            e.target.value
+                                        )
+                                    }
 
-                                                                            <span>
+                                />
 
-                                                                                Advance Payment
+                            </div>
 
-                                                                            </span>
+                        </section>
 
-                                                                            <strong>
 
-                                                                                {pricing.paymentConfiguration?.advancePaymentAllowed
+                        <section className="pricing-card">
 
-                                                                                    ? `${pricing.paymentConfiguration.advancePercentage}%`
+                            <h3>
 
-                                                                                    : "Disabled"}
+                                Cancellation Policy
 
-                                                                            </strong>
+                            </h3>
 
-                                                                        </div>
+                            <div className="form-group">
 
-                                                                        <div className="summary-row">
+                                <label>
 
-                                                                            <span>
+                                    Refund Percentage
 
-                                                                                Cancellation
+                                </label>
 
-                                                                            </span>
+                                <input
 
-                                                                            <strong>
+                                    type="number"
 
-                                                                                {pricing.cancellationPolicy?.refundPercentage}% Refund
+                                    value={
+                                        pricing.cancellationPolicy
+                                            ?.refundPercentage
+                                    }
 
-                                                                            </strong>
+                                    onChange={(e) =>
+                                        updateRefundPercentage(
+                                            e.target.value
+                                        )
+                                    }
 
-                                                                        </div>
+                                />
 
-                                                                    </section>
+                            </div>
 
-                                                                </div>
+                            <div className="form-group">
 
-                                                            </div>
+                                <label>
 
-                                                        </div>
+                                    Cancellation Before (Days)
 
-                                                    );
+                                </label>
 
-                                                };
+                                <input
 
-                                                export default VendorPricing;
+                                    type="number"
+
+                                    value={
+                                        pricing.cancellationPolicy
+                                            ?.cancelBeforeDays
+                                    }
+
+                                    onChange={(e) =>
+                                        updateCancelBeforeDays(
+                                            e.target.value
+                                        )
+                                    }
+
+                                />
+
+                            </div>
+
+                        </section>
+
+                    </div>
+                    <div className="pricing-right">
+
+                        <section className="pricing-card">
+
+                            <h3>
+
+                                Pricing Summary
+
+                            </h3>
+
+                            <div className="summary-row">
+
+                                <span>
+
+                                    Base Amount
+
+                                </span>
+
+                                <strong>
+
+                                    ₹{pricing.baseAmount.toLocaleString("en-IN")}
+
+                                </strong>
+
+                            </div>
+
+                            {
+
+                                pricing.pricingHeads.map((head, index) => (
+
+                                    <div
+                                        key={index}
+                                        className="summary-row"
+                                    >
+
+                                        <span>
+
+                                            {head.name || "Pricing Head"}
+
+                                        </span>
+
+                                        <strong>
+
+                                            {head.calculationType === "FIXED"
+
+                                                ? `₹${head.value}`
+
+                                                : `${head.value}%`
+                                            }
+
+                                        </strong>
+
+                                    </div>
+
+                                ))
+
+                            }
+
+                            {
+
+                                pricing.discounts.map((discount, index) => (
+
+                                    <div
+                                        key={index}
+                                        className="summary-row discount"
+                                    >
+
+                                        <span>
+
+                                            {discount.name || "Discount"}
+
+                                        </span>
+
+                                        <strong>
+
+                                            {discount.discountType === "FIXED"
+
+                                                ? `- ₹${discount.value}`
+
+                                                : `- ${discount.value}%`
+                                            }
+
+                                        </strong>
+
+                                    </div>
+
+                                ))
+
+                            }
+
+                            <hr />
+
+                            <div className="summary-row">
+
+                                <span>
+
+                                    Advance Payment
+
+                                </span>
+
+                                <strong>
+
+                                    {pricing.paymentConfiguration?.advancePaymentAllowed
+
+                                        ? `${pricing.paymentConfiguration.advancePercentage}%`
+
+                                        : "Disabled"}
+
+                                </strong>
+
+                            </div>
+
+                            <div className="summary-row">
+
+                                <span>
+
+                                    Cancellation
+
+                                </span>
+
+                                <strong>
+
+                                    {pricing.cancellationPolicy?.refundPercentage}% Refund
+
+                                </strong>
+
+                            </div>
+
+                        </section>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        );
+
+    };
+
+    export default VendorPricing;

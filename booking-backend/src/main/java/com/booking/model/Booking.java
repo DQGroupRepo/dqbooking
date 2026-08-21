@@ -156,4 +156,17 @@ public class Booking extends BaseEntity {
      * Refund amount.
      */
     private BigDecimal refundableAmount;
+
+    /*
+     * =========================================
+     * SELECTED SERVICE PACKAGE
+     * =========================================
+     *
+     * Snapshot reference for the package chosen
+     * by the customer.
+     */
+
+    private String packageId;
+
+    private String packageType;
 }

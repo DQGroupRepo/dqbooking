@@ -210,7 +210,7 @@ const Register = () => {
           <p>
             Start planning your special event
           </p>
-
+          <br></br>
 
           <div className="form-group">
 

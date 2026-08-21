@@ -14,10 +14,9 @@ import BookingCard from "../../components/vendor/VendorBookingCard";
 
 import VendorDetailService from "../../services/VendorDetailService";
 import BundleService from "../../services/BundleService";
+import type { ServicePackage } from "../../types/ServicePackage";
 
-import type {
-    VendorDetail as VendorDetailType
-} from "../../types/VendorDetail";
+import type { VendorDetail as VendorDetailType } from "../../types/VendorDetail";
 
 import type { Bundle } from "../../types/Bundle";
 
@@ -45,7 +44,16 @@ const VendorDetail = () => {
     const fromBundle =
         bundleState?.fromBundle === true;
 
+     /*
+         * =========================================
+         * SELECTED PACKAGE
+         * =========================================
+         */
 
+    const [
+        selectedPackage,
+        setSelectedPackage
+    ] = useState<ServicePackage | null>(null);
     /*
      * =========================================
      * VENDOR
@@ -112,6 +120,16 @@ const VendorDetail = () => {
             );
 
         }
+
+    };
+
+    const handlePackageSelect = (
+        pkg: ServicePackage
+    ) => {
+
+        setSelectedPackage(
+            pkg
+        );
 
     };
 
@@ -326,7 +344,20 @@ const VendorDetail = () => {
                         />
 
 
-                        <VendorPackages />
+                        <VendorPackages
+                            packages={vendor.packages ?? []}
+                            selectedPackageId={
+                                selectedPackage
+                                    ? (
+                                        selectedPackage.id ??
+                                        selectedPackage.type
+                                    )
+                                    : undefined
+                            }
+                            onSelectPackage={
+                                handlePackageSelect
+                            }
+                        />
 
 
                         <VendorReviews />
@@ -345,13 +376,7 @@ const VendorDetail = () => {
                             bundles
                         }
 
-                        fromBundle={
-                            fromBundle
-                        }
-
-                        bundleState={
-                            bundleState
-                        }
+                       selectedPackage={selectedPackage}
 
                     />
 
