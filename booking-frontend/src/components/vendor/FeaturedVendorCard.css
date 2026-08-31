@@ -1,0 +1,19 @@
+.featured-card {
+    display: flex;
+    flex-direction: column;
+}
+
+
+.featured-card img {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    object-fit: cover;
+    display: block;
+}
+
+
+.featured-info {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}

@@ -361,3 +361,531 @@
 
     line-height: 1;
 }
+
+/* =========================================================
+   NOTIFICATION
+========================================================= */
+
+.notification-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+
+.notification-btn {
+    position: relative;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 42px;
+    height: 42px;
+
+    padding: 0;
+
+    border: none;
+    border-radius: 50%;
+
+    background: transparent;
+
+    color: inherit;
+
+    cursor: pointer;
+
+    transition:
+        background 0.2s ease,
+        transform 0.2s ease;
+}
+
+
+.notification-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+
+    transform: translateY(-1px);
+}
+
+
+.notification-icon {
+    font-size: 21px;
+
+    line-height: 1;
+}
+
+
+/* =========================================================
+   UNREAD BADGE
+========================================================= */
+
+.notification-badge {
+    position: absolute;
+
+    top: -2px;
+    right: -2px;
+
+    min-width: 18px;
+    height: 18px;
+
+    padding: 0 5px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 999px;
+
+    background: #ef4444;
+
+    color: #fff;
+
+    font-size: 10px;
+    font-weight: 700;
+
+    border: 2px solid #0b3550;
+
+}
+
+
+/* =========================================================
+   DROPDOWN
+========================================================= */
+
+.notification-dropdown {
+    position: absolute;
+
+    top: calc(100% + 12px);
+
+    right: 0;
+
+    width: 390px;
+
+    background: #fff;
+
+    border: 1px solid #e5e7eb;
+
+    border-radius: 14px;
+
+    box-shadow:
+        0 20px 45px rgba(15, 23, 42, 0.18);
+
+    overflow: hidden;
+
+    z-index: 2000;
+
+    animation:
+        notificationDropIn
+        0.18s ease-out;
+}
+
+
+@keyframes notificationDropIn {
+
+    from {
+
+        opacity: 0;
+
+        transform:
+            translateY(-8px)
+            scale(0.98);
+
+    }
+
+    to {
+
+        opacity: 1;
+
+        transform:
+            translateY(0)
+            scale(1);
+
+    }
+
+}
+
+
+/* =========================================================
+   DROPDOWN HEADER
+========================================================= */
+
+.notification-dropdown-header {
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    gap: 15px;
+
+    padding: 16px 18px;
+
+    border-bottom: 1px solid #eef0f2;
+
+}
+
+
+.notification-dropdown-header > div {
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 3px;
+
+}
+
+
+.notification-dropdown-header h3 {
+
+    margin: 0;
+
+    font-size: 16px;
+
+    font-weight: 700;
+
+    color: #1f2937;
+
+}
+
+
+.notification-dropdown-header span {
+
+    font-size: 12px;
+
+    color: #9ca3af;
+
+}
+
+
+.notification-mark-all {
+
+    border: none;
+
+    background: transparent;
+
+    color: #2563eb;
+
+    font-size: 12px;
+
+    font-weight: 600;
+
+    cursor: pointer;
+
+    white-space: nowrap;
+
+}
+
+
+.notification-mark-all:hover {
+
+    text-decoration: underline;
+
+}
+
+
+/* =========================================================
+   LIST
+========================================================= */
+
+.notification-list {
+
+    max-height: 390px;
+
+    overflow-y: auto;
+
+}
+
+
+.notification-list::-webkit-scrollbar {
+
+    width: 6px;
+
+}
+
+
+.notification-list::-webkit-scrollbar-thumb {
+
+    background: #d1d5db;
+
+    border-radius: 10px;
+
+}
+
+
+/* =========================================================
+   NOTIFICATION ITEM
+========================================================= */
+
+.notification-item {
+
+    width: 100%;
+
+    display: flex;
+
+    align-items: flex-start;
+
+    gap: 12px;
+
+    padding: 14px 16px;
+
+    border: none;
+
+    border-bottom: 1px solid #f1f5f9;
+
+    background: #fff;
+
+    text-align: left;
+
+    cursor: pointer;
+
+    transition:
+        background 0.2s ease;
+}
+
+
+.notification-item:hover {
+
+    background: #f8fafc;
+
+}
+
+
+.notification-item.unread {
+
+    background: #f5f9ff;
+
+}
+
+
+.notification-item.unread:hover {
+
+    background: #eef5ff;
+
+}
+
+
+/* =========================================================
+   ICON
+========================================================= */
+
+.notification-item-icon {
+
+    flex: 0 0 36px;
+
+    width: 36px;
+
+    height: 36px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    border-radius: 10px;
+
+    background: #eef2ff;
+
+    color: #4f46e5;
+
+    font-size: 16px;
+
+}
+
+
+/* =========================================================
+   CONTENT
+========================================================= */
+
+.notification-item-content {
+
+    min-width: 0;
+
+    flex: 1;
+
+}
+
+
+.notification-item-top {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 7px;
+
+}
+
+
+.notification-item-top strong {
+
+    font-size: 13px;
+
+    font-weight: 700;
+
+    color: #1f2937;
+
+}
+
+
+.notification-item-content p {
+
+    margin: 4px 0;
+
+    font-size: 12px;
+
+    line-height: 1.45;
+
+    color: #4b5563;
+
+}
+
+
+.notification-item-time {
+
+    font-size: 11px;
+
+    color: #9ca3af;
+
+}
+
+
+/* =========================================================
+   UNREAD DOT
+========================================================= */
+
+.notification-unread-dot {
+
+    width: 7px;
+
+    height: 7px;
+
+    flex: 0 0 7px;
+
+    border-radius: 50%;
+
+    background: #2563eb;
+
+}
+
+
+/* =========================================================
+   EMPTY
+========================================================= */
+
+.notification-empty {
+
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+
+    justify-content: center;
+
+    gap: 6px;
+
+    padding: 45px 20px;
+
+    text-align: center;
+
+}
+
+
+.notification-empty-icon {
+
+    width: 46px;
+
+    height: 46px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    margin-bottom: 5px;
+
+    border-radius: 50%;
+
+    background: #f3f4f6;
+
+    font-size: 20px;
+
+}
+
+
+.notification-empty strong {
+
+    font-size: 14px;
+
+    color: #374151;
+
+}
+
+
+.notification-empty span {
+
+    font-size: 12px;
+
+    color: #9ca3af;
+
+}
+
+
+/* =========================================================
+   FOOTER
+========================================================= */
+
+.notification-dropdown-footer {
+
+    display: flex;
+
+    justify-content: center;
+
+    padding: 10px 16px;
+
+    border-top: 1px solid #eef0f2;
+
+}
+
+
+.notification-dropdown-footer button {
+
+    border: none;
+
+    background: transparent;
+
+    color: #6b7280;
+
+    font-size: 12px;
+
+    cursor: pointer;
+
+}
+
+
+/* =========================================================
+   RESPONSIVE
+========================================================= */
+
+@media (max-width: 600px) {
+
+    .notification-dropdown {
+
+        position: fixed;
+
+        top: 70px;
+
+        left: 15px;
+
+        right: 15px;
+
+        width: auto;
+
+        max-width: none;
+
+    }
+
+}

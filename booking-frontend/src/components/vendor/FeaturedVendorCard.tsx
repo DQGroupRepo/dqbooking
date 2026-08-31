@@ -1,47 +1,96 @@
 import { Link } from "react-router-dom";
-import type { Vendor } from "../../types/Vendor";
+
+import type { FeaturedService }
+    from "../../types/FeaturedService";
 
 import "./FeaturedVendorCard.css";
 
+
 interface Props {
-    vendor: Vendor;
+
+    service: FeaturedService;
+
 }
 
+
 export default function FeaturedVendorCard({
-    vendor
+    service
 }: Props) {
+
+    const image =
+        service.imageUrl ||
+        "/images/no-image.png";
 
     return (
 
         <div className="featured-card">
 
             <img
-                src={vendor.imageUrl}
-                alt={vendor.businessName}
+                src={image}
+                alt={service.serviceName}
             />
+
 
             <div className="featured-info">
 
                 <h3>
-                    {vendor.businessName}
+                    {
+                        service.serviceName
+                    }
                 </h3>
 
+
                 <p>
-                    📍 {vendor.city}
+                    {
+                        service.businessName
+                    }
                 </p>
 
+
+                <p>
+                    📍 {service.city}
+                </p>
+
+
                 <div className="featured-rating">
-                    ⭐ {vendor.rating}
+
+                    ⭐ {service.rating}
+
+                    {
+                        service.reviewCount > 0 && (
+                            <span>
+                                {" "}
+                                ({service.reviewCount})
+                            </span>
+                        )
+                    }
+
                 </div>
 
+
                 <h4>
-                    ₹{vendor.startingPrice.toLocaleString("en-IN")} onwards
+
+                    ₹
+                    {
+                        Number(
+                            service.startingPrice
+                        ).toLocaleString(
+                            "en-IN"
+                        )
+                    }
+
+                    {" "}
+                    onwards
+
                 </h4>
 
+
                 <Link
-                    to={`/vendor/${vendor.id}`}
+                    to={`/vendor/${service.serviceId}`}
                 >
-                    <button>
+                    <button
+                        type="button"
+                    >
                         View Details
                     </button>
                 </Link>

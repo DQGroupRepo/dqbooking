@@ -10,6 +10,21 @@ export type ServiceModerationStatus =
     | "REJECTED"
     | "SUSPENDED";
 
+const discoveryOptions = [
+    {
+        key: "FEATURED",
+        label: "Featured"
+    },
+    {
+        key: "TRENDING_NOW",
+        label: "Trending Now"
+    },
+    {
+        key: "MOST_BOOKED",
+        label: "Most Booked"
+    }
+];
+
 export interface AdminVendorService {
     serviceId: string;
     serviceName: string;
@@ -17,6 +32,7 @@ export interface AdminVendorService {
     moderationStatus: ServiceModerationStatus;
     active: boolean;
     deleted: boolean;
+    discoveryTags?: string[];
 }
 
 export interface AdminVendorVerification {

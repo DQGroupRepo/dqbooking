@@ -99,6 +99,18 @@ class AdminVendorVerificationService {
             `/admin/services/${serviceId}/reactivate`
         );
     }
+
+    async updateServiceDiscoveryTags(
+        serviceId: string,
+        tags: string[]
+    ): Promise<void> {
+
+        await api.put(
+            `/admin/vendors/services/${serviceId}/discovery-tags`,
+            tags
+        );
+
+    }
 }
 
 export default new AdminVendorVerificationService();

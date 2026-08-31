@@ -7,14 +7,12 @@ import com.booking.exception.VendorNotFoundException;
 import com.booking.mapper.CustomerVendorMapper;
 import com.booking.model.User;
 import com.booking.model.VendorService;
-import com.booking.model.enums.ServiceCategory;
-import com.booking.model.enums.VendorVerificationStatus;
+import com.booking.model.enums.*;
 import com.booking.repository.UserRepository;
 import com.booking.repository.VendorServiceRepository;
 import com.booking.service.CustomerService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import com.booking.model.enums.ServiceModerationStatus;
 import com.booking.model.enums.VendorVerificationStatus;
 
 import java.util.List;
@@ -136,6 +134,87 @@ public class CustomerServiceImpl implements CustomerService {
 
                 })
                 .filter(java.util.Objects::nonNull)
+                .toList();
+
+    }
+
+    @Override
+    public List<VendorListingResponse> getFeaturedServices() {
+
+        List<VendorService> services =
+                vendorServiceRepository
+                        .findByDiscoveryTagAndActiveTrueAndDeletedFalse(
+                                ServiceDiscoveryTag.FEATURED
+                        );
+
+
+        return services.stream()
+                .map(service -> {
+
+                    User vendor =
+                            vendorRepository
+                                    .findById(
+                                            service.getVendorId()
+                                    )
+                                    .orElse(null);
+
+
+                    if (vendor == null) {
+
+                        return null;
+
+                    }
+
+
+                    /*
+                     * Only approved vendors should be
+                     * visible to customers.
+                     */
+
+                    if (
+                            vendor.getVerificationStatus()
+                                    != VendorVerificationStatus.APPROVED
+                    ) {
+
+                        return null;
+
+                    }
+
+
+                    /*
+                     * Only approved services should be
+                     * visible to customers.
+                     */
+
+                    if (
+                            service.getModerationStatus()
+                                    != ServiceModerationStatus.APPROVED
+                    ) {
+
+                        return null;
+
+                    }
+
+
+                    /*
+                     * Repository already checks:
+                     *
+                     * featured = true
+                     * active = true
+                     * deleted = false
+                     *
+                     * so no need to repeat those checks.
+                     */
+
+                    return customerVendorMapper.toListing(
+                            vendor,
+                            service
+                    );
+
+                })
+                .filter(
+                        java.util.Objects::nonNull
+                )
                 .toList();
 
     }

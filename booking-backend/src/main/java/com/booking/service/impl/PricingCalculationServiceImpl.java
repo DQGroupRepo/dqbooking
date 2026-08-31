@@ -7,6 +7,7 @@ import com.booking.model.VendorDiscount;
 import com.booking.model.VendorPricingHead;
 import com.booking.model.VendorService;
 import com.booking.model.VendorServicePricing;
+import com.booking.model.embedded.ServicePackage;
 import com.booking.model.enums.DiscountType;
 import com.booking.model.enums.PricingCalculationType;
 import com.booking.repository.VendorServicePricingRepository;
@@ -37,7 +38,8 @@ public class PricingCalculationServiceImpl
     @Override
     public PricingCalculationResult calculatePrice(
             String serviceId,
-            LocalDate eventDate
+            LocalDate eventDate,
+            ServicePackage selectedPackage
     ) {
 
         /*
@@ -91,8 +93,23 @@ public class PricingCalculationServiceImpl
          * =========================================
          */
 
-        BigDecimal baseAmount =
-                safe(pricing.getBaseAmount());
+        BigDecimal baseAmount;
+
+        if (selectedPackage != null) {
+
+            baseAmount =
+                    safe(
+                            selectedPackage.getPrice()
+                    );
+
+        } else {
+
+            baseAmount =
+                    safe(
+                            pricing.getBaseAmount()
+                    );
+
+        }
 
 
         /*

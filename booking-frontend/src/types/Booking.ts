@@ -36,4 +36,7 @@ export interface Booking {
 
     pricing: BookingPricingResponse;
 
+    packageId?: string;
+    packageType?: "SILVER" | "GOLD" | "PREMIUM";
+
 }

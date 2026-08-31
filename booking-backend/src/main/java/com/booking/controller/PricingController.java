@@ -3,6 +3,10 @@ package com.booking.controller;
 import com.booking.dto.pricing.VendorServicePricingRequest;
 import com.booking.dto.pricing.PricingCalculationResult;
 import com.booking.dto.pricing.VendorServicePricingResponse;
+import com.booking.exception.ResourceNotFoundException;
+import com.booking.model.VendorService;
+import com.booking.model.embedded.ServicePackage;
+import com.booking.repository.VendorServiceRepository;
 import com.booking.service.PricingCalculationService;
 import com.booking.service.VendorServicePricingService;
 import jakarta.validation.Valid;
@@ -22,6 +26,8 @@ public class PricingController {
 
     private final VendorServicePricingService
             vendorServicePricingService;
+    private final VendorServiceRepository
+            vendorServiceRepository;
 
 
     /*
@@ -64,14 +70,67 @@ public class PricingController {
             @DateTimeFormat(
                     iso = DateTimeFormat.ISO.DATE
             )
-            LocalDate eventDate
+            LocalDate eventDate,
+
+            @RequestParam(
+                    required = false
+            )
+            String packageId
 
     ) {
+
+        ServicePackage selectedPackage =
+                null;
+
+
+        if (packageId != null) {
+
+            VendorService service =
+                    vendorServiceRepository
+                            .findByIdAndDeletedFalse(
+                                    serviceId
+                            )
+                            .orElseThrow(() ->
+                                    new ResourceNotFoundException(
+                                            "Service not found."
+                                    )
+                            );
+
+
+            selectedPackage =
+                    service.getPackages()
+                            .stream()
+                            .filter(
+                                    pkg ->
+                                            pkg.getId()
+                                                    .equals(
+                                                            packageId
+                                                    )
+                            )
+                            .findFirst()
+                            .orElseThrow(() ->
+                                    new ResourceNotFoundException(
+                                            "Selected package not found."
+                                    )
+                            );
+
+
+            if (!selectedPackage.isActive()) {
+
+                throw new IllegalArgumentException(
+                        "Selected package is not active."
+                );
+
+            }
+
+        }
+
 
         return pricingCalculationService
                 .calculatePrice(
                         serviceId,
-                        eventDate
+                        eventDate,
+                        selectedPackage
                 );
     }
 

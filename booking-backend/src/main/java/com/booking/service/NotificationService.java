@@ -9,6 +9,14 @@ public interface NotificationService {
 
     List<NotificationResponse> getNotifications();
 
+    long getUnreadCount();
+
+    void markAsRead(
+            String notificationId
+    );
+
+    void markAllAsRead();
+
     void createNotification(
             String userId,
             NotificationType type,
