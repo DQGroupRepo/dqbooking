@@ -5,6 +5,7 @@ import com.booking.model.embedded.BookingSettings;
 import com.booking.model.embedded.ContactInfo;
 import com.booking.model.enums.DiscountType;
 import com.booking.model.enums.ServiceCategory;
+import com.booking.model.enums.ServiceDiscoveryTag;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -12,6 +13,8 @@ import com.booking.model.enums.ServiceModerationStatus;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Set;
+
 import com.booking.model.embedded.ServicePackage;
 
 @Getter
@@ -32,8 +35,6 @@ public class VendorService extends BaseEntity {
     private Integer capacity;
 
     private Integer durationHours;
-
-    private Boolean featured = false;
 
     private Integer displayOrder = 0;
 
@@ -79,5 +80,7 @@ public class VendorService extends BaseEntity {
      */
 
     private List<ServicePackage> packages;
+
+    private Set<ServiceDiscoveryTag> discoveryTags;
 
 }

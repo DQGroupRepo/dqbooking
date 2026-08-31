@@ -12,4 +12,12 @@ public interface NotificationRepository
             String userId
     );
 
+    long countByUserIdAndReadFalse(
+            String userId
+    );
+
+    List<Notification> findByUserIdAndReadFalse(
+            String userId
+    );
+
 }

@@ -1,5 +1,7 @@
 package com.booking.dto.bundle;
 
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import lombok.Getter;
 import lombok.Setter;
@@ -10,6 +12,11 @@ import java.util.List;
 @Setter
 public class BundleCalculationRequest {
 
-    @NotEmpty(message = "At least one service is required")
-    private List<String> serviceIds;
+    @NotBlank
+    private String bundleId;
+
+    @NotEmpty
+    @Valid
+    private List<BundleCalculationItemRequest> items;
+
 }

@@ -1,6 +1,7 @@
 package com.booking.service.impl;
 
 import com.booking.exception.ServiceNotFoundException;
+import com.booking.exception.VendorServiceNotFoundException;
 import com.booking.model.VendorService;
 import com.booking.model.enums.ServiceModerationStatus;
 import com.booking.repository.VendorServiceRepository;
@@ -47,18 +48,43 @@ public class AdminServiceModerationServiceImpl
     }
 
     @Override
-    public void suspendService(String serviceId) {
+    public void suspendService(
+            String serviceId
+    ) {
 
         VendorService service =
-                getService(serviceId);
+                vendorServiceRepository
+                        .findById(serviceId)
+                        .orElseThrow(() ->
+                                new VendorServiceNotFoundException(
+                                        "Service not found: "
+                                                + serviceId
+                                )
+                        );
 
+
+        /*
+         * Suspend/deactivate service.
+         */
         service.setModerationStatus(
                 ServiceModerationStatus.SUSPENDED
         );
 
-        service.setActive(false);
+        service.setActive(
+                false
+        );
 
-        vendorServiceRepository.save(service);
+
+        /*
+         * Remove all discovery selections.
+         */
+        service.setDiscoveryTags(
+                new java.util.HashSet<>()
+        );
+
+        vendorServiceRepository.save(
+                service
+        );
     }
 
     @Override

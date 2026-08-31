@@ -14,15 +14,47 @@ public class NotificationMapperImpl
 
     @Override
     public NotificationResponse toResponse(
-            Notification notification) {
+            Notification notification
+    ) {
 
-        return NotificationResponse.builder()
-                .id(notification.getId())
-                .message(notification.getMessage())
-                .type(notification.getType()
-                        .name()
-                        .toLowerCase())
-                .time(formatTime(notification.getCreatedAt()))
+        return NotificationResponse
+                .builder()
+
+                .id(
+                        notification.getId()
+                )
+
+                .userId(
+                        notification.getUserId()
+                )
+
+                .title(
+                        notification.getTitle()
+                )
+
+                .message(
+                        notification.getMessage()
+                )
+
+                .type(
+                        notification.getType()
+                                .name()
+                )
+
+                .referenceId(
+                        notification.getReferenceId()
+                )
+
+                .read(
+                        Boolean.TRUE.equals(
+                                notification.getRead()
+                        )
+                )
+
+                .createdAt(
+                        notification.getCreatedAt()
+                )
+
                 .build();
 
     }

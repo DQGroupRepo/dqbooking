@@ -4,356 +4,577 @@ import FeaturedVendorCard from "../../components/vendor/FeaturedVendorCard";
 import SearchBar from "../../components/search/SearchBar";
 import CategoryCard from "../../components/home/CategoryCard";
 import { categories } from "../../mocks/categories";
-import ServiceCard from "../../components/home/ServiceCard";
 import ServiceSection from "../../components/home/ServiceSection";
-import { popularLocations, testimonials } from "../../mocks/homeExtraData";
+import {
+    popularLocations,
+    testimonials
+} from "../../mocks/homeExtraData";
 
-import { popularHalls, bridalMakeup, photographyServices, videographyServices } from "../../mocks/homeServices";
-import { useEffect, useState } from "react";
+import {
+    popularHalls,
+    bridalMakeup,
+    photographyServices,
+    videographyServices
+} from "../../mocks/homeServices";
 
-import VendorListingService from "../../services/VendorListingService";
+import {
+    useEffect,
+    useState
+} from "react";
 
-import type { Vendor } from "../../types/Vendor";
+import type {
+    FeaturedService
+} from "../../types/FeaturedService";
+
 
 const Home = () => {
 
-  const [vendors, setVendors] = useState<Vendor[]>([]);
+    const [
+        featuredServices,
+        setFeaturedServices
+    ] = useState<FeaturedService[]>([]);
 
-  useEffect(() => {
+    const featuredDisplayServices =
+            featuredServices.length === 0
+                ? []
+                : featuredServices.length === 1
+                    ? [
+                        featuredServices[0],
+                        featuredServices[0],
+                        featuredServices[0]
+                    ]
+                    : featuredServices.length === 2
+                        ? [
+                            featuredServices[0],
+                            featuredServices[1],
+                            featuredServices[0]
+                        ]
+                        : featuredServices.slice(0, 3);
+    /*
+     * =========================================
+     * LOAD FEATURED SERVICES
+     * =========================================
+     *
+     * These are selected by the admin from
+     * Vendor Verification.
+     */
 
-      loadFeaturedVendors();
+    useEffect(() => {
 
-  }, []);
+        loadFeaturedServices();
 
-  async function loadFeaturedVendors() {
-
-      try {
-
-          const data =
-              await VendorListingService.getListings();
-
-          setVendors(data.slice(0, 6));
-
-      }
-
-      catch (error) {
-
-          console.error(error);
-
-      }
-
-  }
-  return (
-    <>
-
-      <section className="hero">
-        <div className="hero-overlay">
-        <div className="hero-content">
-
-          <h1>
-            Find Everything For Your Special Occasion
-          </h1>
-
-          <p>
-            Discover trusted venues,
-            photographers,
-            makeup artists,
-            decorators and event professionals.
-          </p>
-          <SearchBar />
-        </div>
-        </div>
-        </section>
-
-        <section className="categories-section">
-
-          <div className="container">
-
-            <h2 className="section-title">
-              Explore Categories
-            </h2>
-
-            <p className="section-subtitle">
-
-              Everything you need for your celebration
-
-            </p>
+    }, []);
 
 
-            <div className="category-grid">
+    async function loadFeaturedServices() {
 
-              {categories.map((category) => (
+        try {
 
-                <CategoryCard
+            /*
+             * IMPORTANT:
+             *
+             * This should use the CUSTOMER
+             * featured-services endpoint.
+             *
+             * Do NOT use the admin verification
+             * service here.
+             */
 
-                  key={category.title}
+            const response =
+                await fetch(
+                    "http://localhost:8080/api/customer/services/featured"
+                );
 
-                  icon={category.icon}
 
-                  title={category.title}
+            if (!response.ok) {
 
-                  description={category.description}
+                throw new Error(
+                    "Failed to load featured services."
+                );
 
-                  link={category.link}
-                  category={category.category}
+            }
 
-                />
 
-              ))}
+            const data:
+                FeaturedService[] =
+                await response.json();
 
-            </div>
 
-          </div>
+            setFeaturedServices(
+                data
+            );
 
-        </section>
+        }
+        catch (error) {
 
-        <section className="featured-vendors">
+            console.error(
+                "Failed to load featured services:",
+                error
+            );
 
-                <div className="container">
 
-                  <div className="section-header">
+            setFeaturedServices(
+                []
+            );
 
-                    <h2>
-                      Featured Vendors
-                    </h2>
+        }
 
-                    <div className="carousel-buttons">
+    }
 
-                      <button>
-                        ‹
-                      </button>
 
-                      <button>
-                        ›
-                      </button>
+    return (
+
+        <>
+
+            {/* =========================================
+                HERO
+            ========================================= */}
+
+            <section className="hero">
+
+                <div className="hero-overlay">
+
+                    <div className="hero-content">
+
+                        <h1>
+                            Find Everything For Your Special Occasion
+                        </h1>
+
+                        <p>
+                            Discover trusted venues,
+                            photographers,
+                            makeup artists,
+                            decorators and event professionals.
+                        </p>
+
+                        <SearchBar />
 
                     </div>
 
-                  </div>
+                </div>
+
+            </section>
 
 
-                  <div className="vendor-grid">
+            {/* =========================================
+                CATEGORIES
+            ========================================= */}
 
-                    {vendors.map((vendor) => (
+            <section className="categories-section">
 
-                        <FeaturedVendorCard
-                            key={vendor.serviceId}
-                            vendor={vendor}
-                        />
+                <div className="container">
 
-                    ))}
+                    <h2 className="section-title">
+                        Explore Categories
+                    </h2>
 
-                  </div>
+                    <p className="section-subtitle">
+                        Everything you need for your celebration
+                    </p>
+
+
+                    <div className="category-grid">
+
+                        {
+                            categories.map(
+                                category => (
+
+                                    <CategoryCard
+
+                                        key={
+                                            category.title
+                                        }
+
+                                        icon={
+                                            category.icon
+                                        }
+
+                                        title={
+                                            category.title
+                                        }
+
+                                        description={
+                                            category.description
+                                        }
+
+                                        link={
+                                            category.link
+                                        }
+
+                                        category={
+                                            category.category
+                                        }
+
+                                    />
+
+                                )
+                            )
+                        }
+
+                    </div>
 
                 </div>
 
-              </section>
-
-        <ServiceSection
-
-        title="Popular Halls"
-
-        subtitle="Beautiful venues for weddings and celebrations"
-
-        services={popularHalls}
-
-        />
+            </section>
 
 
-        <ServiceSection
+            {/* =========================================
+                FEATURED VENDORS
+            ========================================= */}
 
-        title="Top Bridal Makeup Artists"
+            <section className="featured-vendors">
 
-        subtitle="Professional artists for your special day"
+                <div className="container">
 
-        services={bridalMakeup}
+                    <div className="section-header">
 
-        />
-
-
-        <ServiceSection
-
-        title="Professional Photography"
-
-        subtitle="Capture your beautiful moments"
-
-        services={photographyServices}
-
-        />
+                        <h2>
+                            Featured Vendors
+                        </h2>
 
 
-        <ServiceSection
+                        <div className="carousel-buttons">
 
-        title="Wedding Videography"
+                            <button
+                                type="button"
+                            >
+                                ‹
+                            </button>
 
-        subtitle="Cinematic memories forever"
+                            <button
+                                type="button"
+                            >
+                                ›
+                            </button>
 
-        services={videographyServices}
+                        </div>
 
-        />
+                    </div>
 
-        <section className="locations-section">
 
-          <div className="container">
+                    {
+                        featuredServices.length === 0 ? (
 
-            <h2 className="section-title">
-              Popular Locations
-            </h2>
+                            <div className="featured-empty-state">
 
-            <div className="location-grid">
+                                <p>
+                                    No featured services available at the moment.
+                                </p>
 
-              {popularLocations.map((location) => (
+                            </div>
 
-                <div
-                  key={location.city}
-                  className="location-card"
-                >
+                        ) : (
 
-                  <h3>
-                    {location.city}
-                  </h3>
+                            <div className="vendor-grid">
 
-                  <p>
-                    {location.vendors}
-                  </p>
+                                {featuredDisplayServices.map(
+                                    (service, index) => (
+
+                                        <FeaturedVendorCard
+                                            key={`${service.serviceId}-${index}`}
+                                            service={service}
+                                        />
+
+                                    )
+                                )}
+
+                            </div>
+
+                        )
+                    }
 
                 </div>
 
-              ))}
-
-            </div>
-
-          </div>
-
-        </section>
-
-        <section className="how-it-works">
-
-          <div className="container">
-
-            <h2 className="section-title">
-              How EventNest Works
-            </h2>
-
-            <div className="steps-grid">
-
-              <div className="step-card">
-
-                <span>1</span>
-
-                <h3>
-                  Choose Service
-                </h3>
-
-                <p>
-                  Select halls, photographers,
-                  makeup artists and more.
-                </p>
-
-              </div>
+            </section>
 
 
-              <div className="step-card">
+            {/* =========================================
+                POPULAR HALLS
+            ========================================= */}
 
-                <span>2</span>
+            <ServiceSection
 
-                <h3>
-                  Compare Vendors
-                </h3>
+                title="Popular Halls"
 
-                <p>
-                  Check ratings, packages
-                  and reviews.
-                </p>
+                subtitle="Beautiful venues for weddings and celebrations"
 
-              </div>
+                services={
+                    popularHalls
+                }
+
+            />
 
 
-              <div className="step-card">
+            {/* =========================================
+                BRIDAL MAKEUP
+            ========================================= */}
 
-                <span>3</span>
+            <ServiceSection
 
-                <h3>
-                  Book & Celebrate
-                </h3>
+                title="Top Bridal Makeup Artists"
 
-                <p>
-                  Confirm your booking
-                  and enjoy your event.
-                </p>
+                subtitle="Professional artists for your special day"
 
-              </div>
+                services={
+                    bridalMakeup
+                }
 
-            </div>
+            />
 
-          </div>
 
-        </section>
+            {/* =========================================
+                PHOTOGRAPHY
+            ========================================= */}
 
-        <section className="testimonial-section">
+            <ServiceSection
 
-          <div className="container">
+                title="Professional Photography"
 
-            <h2 className="section-title">
-              Customer Reviews
-            </h2>
+                subtitle="Capture your beautiful moments"
 
-            <div className="testimonial-grid">
+                services={
+                    photographyServices
+                }
 
-              {testimonials.map((item) => (
+            />
 
-                <div
-                  key={item.name}
-                  className="testimonial-card"
-                >
 
-                  <div>
-                    ⭐⭐⭐⭐⭐
-                  </div>
+            {/* =========================================
+                VIDEOGRAPHY
+            ========================================= */}
 
-                  <p>
-                    "{item.review}"
-                  </p>
+            <ServiceSection
 
-                  <strong>
-                    - {item.name}
-                  </strong>
+                title="Wedding Videography"
+
+                subtitle="Cinematic memories forever"
+
+                services={
+                    videographyServices
+                }
+
+            />
+
+
+            {/* =========================================
+                POPULAR LOCATIONS
+            ========================================= */}
+
+            <section className="locations-section">
+
+                <div className="container">
+
+                    <h2 className="section-title">
+                        Popular Locations
+                    </h2>
+
+
+                    <div className="location-grid">
+
+                        {
+                            popularLocations.map(
+                                location => (
+
+                                    <div
+
+                                        key={
+                                            location.city
+                                        }
+
+                                        className="location-card"
+
+                                    >
+
+                                        <h3>
+                                            {
+                                                location.city
+                                            }
+                                        </h3>
+
+                                        <p>
+                                            {
+                                                location.vendors
+                                            }
+                                        </p>
+
+                                    </div>
+
+                                )
+                            )
+                        }
+
+                    </div>
 
                 </div>
 
-              ))}
-
-            </div>
-
-          </div>
-
-        </section>
-
-        <section className="vendor-banner">
-
-          <div className="container">
-
-            <h2>
-              Are you an Event Service Provider?
-            </h2>
-
-            <p>
-              Join EventNest and reach
-              thousands of customers.
-            </p>
-
-            <button>
-              Register Your Business
-            </button>
-
-          </div>
-
-        </section>
+            </section>
 
 
+            {/* =========================================
+                HOW IT WORKS
+            ========================================= */}
 
-    </>
-  );
+            <section className="how-it-works">
+
+                <div className="container">
+
+                    <h2 className="section-title">
+                        How EventNest Works
+                    </h2>
+
+
+                    <div className="steps-grid">
+
+                        <div className="step-card">
+
+                            <span>
+                                1
+                            </span>
+
+                            <h3>
+                                Choose Service
+                            </h3>
+
+                            <p>
+                                Select halls, photographers,
+                                makeup artists and more.
+                            </p>
+
+                        </div>
+
+
+                        <div className="step-card">
+
+                            <span>
+                                2
+                            </span>
+
+                            <h3>
+                                Compare Vendors
+                            </h3>
+
+                            <p>
+                                Check ratings, packages
+                                and reviews.
+                            </p>
+
+                        </div>
+
+
+                        <div className="step-card">
+
+                            <span>
+                                3
+                            </span>
+
+                            <h3>
+                                Book & Celebrate
+                            </h3>
+
+                            <p>
+                                Confirm your booking
+                                and enjoy your event.
+                            </p>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+
+            {/* =========================================
+                TESTIMONIALS
+            ========================================= */}
+
+            <section className="testimonial-section">
+
+                <div className="container">
+
+                    <h2 className="section-title">
+                        Customer Reviews
+                    </h2>
+
+
+                    <div className="testimonial-grid">
+
+                        {
+                            testimonials.map(
+                                item => (
+
+                                    <div
+
+                                        key={
+                                            item.name
+                                        }
+
+                                        className="testimonial-card"
+
+                                    >
+
+                                        <div>
+                                            ⭐⭐⭐⭐⭐
+                                        </div>
+
+                                        <p>
+                                            "
+                                            {
+                                                item.review
+                                            }
+                                            "
+                                        </p>
+
+                                        <strong>
+                                            - {item.name}
+                                        </strong>
+
+                                    </div>
+
+                                )
+                            )
+                        }
+
+                    </div>
+
+                </div>
+
+            </section>
+
+
+            {/* =========================================
+                VENDOR BANNER
+            ========================================= */}
+
+            <section className="vendor-banner">
+
+                <div className="container">
+
+                    <h2>
+                        Are you an Event Service Provider?
+                    </h2>
+
+                    <p>
+                        Join EventNest and reach
+                        thousands of customers.
+                    </p>
+
+                    <button
+                        type="button"
+                    >
+                        Register Your Business
+                    </button>
+
+                </div>
+
+            </section>
+
+        </>
+
+    );
+
 };
+
 
 export default Home;

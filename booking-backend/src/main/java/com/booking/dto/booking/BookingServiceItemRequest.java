@@ -16,6 +16,8 @@ public class BookingServiceItemRequest {
     @NotBlank
     private String serviceId;
 
+    private String packageId;
+
     @NotNull
     @Future
     private LocalDate eventDate;

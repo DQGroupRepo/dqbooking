@@ -39,4 +39,11 @@ public class CustomerController {
         return customerService.getVendorListings(category);
 
     }
+
+    @GetMapping("/services/featured")
+    public List<VendorListingResponse> getFeaturedServices() {
+
+        return customerService.getFeaturedServices();
+
+    }
 }

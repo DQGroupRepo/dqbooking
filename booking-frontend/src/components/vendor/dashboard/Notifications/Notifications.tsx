@@ -4,111 +4,313 @@ import {
     FaCalendarCheck,
     FaRupeeSign,
     FaStar,
-    FaTimesCircle
+    FaTimesCircle,
+    FaBell
 } from "react-icons/fa";
 
-import DashboardPanel from "../DashboardPanel/DashboardPanel";
+import {
+    useNavigate
+} from "react-router-dom";
 
-import VendorNotificationService from "../../../../services/VendorNotificationService";
+import DashboardPanel
+    from "../DashboardPanel/DashboardPanel";
 
-import type { VendorNotification } from "../../../../types/VendorNotification";
+import NotificationService
+    from "../../../../services/NotificationService";
 
-import styles from "./Notifications.module.css";
+import type {
+    Notification
+} from "../../../../types/Notification";
+
+import styles
+    from "./Notifications.module.css";
+
 
 export default function Notifications() {
 
-    const [notifications, setNotifications] = useState<VendorNotification[]>([]);
+    const navigate =
+        useNavigate();
+
+
+    const [
+        notifications,
+        setNotifications
+    ] =
+        useState<Notification[]>([]);
+
 
     useEffect(() => {
+
         loadNotifications();
+
     }, []);
+
 
     async function loadNotifications() {
 
-        const data =
-            await VendorNotificationService.getNotifications();
+        try {
 
-        setNotifications(data);
+            const data =
+                await NotificationService
+                    .getNotifications();
+
+            setNotifications(
+                data
+            );
+
+        }
+        catch (error) {
+
+            console.error(
+                "Failed to load notifications:",
+                error
+            );
+
+        }
 
     }
 
-    const getIcon = (type: string) => {
+
+    const getIcon = (
+        type: Notification["type"]
+    ) => {
 
         switch (type) {
 
-            case "booking":
-                return <FaCalendarCheck className={styles.booking} />;
+            case "BOOKING":
+                return (
+                    <FaCalendarCheck
+                        className={
+                            styles.booking
+                        }
+                    />
+                );
 
-            case "payment":
-                return <FaRupeeSign className={styles.payment} />;
+            case "PAYMENT":
+                return (
+                    <FaRupeeSign
+                        className={
+                            styles.payment
+                        }
+                    />
+                );
 
-            case "review":
-                return <FaStar className={styles.review} />;
+            case "REVIEW":
+                return (
+                    <FaStar
+                        className={
+                            styles.review
+                        }
+                    />
+                );
 
-            case "cancelled":
-                return <FaTimesCircle className={styles.cancelled} />;
+            case "CANCELLED":
+                return (
+                    <FaTimesCircle
+                        className={
+                            styles.cancelled
+                        }
+                    />
+                );
 
             default:
-                return null;
+                return (
+                    <FaBell />
+                );
 
         }
 
     };
 
-    const getIconBackground = (type: string) => {
+
+    const getIconBackground = (
+        type: Notification["type"]
+    ) => {
 
         switch (type) {
 
-            case "booking":
+            case "BOOKING":
                 return styles.bookingBg;
 
-            case "payment":
+            case "PAYMENT":
                 return styles.paymentBg;
 
-            case "review":
+            case "REVIEW":
                 return styles.reviewBg;
 
-            case "cancelled":
+            case "CANCELLED":
                 return styles.cancelledBg;
 
             default:
                 return "";
+
         }
 
     };
 
+
+    async function handleNotificationClick(
+        notification: Notification
+    ) {
+
+        try {
+
+            if (!notification.read) {
+
+                await NotificationService
+                    .markAsRead(
+                        notification.id
+                    );
+
+            }
+
+        }
+        catch (error) {
+
+            console.error(
+                "Failed to mark notification as read:",
+                error
+            );
+
+        }
+
+
+        if (
+            notification.referenceId &&
+            (
+                notification.type === "BOOKING" ||
+                notification.type === "CANCELLED"
+            )
+        ) {
+
+            navigate(
+                `/vendor/bookings/${notification.referenceId}`
+            );
+
+        }
+
+    }
+
+
     return (
 
-        <DashboardPanel title="Notifications">
+        <DashboardPanel
+            title="Notifications"
+        >
 
             <div className={styles.list}>
 
-                {notifications.map(notification => (
+                {
+                    notifications.length ===
+                    0 ? (
 
-                    <div
-                        key={notification.id}
-                        className={styles.item}
-                    >
-
-                        <div className={`${styles.icon} ${getIconBackground(notification.type)}`}>
-                            {getIcon(notification.type)}
+                        <div
+                            className={
+                                styles.empty
+                            }
+                        >
+                            No notifications.
                         </div>
 
-                        <div className={styles.details}>
+                    ) : (
 
-                            <div className={styles.message}>
-                                {notification.message}
-                            </div>
+                        notifications.map(
+                            notification => (
 
-                            <span className={styles.time}>
-                                {notification.time}
-                            </span>
+                                <button
+                                    type="button"
 
-                        </div>
+                                    key={
+                                        notification.id
+                                    }
 
-                    </div>
+                                    className={`${
+                                        styles.item
+                                    } ${
+                                        !notification.read
+                                            ? styles.unread
+                                            : ""
+                                    }`}
 
-                ))}
+                                    onClick={() =>
+                                        handleNotificationClick(
+                                            notification
+                                        )
+                                    }
+                                >
+
+                                    <div
+                                        className={`${
+                                            styles.icon
+                                        } ${
+                                            getIconBackground(
+                                                notification.type
+                                            )
+                                        }`}
+                                    >
+                                        {
+                                            getIcon(
+                                                notification.type
+                                            )
+                                        }
+                                    </div>
+
+
+                                    <div
+                                        className={
+                                            styles.details
+                                        }
+                                    >
+
+                                        <div
+                                            className={
+                                                styles.title
+                                            }
+                                        >
+                                            {
+                                                notification.title
+                                            }
+                                        </div>
+
+
+                                        <div
+                                            className={
+                                                styles.message
+                                            }
+                                        >
+                                            {
+                                                notification.message
+                                            }
+                                        </div>
+
+
+                                        {
+                                            notification.createdAt && (
+
+                                                <span
+                                                    className={
+                                                        styles.time
+                                                    }
+                                                >
+                                                    {
+                                                        new Date(
+                                                            notification.createdAt
+                                                        ).toLocaleString()
+                                                    }
+                                                </span>
+
+                                            )
+                                        }
+
+                                    </div>
+
+                                </button>
+
+                            )
+                        )
+
+                    )
+                }
 
             </div>
 

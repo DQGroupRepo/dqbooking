@@ -3,8 +3,11 @@ package com.booking.service.impl;
 import com.booking.dto.admin.AdminVendorServiceResponse;
 import com.booking.dto.admin.AdminVendorVerificationResponse;
 import com.booking.exception.VendorNotFoundException;
+import com.booking.exception.VendorServiceNotFoundException;
 import com.booking.model.User;
 import com.booking.model.VendorService;
+import com.booking.model.enums.ServiceDiscoveryTag;
+import com.booking.model.enums.ServiceModerationStatus;
 import com.booking.model.enums.VendorVerificationStatus;
 import com.booking.repository.UserRepository;
 import com.booking.repository.VendorServiceRepository;
@@ -13,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -148,6 +152,9 @@ public class AdminVendorVerificationServiceImpl
                 .deleted(
                         service.getDeleted()
                 )
+                .discoveryTags(
+                        service.getDiscoveryTags()
+                )
 
                 .build();
     }
@@ -226,4 +233,49 @@ public class AdminVendorVerificationServiceImpl
 
         return vendor;
     }
+
+    @Override
+    public void updateServiceDiscoveryTags(
+            String serviceId,
+            Set<ServiceDiscoveryTag> tags
+    ) {
+
+        VendorService service =
+                vendorServiceRepository
+                        .findById(serviceId)
+                        .orElseThrow(() ->
+                                new VendorServiceNotFoundException(
+                                        "Service not found: "
+                                                + serviceId
+                                )
+                        );
+
+
+        if (
+                Boolean.TRUE.equals(
+                        service.getDeleted()
+                )
+        ) {
+
+            throw new IllegalStateException(
+                    "Deleted service cannot be updated."
+            );
+
+        }
+
+
+        service.setDiscoveryTags(
+                tags == null
+                        ? new java.util.HashSet<>()
+                        : new java.util.HashSet<>(
+                        tags
+                )
+        );
+
+        vendorServiceRepository.save(
+                service
+        );
+    }
+
+
 }

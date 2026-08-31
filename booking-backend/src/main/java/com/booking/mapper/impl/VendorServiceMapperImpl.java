@@ -108,7 +108,6 @@ public class VendorServiceMapperImpl implements VendorServiceMapper {
         response.setDurationHours(service.getDurationHours());
 
         response.setActive(service.getActive());
-        response.setFeatured(service.getFeatured());
         response.setPricingConfigured(false);
 
         response.setContactInfo(

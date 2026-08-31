@@ -1,11 +1,16 @@
 package com.booking.service.impl;
 
+import com.booking.dto.bundle.BundleCalculationItemRequest;
 import com.booking.dto.bundle.BundleCalculationRequest;
 import com.booking.dto.bundle.BundleCalculationResponse;
 import com.booking.dto.bundle.BundleDiscountItem;
+import com.booking.exception.ResourceNotFoundException;
 import com.booking.exception.VendorServiceNotFoundException;
+import com.booking.model.Bundle;
 import com.booking.model.VendorService;
+import com.booking.model.embedded.ServicePackage;
 import com.booking.model.enums.DiscountType;
+import com.booking.repository.BundleRepository;
 import com.booking.repository.VendorServiceRepository;
 import com.booking.service.BundleCalculationService;
 import lombok.RequiredArgsConstructor;
@@ -16,6 +21,7 @@ import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
@@ -24,21 +30,47 @@ public class BundleCalculationServiceImpl
         implements BundleCalculationService {
 
     private final VendorServiceRepository vendorServiceRepository;
+    private final BundleRepository bundleRepository;
 
 
     @Override
     public BundleCalculationResponse calculateBundle(
-            BundleCalculationRequest request) {
+            BundleCalculationRequest request
+    ) {
 
-        List<VendorService> services =
-                request.getServiceIds()
-                        .stream()
-                        .distinct()
-                        .map(this::getService)
-                        .toList();
+        /*
+         * =========================================
+         * 1. LOAD BUNDLE
+         * =========================================
+         */
+
+        Bundle bundle =
+                bundleRepository
+                        .findById(
+                                request.getBundleId()
+                        )
+                        .orElseThrow(() ->
+                                new ResourceNotFoundException(
+                                        "Bundle not found: "
+                                                + request.getBundleId()
+                                )
+                        );
 
 
-        if (services.isEmpty()) {
+        /*
+         * =========================================
+         * 2. LOAD SERVICES
+         * =========================================
+         */
+
+        List<BundleCalculationItemRequest> requestItems =
+                request.getItems();
+
+
+        if (
+                requestItems == null ||
+                        requestItems.isEmpty()
+        ) {
 
             return BundleCalculationResponse.builder()
                     .bundleApplied(false)
@@ -51,231 +83,403 @@ public class BundleCalculationServiceImpl
         }
 
 
-        /*
-         * Group selected services by vendor.
-         *
-         * Bundle qualification is vendor-specific.
-         */
-        Map<String, List<VendorService>> servicesByVendor =
-                services.stream()
+        Map<String, VendorService> serviceMap =
+                requestItems
+                        .stream()
+                        .map(
+                                BundleCalculationItemRequest
+                                        ::getServiceId
+                        )
+                        .distinct()
+                        .map(this::getService)
                         .collect(
-                                Collectors.groupingBy(
-                                        VendorService::getVendorId
+                                Collectors.toMap(
+                                        VendorService::getId,
+                                        service -> service
                                 )
                         );
 
 
         /*
-         * A bundle is currently calculated per vendor.
-         *
-         * If the cart contains services from multiple vendors,
-         * each vendor's group is evaluated independently.
-         *
-         * This means:
-         *
-         * Vendor A -> 2 qualifying services -> discount
-         * Vendor B -> 1 qualifying service -> no discount
+         * =========================================
+         * 3. VERIFY BUNDLE SERVICES
+         * =========================================
          */
-        List<BundleDiscountItem> resultItems =
-                new ArrayList<>();
 
+        List<BundleCalculationLine> lines =
+                requestItems
+                        .stream()
+                        .map(item -> {
+
+                            VendorService service =
+                                    serviceMap.get(
+                                            item.getServiceId()
+                                    );
+
+
+                            if (service == null) {
+
+                                throw new VendorServiceNotFoundException(
+                                        "Service not found: "
+                                                + item.getServiceId()
+                                );
+
+                            }
+
+
+                            /*
+                             * Verify service belongs to bundle.
+                             */
+
+                            if (
+                                    !bundle
+                                            .getServiceIds()
+                                            .contains(
+                                                    service.getId()
+                                            )
+                            ) {
+
+                                throw new IllegalArgumentException(
+                                        "Service "
+                                                + service.getId()
+                                                + " does not belong to bundle "
+                                                + bundle.getId()
+                                );
+
+                            }
+
+
+                            ServicePackage selectedPackage =
+                                    resolvePackage(
+                                            service,
+                                            item.getPackageId()
+                                    );
+
+
+                            return new BundleCalculationLine(
+                                    service,
+                                    selectedPackage
+                            );
+
+                        })
+                        .toList();
+
+
+        /*
+         * =========================================
+         * 4. VERIFY SAME VENDOR
+         * =========================================
+         */
+
+        if (lines.isEmpty()) {
+
+            return BundleCalculationResponse.builder()
+                    .bundleApplied(false)
+                    .qualifyingServiceCount(0)
+                    .originalTotal(BigDecimal.ZERO)
+                    .totalDiscount(BigDecimal.ZERO)
+                    .finalTotal(BigDecimal.ZERO)
+                    .items(List.of())
+                    .build();
+        }
+
+
+        String vendorId =
+                lines.get(0)
+                        .service()
+                        .getVendorId();
+
+
+        boolean sameVendor =
+                lines.stream()
+                        .allMatch(
+                                line ->
+                                        line.service()
+                                                .getVendorId()
+                                                .equals(
+                                                        vendorId
+                                                )
+                        );
+
+
+        if (!sameVendor) {
+
+            throw new IllegalArgumentException(
+                    "All services in a bundle must belong to the same vendor."
+            );
+
+        }
+
+
+        /*
+         * =========================================
+         * 5. QUALIFICATION
+         * =========================================
+         */
+
+        int qualifyingServiceCount =
+                lines.size();
+
+
+        boolean bundleApplied =
+                qualifyingServiceCount >= 2;
+
+
+        /*
+         * =========================================
+         * 6. ORIGINAL TOTAL
+         * =========================================
+         *
+         * Package price is used when selected.
+         * Otherwise normal service price is used.
+         */
 
         BigDecimal originalTotal =
-                BigDecimal.ZERO;
+                lines.stream()
+                        .map(line -> {
 
-        BigDecimal finalTotal =
-                BigDecimal.ZERO;
+                            if (
+                                    line.selectedPackage()
+                                            != null
+                            ) {
+
+                                return safe(
+                                        line.selectedPackage()
+                                                .getPrice()
+                                );
+
+                            }
+
+
+                            return safe(
+                                    line.service()
+                                            .getPrice()
+                            );
+
+                        })
+                        .reduce(
+                                BigDecimal.ZERO,
+                                BigDecimal::add
+                        );
+
+
+        /*
+         * =========================================
+         * 7. CALCULATE BUNDLE DISCOUNT
+         * =========================================
+         */
 
         BigDecimal totalDiscount =
                 BigDecimal.ZERO;
 
 
-        for (Map.Entry<String, List<VendorService>> entry :
-                servicesByVendor.entrySet()) {
+        if (bundleApplied) {
 
-            List<VendorService> vendorServices =
-                    entry.getValue();
-
-
-            /*
-             * Only bundle-enabled services qualify.
-             */
-            List<VendorService> bundleServices =
-                    vendorServices.stream()
-                            .filter(service ->
-                                    Boolean.TRUE.equals(
-                                            service.getBundleEnabled()
-                                    )
-                            )
-                            .toList();
+            BigDecimal discountValue =
+                    safe(
+                            bundle.getDiscountValue()
+                    );
 
 
-            boolean bundleApplied =
-                    bundleServices.size() >= 2;
-
-
-            for (VendorService service :
-                    vendorServices) {
-
-                BigDecimal originalAmount =
-                        service.getPrice() != null
-                                ? service.getPrice()
-                                : BigDecimal.ZERO;
-
-
-                BigDecimal discountAmount =
-                        BigDecimal.ZERO;
-
-
-                /*
-                 * Discount is applied only when:
-                 *
-                 * 1. At least two bundle services
-                 *    from this vendor are selected.
-                 *
-                 * 2. This particular service has
-                 *    bundleEnabled = true.
-                 */
-                if (bundleApplied &&
-                        Boolean.TRUE.equals(
-                                service.getBundleEnabled()
-                        )) {
-
-                    discountAmount =
-                            calculateDiscount(
-                                    service
-                            );
-                }
-
-
-                BigDecimal finalAmount =
-                        originalAmount
-                                .subtract(
-                                        discountAmount
-                                )
-                                .max(
-                                        BigDecimal.ZERO
-                                );
-
-
-                originalTotal =
-                        originalTotal.add(
-                                originalAmount
-                        );
+            if (
+                    "PERCENTAGE".equalsIgnoreCase(
+                            bundle.getDiscountType()
+                    )
+            ) {
 
                 totalDiscount =
-                        totalDiscount.add(
-                                discountAmount
-                        );
+                        originalTotal
+                                .multiply(
+                                        discountValue
+                                )
+                                .divide(
+                                        BigDecimal.valueOf(100),
+                                        2,
+                                        RoundingMode.HALF_UP
+                                );
 
-                finalTotal =
-                        finalTotal.add(
-                                finalAmount
-                        );
-
-
-                resultItems.add(
-                        BundleDiscountItem.builder()
-                                .serviceId(
-                                        service.getId()
-                                )
-                                .serviceName(
-                                        service.getServiceName()
-                                )
-                                .vendorId(
-                                        service.getVendorId()
-                                )
-                                .originalAmount(
-                                        originalAmount
-                                )
-                                .discountValue(
-                                        service.getBundleDiscountValue()
-                                )
-                                .discountAmount(
-                                        discountAmount
-                                )
-                                .finalAmount(
-                                        finalAmount
-                                )
-                                .bundleApplied(
-                                        discountAmount.compareTo(
-                                                BigDecimal.ZERO
-                                        ) > 0
-                                )
-                                .build()
-                );
             }
+            else if (
+                    "FIXED".equalsIgnoreCase(
+                            bundle.getDiscountType()
+                    )
+            ) {
+
+                totalDiscount =
+                        discountValue.min(
+                                originalTotal
+                        );
+
+            }
+
         }
 
 
         /*
-         * Bundle is applied if at least one
-         * vendor group qualified.
+         * =========================================
+         * 8. ALLOCATE DISCOUNT
+         * =========================================
          */
-        boolean bundleApplied =
-                totalDiscount.compareTo(
-                        BigDecimal.ZERO
-                ) > 0;
+
+        List<BundleDiscountItem> resultItems =
+                new ArrayList<>();
 
 
-        String qualifyingVendorId =
-                servicesByVendor.entrySet()
-                        .stream()
-                        .filter(entry ->
-                                entry.getValue()
-                                        .stream()
-                                        .filter(service ->
-                                                Boolean.TRUE.equals(
-                                                        service.getBundleEnabled()
-                                                )
-                                        )
-                                        .count() >= 2
-                        )
-                        .map(Map.Entry::getKey)
-                        .findFirst()
-                        .orElse(null);
+        BigDecimal finalTotal =
+                originalTotal.subtract(
+                        totalDiscount
+                );
 
 
-        int qualifyingServiceCount =
-                qualifyingVendorId == null
-                        ? 0
-                        : servicesByVendor
-                        .get(qualifyingVendorId)
-                        .stream()
-                        .filter(service ->
-                                Boolean.TRUE.equals(
-                                        service.getBundleEnabled()
+        for (
+                BundleCalculationLine line :
+                lines
+        ) {
+
+            VendorService service =
+                    line.service();
+
+
+            ServicePackage selectedPackage =
+                    line.selectedPackage();
+
+
+            BigDecimal originalAmount =
+                    selectedPackage != null
+                            ? safe(
+                            selectedPackage.getPrice()
+                    )
+                            : safe(
+                            service.getPrice()
+                    );
+
+
+            BigDecimal itemDiscount =
+                    BigDecimal.ZERO;
+
+
+            if (
+                    bundleApplied &&
+                            originalTotal.compareTo(
+                                    BigDecimal.ZERO
+                            ) > 0
+            ) {
+
+                itemDiscount =
+                        totalDiscount
+                                .multiply(
+                                        originalAmount
                                 )
-                        )
-                        .toList()
-                        .size();
+                                .divide(
+                                        originalTotal,
+                                        2,
+                                        RoundingMode.HALF_UP
+                                );
+
+            }
+
+
+            BigDecimal itemFinalAmount =
+                    originalAmount
+                            .subtract(
+                                    itemDiscount
+                            )
+                            .max(
+                                    BigDecimal.ZERO
+                            );
+
+
+            resultItems.add(
+                    BundleDiscountItem.builder()
+
+                            .serviceId(
+                                    service.getId()
+                            )
+
+                            .serviceName(
+                                    service.getServiceName()
+                            )
+
+                            .vendorId(
+                                    service.getVendorId()
+                            )
+
+                            .originalAmount(
+                                    originalAmount
+                            )
+
+                            .discountValue(
+                                    bundle.getDiscountValue()
+                            )
+
+                            .discountAmount(
+                                    itemDiscount
+                            )
+
+                            .finalAmount(
+                                    itemFinalAmount
+                            )
+
+                            .bundleApplied(
+                                    itemDiscount.compareTo(
+                                            BigDecimal.ZERO
+                                    ) > 0
+                            )
+
+                            .build()
+            );
+
+        }
 
 
         return BundleCalculationResponse.builder()
-                .bundleApplied(bundleApplied)
-                .vendorId(qualifyingVendorId)
+
+                .bundleApplied(
+                        bundleApplied
+                )
+
+                .vendorId(
+                        vendorId
+                )
+
                 .qualifyingServiceCount(
                         qualifyingServiceCount
                 )
+
                 .originalTotal(
                         originalTotal
                 )
+
                 .totalDiscount(
                         totalDiscount
                 )
+
                 .finalTotal(
                         finalTotal
                 )
-                .items(resultItems)
+
+                .items(
+                        resultItems
+                )
+
                 .build();
     }
 
 
+    /*
+     * =========================================
+     * FIND SERVICE
+     * =========================================
+     */
+
     private VendorService getService(
-            String serviceId) {
+            String serviceId
+    ) {
 
         return vendorServiceRepository
-                .findByIdAndDeletedFalse(serviceId)
+                .findByIdAndDeletedFalse(
+                        serviceId
+                )
                 .orElseThrow(() ->
                         new VendorServiceNotFoundException(
                                 "Service not found: "
@@ -285,12 +489,91 @@ public class BundleCalculationServiceImpl
     }
 
 
-    private BigDecimal calculateDiscount(
-            VendorService service) {
+    /*
+     * =========================================
+     * RESOLVE PACKAGE
+     * =========================================
+     */
 
-        if (service.getBundleDiscountValue() == null ||
-                service.getBundleDiscountType() == null ||
-                service.getPrice() == null) {
+    private ServicePackage resolvePackage(
+            VendorService service,
+            String packageId
+    ) {
+
+        /*
+         * No package selected.
+         *
+         * Existing service pricing behaviour
+         * continues.
+         */
+
+        if (
+                packageId == null ||
+                        packageId.isBlank()
+        ) {
+
+            return null;
+        }
+
+
+        List<ServicePackage> packages =
+                service.getPackages() == null
+                        ? List.of()
+                        : service.getPackages();
+
+
+        ServicePackage selectedPackage =
+                packages
+                        .stream()
+                        .filter(
+                                pkg ->
+                                        pkg.getId()
+                                                .equals(
+                                                        packageId
+                                                )
+                        )
+                        .findFirst()
+                        .orElseThrow(() ->
+                                new VendorServiceNotFoundException(
+                                        "Selected package not found: "
+                                                + packageId
+                                )
+                        );
+
+
+        /*
+         * Package must be active.
+         */
+
+        if (
+                !selectedPackage.isActive()
+        ) {
+
+            throw new IllegalArgumentException(
+                    "Selected package is not active."
+            );
+        }
+
+
+        return selectedPackage;
+    }
+
+
+    /*
+     * =========================================
+     * CALCULATE BUNDLE DISCOUNT
+     * =========================================
+     */
+
+    private BigDecimal calculateDiscount(
+            BigDecimal originalAmount,
+            VendorService service
+    ) {
+
+        if (
+                service.getBundleDiscountValue() == null ||
+                        service.getBundleDiscountType() == null
+        ) {
 
             return BigDecimal.ZERO;
         }
@@ -300,34 +583,84 @@ public class BundleCalculationServiceImpl
                 service.getBundleDiscountValue();
 
 
-        if (value.compareTo(BigDecimal.ZERO) <= 0) {
+        if (
+                value.compareTo(
+                        BigDecimal.ZERO
+                ) <= 0
+        ) {
 
             return BigDecimal.ZERO;
         }
 
 
-        if (service.getBundleDiscountType()
-                == DiscountType.PERCENTAGE) {
+        /*
+         * PERCENTAGE
+         */
 
-            return service.getPrice()
+        if (
+                service.getBundleDiscountType()
+                        == DiscountType.PERCENTAGE
+        ) {
+
+            return originalAmount
+
                     .multiply(value)
+
                     .divide(
                             BigDecimal.valueOf(100),
                             2,
                             RoundingMode.HALF_UP
                     );
+
         }
 
 
-        if (service.getBundleDiscountType()
-                == DiscountType.FIXED) {
+        /*
+         * FIXED
+         */
+
+        if (
+                service.getBundleDiscountType()
+                        == DiscountType.FIXED
+        ) {
 
             return value.min(
-                    service.getPrice()
+                    originalAmount
             );
+
         }
 
 
         return BigDecimal.ZERO;
     }
+
+
+    /*
+     * =========================================
+     * SAFE DECIMAL
+     * =========================================
+     */
+
+    private BigDecimal safe(
+            BigDecimal value
+    ) {
+
+        return value == null
+                ? BigDecimal.ZERO
+                : value;
+    }
+
+
+    /*
+     * =========================================
+     * INTERNAL CALCULATION LINE
+     * =========================================
+     */
+
+    private record BundleCalculationLine(
+            VendorService service,
+            ServicePackage selectedPackage
+    ) {
+    }
+
 }

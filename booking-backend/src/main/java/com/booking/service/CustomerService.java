@@ -11,4 +11,6 @@ public interface CustomerService {
     );
 
     List<VendorListingResponse> getVendorListings(String category);
+
+    List<VendorListingResponse> getFeaturedServices();
 }
