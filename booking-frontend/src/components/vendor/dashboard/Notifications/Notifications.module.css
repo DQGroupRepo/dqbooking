@@ -1,101 +1,314 @@
-.list{
-    display:flex;
-    flex-direction:column;
-    gap:16px;
+.notificationPanel {
+    width: 100%;
 }
 
-.item{
 
-    display:flex;
+/* =========================================================
+   HEADER
+========================================================= */
 
-    gap:14px;
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
 
-    align-items:flex-start;
+    gap: 12px;
 
-    padding:14px;
-
-    border-radius:14px;
-
-    transition:.25s;
+    margin-bottom: 14px;
 }
 
-.item:hover{
-
-    background:#f8fbff;
-
+.header > div {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
 }
 
-.icon{
+.header h3 {
+    margin: 0;
 
-    width:48px;
+    font-size: 14px;
+    font-weight: 700;
 
-    height:48px;
-
-    border-radius:14px;
-
-    display:flex;
-
-    align-items:center;
-
-    justify-content:center;
-
-    flex-shrink:0;
+    color: #1f2937;
 }
 
-.details{
-    flex:1;
+.header span {
+    font-size: 11px;
+
+    color: #9ca3af;
 }
 
-.message{
+.markAll {
+    border: none;
 
-    font-size:14px;
+    background: transparent;
 
-    font-weight:500;
+    color: #2563eb;
 
-    color:#334155;
+    font-size: 11px;
+    font-weight: 600;
 
-    line-height:1.5;
+    cursor: pointer;
+
+    padding: 4px 0;
 }
 
-.time{
-
-    display:block;
-
-    margin-top:6px;
-
-    font-size:12px;
-
-    color:#94a3b8;
+.markAll:hover {
+    text-decoration: underline;
 }
 
-.booking{
-    color:#2563eb;
+
+/* =========================================================
+   LIST
+========================================================= */
+
+.list {
+    display: flex;
+    flex-direction: column;
+
+    gap: 8px;
 }
 
-.payment{
-    color:#16a34a;
+
+/* =========================================================
+   ITEM
+========================================================= */
+
+.item {
+    width: 100%;
+
+    display: flex;
+    align-items: flex-start;
+
+    gap: 12px;
+
+    padding: 12px;
+
+    border: 1px solid #eef0f2;
+
+    border-radius: 10px;
+
+    background: #fff;
+
+    text-align: left;
+
+    cursor: pointer;
+
+    transition:
+        background 0.2s ease,
+        border-color 0.2s ease,
+        transform 0.2s ease,
+        box-shadow 0.2s ease;
 }
 
-.review{
-    color:#f59e0b;
+.item:hover {
+    background: #f8fafc;
+
+    border-color: #dbe3ea;
+
+    transform: translateY(-1px);
+
+    box-shadow:
+        0 5px 14px rgba(15, 23, 42, 0.06);
 }
 
-.cancelled{
-    color:#ef4444;
+
+/* =========================================================
+   UNREAD
+========================================================= */
+
+.unread {
+    background: #f5f9ff;
+
+    border-color: #dbeafe;
 }
 
-.bookingBg{
-    background:#DBEAFE;
+.unread:hover {
+    background: #eef5ff;
 }
 
-.paymentBg{
-    background:#DCFCE7;
+
+/* =========================================================
+   ICON
+========================================================= */
+
+.icon {
+    flex: 0 0 36px;
+
+    width: 36px;
+    height: 36px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 10px;
+
+    font-size: 15px;
 }
 
-.reviewBg{
-    background:#FEF3C7;
+.bookingBg {
+    background: #e0f2fe;
+    color: #0369a1;
 }
 
-.cancelledBg{
-    background:#FEE2E2;
+.paymentBg {
+    background: #ecfdf5;
+    color: #047857;
+}
+
+.reviewBg {
+    background: #fef3c7;
+    color: #b45309;
+}
+
+.cancelledBg {
+    background: #fef2f2;
+    color: #b91c1c;
+}
+
+.defaultBg {
+    background: #f3f4f6;
+    color: #4b5563;
+}
+
+
+/* =========================================================
+   DETAILS
+========================================================= */
+
+.details {
+    min-width: 0;
+
+    flex: 1;
+}
+
+.itemHeader {
+    display: flex;
+
+    align-items: center;
+
+    gap: 7px;
+}
+
+.itemHeader strong {
+    font-size: 13px;
+
+    font-weight: 700;
+
+    color: #1f2937;
+}
+
+.message {
+    margin: 4px 0 3px;
+
+    font-size: 12px;
+
+    line-height: 1.45;
+
+    color: #4b5563;
+}
+
+.time {
+    font-size: 10px;
+
+    color: #9ca3af;
+}
+
+
+/* =========================================================
+   UNREAD DOT
+========================================================= */
+
+.unreadDot {
+    width: 7px;
+    height: 7px;
+
+    flex: 0 0 7px;
+
+    border-radius: 50%;
+
+    background: #2563eb;
+}
+
+
+/* =========================================================
+   EMPTY
+========================================================= */
+
+.empty {
+    min-height: 160px;
+
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+
+    justify-content: center;
+
+    gap: 6px;
+
+    text-align: center;
+
+    color: #9ca3af;
+}
+
+.empty strong {
+    font-size: 13px;
+
+    color: #374151;
+}
+
+.empty span {
+    font-size: 11px;
+}
+
+.emptyIcon {
+    width: 42px;
+    height: 42px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    margin-bottom: 4px;
+
+    border-radius: 50%;
+
+    background: #f3f4f6;
+
+    color: #9ca3af;
+
+    font-size: 17px;
+}
+
+
+/* =========================================================
+   RESPONSIVE
+========================================================= */
+
+@media (max-width: 600px) {
+
+    .item {
+        padding: 10px;
+    }
+
+    .icon {
+        flex-basis: 32px;
+
+        width: 32px;
+        height: 32px;
+
+        font-size: 13px;
+    }
+
+    .itemHeader strong {
+        font-size: 12px;
+    }
+
+    .message {
+        font-size: 11px;
+    }
+
 }

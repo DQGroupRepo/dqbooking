@@ -5,26 +5,14 @@ import SearchBar from "../../components/search/SearchBar";
 import CategoryCard from "../../components/home/CategoryCard";
 import { categories } from "../../mocks/categories";
 import ServiceSection from "../../components/home/ServiceSection";
-import {
-    popularLocations,
-    testimonials
-} from "../../mocks/homeExtraData";
+import { popularLocations, testimonials } from "../../mocks/homeExtraData";
 
-import {
-    popularHalls,
-    bridalMakeup,
-    photographyServices,
-    videographyServices
-} from "../../mocks/homeServices";
+import { popularHalls, bridalMakeup,
+    photographyServices, videographyServices } from "../../mocks/homeServices";
 
-import {
-    useEffect,
-    useState
-} from "react";
+import { useEffect, useMemo, useState } from "react";
 
-import type {
-    FeaturedService
-} from "../../types/FeaturedService";
+import type { FeaturedService } from "../../types/FeaturedService";
 
 
 const Home = () => {
@@ -34,22 +22,19 @@ const Home = () => {
         setFeaturedServices
     ] = useState<FeaturedService[]>([]);
 
-    const featuredDisplayServices =
-            featuredServices.length === 0
-                ? []
-                : featuredServices.length === 1
-                    ? [
-                        featuredServices[0],
-                        featuredServices[0],
-                        featuredServices[0]
-                    ]
-                    : featuredServices.length === 2
-                        ? [
-                            featuredServices[0],
-                            featuredServices[1],
-                            featuredServices[0]
-                        ]
-                        : featuredServices.slice(0, 3);
+     /*
+         * =========================================
+         * FEATURED CAROUSEL POSITION
+         * =========================================
+         *
+         * Represents the first real service currently
+         * visible in the 3-card window.
+         */
+
+        const [
+            featuredStartIndex,
+            setFeaturedStartIndex
+        ] = useState(0);
     /*
      * =========================================
      * LOAD FEATURED SERVICES
@@ -103,6 +88,14 @@ const Home = () => {
             setFeaturedServices(
                 data
             );
+             /*
+             * Always start from the first service
+             * after loading.
+             */
+
+            setFeaturedStartIndex(
+                0
+            );
 
         }
         catch (error) {
@@ -117,9 +110,169 @@ const Home = () => {
                 []
             );
 
+            setFeaturedStartIndex(
+                0
+            );
+
         }
 
     }
+     /*
+         * =========================================
+         * DISPLAY SERVICES
+         * =========================================
+         *
+         * Less than 3:
+         *
+         * 1 service -> 1,1,1
+         *
+         * 2 services -> 1,2,1
+         *
+         * 3+ services -> actual carousel window
+         */
+
+        const featuredDisplayServices =
+            useMemo(
+                () => {
+
+                    if (
+                        featuredServices.length === 0
+                    ) {
+
+                        return [];
+
+                    }
+
+
+                    /*
+                     * One featured service.
+                     */
+
+                    if (
+                        featuredServices.length === 1
+                    ) {
+
+                        return [
+
+                            featuredServices[0],
+
+                            featuredServices[0],
+
+                            featuredServices[0]
+
+                        ];
+
+                    }
+
+
+                    /*
+                     * Two featured services.
+                     */
+
+                    if (
+                        featuredServices.length === 2
+                    ) {
+
+                        return [
+
+                            featuredServices[0],
+
+                            featuredServices[1],
+
+                            featuredServices[0]
+
+                        ];
+
+                    }
+
+
+                    /*
+                     * Three or more.
+                     *
+                     * Show three services beginning
+                     * at featuredStartIndex.
+                     */
+
+                    return featuredServices.slice(
+                        featuredStartIndex,
+                        featuredStartIndex + 3
+                    );
+
+                },
+                [
+                    featuredServices,
+                    featuredStartIndex
+                ]
+            );
+
+
+        /*
+         * =========================================
+         * CAROUSEL STATE
+         * =========================================
+         */
+
+        const canGoPrevious =
+            featuredServices.length > 3 &&
+            featuredStartIndex > 0;
+
+
+        const canGoNext =
+            featuredServices.length > 3 &&
+            featuredStartIndex <
+                featuredServices.length - 3;
+
+
+        /*
+         * =========================================
+         * PREVIOUS
+         * =========================================
+         */
+
+        function handlePreviousFeatured() {
+
+            if (!canGoPrevious) {
+
+                return;
+
+            }
+
+
+            setFeaturedStartIndex(
+                previous =>
+                    Math.max(
+                        0,
+                        previous - 1
+                    )
+            );
+
+        }
+
+
+        /*
+         * =========================================
+         * NEXT
+         * =========================================
+         */
+
+        function handleNextFeatured() {
+
+            if (!canGoNext) {
+
+                return;
+
+            }
+
+
+            setFeaturedStartIndex(
+                previous =>
+                    Math.min(
+                        featuredServices.length - 3,
+                        previous + 1
+                    )
+            );
+
+        }
 
 
     return (
@@ -226,28 +379,54 @@ const Home = () => {
 
                 <div className="container">
 
+
                     <div className="section-header">
 
-                        <h2>
-                            Featured Vendors
-                        </h2>
+                        <div>
 
-
-                        <div className="carousel-buttons">
-
-                            <button
-                                type="button"
-                            >
-                                ‹
-                            </button>
-
-                            <button
-                                type="button"
-                            >
-                                ›
-                            </button>
+                            <h2>
+                                Featured Vendors
+                            </h2>
 
                         </div>
+
+
+                        {
+                            featuredServices.length > 3 && (
+
+                                <div className="carousel-buttons">
+
+                                    <button
+                                        type="button"
+                                        onClick={
+                                            handlePreviousFeatured
+                                        }
+                                        disabled={
+                                            !canGoPrevious
+                                        }
+                                        aria-label="Previous featured vendors"
+                                    >
+                                        ‹
+                                    </button>
+
+
+                                    <button
+                                        type="button"
+                                        onClick={
+                                            handleNextFeatured
+                                        }
+                                        disabled={
+                                            !canGoNext
+                                        }
+                                        aria-label="Next featured vendors"
+                                    >
+                                        ›
+                                    </button>
+
+                                </div>
+
+                            )
+                        }
 
                     </div>
 
@@ -267,16 +446,28 @@ const Home = () => {
 
                             <div className="vendor-grid">
 
-                                {featuredDisplayServices.map(
-                                    (service, index) => (
+                                {
+                                    featuredDisplayServices.map(
+                                        (
+                                            service,
+                                            index
+                                        ) => (
 
-                                        <FeaturedVendorCard
-                                            key={`${service.serviceId}-${index}`}
-                                            service={service}
-                                        />
+                                            <FeaturedVendorCard
 
+                                                key={
+                                                    `${service.serviceId}-${index}`
+                                                }
+
+                                                service={
+                                                    service
+                                                }
+
+                                            />
+
+                                        )
                                     )
-                                )}
+                                }
 
                             </div>
 

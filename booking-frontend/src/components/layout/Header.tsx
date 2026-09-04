@@ -1,13 +1,45 @@
-import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import {
+    useEffect,
+    useRef,
+    useState
+} from "react";
 
-import { useAuth } from "../../context/AuthContext";
+import {
+    Link,
+    useNavigate
+} from "react-router-dom";
 
-import CartService from "../../services/CartService";
+import {
+    FaBell,
+    FaCalendarAlt,
+    FaChevronDown,
+    FaCheckCircle,
+    FaClock,
+    FaMapMarkerAlt,
+    FaQuestionCircle,
+    FaRupeeSign,
+    FaSearch,
+    FaShoppingCart,
+    FaStar,
+    FaTimesCircle,
+    FaUser,
+    FaStore,
+    FaSignOutAlt
+} from "react-icons/fa";
 
-import NotificationService from "../../services/NotificationService";
+import {
+    useAuth
+} from "../../context/AuthContext";
 
-import type { Notification } from "../../types/Notification";
+import CartService
+    from "../../services/CartService";
+
+import NotificationService
+    from "../../services/NotificationService";
+
+import type {
+    Notification
+} from "../../types/Notification";
 
 import "./Header.css";
 
@@ -19,6 +51,16 @@ const Header = () => {
         isAuthenticated,
         logout
     } = useAuth();
+
+    const navigate =
+        useNavigate();
+
+
+    /*
+     * =========================================
+     * NOTIFICATIONS
+     * =========================================
+     */
 
     const [
         notifications,
@@ -37,11 +79,14 @@ const Header = () => {
         setShowNotifications
     ] = useState(false);
 
-    const navigate = useNavigate();
+
+    const notificationRef =
+        useRef<HTMLDivElement>(null);
+
 
     /*
      * =========================================
-     * CART COUNT
+     * CART
      * =========================================
      */
 
@@ -51,6 +96,29 @@ const Header = () => {
     ] = useState(
         CartService.getItemCount()
     );
+
+
+    /*
+     * =========================================
+     * PROFILE
+     * =========================================
+     */
+
+    const [
+        showProfile,
+        setShowProfile
+    ] = useState(false);
+
+
+    const profileRef =
+        useRef<HTMLDivElement>(null);
+
+
+    /*
+     * =========================================
+     * LOAD NOTIFICATIONS
+     * =========================================
+     */
 
     useEffect(() => {
 
@@ -69,6 +137,7 @@ const Header = () => {
 
     }, [isAuthenticated]);
 
+
     async function loadHeaderNotifications() {
 
         try {
@@ -77,16 +146,28 @@ const Header = () => {
                 await NotificationService
                     .getNotifications();
 
+
+            /*
+             * Keep only the latest five
+             * inside the header dropdown.
+             */
+
             setNotifications(
                 data.slice(0, 5)
             );
 
+
+            /*
+             * Calculate unread count
+             * from the complete response.
+             */
 
             const count =
                 data.filter(
                     notification =>
                         !notification.read
                 ).length;
+
 
             setUnreadCount(
                 count
@@ -104,7 +185,14 @@ const Header = () => {
 
     }
 
-    async function handleHeaderNotificationClick(
+
+    /*
+     * =========================================
+     * NOTIFICATION CLICK
+     * =========================================
+     */
+
+    async function handleNotificationClick(
         notification: Notification
     ) {
 
@@ -116,6 +204,33 @@ const Header = () => {
                     .markAsRead(
                         notification.id
                     );
+
+
+                /*
+                 * Update local state immediately.
+                 */
+
+                setNotifications(
+                    current =>
+                        current.map(
+                            item =>
+                                item.id === notification.id
+                                    ? {
+                                        ...item,
+                                        read: true
+                                    }
+                                    : item
+                        )
+                );
+
+
+                setUnreadCount(
+                    current =>
+                        Math.max(
+                            0,
+                            current - 1
+                        )
+                );
 
             }
 
@@ -130,10 +245,14 @@ const Header = () => {
         }
 
 
-        setShowNotifications(
-            false
-        );
+        setShowNotifications(false);
 
+
+        /*
+         * =====================================
+         * BOOKING / CANCELLATION
+         * =====================================
+         */
 
         if (
             notification.referenceId &&
@@ -175,7 +294,54 @@ const Header = () => {
 
     /*
      * =========================================
-     * LISTEN FOR CART CHANGES
+     * MARK ALL AS READ
+     * =========================================
+     */
+
+    async function handleMarkAllAsRead() {
+
+        if (unreadCount === 0) {
+
+            return;
+
+        }
+
+
+        try {
+
+            await NotificationService
+                .markAllAsRead();
+
+
+            setNotifications(
+                current =>
+                    current.map(
+                        notification => ({
+                            ...notification,
+                            read: true
+                        })
+                    )
+            );
+
+
+            setUnreadCount(0);
+
+        }
+        catch (error) {
+
+            console.error(
+                "Failed to mark all notifications as read:",
+                error
+            );
+
+        }
+
+    }
+
+
+    /*
+     * =========================================
+     * CART CHANGES
      * =========================================
      */
 
@@ -190,21 +356,11 @@ const Header = () => {
         };
 
 
-        /*
-         * Update immediately when another
-         * component changes the cart.
-         */
-
         window.addEventListener(
             "cartUpdated",
             updateCartCount
         );
 
-
-        /*
-         * Also refresh when user returns
-         * to the browser/tab.
-         */
 
         window.addEventListener(
             "storage",
@@ -228,9 +384,83 @@ const Header = () => {
 
     }, []);
 
+
+    /*
+     * =========================================
+     * CLICK OUTSIDE
+     * =========================================
+     */
+
+    useEffect(() => {
+
+        function handleOutsideClick(
+            event: MouseEvent
+        ) {
+
+            const target =
+                event.target as Node;
+
+
+            if (
+                notificationRef.current &&
+                !notificationRef.current.contains(
+                    target
+                )
+            ) {
+
+                setShowNotifications(false);
+
+            }
+
+
+            if (
+                profileRef.current &&
+                !profileRef.current.contains(
+                    target
+                )
+            ) {
+
+                setShowProfile(false);
+
+            }
+
+        }
+
+
+        document.addEventListener(
+            "mousedown",
+            handleOutsideClick
+        );
+
+
+        return () => {
+
+            document.removeEventListener(
+                "mousedown",
+                handleOutsideClick
+            );
+
+        };
+
+    }, []);
+
+
+    /*
+     * =========================================
+     * NOTIFICATION TIME
+     * =========================================
+     */
+
     function formatNotificationTime(
-        createdAt: string
+        createdAt?: string
     ): string {
+
+        if (!createdAt) {
+
+            return "";
+
+        }
+
 
         const date =
             new Date(createdAt);
@@ -238,14 +468,17 @@ const Header = () => {
         const now =
             new Date();
 
+
         const diff =
             now.getTime() -
             date.getTime();
+
 
         const minutes =
             Math.floor(
                 diff / 60000
             );
+
 
         if (minutes < 1) {
 
@@ -253,16 +486,19 @@ const Header = () => {
 
         }
 
+
         if (minutes < 60) {
 
             return `${minutes} min ago`;
 
         }
 
+
         const hours =
             Math.floor(
                 minutes / 60
             );
+
 
         if (hours < 24) {
 
@@ -270,10 +506,12 @@ const Header = () => {
 
         }
 
+
         const days =
             Math.floor(
                 hours / 24
             );
+
 
         if (days === 1) {
 
@@ -281,11 +519,13 @@ const Header = () => {
 
         }
 
+
         if (days < 7) {
 
             return `${days} days ago`;
 
         }
+
 
         return date.toLocaleDateString(
             "en-IN"
@@ -294,31 +534,222 @@ const Header = () => {
     }
 
 
+    /*
+     * =========================================
+     * NOTIFICATION ICON
+     * =========================================
+     */
+
+    function getNotificationIcon(
+        type: Notification["type"]
+    ) {
+
+        switch (type) {
+
+            case "BOOKING":
+
+                return (
+                    <FaCalendarAlt />
+                );
+
+
+            case "PAYMENT":
+
+                return (
+                    <FaRupeeSign />
+                );
+
+
+            case "REVIEW":
+
+                return (
+                    <FaStar />
+                );
+
+
+            case "CANCELLED":
+
+                return (
+                    <FaTimesCircle />
+                );
+
+
+            case "SYSTEM":
+
+                return (
+                    <FaCheckCircle />
+                );
+
+
+            default:
+
+                return (
+                    <FaBell />
+                );
+
+        }
+
+    }
+
+
+    /*
+     * =========================================
+     * NOTIFICATION STYLE
+     * =========================================
+     */
+
+    function getNotificationTypeClass(
+        type: Notification["type"]
+    ) {
+
+        switch (type) {
+
+            case "BOOKING":
+                return "notification-type-booking";
+
+            case "PAYMENT":
+                return "notification-type-payment";
+
+            case "REVIEW":
+                return "notification-type-review";
+
+            case "CANCELLED":
+                return "notification-type-cancelled";
+
+            case "SYSTEM":
+                return "notification-type-system";
+
+            default:
+                return "";
+
+        }
+
+    }
+
+
+    /*
+     * =========================================
+     * AVATAR
+     * =========================================
+     */
+
+    const userName =
+        user?.name || "User";
+
+
+    const avatar =
+        userName
+            .split(" ")
+            .filter(Boolean)
+            .map(
+                word =>
+                    word[0]
+            )
+            .join("")
+            .substring(0, 2)
+            .toUpperCase();
+
+
+    /*
+     * =========================================
+     * LOGOUT
+     * =========================================
+     */
+
+    function handleLogout() {
+
+        setShowProfile(false);
+
+        logout();
+
+        navigate("/");
+
+    }
+
+
     return (
 
-        <>
-
-            <div className="top-bar">
-
-                <div className="container top-container">
+        <header className="eventnest-header">
 
 
-                    <div className="top-location">
+            {/* =====================================================
+                TOP UTILITY BAR
+            ===================================================== */}
 
-                        🇮🇳 India ▼
+            <div className="header-utility">
 
-                        &nbsp;&nbsp;
+                <div className="header-container utility-container">
 
-                        ₹ INR ▼
+
+                    {/* LOCATION / CURRENCY */}
+
+                    <div className="utility-left">
+
+                        <button
+                            type="button"
+                            className="utility-selector"
+                        >
+
+                            <FaMapMarkerAlt />
+
+                            <span>
+                                India
+                            </span>
+
+                            <FaChevronDown />
+
+                        </button>
+
+
+                        <span className="utility-divider" />
+
+
+                        <button
+                            type="button"
+                            className="utility-selector"
+                        >
+
+                            <FaRupeeSign />
+
+                            <span>
+                                INR
+                            </span>
+
+                            <FaChevronDown />
+
+                        </button>
 
                     </div>
 
 
-                    <div className="header-actions">
+                    {/* CENTER TAGLINE */}
+
+                    <div className="utility-tagline">
+
+                        <span />
+
+                        <em>
+                            Celebrate Life's Special Moments
+                        </em>
+
+                        <span />
+
+                    </div>
 
 
-                        <Link to="/help">
+                    {/* RIGHT */}
+
+                    <div className="utility-right">
+
+                        <Link
+                            to="/help"
+                            className="utility-link"
+                        >
+
+                            <FaQuestionCircle />
+
                             Help
+
                         </Link>
 
 
@@ -326,362 +757,40 @@ const Header = () => {
 
                             <>
 
-                                {/* =================================
-                                    CART
-                                ================================= */}
+                                <span className="utility-divider" />
 
-                                <button
-                                    type="button"
-                                    className="header-cart-button"
-                                    onClick={() =>
-                                        navigate("/cart")
-                                    }
-                                    title="View Cart"
-                                >
-
-                                    <span className="header-cart-icon">
-                                        🛒
-                                    </span>
-
-                                    <span>
-                                        Cart
-                                    </span>
-
-                                    <span className="header-cart-badge">
-                                        {cartCount}
-                                    </span>
-
-                                </button>
-
-
-                                {/* =================================
-                                    NOTIFICATIONS
-                                ================================= */}
-
-                                <div className="notification-wrapper">
-
-                                    <button
-                                        type="button"
-                                        className="notification-btn"
-                                        title="Notifications"
-                                        onClick={() =>
-                                            setShowNotifications(
-                                                current => !current
-                                            )
-                                        }
-                                    >
-
-                                        <span className="notification-icon">
-                                            🔔
-                                        </span>
-
-                                        {
-                                            unreadCount > 0 && (
-
-                                                <span className="notification-badge">
-                                                    {
-                                                        unreadCount > 9
-                                                            ? "9+"
-                                                            : unreadCount
-                                                    }
-                                                </span>
-
-                                            )
-                                        }
-
-                                    </button>
-
-
-                                    {
-                                        showNotifications && (
-
-                                            <div
-                                                className="notification-dropdown"
-                                                onClick={e =>
-                                                    e.stopPropagation()
-                                                }
-                                            >
-
-                                                {/* =========================
-                                                    HEADER
-                                                ========================= */}
-
-                                                <div className="notification-dropdown-header">
-
-                                                    <div>
-
-                                                        <h3>
-                                                            Notifications
-                                                        </h3>
-
-                                                        <span>
-                                                            {
-                                                                unreadCount
-                                                            } unread
-                                                        </span>
-
-                                                    </div>
-
-
-                                                    {
-                                                        unreadCount > 0 && (
-
-                                                            <button
-                                                                type="button"
-                                                                className="notification-mark-all"
-                                                                onClick={async () => {
-
-                                                                    await NotificationService
-                                                                        .markAllAsRead();
-
-                                                                    await loadHeaderNotifications();
-
-                                                                }}
-                                                            >
-                                                                Mark all as read
-                                                            </button>
-
-                                                        )
-                                                    }
-
-                                                </div>
-
-
-                                                {/* =========================
-                                                    NOTIFICATION LIST
-                                                ========================= */}
-
-                                                <div className="notification-list">
-
-                                                    {
-                                                        notifications.length === 0 ? (
-
-                                                            <div className="notification-empty">
-
-                                                                <div className="notification-empty-icon">
-                                                                    🔔
-                                                                </div>
-
-                                                                <strong>
-                                                                    You're all caught up
-                                                                </strong>
-
-                                                                <span>
-                                                                    No new notifications.
-                                                                </span>
-
-                                                            </div>
-
-                                                        ) : (
-
-                                                            notifications.map(
-                                                                notification => (
-
-                                                                    <button
-                                                                        type="button"
-
-                                                                        key={
-                                                                            notification.id
-                                                                        }
-
-                                                                        className={
-                                                                            `notification-item ${
-                                                                                !notification.read
-                                                                                    ? "unread"
-                                                                                    : ""
-                                                                            }`
-                                                                        }
-
-                                                                        onClick={() =>
-                                                                            handleHeaderNotificationClick(
-                                                                                notification
-                                                                            )
-                                                                        }
-                                                                    >
-
-                                                                        <div className="notification-item-icon">
-
-                                                                            {
-                                                                                notification.type ===
-                                                                                    "BOOKING"
-                                                                                    ? "📅"
-                                                                                    : notification.type ===
-                                                                                        "PAYMENT"
-                                                                                        ? "₹"
-                                                                                        : notification.type ===
-                                                                                            "REVIEW"
-                                                                                            ? "⭐"
-                                                                                            : notification.type ===
-                                                                                                "CANCELLED"
-                                                                                                ? "⚠️"
-                                                                                                : "🔔"
-                                                                            }
-
-                                                                        </div>
-
-
-                                                                        <div className="notification-item-content">
-
-                                                                            <div className="notification-item-top">
-
-                                                                                <strong>
-                                                                                    {
-                                                                                        notification.title
-                                                                                    }
-                                                                                </strong>
-
-                                                                                {
-                                                                                    !notification.read && (
-
-                                                                                        <span className="notification-unread-dot" />
-
-                                                                                    )
-                                                                                }
-
-                                                                            </div>
-
-
-                                                                            <p>
-                                                                                {
-                                                                                    notification.message
-                                                                                }
-                                                                            </p>
-
-
-                                                                            {
-                                                                                notification.createdAt && (
-
-                                                                                    <span className="notification-item-time">
-
-                                                                                        {
-                                                                                            formatNotificationTime(
-                                                                                                notification.createdAt
-                                                                                            )
-                                                                                        }
-
-                                                                                    </span>
-
-                                                                                )
-                                                                            }
-
-                                                                        </div>
-
-                                                                    </button>
-
-                                                                )
-                                                            )
-
-                                                        )
-                                                    }
-
-                                                </div>
-
-
-                                                {/* =========================
-                                                    FOOTER
-                                                ========================= */}
-
-                                                {
-                                                    notifications.length > 0 && (
-
-                                                        <div className="notification-dropdown-footer">
-
-                                                            <button
-                                                                type="button"
-                                                                onClick={() =>
-                                                                    setShowNotifications(
-                                                                        false
-                                                                    )
-                                                                }
-                                                            >
-                                                                Close
-                                                            </button>
-
-                                                        </div>
-
-                                                    )
-                                                }
-
-                                            </div>
-
-                                        )
-                                    }
-
-                                </div>
-
-
-                                {/* =================================
-                                    USER PROFILE
-                                ================================= */}
-
-                                <div className="user-profile">
-
-                                    <span className="user-avatar">
-                                        👤
-                                    </span>
-
-
-                                    <div className="user-details">
-
-                                        <span className="user-name">
-                                            {user.name || "User"}
-                                        </span>
-
-
-                                        <span className="user-role">
-                                            {user.role}
-                                        </span>
-
-                                    </div>
-
-                                </div>
-
-
-                                {/* =================================
-                                    VENDOR DASHBOARD
-                                ================================= */}
 
                                 {user.role === "VENDOR" && (
 
                                     <Link
-                                        to="/vendor/dashboard"
-                                        className="header-dashboard-link"
+                                        to="/vendor/create-listing"
+                                        className="utility-link"
                                     >
-                                        Dashboard
+
+                                        <FaStore />
+
+                                        List Your Service
+
                                     </Link>
 
                                 )}
 
 
-                                {/* =================================
-                                    ADMIN DASHBOARD
-                                ================================= */}
-
-                                {user.role === "ADMIN" && (
+                                {user.role !== "VENDOR" && (
 
                                     <Link
-                                        to="/admin/dashboard"
-                                        className="header-dashboard-link"
+                                        to="/register"
+                                        className="utility-link"
                                     >
-                                        Dashboard
+
+                                        <FaStore />
+
+                                        List Your Service
+
                                     </Link>
 
                                 )}
 
-
-                                {/* =================================
-                                    LOGOUT
-                                ================================= */}
-
-                                <button
-                                    className="logout-btn"
-                                    onClick={() => {
-                                        logout();
-                                        navigate("/");
-                                    }}
-                                >
-                                    Logout
-                                </button>
 
                             </>
 
@@ -689,24 +798,17 @@ const Header = () => {
 
                             <>
 
-                                <Link to="/login">
-
-                                    <button
-                                        className="login-btn"
-                                    >
-                                        Login
-                                    </button>
-
-                                </Link>
+                                <span className="utility-divider" />
 
 
-                                <Link to="/register">
+                                <Link
+                                    to="/register"
+                                    className="utility-link"
+                                >
 
-                                    <button
-                                        className="register-btn"
-                                    >
-                                        Register
-                                    </button>
+                                    <FaStore />
+
+                                    List Your Service
 
                                 </Link>
 
@@ -721,64 +823,713 @@ const Header = () => {
             </div>
 
 
-            {/* =========================================
+            {/* =====================================================
                 MAIN HEADER
-            ========================================= */}
+            ===================================================== */}
 
-            <header className="main-header">
+            <div className="header-main">
 
-                <div className="container header-container">
+                <div className="header-container main-header-container">
 
+
+                    {/* BRAND */}
 
                     <Link
                         to="/"
-                        className="logo"
+                        className="eventnest-brand"
                     >
 
-                        🎉 EventNest
+                        <div className="brand-icon">
+                            🎉
+                        </div>
+
+                        <div className="brand-content">
+
+                            <span className="brand-name">
+                                EventNest
+                            </span>
+
+                            <span className="brand-tagline">
+                                Plan&nbsp; | &nbsp;Book&nbsp; | &nbsp;Celebrate
+                            </span>
+
+                        </div>
 
                     </Link>
 
 
-                    <nav className="desktop-menu">
+                    {/* SEARCH */}
+
+                    <div className="header-search">
+
+                        <div className="search-field search-keyword">
+
+                            <FaSearch />
+
+                            <input
+                                type="text"
+                                placeholder="Search venues, photographers, makeup artists..."
+                            />
+
+                        </div>
 
 
-                        <Link to="/">
-                            Home
-                        </Link>
+                        <div className="search-separator" />
 
 
-                        <Link to="/categories?category=HALL">
-                            Halls
-                        </Link>
+                        <div className="search-field search-location">
+
+                            <FaMapMarkerAlt />
+
+                            <span>
+                                Trivandrum
+                            </span>
+
+                            <FaChevronDown
+                                className="search-chevron"
+                            />
+
+                        </div>
 
 
-                        <Link to="/categories?category=PHOTOGRAPHY">
-                            Photography
-                        </Link>
+                        <div className="search-separator" />
 
 
-                        <Link to="/categories?category=MAKEUP">
-                            Makeup
-                        </Link>
+                        <div className="search-field search-date">
+
+                            <FaCalendarAlt />
+
+                            <span>
+                                Event Date
+                            </span>
+
+                            <FaChevronDown
+                                className="search-chevron"
+                            />
+
+                        </div>
 
 
-                        {user?.role === "CUSTOMER" && (
+                        <button
+                            type="button"
+                            className="header-search-button"
+                        >
 
-                            <Link to="/customer/bookings">
-                                My Bookings
-                            </Link>
+                            Search
+
+                        </button>
+
+                    </div>
+
+
+                    {/* ACTIONS */}
+
+                    <div className="header-main-actions">
+
+
+                        {/* CART */}
+
+                        {isAuthenticated && user && (
+
+                            <button
+                                type="button"
+                                className="header-action-button cart-action"
+                                onClick={() =>
+                                    navigate("/cart")
+                                }
+                                title="Cart"
+                            >
+
+                                <FaShoppingCart />
+
+                                {
+                                    cartCount > 0 && (
+
+                                        <span className="action-badge cart-badge">
+
+                                            {
+                                                cartCount > 99
+                                                    ? "99+"
+                                                    : cartCount
+                                            }
+
+                                        </span>
+
+                                    )
+                                }
+
+                            </button>
 
                         )}
 
-                    </nav>
 
+                        {/* NOTIFICATIONS */}
+
+                        {isAuthenticated && user && (
+
+                            <div
+                                className="notification-wrapper"
+                                ref={notificationRef}
+                            >
+
+                                <button
+                                    type="button"
+                                    className={`header-action-button notification-action ${
+                                        showNotifications
+                                            ? "action-active"
+                                            : ""
+                                    }`}
+                                    onClick={() =>
+                                        setShowNotifications(
+                                            current =>
+                                                !current
+                                        )
+                                    }
+                                    title="Notifications"
+                                >
+
+                                    <FaBell />
+
+
+                                    {
+                                        unreadCount > 0 && (
+
+                                            <span className="action-badge notification-badge">
+
+                                                {
+                                                    unreadCount > 9
+                                                        ? "9+"
+                                                        : unreadCount
+                                                }
+
+                                            </span>
+
+                                        )
+                                    }
+
+                                </button>
+
+
+                                {/* =================================
+                                    NOTIFICATION POPUP
+                                ================================= */}
+
+                                {
+                                    showNotifications && (
+
+                                        <div className="notification-dropdown">
+
+
+                                            {/* HEADER */}
+
+                                            <div className="notification-dropdown-header">
+
+                                                <div>
+
+                                                    <h3>
+                                                        Notifications
+                                                    </h3>
+
+                                                    <span>
+                                                        {
+                                                            unreadCount > 0
+                                                                ? `${unreadCount} unread notification${unreadCount === 1 ? "" : "s"}`
+                                                                : "You're all caught up"
+                                                        }
+                                                    </span>
+
+                                                </div>
+
+
+                                                {
+                                                    unreadCount > 0 && (
+
+                                                        <button
+                                                            type="button"
+                                                            className="mark-all-button"
+                                                            onClick={
+                                                                handleMarkAllAsRead
+                                                            }
+                                                        >
+
+                                                            Mark all as read
+
+                                                        </button>
+
+                                                    )
+                                                }
+
+                                            </div>
+
+
+                                            {/* LIST */}
+
+                                            <div className="notification-list">
+
+                                                {
+                                                    notifications.length === 0 ? (
+
+                                                        <div className="notification-empty">
+
+                                                            <div className="empty-notification-icon">
+
+                                                                <FaBell />
+
+                                                            </div>
+
+                                                            <strong>
+                                                                You're all caught up
+                                                            </strong>
+
+                                                            <span>
+                                                                No notifications to show right now.
+                                                            </span>
+
+                                                        </div>
+
+                                                    ) : (
+
+                                                        notifications.map(
+                                                            notification => (
+
+                                                                <button
+                                                                    type="button"
+
+                                                                    key={
+                                                                        notification.id
+                                                                    }
+
+                                                                    className={`notification-item ${
+                                                                        !notification.read
+                                                                            ? "notification-unread"
+                                                                            : ""
+                                                                    }`}
+
+                                                                    onClick={() =>
+                                                                        handleNotificationClick(
+                                                                            notification
+                                                                        )
+                                                                    }
+                                                                >
+
+
+                                                                    <div
+                                                                        className={`notification-icon ${
+                                                                            getNotificationTypeClass(
+                                                                                notification.type
+                                                                            )
+                                                                        }`}
+                                                                    >
+
+                                                                        {
+                                                                            getNotificationIcon(
+                                                                                notification.type
+                                                                            )
+                                                                        }
+
+                                                                    </div>
+
+
+                                                                    <div className="notification-content">
+
+                                                                        <div className="notification-title-row">
+
+                                                                            <strong>
+                                                                                {
+                                                                                    notification.title
+                                                                                }
+                                                                            </strong>
+
+
+                                                                            {
+                                                                                !notification.read && (
+
+                                                                                    <span className="unread-dot" />
+
+                                                                                )
+                                                                            }
+
+                                                                        </div>
+
+
+                                                                        <p>
+                                                                            {
+                                                                                notification.message
+                                                                            }
+                                                                        </p>
+
+
+                                                                        {
+                                                                            notification.createdAt && (
+
+                                                                                <span className="notification-time">
+
+                                                                                    <FaClock />
+
+                                                                                    {
+                                                                                        formatNotificationTime(
+                                                                                            notification.createdAt
+                                                                                        )
+                                                                                    }
+
+                                                                                </span>
+
+                                                                            )
+                                                                        }
+
+                                                                    </div>
+
+
+                                                                    <span className="notification-arrow">
+                                                                        →
+                                                                    </span>
+
+                                                                </button>
+
+                                                            )
+                                                        )
+
+                                                    )
+                                                }
+
+                                            </div>
+
+
+                                            {/* FOOTER */}
+
+                                            {
+                                                notifications.length > 0 && (
+
+                                                    <div className="notification-footer">
+
+                                                        <button
+                                                            type="button"
+                                                            onClick={() =>
+                                                                setShowNotifications(
+                                                                    false
+                                                                )
+                                                            }
+                                                        >
+
+                                                            Close
+
+                                                        </button>
+
+                                                    </div>
+
+                                                )
+                                            }
+
+                                        </div>
+
+                                    )
+                                }
+
+                            </div>
+
+                        )}
+
+
+                        {/* USER */}
+
+                        {isAuthenticated && user ? (
+
+                            <div
+                                className="profile-wrapper"
+                                ref={profileRef}
+                            >
+
+                                <button
+                                    type="button"
+                                    className={`header-profile ${
+                                        showProfile
+                                            ? "profile-active"
+                                            : ""
+                                    }`}
+                                    onClick={() =>
+                                        setShowProfile(
+                                            current =>
+                                                !current
+                                        )
+                                    }
+                                >
+
+                                    <div className="profile-avatar">
+
+                                        {
+                                            avatar
+                                        }
+
+                                    </div>
+
+
+                                    <div className="profile-text">
+
+                                        <strong>
+                                            {
+                                                user.name ||
+                                                "User"
+                                            }
+                                        </strong>
+
+                                        <span>
+                                            {
+                                                user.role
+                                            }
+                                        </span>
+
+                                    </div>
+
+
+                                    <FaChevronDown
+                                        className={
+                                            showProfile
+                                                ? "profile-chevron-open"
+                                                : ""
+                                        }
+                                    />
+
+                                </button>
+
+
+                                {
+                                    showProfile && (
+
+                                        <div className="profile-dropdown">
+
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    setShowProfile(
+                                                        false
+                                                    )
+                                                }
+                                            >
+
+                                                <FaUser />
+
+                                                <div>
+
+                                                    <strong>
+                                                        My Profile
+                                                    </strong>
+
+                                                    <span>
+                                                        View your account
+                                                    </span>
+
+                                                </div>
+
+                                            </button>
+
+
+                                            <div className="profile-divider" />
+
+
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    setShowProfile(
+                                                        false
+                                                    )
+                                                }
+                                            >
+
+                                                <FaUser />
+
+                                                <div>
+
+                                                    <strong>
+                                                        Account
+                                                    </strong>
+
+                                                    <span>
+                                                        Manage your account
+                                                    </span>
+
+                                                </div>
+
+                                            </button>
+
+
+                                            <div className="profile-divider" />
+
+
+                                            <button
+                                                type="button"
+                                                className="profile-logout"
+                                                onClick={
+                                                    handleLogout
+                                                }
+                                            >
+
+                                                <FaSignOutAlt />
+
+                                                <div>
+
+                                                    <strong>
+                                                        Sign Out
+                                                    </strong>
+
+                                                    <span>
+                                                        Logout from EventNest
+                                                    </span>
+
+                                                </div>
+
+                                            </button>
+
+                                        </div>
+
+                                    )
+                                }
+
+                            </div>
+
+                        ) : (
+
+                            <div className="guest-actions">
+
+                                <Link
+                                    to="/login"
+                                    className="header-login"
+                                >
+                                    Login
+                                </Link>
+
+                                <Link
+                                    to="/register"
+                                    className="header-register"
+                                >
+                                    Register
+                                </Link>
+
+                            </div>
+
+                        )}
+
+
+                        {/* DASHBOARD */}
+
+                        {isAuthenticated &&
+                            user?.role === "VENDOR" && (
+
+                                <Link
+                                    to="/vendor/dashboard"
+                                    className="header-dashboard"
+                                >
+                                    Dashboard
+                                </Link>
+
+                            )
+                        }
+
+
+                        {isAuthenticated &&
+                            user?.role === "ADMIN" && (
+
+                                <Link
+                                    to="/admin/dashboard"
+                                    className="header-dashboard"
+                                >
+                                    Dashboard
+                                </Link>
+
+                            )
+                        }
+
+                    </div>
 
                 </div>
 
-            </header>
+            </div>
 
-        </>
+
+            {/* =====================================================
+                NAVIGATION
+            ===================================================== */}
+
+            <nav className="header-navigation">
+
+                <div className="header-container navigation-container">
+
+
+                    <Link
+                        to="/"
+                        className="navigation-link active"
+                    >
+                        Home
+                    </Link>
+
+
+                    <Link
+                        to="/categories?category=HALL"
+                        className="navigation-link"
+                    >
+                        Venues
+                    </Link>
+
+
+                    <Link
+                        to="/categories?category=PHOTOGRAPHY"
+                        className="navigation-link"
+                    >
+                        Photography
+                    </Link>
+
+
+                    <Link
+                        to="/categories?category=MAKEUP"
+                        className="navigation-link"
+                    >
+                        Makeup
+                    </Link>
+
+
+                    <Link
+                        to="/categories?category=CATERING"
+                        className="navigation-link"
+                    >
+                        Catering
+                    </Link>
+
+
+                    <Link
+                        to="/categories?category=DECORATION"
+                        className="navigation-link"
+                    >
+                        Decor
+                    </Link>
+
+
+                    <button
+                        type="button"
+                        className="navigation-more"
+                    >
+
+                        More
+
+                        <FaChevronDown />
+
+                    </button>
+
+
+                    {user?.role === "CUSTOMER" && (
+
+                        <Link
+                            to="/customer/bookings"
+                            className="navigation-bookings"
+                        >
+                            My Bookings
+                        </Link>
+
+                    )}
+
+                </div>
+
+            </nav>
+
+        </header>
 
     );
 

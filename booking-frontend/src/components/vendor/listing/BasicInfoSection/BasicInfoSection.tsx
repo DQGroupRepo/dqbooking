@@ -63,7 +63,7 @@ export default function BasicInfoSection({
 
                 value={formData.serviceName}
 
-                placeholder="Royal Palace Convention Hall"
+                /* placeholder="Royal Palace Convention Hall" */
 
                 onChange={handleChange}
 
@@ -77,7 +77,7 @@ export default function BasicInfoSection({
 
                 value={formData.location}
 
-                placeholder="Chennai, Tamil Nadu"
+                /* placeholder="1Chennai, Tamil Nadu" */
 
                 onChange={handleChange}
 
@@ -95,7 +95,7 @@ export default function BasicInfoSection({
 
                     value={formData.price}
 
-                    placeholder="45000"
+                    /* placeholder="45000" */
 
                     onChange={handleChange}
 
@@ -111,7 +111,7 @@ export default function BasicInfoSection({
 
                     value={formData.capacity}
 
-                    placeholder="500"
+                    /* placeholder="500" */
 
                     onChange={handleChange}
 
@@ -122,7 +122,7 @@ export default function BasicInfoSection({
                     type="number"
                     label="Duration (Hours)"
                     value={formData.durationHours}
-                    placeholder="8"
+                    /* placeholder="8" */
                     onChange={handleChange}
                 />
 
