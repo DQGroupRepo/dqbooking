@@ -1,38 +1,84 @@
-export interface VendorPricingHead{
+export interface VendorPricingHead {
 
-    code:string;
+    code: string;
 
-    name:string;
+    name: string;
 
-    calculationType:string;
+    calculationType:
+        | "FIXED"
+        | "PERCENTAGE";
 
-    value:number;
+    value: number;
+
+    displayOrder?: number;
+
+    active?: boolean;
+}
+
+
+export interface VendorDiscount {
+
+    name: string;
+
+    discountType:
+        | "FIXED"
+        | "PERCENTAGE";
+
+    value: number;
+
+    active?: boolean;
+}
+
+
+export interface PaymentConfiguration {
+
+    advancePaymentAllowed: boolean;
+
+    advancePercentage: number;
+}
+
+
+export interface RefundRule {
+
+    minDaysBeforeEvent: number;
+
+    maxDaysBeforeEvent:
+        | number
+        | null;
+
+    refundPercentage: number;
+}
+
+
+export interface CancellationPolicy {
+
+    processingDays?: number;
+
+    refundRules: RefundRule[];
 
 }
 
-export interface VendorDiscount{
 
-    name:string;
+export interface VendorServicePricing {
 
-    discountType:string;
+    id?: string;
 
-    value:number;
+    serviceId: string;
+
+    version?: number;
+
+    effectiveFrom: string;
+
+    effectiveUntil?: string;
+
+    baseAmount: number;
+
+    pricingHeads: VendorPricingHead[];
+
+    discounts: VendorDiscount[];
+
+    paymentConfiguration: PaymentConfiguration;
+
+    cancellationPolicy: CancellationPolicy;
 
 }
-
-export interface VendorServicePricing{
-
-    id:string;
-
-    serviceId:string;
-
-    version:number;
-
-    baseAmount:number;
-
-    pricingHeads:VendorPricingHead[];
-
-    discounts:VendorDiscount[];
-
-}
-

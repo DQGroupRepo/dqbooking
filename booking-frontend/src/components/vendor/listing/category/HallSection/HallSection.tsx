@@ -48,6 +48,16 @@ const facilities = [
     {
         label: "Bridal Room",
         value: "bridalRoom"
+    },
+
+    {
+        label: "Audio-Visual (AV) Systems",
+        value: "audioVisual"
+    },
+
+    {
+        label: "Lighting Infrastructure",
+        value: "lightingInfra"
     }
 
 ];

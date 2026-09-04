@@ -129,7 +129,7 @@
 
 .categories-section {
 
-    padding: 80px 0;
+    padding: 45px 0 50px;
 
     background: #fff;
 }
@@ -381,4 +381,102 @@
     font-weight:600;
 
     cursor:pointer;
+}
+
+/* =========================================================
+   FEATURED VENDOR CAROUSEL
+========================================================= */
+
+.carousel-buttons {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+
+.carousel-buttons button {
+
+    width: 40px;
+
+    height: 40px;
+
+    border-radius: 50%;
+
+    border: none;
+
+    background: var(--primary);
+
+    color: white;
+
+    font-size: 24px;
+
+    cursor: pointer;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    transition:
+        opacity 0.2s ease,
+        transform 0.2s ease;
+
+}
+
+
+.carousel-buttons button:hover:not(:disabled) {
+
+    transform: translateY(-1px);
+
+}
+
+
+.carousel-buttons button:disabled {
+
+    opacity: 0.35;
+
+    cursor: not-allowed;
+
+    transform: none;
+
+}
+
+
+/* =========================================================
+   FEATURED GRID
+========================================================= */
+
+.vendor-grid {
+
+    display: grid;
+
+    grid-template-columns:
+        repeat(3, minmax(0, 1fr));
+
+    gap: 20px;
+
+}
+
+
+@media (max-width: 1000px) {
+
+    .vendor-grid {
+
+        grid-template-columns:
+            repeat(2, minmax(0, 1fr));
+
+    }
+
+}
+
+
+@media (max-width: 650px) {
+
+    .vendor-grid {
+
+        grid-template-columns: 1fr;
+
+    }
+
 }

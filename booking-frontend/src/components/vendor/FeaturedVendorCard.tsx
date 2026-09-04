@@ -87,9 +87,11 @@ export default function FeaturedVendorCard({
 
                 <Link
                     to={`/vendor/${service.serviceId}`}
+                    className="featured-details-link"
                 >
                     <button
                         type="button"
+                        className="featured-details-button"
                     >
                         View Details
                     </button>

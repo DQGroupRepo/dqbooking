@@ -1,15 +1,109 @@
-import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import {
+    useEffect,
+    useState
+} from "react";
 
-import type { ServicePackage, ServicePackageType } from "../../../types/ServicePackage";
-import VendorPricingService from "../../../services/VendorPricingService";
-import toast from "react-hot-toast";
-import type { VendorServicePricing, VendorPricingHead, VendorDiscount } from "../../../types/VendorPricing";
-import VendorServiceService from "../../../services/VendorServiceService";
+import {
+    useNavigate,
+    useParams
+} from "react-router-dom";
+
+import type {
+    ServicePackage,
+    ServicePackageType
+} from "../../../types/ServicePackage";
+
+import VendorPricingService
+    from "../../../services/VendorPricingService";
+
+import VendorServiceService
+    from "../../../services/VendorServiceService";
+
+import toast
+    from "react-hot-toast";
+
+import type {
+    VendorServicePricing,
+    VendorPricingHead,
+    VendorDiscount,
+    RefundRule
+} from "../../../types/VendorPricing";
 
 import "./VendorPricing.css";
 
-const emptyPricing: VendorServicePricing = {
+
+/*
+ * =========================================================
+ * PACKAGE CONFIGURATION
+ * =========================================================
+ */
+
+const PACKAGE_TYPES:
+    ServicePackageType[] = [
+
+    "SILVER",
+    "GOLD",
+    "PREMIUM"
+
+];
+
+
+const PACKAGE_LABELS:
+    Record<ServicePackageType, string> = {
+
+    SILVER: "Silver",
+
+    GOLD: "Gold",
+
+    PREMIUM: "Premium"
+
+};
+
+
+const PACKAGE_SUBTITLES:
+    Record<ServicePackageType, string> = {
+
+    SILVER:
+        "Basic Package",
+
+    GOLD:
+        "Most Popular",
+
+    PREMIUM:
+        "Complete Experience"
+
+};
+
+
+const PACKAGE_ORDER:
+    Record<ServicePackageType, number> = {
+
+    SILVER: 1,
+
+    GOLD: 2,
+
+    PREMIUM: 3
+
+};
+
+
+/*
+ * =========================================================
+ * EMPTY PRICING
+ * =========================================================
+ *
+ * No cancellation/refund rules are predefined.
+ *
+ * The vendor creates their own rules.
+ */
+
+ const emptyCancellationPolicy = {
+     processingDays: 0,
+     refundRules: []
+ };
+
+const emptyPricing:
+    VendorServicePricing = {
 
     serviceId: "",
 
@@ -33,300 +127,509 @@ const emptyPricing: VendorServicePricing = {
 
     cancellationPolicy: {
 
-        refundPercentage: 0,
+        processingDays: 0,
 
-        cancelBeforeDays: 0
+        refundRules: []
 
     }
 
 };
 
+
+
+
+/*
+ * =========================================================
+ * COMPONENT
+ * =========================================================
+ */
+
 const VendorPricing = () => {
 
-    const { serviceId } = useParams();
+    const {
+        serviceId
+    } = useParams();
 
-    const navigate = useNavigate();
 
-    const [loading, setLoading] = useState(true);
+    const navigate =
+        useNavigate();
 
-    const [saving, setSaving] = useState(false);
 
-    const [pricing, setPricing] =
-        useState<VendorServicePricing>(emptyPricing);
+    const [
+        loading,
+        setLoading
+    ] = useState(true);
 
-    const [ packages, setPackages ] = useState<ServicePackage[]>([]);
+
+    const [
+        saving,
+        setSaving
+    ] = useState(false);
+
+
+    const [
+        pricing,
+        setPricing
+    ] =
+        useState<VendorServicePricing>(
+            emptyPricing
+        );
+
+
+    const [
+        packages,
+        setPackages
+    ] =
+        useState<ServicePackage[]>([]);
+
+
+    /*
+     * =========================================================
+     * LOAD PRICING + PACKAGES
+     * =========================================================
+     */
 
     useEffect(() => {
+
         if (!serviceId) {
 
             return;
 
         }
 
+
         loadPricing();
 
-    }, [serviceId]);
+    }, [
+        serviceId
+    ]);
 
-    updateServicePackages: async (
-        serviceId: string,
-        packages: ServicePackage[]
-    ) => {
-
-        const response =
-            await api.put(
-                `/vendor/services/${serviceId}/packages`,
-                {
-                    packages
-                }
-            );
-
-        return response.data;
-    }
 
     async function loadPricing() {
+
         try {
 
-            setLoading(true);
+            setLoading(
+                true
+            );
+
+
+            /*
+             * Load pricing configuration.
+             */
 
             const response =
-                await VendorPricingService.getPricing(serviceId!);
+                await VendorPricingService
+                    .getPricing(
+                        serviceId!
+                    );
+
 
             if (response) {
-
-                setPricing(response);
-
-            } else {
 
                 setPricing({
 
                     ...emptyPricing,
 
-                    serviceId: serviceId!
+                    ...response,
+
+                    paymentConfiguration: {
+
+                        ...emptyPricing.paymentConfiguration,
+
+                        ...response.paymentConfiguration
+
+                    },
+
+                    cancellationPolicy: {
+
+                        ...emptyCancellationPolicy,
+
+                        ...response.cancellationPolicy,
+
+                        refundRules:
+                            response.cancellationPolicy
+                                ?.refundRules ?? []
+
+                    }
 
                 });
 
             }
+            else {
+
+                setPricing({
+
+                    ...emptyPricing,
+
+                    serviceId:
+                        serviceId!
+
+                });
+
+            }
+
+
+            /*
+             * Load packages from service.
+             */
+
             const service =
-                        await VendorServiceService.getServiceById(
-                            serviceId!
-                        );
+                await VendorServiceService
+                    .getServiceById(
+                        serviceId!
+                    );
+
 
             setPackages(
                 service.packages ?? []
             );
 
-        } catch {
+        }
+        catch (error) {
+
+            console.error(
+                "Failed to load pricing:",
+                error
+            );
+
+
             setPricing({
 
                 ...emptyPricing,
 
-                serviceId: serviceId!
+                serviceId:
+                    serviceId!
 
             });
 
-        } finally {
-            setLoading(false);
+
+            setPackages(
+                []
+            );
+
+        }
+        finally {
+
+            setLoading(
+                false
+            );
 
         }
 
     }
 
-    function updateBaseAmount(value: string) {
 
-        setPricing({
+    /*
+     * =========================================================
+     * SORTED PACKAGES
+     * =========================================================
+     *
+     * Important:
+     *
+     * Never mutate the packages state with .sort().
+     */
 
-            ...pricing,
+    const sortedPackages =
+        [...packages].sort(
+            (
+                a,
+                b
+            ) =>
+                PACKAGE_ORDER[a.type] -
+                PACKAGE_ORDER[b.type]
+        );
 
-            baseAmount: Number(value)
 
-        });
+    /*
+     * =========================================================
+     * FIND PACKAGE
+     * =========================================================
+     */
 
-    }
+    function getPackage(
+        type: ServicePackageType
+    ) {
 
-    function updateEffectiveFrom(value: string) {
-
-        setPricing({
-
-            ...pricing,
-
-            effectiveFrom: value
-
-        });
-
-    }
-
-    function updateEffectiveUntil(value: string) {
-
-        setPricing({
-
-            ...pricing,
-
-            effectiveUntil: value
-
-        });
-
-    }
-
-    function updateAdvanceAllowed(value: boolean) {
-
-        setPricing({
-
-            ...pricing,
-
-            paymentConfiguration: {
-
-                ...pricing.paymentConfiguration,
-
-                advancePaymentAllowed: value
-
-            }
-
-        });
+        return packages.find(
+            pkg =>
+                pkg.type === type
+        );
 
     }
 
-    function updateAdvancePercentage(value: string) {
 
-        setPricing({
+    /*
+     * =========================================================
+     * GET ACTUAL PACKAGE INDEX
+     * =========================================================
+     */
 
-            ...pricing,
+    function getPackageIndex(
+        type: ServicePackageType
+    ) {
 
-            paymentConfiguration: {
-
-                ...pricing.paymentConfiguration,
-
-                advancePercentage: Number(value)
-
-            }
-
-        });
-
-    }
-
-    function updateRefundPercentage(value: string) {
-
-        setPricing({
-
-            ...pricing,
-
-            cancellationPolicy: {
-
-                ...pricing.cancellationPolicy,
-
-                refundPercentage: Number(value)
-
-            }
-
-        });
+        return packages.findIndex(
+            pkg =>
+                pkg.type === type
+        );
 
     }
 
-    function updateCancelBeforeDays(value: string) {
 
-        setPricing({
+    /*
+     * =========================================================
+     * BASE PRICING
+     * =========================================================
+     */
 
-            ...pricing,
+    function updateBaseAmount(
+        value: string
+    ) {
 
-            cancellationPolicy: {
+        setPricing(
+            previous => ({
 
-                ...pricing.cancellationPolicy,
+                ...previous,
 
-                cancelBeforeDays: Number(value)
+                baseAmount:
+                    Number(value)
 
-            }
-
-        });
+            })
+        );
 
     }
+
+
+    function updateEffectiveFrom(
+        value: string
+    ) {
+
+        setPricing(
+            previous => ({
+
+                ...previous,
+
+                effectiveFrom:
+                    value
+
+            })
+        );
+
+    }
+
+
+    function updateEffectiveUntil(
+        value: string
+    ) {
+
+        setPricing(
+            previous => ({
+
+                ...previous,
+
+                effectiveUntil:
+                    value
+
+            })
+        );
+
+    }
+
+
+    /*
+     * =========================================================
+     * PAYMENT CONFIGURATION
+     * =========================================================
+     */
+
+    function updateAdvanceAllowed(
+        value: boolean
+    ) {
+
+        setPricing(
+            previous => ({
+
+                ...previous,
+
+                paymentConfiguration: {
+
+                    ...previous
+                        .paymentConfiguration,
+
+                    advancePaymentAllowed:
+                        value
+
+                }
+
+            })
+        );
+
+    }
+
+
+    function updateAdvancePercentage(
+        value: string
+    ) {
+
+        setPricing(
+            previous => ({
+
+                ...previous,
+
+                paymentConfiguration: {
+
+                    ...previous
+                        .paymentConfiguration,
+
+                    advancePercentage:
+                        Number(value)
+
+                }
+
+            })
+        );
+
+    }
+
+
+    /*
+     * =========================================================
+     * PRICING HEADS
+     * =========================================================
+     */
+
     function addPricingHead() {
 
-        const head: VendorPricingHead = {
+        const head:
+            VendorPricingHead = {
 
             code: "",
 
             name: "",
 
-            calculationType: "FIXED",
+            calculationType:
+                "FIXED",
 
             value: 0,
 
-            displayOrder: pricing.pricingHeads.length + 1,
+            displayOrder:
+                pricing
+                    .pricingHeads
+                    .length + 1,
 
             active: true
 
         };
 
-        setPricing({
 
-            ...pricing,
+        setPricing(
+            previous => ({
 
-            pricingHeads: [
+                ...previous,
 
-                ...pricing.pricingHeads,
+                pricingHeads: [
 
-                head
+                    ...previous
+                        .pricingHeads,
 
-            ]
+                    head
 
-        });
+                ]
+
+            })
+        );
 
     }
+
 
     function updatePricingHead(
 
         index: number,
 
-        field: keyof VendorPricingHead,
+        field:
+            keyof VendorPricingHead,
 
         value: any
 
     ) {
 
-        const updated = [...pricing.pricingHeads];
+        setPricing(
+            previous => {
 
-        updated[index] = {
+                const updated =
+                    [
+                        ...previous
+                            .pricingHeads
+                    ];
 
-            ...updated[index],
 
-            [field]: value
+                updated[index] = {
 
-        };
+                    ...updated[index],
 
-        setPricing({
+                    [field]:
+                        value
 
-            ...pricing,
+                };
 
-            pricingHeads: updated
 
-        });
+                return {
+
+                    ...previous,
+
+                    pricingHeads:
+                        updated
+
+                };
+
+            }
+        );
+
+    }
+
+
+    function removePricingHead(
+        index: number
+    ) {
+
+        setPricing(
+            previous => ({
+
+                ...previous,
+
+                pricingHeads:
+                    previous
+                        .pricingHeads
+                        .filter(
+                            (
+                                _,
+                                i
+                            ) =>
+                                i !== index
+                        )
+
+            })
+        );
 
     }
 
-    function removePricingHead(index: number) {
 
-        setPricing({
-
-            ...pricing,
-
-            pricingHeads:
-
-                pricing.pricingHeads.filter(
-
-                    (_, i) => i !== index
-
-                )
-
-        });
-
-    }
+    /*
+     * =========================================================
+     * DISCOUNTS
+     * =========================================================
+     */
 
     function addDiscount() {
 
-        const discount: VendorDiscount = {
+        const discount:
+            VendorDiscount = {
 
             name: "",
 
-            discountType: "FIXED",
+            discountType:
+                "FIXED",
 
             value: 0,
 
@@ -334,273 +637,698 @@ const VendorPricing = () => {
 
         };
 
-        setPricing({
 
-            ...pricing,
+        setPricing(
+            previous => ({
 
-            discounts: [
+                ...previous,
 
-                ...pricing.discounts,
+                discounts: [
 
-                discount
+                    ...previous
+                        .discounts,
 
-            ]
+                    discount
 
-        });
+                ]
+
+            })
+        );
 
     }
+
 
     function updateDiscount(
 
         index: number,
 
-        field: keyof VendorDiscount,
+        field:
+            keyof VendorDiscount,
 
         value: any
 
     ) {
 
-        const updated = [...pricing.discounts];
+        setPricing(
+            previous => {
 
-        updated[index] = {
+                const updated =
+                    [
+                        ...previous
+                            .discounts
+                    ];
 
-            ...updated[index],
 
-            [field]: value
+                updated[index] = {
 
-        };
+                    ...updated[index],
 
-        setPricing({
+                    [field]:
+                        value
 
-            ...pricing,
+                };
 
-            discounts: updated
 
-        });
+                return {
+
+                    ...previous,
+
+                    discounts:
+                        updated
+
+                };
+
+            }
+        );
+
+    }
+
+
+    function removeDiscount(
+        index: number
+    ) {
+
+        setPricing(
+            previous => ({
+
+                ...previous,
+
+                discounts:
+                    previous
+                        .discounts
+                        .filter(
+                            (
+                                _,
+                                i
+                            ) =>
+                                i !== index
+                        )
+
+            })
+        );
 
     }
 
-    function removeDiscount(index: number) {
 
-        setPricing({
-
-            ...pricing,
-
-            discounts:
-
-                pricing.discounts.filter(
-
-                    (_, i) => i !== index
-
-                )
-
-        });
-
-    }
+    /*
+     * =========================================================
+     * PACKAGE
+     * =========================================================
+     */
 
     function addPackage(
         type: ServicePackageType
     ) {
 
         if (
-            packages.some(
-                pkg =>
-                    pkg.type === type
-            )
+            getPackage(type)
         ) {
+
             return;
+
         }
 
 
-        setPackages([
-            ...packages,
-            {
-                id: undefined,
-                type,
-                price: 0,
-                features: [],
-                active: true
-            }
-        ]);
+        const newPackage:
+            ServicePackage = {
+
+            id: undefined,
+
+            type,
+
+            price: 0,
+
+            features: [],
+
+            active: true
+
+        };
+
+
+        setPackages(
+            previous => [
+
+                ...previous,
+
+                newPackage
+
+            ]
+        );
 
     }
+
+
+    /*
+     * =========================================================
+     * TOGGLE PACKAGE
+     * =========================================================
+     */
+
+    function togglePackage(
+        type: ServicePackageType
+    ) {
+
+        const existingPackage =
+            getPackage(type);
+
+
+        if (!existingPackage) {
+
+            addPackage(
+                type
+            );
+
+            return;
+
+        }
+
+
+        setPackages(
+            previous =>
+                previous.map(
+                    pkg =>
+                        pkg.type === type
+
+                            ? {
+
+                                ...pkg,
+
+                                active:
+                                    !pkg.active
+
+                            }
+
+                            : pkg
+                )
+        );
+
+    }
+
+
+    /*
+     * =========================================================
+     * UPDATE PACKAGE
+     * =========================================================
+     */
 
     function updatePackage(
-        index: number,
-        field: keyof ServicePackage,
+
+        type: ServicePackageType,
+
+        field:
+            keyof ServicePackage,
+
         value: any
+
     ) {
 
-        const updated =
-            [...packages];
-
-        updated[index] = {
-            ...updated[index],
-            [field]: value
-        };
-
         setPackages(
-            updated
+            previous =>
+                previous.map(
+                    pkg =>
+                        pkg.type === type
+
+                            ? {
+
+                                ...pkg,
+
+                                [field]:
+                                    value
+
+                            }
+
+                            : pkg
+                )
         );
 
     }
+
+
+    /*
+     * =========================================================
+     * REMOVE PACKAGE
+     * =========================================================
+     */
 
     function removePackage(
-        index: number
+        type: ServicePackageType
     ) {
 
         setPackages(
-            packages.filter(
-                (_, i) =>
-                    i !== index
-            )
+            previous =>
+                previous.filter(
+                    pkg =>
+                        pkg.type !== type
+                )
         );
 
     }
+
+
+    /*
+     * =========================================================
+     * ADD FEATURE
+     * =========================================================
+     */
 
     function addFeature(
-        packageIndex: number
+        type: ServicePackageType
     ) {
 
-        const updated =
-            [...packages];
-
-        updated[
-            packageIndex
-        ] = {
-
-            ...updated[packageIndex],
-
-            features: [
-                ...updated[packageIndex].features,
-                ""
-            ]
-
-        };
-
         setPackages(
-            updated
+            previous =>
+                previous.map(
+                    pkg =>
+                        pkg.type === type
+
+                            ? {
+
+                                ...pkg,
+
+                                features: [
+
+                                    ...pkg.features,
+
+                                    ""
+
+                                ]
+
+                            }
+
+                            : pkg
+                )
         );
 
     }
 
+
+    /*
+     * =========================================================
+     * UPDATE FEATURE
+     * =========================================================
+     */
+
     function updateFeature(
-        packageIndex: number,
+
+        type: ServicePackageType,
+
         featureIndex: number,
+
+        value: string
+
+    ) {
+
+        setPackages(
+            previous =>
+                previous.map(
+                    pkg => {
+
+                        if (
+                            pkg.type !== type
+                        ) {
+
+                            return pkg;
+
+                        }
+
+
+                        const features =
+                            [
+                                ...pkg
+                                    .features
+                            ];
+
+
+                        features[
+                            featureIndex
+                        ] =
+                            value;
+
+
+                        return {
+
+                            ...pkg,
+
+                            features
+
+                        };
+
+                    }
+                )
+        );
+
+    }
+
+
+    /*
+     * =========================================================
+     * REMOVE FEATURE
+     * =========================================================
+     */
+
+    function removeFeature(
+
+        type: ServicePackageType,
+
+        featureIndex: number
+
+    ) {
+
+        setPackages(
+            previous =>
+                previous.map(
+                    pkg => {
+
+                        if (
+                            pkg.type !== type
+                        ) {
+
+                            return pkg;
+
+                        }
+
+
+                        return {
+
+                            ...pkg,
+
+                            features:
+                                pkg
+                                    .features
+                                    .filter(
+                                        (
+                                            _,
+                                            index
+                                        ) =>
+                                            index !==
+                                            featureIndex
+                                    )
+
+                        };
+
+                    }
+                )
+        );
+
+    }
+
+
+    /*
+     * =========================================================
+     * CANCELLATION POLICY
+     * =========================================================
+     */
+
+    function updateProcessingDays(
         value: string
     ) {
 
-        const updated =
-            [...packages];
+        setPricing(
+            previous => ({
 
-        const features =
-            [
-                ...updated[
-                    packageIndex
-                ].features
-            ];
+                ...previous,
 
-        features[
-            featureIndex
-        ] = value;
+                cancellationPolicy: {
 
-        updated[
-            packageIndex
-        ] = {
+                    processingDays:
+                        Number(value),
 
-            ...updated[
-                packageIndex
-            ],
+                    refundRules:
+                        previous
+                            .cancellationPolicy
+                            ?.refundRules ?? []
 
-            features
+                }
 
-        };
-
-        setPackages(
-            updated
+            })
         );
 
     }
 
-    function removeFeature(
-        packageIndex: number,
-        featureIndex: number
+
+    /*
+     * =========================================================
+     * ADD REFUND RULE
+     * =========================================================
+     *
+     * No business assumptions are made.
+     *
+     * Vendor defines the rule.
+     *
+     * maxDaysBeforeEvent = null means:
+     *
+     *     No upper limit
+     *
+     * Example:
+     *
+     *     31+ days
+     *
+     */
+
+    function addRefundRule() {
+
+        const newRule: RefundRule = {
+
+            minDaysBeforeEvent: 0,
+
+            maxDaysBeforeEvent: null,
+
+            refundPercentage: 0
+
+        };
+
+
+        setPricing(
+            previous => ({
+
+                ...previous,
+
+                cancellationPolicy: {
+
+                    processingDays:
+                        previous
+                            .cancellationPolicy
+                            ?.processingDays ?? 0,
+
+                    refundRules: [
+
+                        ...(
+                            previous
+                                .cancellationPolicy
+                                ?.refundRules ?? []
+                        ),
+
+                        newRule
+
+                    ]
+
+                }
+
+            })
+        );
+
+    }
+
+
+    /*
+     * =========================================================
+     * UPDATE REFUND RULE
+     * =========================================================
+     */
+
+    function updateRefundRule(
+
+        index: number,
+
+        field: keyof RefundRule,
+
+        value: number | null
+
     ) {
 
-        const updated =
-            [...packages];
+        setPricing(
+            previous => {
 
-        updated[
-            packageIndex
-        ] = {
+                const updatedRules = [
+                    ...(
+                        previous
+                            .cancellationPolicy
+                            ?.refundRules ?? []
+                    )
+                ];
 
-            ...updated[
-                packageIndex
-            ],
 
-            features:
-                updated[
-                    packageIndex
-                ].features.filter(
-                    (_, index) =>
-                        index !== featureIndex
-                )
+                updatedRules[index] = {
 
-        };
+                    ...updatedRules[index],
 
-        setPackages(
-            updated
+                    [field]:
+                        value
+
+                };
+
+
+                return {
+
+                    ...previous,
+
+                    cancellationPolicy: {
+
+                        processingDays:
+                            previous
+                                .cancellationPolicy
+                                ?.processingDays ?? 0,
+
+                        refundRules:
+                            updatedRules
+
+                    }
+
+                };
+
+            }
         );
 
     }
 
-    async function savePackages() {
 
-        if (!serviceId) {
-            return;
-        }
+    /*
+     * =========================================================
+     * REMOVE REFUND RULE
+     * =========================================================
+     */
 
+    function removeRefundRule(
+        index: number
+    ) {
 
-        try {
+        setPricing(
+            previous => ({
 
-            setSaving(true);
+                ...previous,
 
+                cancellationPolicy: {
 
-            await VendorServiceService.updatePackages(
-                serviceId,
-                packages
-            );
+                    processingDays:
+                        previous
+                            .cancellationPolicy
+                            ?.processingDays ?? 0,
 
+                    refundRules:
+                        (
+                            previous
+                                .cancellationPolicy
+                                ?.refundRules ?? []
+                        ).filter(
+                            (
+                                _,
+                                ruleIndex
+                            ) =>
+                                ruleIndex !== index
+                        )
 
-            toast.success(
-                "Packages saved successfully."
-            );
+                }
 
-        } catch (error) {
-
-            console.error(
-                "Failed to save packages:",
-                error
-            );
-
-            toast.error(
-                "Unable to save packages."
-            );
-
-        } finally {
-
-            setSaving(false);
-
-        }
+            })
+        );
 
     }
+
+
+    /*
+     * =========================================================
+     * VALIDATE CANCELLATION RULES
+     * =========================================================
+     */
+
+    function validateRefundRules():
+        boolean {
+
+        const rules =
+            pricing
+                .cancellationPolicy
+                ?.refundRules ?? [];
+
+
+        for (
+            let index = 0;
+            index < rules.length;
+            index++
+        ) {
+
+            const rule =
+                rules[index];
+
+
+            if (
+                rule.minDaysBeforeEvent <
+                0
+            ) {
+
+                toast.error(
+                    `Refund Rule ${index + 1}: From Days cannot be negative.`
+                );
+
+                return false;
+
+            }
+
+
+            if (
+                rule.maxDaysBeforeEvent !==
+                    null &&
+                rule.maxDaysBeforeEvent <
+                    rule.minDaysBeforeEvent
+            ) {
+
+                toast.error(
+                    `Refund Rule ${index + 1}: To Days must be greater than or equal to From Days.`
+                );
+
+                return false;
+
+            }
+
+
+            if (
+                rule.refundPercentage < 0 ||
+                rule.refundPercentage > 100
+            ) {
+
+                toast.error(
+                    `Refund Rule ${index + 1}: Refund percentage must be between 0 and 100.`
+                );
+
+                return false;
+
+            }
+
+        }
+
+
+        return true;
+
+    }
+
+
+    /*
+     * =========================================================
+     * SAVE
+     * =========================================================
+     */
 
     async function save() {
 
         if (!serviceId) {
+
             return;
+
         }
 
+
+        /*
+         * Validate base price.
+         */
 
         if (
             !pricing.baseAmount ||
@@ -616,7 +1344,13 @@ const VendorPricing = () => {
         }
 
 
-        if (!pricing.effectiveFrom) {
+        /*
+         * Validate effective date.
+         */
+
+        if (
+            !pricing.effectiveFrom
+        ) {
 
             toast.error(
                 "Select Effective From date."
@@ -627,9 +1361,56 @@ const VendorPricing = () => {
         }
 
 
+        /*
+         * Validate active packages.
+         */
+
+        const activePackages =
+            packages.filter(
+                pkg =>
+                    pkg.active
+            );
+
+
+        for (
+            const pkg
+            of activePackages
+        ) {
+
+            if (
+                !pkg.price ||
+                pkg.price <= 0
+            ) {
+
+                toast.error(
+                    `Enter a valid price for the ${PACKAGE_LABELS[pkg.type]} package.`
+                );
+
+                return;
+
+            }
+
+        }
+
+
+        /*
+         * Validate refund rules.
+         */
+
+        if (
+            !validateRefundRules()
+        ) {
+
+            return;
+
+        }
+
+
         try {
 
-            setSaving(true);
+            setSaving(
+                true
+            );
 
 
             /*
@@ -638,22 +1419,27 @@ const VendorPricing = () => {
              * =========================================
              */
 
-            await VendorServiceService.updatePackages(
-                serviceId,
-                packages
-            );
+            await VendorServiceService
+                .updatePackages(
+                    serviceId,
+                    packages
+                );
 
 
             /*
              * =========================================
-             * SAVE NORMAL PRICING
+             * SAVE PRICING
              * =========================================
              */
 
-            await VendorPricingService.savePricing({
-                ...pricing,
-                serviceId
-            });
+            await VendorPricingService
+                .savePricing({
+
+                    ...pricing,
+
+                    serviceId
+
+                });
 
 
             toast.success(
@@ -673,889 +1459,1730 @@ const VendorPricing = () => {
                 error
             );
 
+
             toast.error(
-                "Unable to save pricing."
+                "Unable to save pricing and packages."
             );
 
         }
         finally {
 
-            setSaving(false);
+            setSaving(
+                false
+            );
 
         }
 
     }
 
+
+    /*
+     * =========================================================
+     * ACTIVE PACKAGE COUNT
+     * =========================================================
+     */
+
+    const activePackageCount =
+        packages.filter(
+            pkg =>
+                pkg.active
+        ).length;
+
+
+    /*
+     * =========================================================
+     * LOADING
+     * =========================================================
+     */
+
     if (loading) {
 
-        return <h2>Loading Pricing...</h2>;
+        return (
+
+            <div className="vendor-pricing-loading">
+
+                Loading Pricing...
+
+            </div>
+
+        );
 
     }
+
+
+    /*
+     * =========================================================
+     * RENDER
+     * =========================================================
+     */
 
     return (
 
         <div className="vendor-pricing-page">
+
+
+            {/* =================================================
+                HEADER
+            ================================================= */}
 
             <div className="pricing-header">
 
                 <div>
 
                     <h2>
-
                         Pricing Configuration
-
                     </h2>
 
                     <p>
-
                         Configure pricing, discounts and payment settings.
-
                     </p>
 
                 </div>
 
+
                 <div className="header-actions">
 
                     <button
-
+                        type="button"
                         className="cancel-btn"
-
-                        onClick={() => navigate(-1)}
-
+                        onClick={() =>
+                            navigate(-1)
+                        }
                     >
-
                         Cancel
-
                     </button>
 
+
                     <button
-
+                        type="button"
                         className="save-btn"
-
                         onClick={save}
-
                         disabled={saving}
-
                     >
 
-                        {saving ? "Saving..." : "Save Pricing"}
+                        {
+                            saving
+                                ? "Saving..."
+                                : "Save Pricing"
+                        }
 
                     </button>
 
                 </div>
 
             </div>
+
+
+            {/* =================================================
+                MAIN GRID
+            ================================================= */}
 
             <div className="pricing-grid">
 
+
+                {/* =================================================
+                    LEFT
+                ================================================= */}
+
                 <div className="pricing-left">
 
-                       <section className="pricing-card">
 
-                           <div className="section-header">
+                    {/* =================================================
+                        SERVICE PACKAGES
+                    ================================================= */}
 
-                               <div>
+                    <section
+                        className={
+                            "pricing-card package-card-section"
+                        }
+                    >
 
-                                   <h3>
-                                       Service Packages
-                                   </h3>
+                        <div className="package-section-header">
 
-                                   <p>
-                                       Choose the package tiers you want
-                                       to offer to customers.
-                                   </p>
-
-                               </div>
-
-                           </div>
-
-
-                           <div className="package-tier-buttons">
-
-                               {
-                                   (
-                                       [
-                                           "SILVER",
-                                           "GOLD",
-                                           "PREMIUM"
-                                       ] as ServicePackageType[]
-                                   ).map(type => (
-
-                                       !packages.some(
-                                           pkg =>
-                                               pkg.type === type
-                                       ) && (
-
-                                           <button
-                                               key={type}
-                                               type="button"
-                                               onClick={() =>
-                                                   addPackage(
-                                                       type
-                                                   )
-                                               }
-                                           >
-                                               + {type}
-                                           </button>
-
-                                       )
-
-                                   ))
-                               }
-
-                           </div>
-
-
-                           {
-                               packages
-                                   .sort(
-                                       (a, b) => {
-
-                                           const order: Record<
-                                               ServicePackageType,
-                                               number
-                                           > = {
-
-                                               SILVER: 1,
-                                               GOLD: 2,
-                                               PREMIUM: 3
-
-                                           };
-
-                                           return (
-                                               order[a.type] -
-                                               order[b.type]
-                                           );
-
-                                       }
-                                   )
-                                   .map(
-                                       (
-                                           pkg,
-                                           packageIndex
-                                       ) => (
-
-                                           <div
-                                               className="service-package-editor"
-                                               key={
-                                                   pkg.id ??
-                                                   pkg.type
-                                               }
-                                           >
-
-                                               <div className="package-header">
-
-                                                   <h4>
-                                                       {pkg.type}
-                                                   </h4>
-
-                                                   <button
-                                                       type="button"
-                                                       className="delete-btn"
-                                                       onClick={() =>
-                                                           removePackage(
-                                                               packageIndex
-                                                           )
-                                                       }
-                                                   >
-                                                       Remove
-                                                   </button>
-
-                                               </div>
-
-
-                                               <div className="form-group">
-
-                                                   <label>
-                                                       Package Price
-                                                   </label>
-
-                                                   <input
-                                                       type="number"
-                                                       min="0"
-                                                       value={
-                                                           pkg.price
-                                                       }
-                                                       onChange={(e) =>
-                                                           updatePackage(
-                                                               packageIndex,
-                                                               "price",
-                                                               Number(
-                                                                   e.target.value
-                                                               )
-                                                           )
-                                                       }
-                                                   />
-
-                                               </div>
-
-
-                                               <div className="package-features">
-
-                                                   <div className="section-header">
-
-                                                       <h4>
-                                                           Features
-                                                       </h4>
-
-                                                       <button
-                                                           type="button"
-                                                           onClick={() =>
-                                                               addFeature(
-                                                                   packageIndex
-                                                               )
-                                                           }
-                                                       >
-                                                           + Add Feature
-                                                       </button>
-
-                                                   </div>
-
-
-                                                   {
-                                                       pkg.features.map(
-                                                           (
-                                                               feature,
-                                                               featureIndex
-                                                           ) => (
-
-                                                               <div
-                                                                   className="package-feature-row"
-                                                                   key={
-                                                                       featureIndex
-                                                                   }
-                                                               >
-
-                                                                   <input
-                                                                       type="text"
-                                                                       value={
-                                                                           feature
-                                                                       }
-                                                                       placeholder="Enter feature"
-                                                                       onChange={(e) =>
-                                                                           updateFeature(
-                                                                               packageIndex,
-                                                                               featureIndex,
-                                                                               e.target.value
-                                                                           )
-                                                                       }
-                                                                   />
-
-                                                                   <button
-                                                                       type="button"
-                                                                       className="delete-btn"
-                                                                       onClick={() =>
-                                                                           removeFeature(
-                                                                               packageIndex,
-                                                                               featureIndex
-                                                                           )
-                                                                       }
-                                                                   >
-                                                                       Remove
-                                                                   </button>
-
-                                                               </div>
-
-                                                           )
-                                                       )
-                                                   }
-
-                                               </div>
-
-                                           </div>
-
-                                       )
-                                   )
-                           }
-
-                       </section>
-
-                        <section className="pricing-card">
-
-                            <h3>Base Pricing</h3>
-
-                            <div className="form-grid">
-
-                                <div className="form-group">
-
-                                    <label>
-
-                                        Base Amount
-
-                                    </label>
-
-                                    <input
-
-                                        type="number"
-
-                                        value={pricing.baseAmount}
-
-                                        onChange={(e) =>
-                                            updateBaseAmount(
-                                                e.target.value
-                                            )
-                                        }
-
-                                    />
-
-                                </div>
-
-                                <div className="form-group">
-
-                                    <label>
-
-                                        Effective From
-
-                                    </label>
-
-                                    <input
-
-                                        type="date"
-
-                                        value={pricing.effectiveFrom ?? ""}
-
-                                        onChange={(e) =>
-                                            updateEffectiveFrom(
-                                                e.target.value
-                                            )
-                                        }
-
-                                    />
-
-                                </div>
-
-                                <div className="form-group">
-
-                                    <label>
-
-                                        Effective Until
-
-                                    </label>
-
-                                    <input
-
-                                        type="date"
-
-                                        value={pricing.effectiveUntil ?? ""}
-
-                                        onChange={(e) =>
-                                            updateEffectiveUntil(
-                                                e.target.value
-                                            )
-                                        }
-
-                                    />
-
-                                </div>
-
-                            </div>
-
-                        </section>
-
-
-                        <section className="pricing-card">
-
-                            <div className="section-header">
+                            <div>
 
                                 <h3>
-
-                                    Pricing Heads
-
+                                    Service Packages
                                 </h3>
 
-                                <button
-                                    onClick={addPricingHead}
-                                >
-
-                                    + Add
-
-                                </button>
+                                <p>
+                                    Choose the package tiers you want to offer to customers.
+                                </p>
 
                             </div>
 
-                            {
 
-                                pricing.pricingHeads.map((head, index) => (
+                            <div className="package-count">
 
-                                    <div
-                                        className="pricing-row"
-                                        key={index}
-                                    >
+                                {
+                                    activePackageCount
+                                }
 
-                                        <input
+                                {" "}
 
-                                            placeholder="Code"
-
-                                            value={head.code}
-
-                                            onChange={(e) =>
-                                                updatePricingHead(
-                                                    index,
-                                                    "code",
-                                                    e.target.value
-                                                )
-                                            }
-
-                                        />
-
-                                        <input
-
-                                            placeholder="Name"
-
-                                            value={head.name}
-
-                                            onChange={(e) =>
-                                                updatePricingHead(
-                                                    index,
-                                                    "name",
-                                                    e.target.value
-                                                )
-                                            }
-
-                                        />
-
-                                        <select
-
-                                            value={head.calculationType}
-
-                                            onChange={(e) =>
-                                                updatePricingHead(
-                                                    index,
-                                                    "calculationType",
-                                                    e.target.value
-                                                )
-                                            }
-
-                                        >
-
-                                            <option value="FIXED">
-
-                                                Fixed
-
-                                            </option>
-
-                                            <option value="PERCENTAGE">
-
-                                                Percentage
-
-                                            </option>
-
-                                        </select>
-
-                                        <input
-
-                                            type="number"
-
-                                            value={head.value}
-
-                                            onChange={(e) =>
-                                                updatePricingHead(
-                                                    index,
-                                                    "value",
-                                                    Number(e.target.value)
-                                                )
-                                            }
-
-                                        />
-
-                                        <button
-
-                                            className="delete-btn"
-
-                                            onClick={() =>
-                                                removePricingHead(index)
-                                            }
-
-                                        >
-
-                                            Remove
-
-                                        </button>
-
-                                    </div>
-
-                                ))
-
-                            }
-
-                        </section>
-
-                        <section className="pricing-card">
-
-                            <div className="section-header">
-
-                                <h3>
-
-                                    Discounts
-
-                                </h3>
-
-                                <button
-                                    onClick={addDiscount}
-                                >
-
-                                    + Add
-
-                                </button>
+                                {
+                                    activePackageCount ===
+                                    1
+                                        ? "active"
+                                        : "active packages"
+                                }
 
                             </div>
 
+                        </div>
+
+
+                        <div className="package-editor-grid">
+
                             {
+                                PACKAGE_TYPES.map(
+                                    type => {
 
-                                pricing.discounts.map((discount, index) => (
+                                        const pkg =
+                                            getPackage(
+                                                type
+                                            );
 
-                                    <div
-                                        className="pricing-row"
-                                        key={index}
-                                    >
 
-                                        <input
+                                        const isActive =
+                                            Boolean(
+                                                pkg?.active
+                                            );
 
-                                            placeholder="Discount Name"
 
-                                            value={discount.name}
+                                        return (
 
-                                            onChange={(e) =>
-                                                updateDiscount(
-                                                    index,
-                                                    "name",
-                                                    e.target.value
-                                                )
-                                            }
+                                            <div
 
-                                        />
+                                                key={
+                                                    type
+                                                }
 
-                                        <select
+                                                className={
+                                                    `service-package-card ${
+                                                        isActive
+                                                            ? "active"
+                                                            : "inactive"
+                                                    } ${
+                                                        type ===
+                                                        "GOLD"
+                                                            ? "popular"
+                                                            : ""
+                                                    }`
+                                                }
 
-                                            value={discount.discountType}
+                                            >
 
-                                            onChange={(e) =>
-                                                updateDiscount(
-                                                    index,
-                                                    "discountType",
-                                                    e.target.value
-                                                )
-                                            }
 
-                                        >
+                                                {/* =================================
+                                                    PACKAGE HEADER
+                                                ================================= */}
 
-                                            <option value="FIXED">
+                                                <div className="package-card-header">
 
-                                                Fixed
+                                                    <div className="package-card-title-area">
 
-                                            </option>
+                                                        <label className="package-toggle">
 
-                                            <option value="PERCENTAGE">
+                                                            <input
 
-                                                Percentage
+                                                                type="checkbox"
 
-                                            </option>
+                                                                checked={
+                                                                    isActive
+                                                                }
 
-                                        </select>
+                                                                onChange={() =>
+                                                                    togglePackage(
+                                                                        type
+                                                                    )
+                                                                }
 
-                                        <input
+                                                            />
 
-                                            type="number"
+                                                            <span className="package-checkmark" />
 
-                                            value={discount.value}
+                                                        </label>
 
-                                            onChange={(e) =>
-                                                updateDiscount(
-                                                    index,
-                                                    "value",
-                                                    Number(e.target.value)
-                                                )
-                                            }
 
-                                        />
+                                                        <div>
 
-                                        <button
+                                                            <h4>
 
-                                            className="delete-btn"
+                                                                {
+                                                                    PACKAGE_LABELS[
+                                                                        type
+                                                                    ]
+                                                                }
 
-                                            onClick={() =>
-                                                removeDiscount(index)
-                                            }
+                                                            </h4>
 
-                                        >
+                                                            <span>
 
-                                            Remove
+                                                                {
+                                                                    PACKAGE_SUBTITLES[
+                                                                        type
+                                                                    ]
+                                                                }
 
-                                        </button>
+                                                            </span>
 
-                                    </div>
+                                                        </div>
 
-                                ))
+                                                    </div>
 
+
+                                                    {
+                                                        type ===
+                                                        "GOLD" && (
+
+                                                            <span className="popular-badge">
+
+                                                                POPULAR
+
+                                                            </span>
+
+                                                        )
+                                                    }
+
+                                                </div>
+
+
+                                                {/* =================================
+                                                    ACTIVE PACKAGE
+                                                ================================= */}
+
+                                                {
+                                                    isActive &&
+                                                    pkg ? (
+
+                                                        <>
+
+                                                            {/* =========================
+                                                                PRICE
+                                                            ========================= */}
+
+                                                            <div className="package-price-field">
+
+                                                                <label>
+                                                                    Package Price
+                                                                </label>
+
+
+                                                                <div className="package-price-input">
+
+                                                                    <span>
+                                                                        ₹
+                                                                    </span>
+
+
+                                                                    <input
+
+                                                                        type="number"
+
+                                                                        min="0"
+
+                                                                        value={
+                                                                            pkg.price
+                                                                        }
+
+                                                                        onChange={e =>
+                                                                            updatePackage(
+                                                                                type,
+                                                                                "price",
+                                                                                Number(
+                                                                                    e.target.value
+                                                                                )
+                                                                            )
+                                                                        }
+
+                                                                    />
+
+                                                                </div>
+
+                                                            </div>
+
+
+                                                            {/* =========================
+                                                                FEATURES
+                                                            ========================= */}
+
+                                                            <div className="package-features-section">
+
+                                                                <div className="package-features-header">
+
+                                                                    <h5>
+                                                                        Features
+                                                                    </h5>
+
+
+                                                                    <button
+
+                                                                        type="button"
+
+                                                                        className="add-feature-btn"
+
+                                                                        onClick={() =>
+                                                                            addFeature(
+                                                                                type
+                                                                            )
+                                                                        }
+
+                                                                    >
+                                                                        + Add Feature
+                                                                    </button>
+
+                                                                </div>
+
+
+                                                                <div className="package-feature-list">
+
+                                                                    {
+                                                                        pkg.features.map(
+                                                                            (
+                                                                                feature,
+                                                                                featureIndex
+                                                                            ) => (
+
+                                                                                <div
+
+                                                                                    key={
+                                                                                        featureIndex
+                                                                                    }
+
+                                                                                    className="package-feature-item"
+
+                                                                                >
+
+                                                                                    <input
+
+                                                                                        type="text"
+
+                                                                                        value={
+                                                                                            feature
+                                                                                        }
+
+                                                                                        placeholder="Enter feature"
+
+                                                                                        onChange={e =>
+                                                                                            updateFeature(
+                                                                                                type,
+                                                                                                featureIndex,
+                                                                                                e.target.value
+                                                                                            )
+                                                                                        }
+
+                                                                                    />
+
+
+                                                                                    <button
+
+                                                                                        type="button"
+
+                                                                                        className="remove-feature-btn"
+
+                                                                                        onClick={() =>
+                                                                                            removeFeature(
+                                                                                                type,
+                                                                                                featureIndex
+                                                                                            )
+                                                                                        }
+
+                                                                                        aria-label="Remove feature"
+
+                                                                                    >
+                                                                                        ×
+                                                                                    </button>
+
+                                                                                </div>
+
+                                                                            )
+                                                                        )
+                                                                    }
+
+
+                                                                    {
+                                                                        pkg.features.length ===
+                                                                        0 && (
+
+                                                                            <div className="no-features">
+
+                                                                                No features added yet.
+
+                                                                            </div>
+
+                                                                        )
+                                                                    }
+
+                                                                </div>
+
+                                                            </div>
+
+
+                                                            {/* =========================
+                                                                REMOVE PACKAGE
+                                                            ========================= */}
+
+                                                            <div className="package-card-footer">
+
+                                                                <button
+
+                                                                    type="button"
+
+                                                                    className="remove-package-btn"
+
+                                                                    onClick={() =>
+                                                                        removePackage(
+                                                                            type
+                                                                        )
+                                                                    }
+
+                                                                >
+
+                                                                    🗑 Remove Package
+
+                                                                </button>
+
+                                                            </div>
+
+                                                        </>
+
+                                                    ) : (
+
+                                                        /* =========================
+                                                           INACTIVE PACKAGE
+                                                        ========================= */
+
+                                                        <div className="inactive-package-content">
+
+                                                            <div className="inactive-package-icon">
+                                                                +
+                                                            </div>
+
+
+                                                            <p>
+                                                                Enable this package to configure its price and features.
+                                                            </p>
+
+
+                                                            <button
+
+                                                                type="button"
+
+                                                                className="enable-package-btn"
+
+                                                                onClick={() =>
+                                                                    togglePackage(
+                                                                        type
+                                                                    )
+                                                                }
+
+                                                            >
+
+                                                                Enable Package
+
+                                                            </button>
+
+                                                        </div>
+
+                                                    )
+
+                                                }
+
+                                            </div>
+
+                                        );
+
+                                    }
+                                )
                             }
 
-                        </section>
+                        </div>
 
 
-                        <section className="pricing-card">
+                        <div className="package-info-banner">
 
-                            <h3>
+                            <span className="package-info-icon">
+                                ⓘ
+                            </span>
 
-                                Payment Configuration
 
-                            </h3>
+                            <div>
 
-                            <label className="checkbox">
+                                <strong>
+                                    Package selection
+                                </strong>
+
+                                <p>
+                                    Customers will see only the active packages.
+                                    Package names are fixed as Silver, Gold and Premium.
+                                </p>
+
+                            </div>
+
+                        </div>
+
+                    </section>
+
+
+                    {/* =================================================
+                        BASE PRICING
+                    ================================================= */}
+
+                    <section className="pricing-card">
+
+                        <h3>
+                            Base Pricing
+                        </h3>
+
+
+                        <div className="form-grid">
+
+                            <div className="form-group">
+
+                                <label>
+                                    Base Amount
+                                </label>
+
 
                                 <input
 
-                                    type="checkbox"
+                                    type="number"
 
-                                    checked={
-                                        pricing.paymentConfiguration
-                                            ?.advancePaymentAllowed
+                                    min="0"
+
+                                    value={
+                                        pricing.baseAmount
                                     }
 
-                                    onChange={(e) =>
-                                        updateAdvanceAllowed(
-                                            e.target.checked
+                                    onChange={e =>
+                                        updateBaseAmount(
+                                            e.target.value
                                         )
                                     }
 
                                 />
 
-                                Allow Advance Payment
+                            </div>
 
+
+                            <div className="form-group">
+
+                                <label>
+                                    Effective From
+                                </label>
+
+
+                                <input
+
+                                    type="date"
+
+                                    value={
+                                        pricing.effectiveFrom ??
+                                        ""
+                                    }
+
+                                    onChange={e =>
+                                        updateEffectiveFrom(
+                                            e.target.value
+                                        )
+                                    }
+
+                                />
+
+                            </div>
+
+
+                            <div className="form-group">
+
+                                <label>
+                                    Effective Until
+                                </label>
+
+
+                                <input
+
+                                    type="date"
+
+                                    value={
+                                        pricing.effectiveUntil ??
+                                        ""
+                                    }
+
+                                    onChange={e =>
+                                        updateEffectiveUntil(
+                                            e.target.value
+                                        )
+                                    }
+
+                                />
+
+                            </div>
+
+                        </div>
+
+                    </section>
+
+
+                    {/* =================================================
+                        PRICING HEADS
+                    ================================================= */}
+
+                    <section className="pricing-card">
+
+                        <div className="section-header">
+
+                            <h3>
+                                Pricing Heads
+                            </h3>
+
+
+                            <button
+                                type="button"
+                                onClick={
+                                    addPricingHead
+                                }
+                            >
+                                + Add
+                            </button>
+
+                        </div>
+
+
+                        {
+                            pricing.pricingHeads.length ===
+                            0 ? (
+
+                                <div className="empty-pricing-state">
+
+                                    No pricing heads configured.
+
+                                </div>
+
+                            ) : (
+
+                                pricing.pricingHeads.map(
+                                    (
+                                        head,
+                                        index
+                                    ) => (
+
+                                        <div
+
+                                            className="pricing-row"
+
+                                            key={
+                                                index
+                                            }
+
+                                        >
+
+                                            <input
+
+                                                placeholder="Code"
+
+                                                value={
+                                                    head.code
+                                                }
+
+                                                onChange={e =>
+                                                    updatePricingHead(
+                                                        index,
+                                                        "code",
+                                                        e.target.value
+                                                    )
+                                                }
+
+                                            />
+
+
+                                            <input
+
+                                                placeholder="Name"
+
+                                                value={
+                                                    head.name
+                                                }
+
+                                                onChange={e =>
+                                                    updatePricingHead(
+                                                        index,
+                                                        "name",
+                                                        e.target.value
+                                                    )
+                                                }
+
+                                            />
+
+
+                                            <select
+
+                                                value={
+                                                    head.calculationType
+                                                }
+
+                                                onChange={e =>
+                                                    updatePricingHead(
+                                                        index,
+                                                        "calculationType",
+                                                        e.target.value
+                                                    )
+                                                }
+
+                                            >
+
+                                                <option value="FIXED">
+                                                    Fixed
+                                                </option>
+
+                                                <option value="PERCENTAGE">
+                                                    Percentage
+                                                </option>
+
+                                            </select>
+
+
+                                            <input
+
+                                                type="number"
+
+                                                value={
+                                                    head.value
+                                                }
+
+                                                onChange={e =>
+                                                    updatePricingHead(
+                                                        index,
+                                                        "value",
+                                                        Number(
+                                                            e.target.value
+                                                        )
+                                                    )
+                                                }
+
+                                            />
+
+
+                                            <button
+
+                                                type="button"
+
+                                                className="delete-btn"
+
+                                                onClick={() =>
+                                                    removePricingHead(
+                                                        index
+                                                    )
+                                                }
+
+                                            >
+
+                                                Remove
+
+                                            </button>
+
+                                        </div>
+
+                                    )
+                                )
+
+                            )
+                        }
+
+                    </section>
+
+
+                    {/* =================================================
+                        DISCOUNTS
+                    ================================================= */}
+
+                    <section className="pricing-card">
+
+                        <div className="section-header">
+
+                            <h3>
+                                Discounts
+                            </h3>
+
+
+                            <button
+                                type="button"
+                                onClick={
+                                    addDiscount
+                                }
+                            >
+                                + Add
+                            </button>
+
+                        </div>
+
+
+                        {
+                            pricing.discounts.length ===
+                            0 ? (
+
+                                <div className="empty-pricing-state">
+
+                                    No discounts configured.
+
+                                </div>
+
+                            ) : (
+
+                                pricing.discounts.map(
+                                    (
+                                        discount,
+                                        index
+                                    ) => (
+
+                                        <div
+
+                                            className="pricing-row"
+
+                                            key={
+                                                index
+                                            }
+
+                                        >
+
+                                            <input
+
+                                                placeholder="Discount Name"
+
+                                                value={
+                                                    discount.name
+                                                }
+
+                                                onChange={e =>
+                                                    updateDiscount(
+                                                        index,
+                                                        "name",
+                                                        e.target.value
+                                                    )
+                                                }
+
+                                            />
+
+
+                                            <select
+
+                                                value={
+                                                    discount.discountType
+                                                }
+
+                                                onChange={e =>
+                                                    updateDiscount(
+                                                        index,
+                                                        "discountType",
+                                                        e.target.value
+                                                    )
+                                                }
+
+                                            >
+
+                                                <option value="FIXED">
+                                                    Fixed
+                                                </option>
+
+                                                <option value="PERCENTAGE">
+                                                    Percentage
+                                                </option>
+
+                                            </select>
+
+
+                                            <input
+
+                                                type="number"
+
+                                                value={
+                                                    discount.value
+                                                }
+
+                                                onChange={e =>
+                                                    updateDiscount(
+                                                        index,
+                                                        "value",
+                                                        Number(
+                                                            e.target.value
+                                                        )
+                                                    )
+                                                }
+
+                                            />
+
+
+                                            <button
+
+                                                type="button"
+
+                                                className="delete-btn"
+
+                                                onClick={() =>
+                                                    removeDiscount(
+                                                        index
+                                                    )
+                                                }
+
+                                            >
+                                                Remove
+                                            </button>
+
+                                        </div>
+
+                                    )
+                                )
+
+                            )
+                        }
+
+                    </section>
+
+
+                    {/* =================================================
+                        PAYMENT
+                    ================================================= */}
+
+                    <section className="pricing-card">
+
+                        <h3>
+                            Payment Configuration
+                        </h3>
+
+
+                        <label className="checkbox">
+
+                            <input
+
+                                type="checkbox"
+
+                                checked={
+                                    Boolean(
+                                        pricing
+                                            .paymentConfiguration
+                                            ?.advancePaymentAllowed
+                                    )
+                                }
+
+                                onChange={e =>
+                                    updateAdvanceAllowed(
+                                        e.target.checked
+                                    )
+                                }
+
+                            />
+
+                            Allow Advance Payment
+
+                        </label>
+
+
+                        <div className="form-group">
+
+                            <label>
+                                Advance Percentage
                             </label>
 
-                            <div className="form-group">
 
-                                <label>
+                            <input
 
-                                    Advance Percentage
+                                type="number"
 
-                                </label>
+                                min="0"
 
-                                <input
+                                max="100"
 
-                                    type="number"
+                                value={
+                                    pricing
+                                        .paymentConfiguration
+                                        ?.advancePercentage ??
+                                    0
+                                }
 
-                                    value={
-                                        pricing.paymentConfiguration
-                                            ?.advancePercentage
-                                    }
+                                onChange={e =>
+                                    updateAdvancePercentage(
+                                        e.target.value
+                                    )
+                                }
 
-                                    onChange={(e) =>
-                                        updateAdvancePercentage(
-                                            e.target.value
-                                        )
-                                    }
+                            />
 
-                                />
+                        </div>
 
-                            </div>
-
-                        </section>
+                    </section>
 
 
-                        <section className="pricing-card">
+                    {/* =================================================
+                        CANCELLATION POLICY
+                    ================================================= */}
 
-                            <h3>
+                    <section className="pricing-card cancellation-card">
 
-                                Cancellation Policy
+                        <div className="section-header">
 
-                            </h3>
+                            <div>
 
-                            <div className="form-group">
+                                <h3>
+                                    Cancellation Policy
+                                </h3>
 
-                                <label>
 
-                                    Refund Percentage
+                                <p className="section-description">
 
-                                </label>
+                                    Define your own refund policy based on
+                                    the number of days before the event.
 
-                                <input
-
-                                    type="number"
-
-                                    value={
-                                        pricing.cancellationPolicy
-                                            ?.refundPercentage
-                                    }
-
-                                    onChange={(e) =>
-                                        updateRefundPercentage(
-                                            e.target.value
-                                        )
-                                    }
-
-                                />
+                                </p>
 
                             </div>
 
-                            <div className="form-group">
 
-                                <label>
+                            <button
 
-                                    Cancellation Before (Days)
+                                type="button"
 
-                                </label>
+                                onClick={
+                                    addRefundRule
+                                }
 
-                                <input
+                            >
 
-                                    type="number"
+                                + Add Refund Rule
 
-                                    value={
-                                        pricing.cancellationPolicy
-                                            ?.cancelBeforeDays
-                                    }
+                            </button>
 
-                                    onChange={(e) =>
-                                        updateCancelBeforeDays(
-                                            e.target.value
-                                        )
-                                    }
+                        </div>
 
-                                />
 
-                            </div>
+                        {/* =================================================
+                            REFUND PROCESSING
+                        ================================================= */}
 
-                        </section>
+                        <div className="form-group processing-days-field">
 
-                    </div>
-                    <div className="pricing-right">
+                            <label>
+                                Refund Processing Days
+                            </label>
 
-                        <section className="pricing-card">
 
-                            <h3>
+                            <input
 
-                                Pricing Summary
+                                type="number"
 
-                            </h3>
+                                min="0"
 
-                            <div className="summary-row">
+                                value={
+                                    pricing
+                                        .cancellationPolicy
+                                        ?.processingDays ??
+                                    0
+                                }
+
+                                onChange={e =>
+                                    updateProcessingDays(
+                                        e.target.value
+                                    )
+                                }
+
+                            />
+
+                            <small>
+                                Number of days required to process a refund.
+                            </small>
+
+                        </div>
+
+
+                        {/* =================================================
+                            REFUND RULES
+                        ================================================= */}
+                        <div className="refund-rules-header">
+
+                            <div>
+
+                                <h4>
+                                    Refund Rules
+                                </h4>
 
                                 <span>
-
-                                    Base Amount
-
+                                    Add as many cancellation rules as required.
                                 </span>
-
-                                <strong>
-
-                                    ₹{pricing.baseAmount.toLocaleString("en-IN")}
-
-                                </strong>
 
                             </div>
 
-                            {
+                            <button
+                                type="button"
+                                onClick={addRefundRule}
+                            >
+                                + Add Rule
+                            </button>
 
-                                pricing.pricingHeads.map((head, index) => (
+                        </div>
 
-                                    <div
-                                        key={index}
-                                        className="summary-row"
-                                    >
 
-                                        <span>
+                        {
+                            (
+                                pricing
+                                    .cancellationPolicy
+                                    ?.refundRules ?? []
+                            ).length === 0 ? (
 
-                                            {head.name || "Pricing Head"}
+                                <div className="refund-rules-empty">
 
-                                        </span>
-
-                                        <strong>
-
-                                            {head.calculationType === "FIXED"
-
-                                                ? `₹${head.value}`
-
-                                                : `${head.value}%`
-                                            }
-
-                                        </strong>
-
+                                    <div className="refund-empty-icon">
+                                        %
                                     </div>
 
-                                ))
+                                    <strong>
+                                        No refund rules configured
+                                    </strong>
 
-                            }
+                                    <span>
+                                        Add a rule to define your cancellation policy.
+                                    </span>
 
-                            {
-
-                                pricing.discounts.map((discount, index) => (
-
-                                    <div
-                                        key={index}
-                                        className="summary-row discount"
+                                    <button
+                                        type="button"
+                                        onClick={addRefundRule}
                                     >
+                                        + Add Refund Rule
+                                    </button>
 
-                                        <span>
+                                </div>
 
-                                            {discount.name || "Discount"}
+                            ) : (
 
-                                        </span>
+                                <div className="refund-rules-list">
 
-                                        <strong>
+                                    {
+                                        (
+                                            pricing
+                                                .cancellationPolicy
+                                                ?.refundRules ?? []
+                                        ).map(
+                                            (
+                                                rule,
+                                                index
+                                            ) => (
 
-                                            {discount.discountType === "FIXED"
+                                                <div
+                                                    key={index}
+                                                    className="refund-rule-row"
+                                                >
 
-                                                ? `- ₹${discount.value}`
+                                                    <div className="refund-rule-field">
 
-                                                : `- ${discount.value}%`
+                                                        <label>
+                                                            From Days
+                                                        </label>
+
+                                                        <input
+                                                            type="number"
+                                                            min="0"
+                                                            value={
+                                                                rule.minDaysBeforeEvent
+                                                            }
+                                                            onChange={e =>
+                                                                updateRefundRule(
+                                                                    index,
+                                                                    "minDaysBeforeEvent",
+                                                                    Number(
+                                                                        e.target.value
+                                                                    )
+                                                                )
+                                                            }
+                                                        />
+
+                                                    </div>
+
+
+                                                    <div className="refund-rule-field">
+
+                                                        <label>
+                                                            To Days
+                                                        </label>
+
+                                                        <input
+                                                            type="number"
+                                                            min="0"
+                                                            value={
+                                                                rule.maxDaysBeforeEvent ===
+                                                                null
+                                                                    ? ""
+                                                                    : rule.maxDaysBeforeEvent
+                                                            }
+                                                            placeholder="No limit"
+                                                            onChange={e =>
+                                                                updateRefundRule(
+                                                                    index,
+                                                                    "maxDaysBeforeEvent",
+                                                                    e.target.value === ""
+                                                                        ? null
+                                                                        : Number(
+                                                                            e.target.value
+                                                                        )
+                                                                )
+                                                            }
+                                                        />
+
+                                                    </div>
+
+
+                                                    <div className="refund-rule-field">
+
+                                                        <label>
+                                                            Refund %
+                                                        </label>
+
+                                                        <div className="percentage-input">
+
+                                                            <input
+                                                                type="number"
+                                                                min="0"
+                                                                max="100"
+                                                                value={
+                                                                    rule.refundPercentage
+                                                                }
+                                                                onChange={e =>
+                                                                    updateRefundRule(
+                                                                        index,
+                                                                        "refundPercentage",
+                                                                        Number(
+                                                                            e.target.value
+                                                                        )
+                                                                    )
+                                                                }
+                                                            />
+
+                                                            <span>
+                                                                %
+                                                            </span>
+
+                                                        </div>
+
+                                                    </div>
+
+
+                                                    <button
+                                                        type="button"
+                                                        className="delete-btn refund-rule-remove"
+                                                        onClick={() =>
+                                                            removeRefundRule(
+                                                                index
+                                                            )
+                                                        }
+                                                    >
+                                                        Remove
+                                                    </button>
+
+                                                </div>
+
+                                            )
+                                        )
+                                    }
+
+                                </div>
+
+                            )
+                        }
+
+
+
+                    </section>
+
+                </div>
+
+
+                {/* =================================================
+                    RIGHT SIDE
+                ================================================= */}
+
+                <div className="pricing-right">
+
+
+                    {/* =================================================
+                        PRICING SUMMARY
+                    ================================================= */}
+
+                    <section className="pricing-card pricing-summary-card">
+
+                        <h3>
+                            Pricing Summary
+                        </h3>
+
+
+                        {/* BASE */}
+
+                        <div className="summary-row">
+
+                            <span>
+                                Base Amount
+                            </span>
+
+
+                            <strong>
+
+                                ₹
+                                {
+                                    Number(
+                                        pricing.baseAmount ||
+                                        0
+                                    ).toLocaleString(
+                                        "en-IN"
+                                    )
+                                }
+
+                            </strong>
+
+                        </div>
+
+
+                        {/* PRICING HEADS */}
+
+                        {
+                            pricing.pricingHeads
+                                .map(
+                                    (
+                                        head,
+                                        index
+                                    ) => (
+
+                                        <div
+
+                                            key={
+                                                index
                                             }
 
-                                        </strong>
+                                            className="summary-row"
 
-                                    </div>
+                                        >
 
-                                ))
+                                            <span>
 
-                            }
+                                                {
+                                                    head.name ||
+                                                    "Pricing Head"
+                                                }
 
-                            <hr />
+                                            </span>
 
-                            <div className="summary-row">
 
-                                <span>
+                                            <strong>
 
-                                    Advance Payment
+                                                {
+                                                    head.calculationType ===
+                                                    "FIXED"
 
-                                </span>
+                                                        ? `₹${Number(
+                                                            head.value ||
+                                                            0
+                                                        ).toLocaleString(
+                                                            "en-IN"
+                                                        )}`
 
-                                <strong>
+                                                        : `${head.value || 0}%`
 
-                                    {pricing.paymentConfiguration?.advancePaymentAllowed
+                                                }
 
-                                        ? `${pricing.paymentConfiguration.advancePercentage}%`
+                                            </strong>
 
-                                        : "Disabled"}
+                                        </div>
 
-                                </strong>
+                                    )
+                                )
+                        }
 
-                            </div>
 
-                            <div className="summary-row">
+                        {/* DISCOUNTS */}
 
-                                <span>
+                        {
+                            pricing.discounts
+                                .map(
+                                    (
+                                        discount,
+                                        index
+                                    ) => (
 
-                                    Cancellation
+                                        <div
 
-                                </span>
+                                            key={
+                                                index
+                                            }
 
-                                <strong>
+                                            className={
+                                                "summary-row discount"
+                                            }
 
-                                    {pricing.cancellationPolicy?.refundPercentage}% Refund
+                                        >
 
-                                </strong>
+                                            <span>
 
-                            </div>
+                                                {
+                                                    discount.name ||
+                                                    "Discount"
+                                                }
 
-                        </section>
+                                            </span>
 
-                    </div>
+
+                                            <strong>
+
+                                                {
+                                                    discount.discountType ===
+                                                    "FIXED"
+
+                                                        ? `- ₹${Number(
+                                                            discount.value ||
+                                                            0
+                                                        ).toLocaleString(
+                                                            "en-IN"
+                                                        )}`
+
+                                                        : `- ${discount.value || 0}%`
+
+                                                }
+
+                                            </strong>
+
+                                        </div>
+
+                                    )
+                                )
+                        }
+
+
+                        <div className="summary-divider" />
+
+
+                        {/* ACTIVE PACKAGES */}
+
+                        <div className="summary-section-title">
+
+                            Active Packages
+
+                        </div>
+
+
+                        {
+                            sortedPackages.filter(
+                                pkg =>
+                                    pkg.active
+                            ).length ===
+                            0 ? (
+
+                                <div className="summary-empty">
+
+                                    No active packages
+
+                                </div>
+
+                            ) : (
+
+                                sortedPackages
+
+                                    .filter(
+                                        pkg =>
+                                            pkg.active
+                                    )
+
+                                    .map(
+                                        pkg => (
+
+                                            <div
+
+                                                key={
+                                                    pkg.id ??
+                                                    pkg.type
+                                                }
+
+                                                className="package-summary-row"
+
+                                            >
+
+                                                <div>
+
+                                                    <span
+
+                                                        className={
+                                                            `package-summary-dot ${
+                                                                pkg.type.toLowerCase()
+                                                            }`
+                                                        }
+
+                                                    />
+
+
+                                                    <span>
+
+                                                        {
+                                                            PACKAGE_LABELS[
+                                                                pkg.type
+                                                            ]
+                                                        }
+
+                                                        {" "}
+                                                        Package
+
+                                                    </span>
+
+                                                </div>
+
+
+                                                <strong>
+
+                                                    ₹
+                                                    {
+                                                        Number(
+                                                            pkg.price ||
+                                                            0
+                                                        ).toLocaleString(
+                                                            "en-IN"
+                                                        )
+                                                    }
+
+                                                </strong>
+
+                                            </div>
+
+                                        )
+                                    )
+
+                            )
+                        }
+
+
+                        <div className="summary-divider" />
+
+
+                        {/* PAYMENT */}
+
+                        <div className="summary-row">
+
+                            <span>
+                                Advance Payment
+                            </span>
+
+
+                            <strong>
+
+                                {
+                                    pricing
+                                        .paymentConfiguration
+                                        ?.advancePaymentAllowed
+
+                                        ? `${pricing.paymentConfiguration.advancePercentage ?? 0}%`
+
+                                        : "Disabled"
+                                }
+
+                            </strong>
+
+                        </div>
+
+
+                        {/* CANCELLATION */}
+
+                        <div className="summary-row">
+
+                            <span>
+                                Refund Rules
+                            </span>
+
+
+                            <strong>
+
+                                {
+                                    pricing
+                                        .cancellationPolicy
+                                        ?.refundRules
+                                        ?.length ??
+                                    0
+                                }
+
+                                {" "}
+
+                                {
+                                    (
+                                        pricing
+                                            .cancellationPolicy
+                                            ?.refundRules
+                                            ?.length ??
+                                        0
+                                    ) === 1
+                                        ? "Rule"
+                                        : "Rules"
+                                }
+
+                            </strong>
+
+                        </div>
+
+
+                        <div className="summary-row">
+
+                            <span>
+                                Refund Processing
+                            </span>
+
+
+                            <strong>
+
+                                {
+                                    pricing
+                                        .cancellationPolicy
+                                        ?.processingDays ??
+                                    0
+                                }
+
+                                {" "}
+                                days
+
+                            </strong>
+
+                        </div>
+
+                    </section>
+
+
+                    {/* =================================================
+                        TIP
+                    ================================================= */}
+
+                    <section className="pricing-tip">
+
+                        <div className="pricing-tip-icon">
+                            💡
+                        </div>
+
+
+                        <div>
+
+                            <strong>
+                                Tip
+                            </strong>
+
+
+                            <p>
+
+                                Gold is highlighted as the popular package.
+                                Customers will see only the package tiers you activate.
+                                Cancellation rules are defined entirely by you.
+
+                            </p>
+
+                        </div>
+
+                    </section>
 
                 </div>
 
             </div>
 
-        );
+        </div>
 
-    };
+    );
 
-    export default VendorPricing;
+};
+
+
+export default VendorPricing;

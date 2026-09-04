@@ -39,6 +39,13 @@ export default function Notifications() {
         useState<Notification[]>([]);
 
 
+    const [
+        loading,
+        setLoading
+    ] =
+        useState(true);
+
+
     useEffect(() => {
 
         loadNotifications();
@@ -50,9 +57,13 @@ export default function Notifications() {
 
         try {
 
+            setLoading(true);
+
+
             const data =
                 await NotificationService
                     .getNotifications();
+
 
             setNotifications(
                 data
@@ -67,6 +78,11 @@ export default function Notifications() {
             );
 
         }
+        finally {
+
+            setLoading(false);
+
+        }
 
     }
 
@@ -78,42 +94,35 @@ export default function Notifications() {
         switch (type) {
 
             case "BOOKING":
+
                 return (
-                    <FaCalendarCheck
-                        className={
-                            styles.booking
-                        }
-                    />
+                    <FaCalendarCheck />
                 );
+
 
             case "PAYMENT":
+
                 return (
-                    <FaRupeeSign
-                        className={
-                            styles.payment
-                        }
-                    />
+                    <FaRupeeSign />
                 );
+
 
             case "REVIEW":
+
                 return (
-                    <FaStar
-                        className={
-                            styles.review
-                        }
-                    />
+                    <FaStar />
                 );
+
 
             case "CANCELLED":
+
                 return (
-                    <FaTimesCircle
-                        className={
-                            styles.cancelled
-                        }
-                    />
+                    <FaTimesCircle />
                 );
 
+
             default:
+
                 return (
                     <FaBell />
                 );
@@ -142,11 +151,97 @@ export default function Notifications() {
                 return styles.cancelledBg;
 
             default:
-                return "";
+                return styles.defaultBg;
 
         }
 
     };
+
+
+    function formatNotificationTime(
+        createdAt?: string
+    ): string {
+
+        if (!createdAt) {
+
+            return "";
+
+        }
+
+
+        const date =
+            new Date(
+                createdAt
+            );
+
+
+        const now =
+            new Date();
+
+
+        const difference =
+            now.getTime() -
+            date.getTime();
+
+
+        const minutes =
+            Math.floor(
+                difference / 60000
+            );
+
+
+        if (minutes < 1) {
+
+            return "Just now";
+
+        }
+
+
+        if (minutes < 60) {
+
+            return `${minutes} min ago`;
+
+        }
+
+
+        const hours =
+            Math.floor(
+                minutes / 60
+            );
+
+
+        if (hours < 24) {
+
+            return `${hours} hr ago`;
+
+        }
+
+
+        const days =
+            Math.floor(
+                hours / 24
+            );
+
+
+        if (days === 1) {
+
+            return "Yesterday";
+
+        }
+
+
+        if (days < 7) {
+
+            return `${days} days ago`;
+
+        }
+
+
+        return date.toLocaleDateString(
+            "en-IN"
+        );
+
+    }
 
 
     async function handleNotificationClick(
@@ -155,12 +250,35 @@ export default function Notifications() {
 
         try {
 
-            if (!notification.read) {
+            if (
+                !notification.read
+            ) {
 
                 await NotificationService
                     .markAsRead(
                         notification.id
                     );
+
+
+                /*
+                 * Update local state immediately.
+                 */
+
+                setNotifications(
+                    current =>
+                        current.map(
+                            item =>
+                                item.id ===
+                                notification.id
+
+                                    ? {
+                                        ...item,
+                                        read: true
+                                    }
+
+                                    : item
+                        )
+                );
 
             }
 
@@ -175,21 +293,86 @@ export default function Notifications() {
         }
 
 
+        /*
+         * =========================================
+         * BOOKING
+         * =========================================
+         */
+
         if (
             notification.referenceId &&
-            (
-                notification.type === "BOOKING" ||
-                notification.type === "CANCELLED"
-            )
+            notification.type ===
+                "BOOKING"
         ) {
 
             navigate(
                 `/vendor/bookings/${notification.referenceId}`
             );
 
+            return;
+
+        }
+
+
+        /*
+         * =========================================
+         * CANCELLED BOOKING
+         * =========================================
+         */
+
+        if (
+            notification.referenceId &&
+            notification.type ===
+                "CANCELLED"
+        ) {
+
+            navigate(
+                `/vendor/bookings/${notification.referenceId}`
+            );
+
+            return;
+
         }
 
     }
+
+
+    async function handleMarkAllAsRead() {
+
+        try {
+
+            await NotificationService
+                .markAllAsRead();
+
+
+            setNotifications(
+                current =>
+                    current.map(
+                        notification => ({
+                            ...notification,
+                            read: true
+                        })
+                    )
+            );
+
+        }
+        catch (error) {
+
+            console.error(
+                "Failed to mark all notifications as read:",
+                error
+            );
+
+        }
+
+    }
+
+
+    const unreadCount =
+        notifications.filter(
+            notification =>
+                !notification.read
+        ).length;
 
 
     return (
@@ -198,116 +381,236 @@ export default function Notifications() {
             title="Notifications"
         >
 
-            <div className={styles.list}>
+            <div
+                className={
+                    styles.notificationPanel
+                }
+            >
+
+
+                {/* =================================
+                    HEADER
+                ================================= */}
+
+                <div
+                    className={
+                        styles.header
+                    }
+                >
+
+                    <div>
+
+                        <h3>
+                            Recent Notifications
+                        </h3>
+
+                        <span>
+                            {
+                                unreadCount
+                            } unread
+                        </span>
+
+                    </div>
+
+
+                    {
+                        unreadCount > 0 && (
+
+                            <button
+                                type="button"
+                                className={
+                                    styles.markAll
+                                }
+                                onClick={
+                                    handleMarkAllAsRead
+                                }
+                            >
+                                Mark all as read
+                            </button>
+
+                        )
+                    }
+
+                </div>
+
+
+                {/* =================================
+                    CONTENT
+                ================================= */}
 
                 {
-                    notifications.length ===
-                    0 ? (
+                    loading ? (
 
                         <div
                             className={
                                 styles.empty
                             }
                         >
-                            No notifications.
+                            Loading notifications...
+                        </div>
+
+                    ) : notifications.length === 0 ? (
+
+                        <div
+                            className={
+                                styles.empty
+                            }
+                        >
+
+                            <div
+                                className={
+                                    styles.emptyIcon
+                                }
+                            >
+                                <FaBell />
+                            </div>
+
+                            <strong>
+                                You're all caught up
+                            </strong>
+
+                            <span>
+                                No notifications to show.
+                            </span>
+
                         </div>
 
                     ) : (
 
-                        notifications.map(
-                            notification => (
+                        <div
+                            className={
+                                styles.list
+                            }
+                        >
 
-                                <button
-                                    type="button"
+                            {
+                                notifications.map(
+                                    notification => (
 
-                                    key={
-                                        notification.id
-                                    }
+                                        <button
 
-                                    className={`${
-                                        styles.item
-                                    } ${
-                                        !notification.read
-                                            ? styles.unread
-                                            : ""
-                                    }`}
+                                            type="button"
 
-                                    onClick={() =>
-                                        handleNotificationClick(
-                                            notification
-                                        )
-                                    }
-                                >
+                                            key={
+                                                notification.id
+                                            }
 
-                                    <div
-                                        className={`${
-                                            styles.icon
-                                        } ${
-                                            getIconBackground(
-                                                notification.type
-                                            )
-                                        }`}
-                                    >
-                                        {
-                                            getIcon(
-                                                notification.type
-                                            )
-                                        }
-                                    </div>
-
-
-                                    <div
-                                        className={
-                                            styles.details
-                                        }
-                                    >
-
-                                        <div
                                             className={
-                                                styles.title
+
+                                                `${styles.item} ${
+                                                    !notification.read
+                                                        ? styles.unread
+                                                        : ""
+                                                }`
+
                                             }
+
+                                            onClick={() =>
+                                                handleNotificationClick(
+                                                    notification
+                                                )
+                                            }
+
                                         >
-                                            {
-                                                notification.title
-                                            }
-                                        </div>
 
 
-                                        <div
-                                            className={
-                                                styles.message
-                                            }
-                                        >
-                                            {
-                                                notification.message
-                                            }
-                                        </div>
+                                            {/* ICON */}
+
+                                            <div
+                                                className={
+                                                    `${styles.icon} ${
+                                                        getIconBackground(
+                                                            notification.type
+                                                        )
+                                                    }`
+                                                }
+                                            >
+
+                                                {
+                                                    getIcon(
+                                                        notification.type
+                                                    )
+                                                }
+
+                                            </div>
 
 
-                                        {
-                                            notification.createdAt && (
+                                            {/* DETAILS */}
 
-                                                <span
+                                            <div
+                                                className={
+                                                    styles.details
+                                                }
+                                            >
+
+                                                <div
                                                     className={
-                                                        styles.time
+                                                        styles.itemHeader
+                                                    }
+                                                >
+
+                                                    <strong>
+                                                        {
+                                                            notification.title
+                                                        }
+                                                    </strong>
+
+
+                                                    {
+                                                        !notification.read && (
+
+                                                            <span
+                                                                className={
+                                                                    styles.unreadDot
+                                                                }
+                                                            />
+
+                                                        )
+                                                    }
+
+                                                </div>
+
+
+                                                <p
+                                                    className={
+                                                        styles.message
                                                     }
                                                 >
                                                     {
-                                                        new Date(
-                                                            notification.createdAt
-                                                        ).toLocaleString()
+                                                        notification.message
                                                     }
-                                                </span>
+                                                </p>
 
-                                            )
-                                        }
 
-                                    </div>
+                                                {
+                                                    notification.createdAt && (
 
-                                </button>
+                                                        <span
+                                                            className={
+                                                                styles.time
+                                                            }
+                                                        >
 
-                            )
-                        )
+                                                            {
+                                                                formatNotificationTime(
+                                                                    notification.createdAt
+                                                                )
+                                                            }
+
+                                                        </span>
+
+                                                    )
+                                                }
+
+                                            </div>
+
+                                        </button>
+
+                                    )
+                                )
+                            }
+
+                        </div>
 
                     )
                 }

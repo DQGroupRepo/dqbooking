@@ -1,109 +1,81 @@
 import {
-
-    useEffect, useState
-
+    useEffect,
+    useState
 } from "react";
 
 import {
-
-    useNavigate, useParams
-
+    useNavigate,
+    useParams
 } from "react-router-dom";
 
 import "./VendorAddService.css";
 
-import type { VendorServiceForm } from "../../types/VendorServiceForm";
+import type {
+    VendorServiceForm
+} from "../../types/VendorServiceForm";
 
 import VendorServiceMapper
-
     from "../../mapper/VendorServiceMapper";
 
 import BasicInfoSection
-
     from "../../components/vendor/listing/BasicInfoSection/BasicInfoSection";
 
-import AmenitiesSection
-
-    from "../../components/vendor/listing/AmenitiesSection/AmenitiesSection";
-
 import ImageUploader
-
     from "../../components/common/imageUpload/ImageUploader";
 
 import UploadService
-
     from "../../services/UploadService";
 
 import ContactSection
-
     from "../../components/vendor/listing/ContactSection/ContactSection";
 
 import AvailabilitySection
-
     from "../../components/vendor/listing/AvailabilitySection/AvailabilitySection";
 
-import BookingSettingsSection
-
-    from "../../components/vendor/listing/BookingSettingsSection/BookingSettingsSection";
-
 import FormActions
-
     from "../../components/vendor/listing/FormActions/FormActions";
 
 import CategorySpecificSection
-
     from "../../components/vendor/listing/category/CategorySpecificSection";
 
 import BackButton
-
     from "../../components/common/ui/BackButton/BackButton";
 
 import VendorServiceService
-
     from "../../services/VendorServiceService";
 
 import VendorServiceFormFactory
-
     from "../../util/VendorServiceFormFactory";
 
 import FormProgress
-
     from "../../components/common/ui/FormProgress/FormProgress";
 
 import calculateListingProgress
-
     from "../../util/calculateListingProgress";
 
 import toast
-
     from "react-hot-toast";
 
 import type {
-
     MediaItem,
-
     ExistingMediaItem
-
 } from "../../components/common/imageUpload/ImageUploader.types";
 
 
 const AddService = () => {
 
-
     const {
-
         id,
-
         category
-
     } = useParams();
 
 
-    const isEditMode = !!id;
+    const isEditMode =
+        !!id;
 
 
-    const navigate = useNavigate();
-
+    const navigate =
+        useNavigate();
 
 
     /*
@@ -113,21 +85,13 @@ const AddService = () => {
      */
 
     const [
-
         formData,
-
         setFormData
-
     ] = useState<VendorServiceForm>(
-
         VendorServiceFormFactory.create(
-
             category ?? ""
-
         )
-
     );
-
 
 
     /*
@@ -140,13 +104,9 @@ const AddService = () => {
      */
 
     const [
-
         media,
-
         setMedia
-
     ] = useState<MediaItem[]>([]);
-
 
 
     /*
@@ -156,49 +116,21 @@ const AddService = () => {
      */
 
     const [
-
         publishing,
-
         setPublishing
-
     ] = useState(false);
 
 
     const [
-
         saved,
-
         setSaved
-
     ] = useState(false);
 
 
     const [
-
         errors,
-
         setErrors
-
     ] = useState<string[]>([]);
-
-
-
-    const amenityList = [
-
-        "AC Hall",
-
-        "Parking",
-
-        "Dining Area",
-
-        "Stage",
-
-        "Generator Backup",
-
-        "Catering Available"
-
-    ];
-
 
 
     /*
@@ -209,7 +141,6 @@ const AddService = () => {
 
     useEffect(() => {
 
-
         if (!isEditMode) {
 
             return;
@@ -219,126 +150,95 @@ const AddService = () => {
 
         loadService();
 
-
     }, [id]);
 
 
+    const loadService =
+        async () => {
 
-    const loadService = async () => {
+            if (!id) {
 
+                return;
 
-        if (!id) {
-
-            return;
-
-        }
-
-
-        try {
+            }
 
 
-            const service =
+            try {
 
-                await VendorServiceService
-
-                    .getServiceById(
-
-                        id
-
-                    );
+                const service =
+                    await VendorServiceService
+                        .getServiceById(
+                            id
+                        );
 
 
+                /*
+                 * Convert backend response
+                 * into editable form state.
+                 *
+                 * Amenities remain part of
+                 * formData. They are simply
+                 * rendered by CategorySpecificSection
+                 * now.
+                 */
 
-            setFormData(
-
-                VendorServiceMapper
-
-                    .responseToForm(
-
-                        service
-
-                    )
-
-            );
-
-
-
-            /*
-             * Convert DB URLs into
-             * unified media objects.
-             *
-             * The order returned by
-             * backend is preserved.
-             */
-
-            const existingMedia:
-
-                MediaItem[] =
-
-                (
-
-                    service.imageUrls ?? []
-
-                ).map(
-
-                    (
-
-                        url,
-
-                        index
-
-                    ) => ({
-
-                        id:
-
-                            `existing-${
-
-                                index
-
-                            }-${
-
-                                url
-
-                            }`,
-
-                        kind: "existing",
-
-                        url
-
-                    })
-
+                setFormData(
+                    VendorServiceMapper
+                        .responseToForm(
+                            service
+                        )
                 );
 
 
-            setMedia(
+                /*
+                 * Convert DB URLs into
+                 * unified media objects.
+                 *
+                 * Backend order is preserved.
+                 */
 
-                existingMedia
+                const existingMedia:
+                    MediaItem[] =
+                    (
+                        service.imageUrls ?? []
+                    ).map(
+                        (
+                            url,
+                            index
+                        ) => ({
 
-            );
+                            id:
+                                `existing-${index}-${url}`,
+
+                            kind:
+                                "existing",
+
+                            url
+
+                        })
+                    );
 
 
-        }
+                setMedia(
+                    existingMedia
+                );
 
-        catch (error) {
+            }
+            catch (error) {
+
+                console.error(
+                    "Failed to load service:",
+                    error
+                );
 
 
-            console.error(
+                toast.error(
+                    "Unable to load service."
+                );
 
-                error
+            }
 
-            );
-
-
-            toast.error(
-
-                "Unable to load service."
-
-            );
-
-        }
-
-    };
-
+        };
 
 
     /*
@@ -348,105 +248,79 @@ const AddService = () => {
      */
 
     const handleChange = (
-
         e: React.ChangeEvent<
-
             HTMLInputElement |
-
             HTMLTextAreaElement |
-
             HTMLSelectElement
-
         >
-
     ) => {
 
+        setFormData(
+            previous => ({
 
-        setFormData({
+                ...previous,
 
-            ...formData,
+                [e.target.name]:
 
-            [e.target.name]:
+                    e.target.type ===
+                    "checkbox"
 
-                e.target.type ===
+                        ? (
+                            e.target as
+                            HTMLInputElement
+                        ).checked
 
-                "checkbox"
+                        : e.target.value
 
-                    ?
-
-                    (
-
-                        e.target as
-
-                        HTMLInputElement
-
-                    ).checked
-
-                    :
-
-                    e.target.value
-
-        });
+            })
+        );
 
     };
-
 
 
     /*
      * =========================
      * Amenities
+     *
+     * IMPORTANT:
+     *
+     * Amenities are still stored
+     * inside formData.
+     *
+     * CategorySpecificSection now
+     * controls which amenity list is
+     * displayed based on category.
      * =========================
      */
 
     const handleAmenityChange = (
-
         item: string
-
     ) => {
 
-
         setFormData(
+            previous => ({
 
-            prev => ({
-
-                ...prev,
+                ...previous,
 
                 amenities:
-
-                    prev.amenities.includes(
-
+                    previous.amenities.includes(
                         item
-
                     )
 
-                        ?
-
-                        prev.amenities.filter(
-
+                        ? previous.amenities.filter(
                             amenity =>
-
-                                amenity !==
-
-                                item
-
+                                amenity !== item
                         )
 
-                        :
-
-                        [
-
-                            ...prev.amenities,
-
+                        : [
+                            ...previous.amenities,
                             item
-
                         ]
 
             })
-
         );
 
     };
-
 
 
     /*
@@ -457,37 +331,27 @@ const AddService = () => {
 
     function validateForm() {
 
-
         const validationErrors:
-
             string[] = [];
 
 
         if (
-
             !formData.serviceName.trim()
-
         ) {
 
             validationErrors.push(
-
                 "Service Name"
-
             );
 
         }
 
 
         if (
-
             !formData.location.trim()
-
         ) {
 
             validationErrors.push(
-
                 "Location"
-
             );
 
         }
@@ -496,76 +360,56 @@ const AddService = () => {
         if (!formData.price) {
 
             validationErrors.push(
-
                 "Price"
-
             );
 
         }
 
 
         if (
-
             !formData.contactPerson.trim()
-
         ) {
 
             validationErrors.push(
-
                 "Contact Person"
-
             );
 
         }
 
 
         if (
-
             !formData.mobile.trim()
-
         ) {
 
             validationErrors.push(
-
                 "Mobile"
-
             );
 
         }
 
 
         if (
-
             !formData.email.trim()
-
         ) {
 
             validationErrors.push(
-
                 "Email"
-
             );
 
         }
 
 
         setErrors(
-
             validationErrors
-
         );
 
 
         return (
-
             validationErrors.length ===
-
             0
-
         );
 
     }
-
 
 
     /*
@@ -573,30 +417,19 @@ const AddService = () => {
      * Remove Existing Media
      * =========================
      *
-     * IMPORTANT:
+     * Only React state changes here.
      *
-     * This only removes the media
-     * from React state.
-     *
-     * MongoDB is NOT changed here.
-     *
-     * The database is changed only
-     * after Update is clicked.
+     * DB changes after Update/Publish.
+     * =========================
      */
 
     const handleRemoveExistingMedia = (
-
         item: ExistingMediaItem
-
     ) => {
 
-
         const confirmed =
-
             window.confirm(
-
                 "Are you sure you want to remove this image/video? The change will be saved only when you click Update."
-
             );
 
 
@@ -608,23 +441,15 @@ const AddService = () => {
 
 
         setMedia(
-
             currentMedia =>
-
                 currentMedia.filter(
-
                     currentItem =>
-
                         currentItem.id !==
-
                         item.id
-
                 )
-
         );
 
     };
-
 
 
     /*
@@ -634,24 +459,17 @@ const AddService = () => {
      */
 
     const handleSubmit = async (
-
         e: React.FormEvent
-
     ) => {
-
 
         e.preventDefault();
 
 
         if (!validateForm()) {
 
-
             toast.error(
-
                 "Please complete all required fields."
-
             );
-
 
             return;
 
@@ -659,15 +477,23 @@ const AddService = () => {
 
 
         setPublishing(
-
             true
-
         );
+
+
+        /*
+         * Keep this variable at the
+         * function level.
+         *
+         * There should NOT be another
+         * let serviceId declaration inside
+         * the try block.
+         */
+
         let serviceId = "";
 
 
         try {
-
 
             /*
              * =================================
@@ -678,116 +504,64 @@ const AddService = () => {
              */
 
             const newMediaItems =
-
                 media.filter(
-
                     item =>
-
                         item.kind ===
-
                         "new"
-
                 );
-
 
 
             /*
              * =================================
              * Step 2
              *
-             * Upload all new files.
-             *
-             * UploadService returns URLs
-             * in the same order as files.
+             * Upload new files.
              * =================================
              */
 
             const uploadedUrls:
-
                 string[] =
+                newMediaItems.length > 0
 
-                newMediaItems.length >
-
-                0
-
-                    ?
-
-                    await UploadService
-
+                    ? await UploadService
                         .uploadImages(
-
                             newMediaItems.map(
-
                                 item =>
-
                                     item.kind ===
-
                                     "new"
 
-                                        ?
+                                        ? item.file
 
-                                        item.file
-
-                                        :
-
-                                        new File(
-
+                                        : new File(
                                             [],
-
                                             ""
-
                                         )
-
                             )
-
                         )
 
-                    :
-
-                    [];
-
+                    : [];
 
 
             /*
              * =================================
              * Step 3
              *
-             * Replace each new File
-             * with its uploaded URL.
-             *
-             * IMPORTANT:
-             *
-             * We iterate through the
-             * ORIGINAL media order.
-             *
-             * Therefore the final
-             * imageUrls order exactly
-             * matches the user's drag order.
+             * Preserve exact media order.
              * =================================
              */
 
-            let uploadedIndex = 0;
+            let uploadedIndex =
+                0;
 
 
             const finalImageUrls:
-
                 string[] =
-
                 media.map(
-
                     item => {
 
-
-                        /*
-                         * Existing media.
-                         */
-
                         if (
-
                             item.kind ===
-
                             "existing"
-
                         ) {
 
                             return item.url;
@@ -795,17 +569,9 @@ const AddService = () => {
                         }
 
 
-
-                        /*
-                         * New uploaded media.
-                         */
-
                         const uploadedUrl =
-
                             uploadedUrls[
-
                                 uploadedIndex
-
                             ];
 
 
@@ -815,9 +581,7 @@ const AddService = () => {
                         return uploadedUrl;
 
                     }
-
                 );
-
 
 
             /*
@@ -825,51 +589,51 @@ const AddService = () => {
              * Step 4
              *
              * Convert form into request.
+             *
+             * formData.amenities is still
+             * included by the mapper exactly
+             * as before.
              * =================================
              */
 
             const request =
-
                 VendorServiceMapper
-
                     .formToRequest(
-
                         formData
-
                     );
-
 
 
             /*
              * =================================
              * Step 5
              *
-             * Send FINAL ordered media list.
+             * Final ordered media list.
              * =================================
              */
 
             request.imageUrls =
-
                 finalImageUrls;
-
 
 
             /*
              * =================================
-             * UPDATE
+             * UPDATE / CREATE
              * =================================
              */
-            let serviceId = "";
 
             if (isEditMode) {
 
                 const updatedService =
-                    await VendorServiceService.updateService(
-                        id!,
-                        request
-                    );
+                    await VendorServiceService
+                        .updateService(
+                            id!,
+                            request
+                        );
 
-                serviceId = updatedService.id;
+
+                serviceId =
+                    updatedService.id;
+
 
                 toast.success(
                     "Service updated successfully."
@@ -879,11 +643,15 @@ const AddService = () => {
             else {
 
                 const createdService =
-                    await VendorServiceService.createService(
-                        request
-                    );
+                    await VendorServiceService
+                        .createService(
+                            request
+                        );
 
-                serviceId = createdService.id;
+
+                serviceId =
+                    createdService.id;
+
 
                 toast.success(
                     "Listing published successfully 🎉"
@@ -891,37 +659,33 @@ const AddService = () => {
 
             }
 
+
+            /*
+             * Pricing remains a separate step.
+             */
+
             navigate(
                 `/vendor/services/${serviceId}/pricing`
             );
 
         }
-
         catch (error) {
 
-
             console.error(
-
+                "Failed to save service:",
                 error
-
             );
 
 
             toast.error(
-
                 "Unable to save listing."
-
             );
 
         }
-
         finally {
 
-
             setPublishing(
-
                 false
-
             );
 
         }
@@ -929,59 +693,39 @@ const AddService = () => {
     };
 
 
-
     /*
      * =========================
      * Progress
      * =========================
+     *
+     * Existing progress logic
+     * continues to use formData.amenities.
+     * =========================
      */
 
     const progress =
-
         calculateListingProgress(
-
             formData,
-
             formData.amenities,
-
             media
-
                 .filter(
-
                     item =>
-
                         item.kind ===
-
                         "new"
-
                 )
-
                 .map(
-
                     item =>
-
                         item.kind ===
-
                         "new"
 
-                            ?
+                            ? item.file
 
-                            item.file
-
-                            :
-
-                            new File(
-
+                            : new File(
                                 [],
-
                                 ""
-
                             )
-
                 )
-
         );
-
 
 
     /*
@@ -992,53 +736,35 @@ const AddService = () => {
 
     function saveDraft() {
 
-
         localStorage.setItem(
-
             "vendorListingDraft",
-
             JSON.stringify(
-
                 formData
-
             )
-
         );
 
 
         setSaved(
-
             true
-
         );
 
 
         setTimeout(
-
             () =>
-
                 setSaved(
-
                     false
-
                 ),
-
             2500
-
         );
 
     }
 
 
-
     return (
-
 
         <section className="vendor-form-section">
 
-
             <div className="vendor-form-container">
-
 
                 <div className="vendor-form-card">
 
@@ -1052,245 +778,174 @@ const AddService = () => {
                     />
 
 
-
                     <h1>
 
                         {
-
                             isEditMode
-
-                                ?
-
-                                "Edit Service"
-
-                                :
-
-                                "Add New Service"
-
+                                ? "Edit Service"
+                                : "Add New Service"
                         }
 
                     </h1>
 
 
-
                     <p>
 
                         {
-
                             isEditMode
 
-                                ?
+                                ? "Update your listing details."
 
-                                "Update your listing details."
-
-                                :
-
-                                "Create a new listing that customers can discover and book."
+                                : "Create a new listing that customers can discover and book."
 
                         }
 
                     </p>
 
 
-
                     <FormProgress
-
                         progress={
-
                             progress
-
                         }
-
                     />
 
 
-
                     <form
-
                         onSubmit={
-
                             handleSubmit
-
                         }
-
                     >
 
+
+                        {/* =====================================
+                            BASIC INFORMATION
+                        ===================================== */}
 
                         <BasicInfoSection
 
                             formData={
-
                                 formData
-
                             }
 
                             handleChange={
-
                                 handleChange
-
                             }
 
                         />
 
 
+                        {/* =====================================
+                            CATEGORY SPECIFIC + AMENITIES
+
+                            Amenities now live inside this
+                            section.
+                        ===================================== */}
 
                         <CategorySpecificSection
 
                             category={
-
                                 formData.category
-
                             }
 
                             formData={
-
                                 formData
-
                             }
 
                             handleChange={
-
                                 handleChange
-
                             }
-
-                        />
-
-
-
-                        <AmenitiesSection
 
                             amenities={
-
                                 formData.amenities
-
-                            }
-
-                            amenityList={
-
-                                amenityList
-
                             }
 
                             handleAmenityChange={
-
                                 handleAmenityChange
-
                             }
 
                         />
 
 
+                        {/* =====================================
+                            IMAGES
+                        ===================================== */}
 
                         <ImageUploader
 
                             media={
-
                                 media
-
                             }
 
                             onChange={
-
                                 setMedia
-
                             }
 
                             onRemoveExisting={
-
                                 handleRemoveExistingMedia
-
                             }
 
                         />
 
 
+                        {/* =====================================
+                            CONTACT
+                        ===================================== */}
 
                         <ContactSection
 
                             formData={
-
                                 formData
-
                             }
 
                             handleChange={
-
                                 handleChange
-
                             }
 
                         />
 
 
+                        {/* =====================================
+                            AVAILABILITY
+                        ===================================== */}
 
                         <AvailabilitySection
 
                             formData={
-
                                 formData
-
                             }
 
                             handleChange={
-
                                 handleChange
-
                             }
 
                         />
 
 
-
-                        <BookingSettingsSection
-
-                            formData={
-
-                                formData
-
-                            }
-
-                            handleChange={
-
-                                handleChange
-
-                            }
-
-                        />
-
-
+                        {/* =====================================
+                            ACTIONS
+                        ===================================== */}
 
                         <FormActions
 
                             onSaveDraft={
-
                                 saveDraft
-
                             }
 
                             publishing={
-
                                 publishing
-
                             }
 
                             isEditMode={
-
                                 isEditMode
-
                             }
 
                         />
 
-
                     </form>
-
 
                 </div>
 
-
             </div>
-
 
         </section>
 

@@ -1,3 +1,4 @@
+/*
 import Input from "../../../common/ui/Input/Input";
 import SectionHeader from "../../../common/ui/SectionHeader/SectionHeader";
 import type { VendorServiceForm } from "../../../../types/VendorServiceForm";
@@ -142,4 +143,4 @@ export default function BookingSettingsSection({
 
     );
 
-}
+} */

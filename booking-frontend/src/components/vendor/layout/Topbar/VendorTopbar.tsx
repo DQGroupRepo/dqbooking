@@ -4,7 +4,11 @@ import {
     FaChevronDown,
     FaUser,
     FaCog,
-    FaSignOutAlt
+    FaSignOutAlt,
+    FaCalendarCheck,
+    FaRupeeSign,
+    FaStar,
+    FaTimesCircle
 } from "react-icons/fa";
 
 import {
@@ -21,6 +25,13 @@ import {
     useAuth
 } from "../../../../context/AuthContext";
 
+import NotificationService
+    from "../../../../services/NotificationService";
+
+import type {
+    Notification
+} from "../../../../types/Notification";
+
 import "./VendorTopbar.css";
 
 
@@ -33,8 +44,14 @@ export default function VendorTopbar() {
 
     const navigate = useNavigate();
 
+
     const profileRef =
         useRef<HTMLDivElement>(null);
+
+
+    const notificationRef =
+        useRef<HTMLDivElement>(null);
+
 
     const [
         profileMenuOpen,
@@ -42,9 +59,30 @@ export default function VendorTopbar() {
     ] = useState(false);
 
 
+    const [
+        notificationMenuOpen,
+        setNotificationMenuOpen
+    ] = useState(false);
+
+
+    const [
+        notifications,
+        setNotifications
+    ] = useState<Notification[]>([]);
+
+
+    const [
+        unreadCount,
+        setUnreadCount
+    ] = useState(0);
+
+
     /*
-     * Current date
+     * =========================================
+     * CURRENT DATE
+     * =========================================
      */
+
     const today =
         new Date().toLocaleDateString(
             "en-IN",
@@ -58,46 +96,124 @@ export default function VendorTopbar() {
 
 
     /*
-     * Vendor name
+     * =========================================
+     * VENDOR NAME
+     * =========================================
      */
+
     const vendorName =
         user?.name || "Vendor";
 
 
     /*
-     * Avatar initials
+     * =========================================
+     * AVATAR
+     * =========================================
      */
+
     const avatar =
         vendorName
             .split(" ")
             .filter(Boolean)
-            .map(word => word[0])
+            .map(
+                word =>
+                    word[0]
+            )
             .join("")
-            .substring(0, 2)
+            .substring(
+                0,
+                2
+            )
             .toUpperCase();
 
 
     /*
-     * Close profile dropdown
-     * when clicking outside.
+     * =========================================
+     * LOAD NOTIFICATIONS
+     * =========================================
      */
+
+    useEffect(() => {
+
+        loadNotifications();
+
+    }, []);
+
+
+    async function loadNotifications() {
+
+        try {
+
+            const data =
+                await NotificationService
+                    .getNotifications();
+
+
+            setNotifications(
+                data
+            );
+
+
+            setUnreadCount(
+                data.filter(
+                    notification =>
+                        !notification.read
+                ).length
+            );
+
+        }
+        catch (error) {
+
+            console.error(
+                "Failed to load notifications:",
+                error
+            );
+
+        }
+
+    }
+
+
+    /*
+     * =========================================
+     * CLOSE DROPDOWNS WHEN CLICKING OUTSIDE
+     * =========================================
+     */
+
     useEffect(() => {
 
         function handleOutsideClick(
             event: MouseEvent
         ) {
 
+            const target =
+                event.target as Node;
+
+
             if (
-
                 profileRef.current &&
-
                 !profileRef.current.contains(
-                    event.target as Node
+                    target
                 )
-
             ) {
 
-                setProfileMenuOpen(false);
+                setProfileMenuOpen(
+                    false
+                );
+
+            }
+
+
+            if (
+                notificationRef.current &&
+                !notificationRef.current.contains(
+                    target
+                )
+            ) {
+
+                setNotificationMenuOpen(
+                    false
+                );
 
             }
 
@@ -123,29 +239,372 @@ export default function VendorTopbar() {
 
 
     /*
-     * Handle Sign Out
+     * =========================================
+     * SIGN OUT
+     * =========================================
      */
+
     const handleLogout = () => {
 
-        setProfileMenuOpen(false);
+        setProfileMenuOpen(
+            false
+        );
+
+        setNotificationMenuOpen(
+            false
+        );
 
         logout();
 
-        navigate("/");
+        navigate(
+            "/"
+        );
 
     };
 
 
     /*
-     * Toggle profile dropdown
+     * =========================================
+     * PROFILE DROPDOWN
+     * =========================================
      */
+
     const toggleProfileMenu = () => {
 
         setProfileMenuOpen(
-            previous => !previous
+            previous =>
+                !previous
+        );
+
+        setNotificationMenuOpen(
+            false
         );
 
     };
+
+
+    /*
+     * =========================================
+     * NOTIFICATION DROPDOWN
+     * =========================================
+     */
+
+    const toggleNotificationMenu = () => {
+
+        setNotificationMenuOpen(
+            previous =>
+                !previous
+        );
+
+        setProfileMenuOpen(
+            false
+        );
+
+    };
+
+
+    /*
+     * =========================================
+     * FORMAT TIME
+     * =========================================
+     */
+
+    function formatNotificationTime(
+        createdAt?: string
+    ): string {
+
+        if (!createdAt) {
+
+            return "";
+
+        }
+
+
+        const date =
+            new Date(
+                createdAt
+            );
+
+
+        const now =
+            new Date();
+
+
+        const difference =
+            now.getTime() -
+            date.getTime();
+
+
+        const minutes =
+            Math.floor(
+                difference / 60000
+            );
+
+
+        if (minutes < 1) {
+
+            return "Just now";
+
+        }
+
+
+        if (minutes < 60) {
+
+            return `${minutes} min ago`;
+
+        }
+
+
+        const hours =
+            Math.floor(
+                minutes / 60
+            );
+
+
+        if (hours < 24) {
+
+            return `${hours} hr ago`;
+
+        }
+
+
+        const days =
+            Math.floor(
+                hours / 24
+            );
+
+
+        if (days === 1) {
+
+            return "Yesterday";
+
+        }
+
+
+        if (days < 7) {
+
+            return `${days} days ago`;
+
+        }
+
+
+        return date.toLocaleDateString(
+            "en-IN"
+        );
+
+    }
+
+
+    /*
+     * =========================================
+     * NOTIFICATION ICON
+     * =========================================
+     */
+
+    function getNotificationIcon(
+        type: Notification["type"]
+    ) {
+
+        switch (type) {
+
+            case "BOOKING":
+
+                return (
+                    <FaCalendarCheck />
+                );
+
+
+            case "PAYMENT":
+
+                return (
+                    <FaRupeeSign />
+                );
+
+
+            case "REVIEW":
+
+                return (
+                    <FaStar />
+                );
+
+
+            case "CANCELLED":
+
+                return (
+                    <FaTimesCircle />
+                );
+
+
+            default:
+
+                return (
+                    <FaBell />
+                );
+
+        }
+
+    }
+
+
+    /*
+     * =========================================
+     * MARK AS READ
+     * =========================================
+     */
+
+    async function markNotificationAsRead(
+        notificationId: string
+    ) {
+
+        try {
+
+            await NotificationService
+                .markAsRead(
+                    notificationId
+                );
+
+
+            setNotifications(
+                current =>
+                    current.map(
+                        notification =>
+                            notification.id ===
+                            notificationId
+
+                                ? {
+                                    ...notification,
+                                    read: true
+                                }
+
+                                : notification
+                    )
+            );
+
+
+            setUnreadCount(
+                current =>
+                    Math.max(
+                        0,
+                        current - 1
+                    )
+            );
+
+        }
+        catch (error) {
+
+            console.error(
+                "Failed to mark notification as read:",
+                error
+            );
+
+        }
+
+    }
+
+
+    /*
+     * =========================================
+     * NOTIFICATION CLICK
+     * =========================================
+     */
+
+    async function handleNotificationClick(
+        notification: Notification
+    ) {
+
+        if (
+            !notification.read
+        ) {
+
+            await markNotificationAsRead(
+                notification.id
+            );
+
+        }
+
+
+        setNotificationMenuOpen(
+            false
+        );
+
+
+        /*
+         * Booking related notification.
+         */
+
+        if (
+            notification.referenceId &&
+            (
+                notification.type === "BOOKING" ||
+                notification.type === "CANCELLED"
+            )
+        ) {
+
+            navigate(
+                `/vendor/bookings/${notification.referenceId}`
+            );
+
+        }
+
+    }
+
+
+    /*
+     * =========================================
+     * MARK ALL AS READ
+     * =========================================
+     */
+
+    async function handleMarkAllAsRead() {
+
+        try {
+
+            await NotificationService
+                .markAllAsRead();
+
+
+            setNotifications(
+                current =>
+                    current.map(
+                        notification => ({
+                            ...notification,
+                            read: true
+                        })
+                    )
+            );
+
+
+            setUnreadCount(
+                0
+            );
+
+        }
+        catch (error) {
+
+            console.error(
+                "Failed to mark all notifications as read:",
+                error
+            );
+
+        }
+
+    }
+
+
+    /*
+     * =========================================
+     * RECENT NOTIFICATIONS
+     * =========================================
+     *
+     * Show only the latest five in the
+     * topbar dropdown.
+     */
+
+    const recentNotifications =
+        notifications.slice(
+            0,
+            5
+        );
 
 
     return (
@@ -170,7 +629,6 @@ export default function VendorTopbar() {
             </div>
 
 
-
             {/* =================================
                 CENTER
             ================================= */}
@@ -191,7 +649,6 @@ export default function VendorTopbar() {
             </div>
 
 
-
             {/* =================================
                 RIGHT
             ================================= */}
@@ -199,21 +656,268 @@ export default function VendorTopbar() {
             <div className="topbar-right">
 
 
-                {/* Notification */}
+                {/* =================================
+                    NOTIFICATIONS
+                ================================= */}
 
-                <button
-                    className="notification-btn"
-                    type="button"
+                <div
+                    className="vendor-notification-wrapper"
+                    ref={notificationRef}
                 >
 
-                    <FaBell />
+                    <button
+                        type="button"
+                        className={
+                            `notification-btn ${
+                                notificationMenuOpen
+                                    ? "notification-btn-active"
+                                    : ""
+                            }`
+                        }
+                        onClick={
+                            toggleNotificationMenu
+                        }
+                        aria-label="Notifications"
+                    >
 
-                    <span className="badge">
-                        3
-                    </span>
+                        <FaBell />
 
-                </button>
 
+                        {
+                            unreadCount > 0 && (
+
+                                <span
+                                    className="badge"
+                                >
+                                    {
+                                        unreadCount > 9
+                                            ? "9+"
+                                            : unreadCount
+                                    }
+                                </span>
+
+                            )
+                        }
+
+                    </button>
+
+
+                    {
+                        notificationMenuOpen && (
+
+                            <div className="vendor-notification-dropdown">
+
+
+                                {/* =================================
+                                    HEADER
+                                ================================= */}
+
+                                <div className="vendor-notification-header">
+
+                                    <div>
+
+                                        <h3>
+                                            Notifications
+                                        </h3>
+
+                                        <span>
+                                            {
+                                                unreadCount
+                                            } unread
+                                        </span>
+
+                                    </div>
+
+
+                                    {
+                                        unreadCount > 0 && (
+
+                                            <button
+                                                type="button"
+                                                className="vendor-mark-all"
+                                                onClick={
+                                                    handleMarkAllAsRead
+                                                }
+                                            >
+                                                Mark all as read
+                                            </button>
+
+                                        )
+                                    }
+
+                                </div>
+
+
+                                {/* =================================
+                                    LIST
+                                ================================= */}
+
+                                <div className="vendor-notification-list">
+
+                                    {
+                                        recentNotifications.length ===
+                                        0 ? (
+
+                                            <div className="vendor-notification-empty">
+
+                                                <div className="vendor-notification-empty-icon">
+
+                                                    <FaBell />
+
+                                                </div>
+
+                                                <strong>
+                                                    You're all caught up
+                                                </strong>
+
+                                                <span>
+                                                    No notifications to show.
+                                                </span>
+
+                                            </div>
+
+                                        ) : (
+
+                                            recentNotifications.map(
+                                                notification => (
+
+                                                    <button
+
+                                                        type="button"
+
+                                                        key={
+                                                            notification.id
+                                                        }
+
+                                                        className={
+                                                            `vendor-notification-item ${
+                                                                !notification.read
+                                                                    ? "unread"
+                                                                    : ""
+                                                            }`
+                                                        }
+
+                                                        onClick={() =>
+                                                            handleNotificationClick(
+                                                                notification
+                                                            )
+                                                        }
+
+                                                    >
+
+                                                        <div className="vendor-notification-icon">
+
+                                                            {
+                                                                getNotificationIcon(
+                                                                    notification.type
+                                                                )
+                                                            }
+
+                                                        </div>
+
+
+                                                        <div className="vendor-notification-content">
+
+                                                            <div className="vendor-notification-item-header">
+
+                                                                <strong>
+
+                                                                    {
+                                                                        notification.title ||
+                                                                        "Notification"
+                                                                    }
+
+                                                                </strong>
+
+
+                                                                {
+                                                                    !notification.read && (
+
+                                                                        <span className="vendor-notification-dot" />
+
+                                                                    )
+                                                                }
+
+                                                            </div>
+
+
+                                                            <p>
+
+                                                                {
+                                                                    notification.message
+                                                                }
+
+                                                            </p>
+
+
+                                                            {
+                                                                notification.createdAt && (
+
+                                                                    <span className="vendor-notification-time">
+
+                                                                        {
+                                                                            formatNotificationTime(
+                                                                                notification.createdAt
+                                                                            )
+                                                                        }
+
+                                                                    </span>
+
+                                                                )
+                                                            }
+
+                                                        </div>
+
+                                                    </button>
+
+                                                )
+                                            )
+
+                                        )
+                                    }
+
+                                </div>
+
+
+                                {/* =================================
+                                    FOOTER
+                                ================================= */}
+
+                                {
+                                    notifications.length > 5 && (
+
+                                        <div className="vendor-notification-footer">
+
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+
+                                                    setNotificationMenuOpen(
+                                                        false
+                                                    );
+
+                                                    /*
+                                                     * Can be connected to
+                                                     * a full notification
+                                                     * page later.
+                                                     */
+
+                                                }}
+                                            >
+                                                Showing latest 5
+                                            </button>
+
+                                        </div>
+
+                                    )
+                                }
+
+                            </div>
+
+                        )
+                    }
+
+                </div>
 
 
                 {/* =================================
@@ -225,37 +929,23 @@ export default function VendorTopbar() {
                     ref={profileRef}
                 >
 
-
-                    {/* Profile Trigger */}
-
                     <button
                         type="button"
                         className={
-
                             `profile-box ${
                                 profileMenuOpen
                                     ? "profile-box-active"
                                     : ""
                             }`
-
                         }
                         onClick={
                             toggleProfileMenu
                         }
                     >
 
-
-                        {/* Avatar */}
-
                         <div className="avatar">
-
                             {avatar}
-
                         </div>
-
-
-
-                        {/* User Details */}
 
                         <div className="profile-details">
 
@@ -269,30 +959,18 @@ export default function VendorTopbar() {
 
                         </div>
 
-
-
-                        {/* Chevron */}
-
                         <FaChevronDown
                             className={
-
                                 profileMenuOpen
                                     ? "chevron-open"
                                     : ""
-
                             }
                         />
 
                     </button>
 
 
-
-                    {/* =================================
-                        DROPDOWN MENU
-                    ================================= */}
-
                     {
-
                         profileMenuOpen && (
 
                             <div className="profile-dropdown">
@@ -309,20 +987,12 @@ export default function VendorTopbar() {
                                             false
                                         );
 
-                                        /*
-                                         * Add vendor profile
-                                         * navigation later.
-                                         */
-
                                     }}
                                 >
 
                                     <div className="dropdown-icon">
-
                                         <FaUser />
-
                                     </div>
-
 
                                     <div className="dropdown-content">
 
@@ -339,11 +1009,7 @@ export default function VendorTopbar() {
                                 </button>
 
 
-
-                                {/* Divider */}
-
                                 <div className="dropdown-divider" />
-
 
 
                                 {/* Settings */}
@@ -357,20 +1023,12 @@ export default function VendorTopbar() {
                                             false
                                         );
 
-                                        /*
-                                         * Add settings
-                                         * navigation later.
-                                         */
-
                                     }}
                                 >
 
                                     <div className="dropdown-icon">
-
                                         <FaCog />
-
                                     </div>
-
 
                                     <div className="dropdown-content">
 
@@ -387,11 +1045,7 @@ export default function VendorTopbar() {
                                 </button>
 
 
-
-                                {/* Divider */}
-
                                 <div className="dropdown-divider" />
-
 
 
                                 {/* Sign Out */}
@@ -410,7 +1064,6 @@ export default function VendorTopbar() {
 
                                     </div>
 
-
                                     <div className="dropdown-content">
 
                                         <strong>
@@ -425,19 +1078,15 @@ export default function VendorTopbar() {
 
                                 </button>
 
-
                             </div>
 
                         )
 
                     }
 
-
                 </div>
 
-
             </div>
-
 
         </header>
 
