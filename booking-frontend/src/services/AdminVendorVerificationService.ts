@@ -4,7 +4,19 @@ import type {
     AdminVendorVerification
 } from "../types/AdminVendorVerification";
 
+
+export type DiscoveryTag =
+    | "FEATURED"
+    | "TRENDING_NOW"
+    | "MOST_BOOKED"
+    | "POPULAR_HALL"
+    | "TOP_BRIDAL_MAKEUP"
+    | "PROFESSIONAL_PHOTOGRAPHY"
+    | "WEDDING_VIDEOGRAPHY";
+
+
 class AdminVendorVerificationService {
+
 
     async getVendors(): Promise<AdminVendorVerification[]> {
 
@@ -14,7 +26,9 @@ class AdminVendorVerificationService {
             );
 
         return response.data;
+
     }
+
 
     async getVendor(
         vendorId: string
@@ -26,7 +40,9 @@ class AdminVendorVerificationService {
             );
 
         return response.data;
+
     }
+
 
     async approveVendor(
         vendorId: string
@@ -35,7 +51,9 @@ class AdminVendorVerificationService {
         await api.put(
             `/admin/vendors/${vendorId}/approve`
         );
+
     }
+
 
     async rejectVendor(
         vendorId: string
@@ -44,7 +62,9 @@ class AdminVendorVerificationService {
         await api.put(
             `/admin/vendors/${vendorId}/reject`
         );
+
     }
+
 
     async suspendVendor(
         vendorId: string
@@ -53,7 +73,9 @@ class AdminVendorVerificationService {
         await api.put(
             `/admin/vendors/${vendorId}/suspend`
         );
+
     }
+
 
     async reactivateVendor(
         vendorId: string
@@ -62,7 +84,15 @@ class AdminVendorVerificationService {
         await api.put(
             `/admin/vendors/${vendorId}/reactivate`
         );
+
     }
+
+
+    /*
+     * =========================================
+     * SERVICE MODERATION
+     * =========================================
+     */
 
     async approveService(
         serviceId: string
@@ -71,7 +101,9 @@ class AdminVendorVerificationService {
         await api.put(
             `/admin/services/${serviceId}/approve`
         );
+
     }
+
 
     async rejectService(
         serviceId: string
@@ -80,7 +112,9 @@ class AdminVendorVerificationService {
         await api.put(
             `/admin/services/${serviceId}/reject`
         );
+
     }
+
 
     async suspendService(
         serviceId: string
@@ -89,7 +123,9 @@ class AdminVendorVerificationService {
         await api.put(
             `/admin/services/${serviceId}/suspend`
         );
+
     }
+
 
     async reactivateService(
         serviceId: string
@@ -98,11 +134,19 @@ class AdminVendorVerificationService {
         await api.put(
             `/admin/services/${serviceId}/reactivate`
         );
+
     }
+
+
+    /*
+     * =========================================
+     * DISCOVERY TAGS
+     * =========================================
+     */
 
     async updateServiceDiscoveryTags(
         serviceId: string,
-        tags: string[]
+        tags: DiscoveryTag[]
     ): Promise<void> {
 
         await api.put(
@@ -111,6 +155,8 @@ class AdminVendorVerificationService {
         );
 
     }
+
 }
+
 
 export default new AdminVendorVerificationService();

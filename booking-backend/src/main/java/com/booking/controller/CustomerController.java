@@ -15,11 +15,10 @@ public class CustomerController {
 
     private final CustomerService customerService;
 
+
     @GetMapping("/services/{serviceId}")
     public VendorDetailResponse getService(
-
             @PathVariable String serviceId
-
     ) {
 
         return customerService.getServiceById(
@@ -28,17 +27,25 @@ public class CustomerController {
 
     }
 
+
     @GetMapping("/services")
     public List<VendorListingResponse> getServices(
-
             @RequestParam(required = false)
             String category
-
     ) throws Exception {
 
-        return customerService.getVendorListings(category);
+        return customerService.getVendorListings(
+                category
+        );
 
     }
+
+
+    /*
+     * =========================================
+     * FEATURED
+     * =========================================
+     */
 
     @GetMapping("/services/featured")
     public List<VendorListingResponse> getFeaturedServices() {
@@ -46,4 +53,61 @@ public class CustomerController {
         return customerService.getFeaturedServices();
 
     }
+
+
+    /*
+     * =========================================
+     * POPULAR HALLS
+     * =========================================
+     */
+
+    @GetMapping("/services/popular-halls")
+    public List<VendorListingResponse> getPopularHalls() {
+
+        return customerService.getPopularHalls();
+
+    }
+
+
+    /*
+     * =========================================
+     * TOP BRIDAL MAKEUP
+     * =========================================
+     */
+
+    @GetMapping("/services/top-bridal-makeup")
+    public List<VendorListingResponse> getTopBridalMakeup() {
+
+        return customerService.getTopBridalMakeup();
+
+    }
+
+
+    /*
+     * =========================================
+     * PROFESSIONAL PHOTOGRAPHY
+     * =========================================
+     */
+
+    @GetMapping("/services/professional-photography")
+    public List<VendorListingResponse> getProfessionalPhotography() {
+
+        return customerService.getProfessionalPhotography();
+
+    }
+
+
+    /*
+     * =========================================
+     * WEDDING VIDEOGRAPHY
+     * =========================================
+     */
+
+    @GetMapping("/services/wedding-videography")
+    public List<VendorListingResponse> getWeddingVideography() {
+
+        return customerService.getWeddingVideography();
+
+    }
+
 }

@@ -1,84 +1,141 @@
+import {
+    useNavigate
+} from "react-router-dom";
+
+import type {
+    VendorListing
+} from "../../types/VendorListing";
+
 import "./ServiceCard.css";
 
 
-interface ServiceCardProps {
-
-  image: string;
-
-  title: string;
-
-  city: string;
-
-  detail: string;
-
-  price: string;
-
-}
-
-
 const ServiceCard = ({
-  image,
-  title,
-  city,
-  detail,
-  price
-}: ServiceCardProps) => {
+    serviceId,
+    businessName,
+    description,
+    city,
+    startingPrice,
+    rating,
+    reviewCount,
+    imageUrl
+}: VendorListing) => {
 
 
-return (
-
-<div className="service-card">
-
-
-<img
-
-src={image}
-
-alt={title}
-
-/>
+    const navigate =
+        useNavigate();
 
 
+    const handleViewDetails = () => {
 
-<div className="service-content">
+        navigate(
+            `/services/${serviceId}`
+        );
 
-
-<h3>
-{title}
-</h3>
-
-
-
-<p>
-📍 {city}
-</p>
+    };
 
 
+    return (
 
-<span>
-{detail}
-</span>
-
+        <div className="service-card">
 
 
-<h4>
-{price}
-</h4>
+            <img
+
+                src={
+                    imageUrl ||
+                    "/placeholder-service.jpg"
+                }
+
+                alt={
+                    businessName
+                }
+
+            />
 
 
-
-<button>
-View Details
-</button>
+            <div className="service-content">
 
 
-</div>
+                <h3>
+
+                    {businessName}
+
+                </h3>
 
 
-</div>
+                <p>
 
-);
+                    📍 {city}
 
+                </p>
+
+
+                {
+                    rating !== undefined && (
+
+                        <p className="service-rating">
+
+                            ⭐ {rating.toFixed(1)}
+
+                            {
+                                reviewCount !== undefined && (
+
+                                    <span>
+
+                                        {" "}
+                                        ({reviewCount})
+
+                                    </span>
+
+                                )
+                            }
+
+                        </p>
+
+                    )
+                }
+
+
+                <span>
+
+                    {description}
+
+                </span>
+
+
+                <h4>
+
+                    Starting from ₹
+                    {
+                        Number(
+                            startingPrice
+                        ).toLocaleString()
+                    }
+
+                </h4>
+
+
+                <button
+
+                    type="button"
+
+                    onClick={
+                        handleViewDetails
+                    }
+
+                >
+
+                    View Details
+
+                </button>
+
+
+            </div>
+
+
+        </div>
+
+    );
 
 };
 

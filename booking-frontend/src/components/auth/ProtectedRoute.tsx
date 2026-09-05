@@ -10,7 +10,7 @@ import {
 
 import type {
     UserRole
-} from "../context/AuthContext";
+} from "../../context/AuthContext";
 
 
 interface ProtectedRouteProps {
@@ -26,17 +26,60 @@ const ProtectedRoute = ({
 
     const {
         user,
-        isAuthenticated
+        isAuthenticated,
+        authLoading
     } = useAuth();
 
-    const location = useLocation();
+    const location =
+        useLocation();
 
 
     /*
-     * User is not logged in
+     * =========================================
+     * AUTHENTICATION INITIALIZATION
+     * =========================================
+     *
+     * Wait until AuthContext has finished
+     * validating the stored JWT with the backend.
+     *
+     * This prevents a refresh from temporarily
+     * redirecting an authenticated user to login.
      */
 
-    if (!isAuthenticated || !user) {
+    if (authLoading) {
+
+        return (
+
+            <div
+                style={{
+                    minHeight: "100vh",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: "14px",
+                    color: "#6b7c88"
+                }}
+            >
+
+                Checking authentication...
+
+            </div>
+
+        );
+
+    }
+
+
+    /*
+     * =========================================
+     * USER NOT AUTHENTICATED
+     * =========================================
+     */
+
+    if (
+        !isAuthenticated ||
+        !user
+    ) {
 
         return (
 
@@ -54,48 +97,83 @@ const ProtectedRoute = ({
 
 
     /*
-     * User is logged in,
-     * but does not have permission
+     * =========================================
+     * ROLE AUTHORIZATION
+     * =========================================
+     *
+     * User is authenticated, but may not have
+     * permission to access this route.
      */
 
     if (
         allowedRoles &&
-        !allowedRoles.includes(user.role)
+        !allowedRoles.includes(
+            user.role
+        )
     ) {
 
-        if (user.role === "VENDOR") {
+
+        /*
+         * Vendor
+         */
+
+        if (
+            user.role === "VENDOR"
+        ) {
 
             return (
+
                 <Navigate
                     to="/vendor/dashboard"
                     replace
                 />
+
             );
 
         }
 
 
-        if (user.role === "ADMIN") {
+        /*
+         * Admin
+         */
+
+        if (
+            user.role === "ADMIN"
+        ) {
 
             return (
+
                 <Navigate
                     to="/admin/dashboard"
                     replace
                 />
+
             );
 
         }
 
 
+        /*
+         * Customer / fallback
+         */
+
         return (
+
             <Navigate
                 to="/"
                 replace
             />
+
         );
 
     }
 
+
+    /*
+     * =========================================
+     * AUTHENTICATED + AUTHORIZED
+     * =========================================
+     */
 
     return <Outlet />;
 

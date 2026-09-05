@@ -19,6 +19,7 @@ public class CustomerVendorMapperImpl
 
         return VendorListingResponse.builder()
                 .serviceId(service.getId())
+                .serviceName(service.getServiceName())
                 .businessName(vendor.getBusinessName())
                 .description(service.getDescription())
                 .category(service.getCategory().name())

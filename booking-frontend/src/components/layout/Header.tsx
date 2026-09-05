@@ -1,13 +1,6 @@
-import {
-    useEffect,
-    useRef,
-    useState
-} from "react";
+import { useEffect, useRef, useState } from "react";
 
-import {
-    Link,
-    useNavigate
-} from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 
 import {
     FaBell,
@@ -31,15 +24,11 @@ import {
     useAuth
 } from "../../context/AuthContext";
 
-import CartService
-    from "../../services/CartService";
+import CartService from "../../services/CartService";
 
-import NotificationService
-    from "../../services/NotificationService";
+import NotificationService from "../../services/NotificationService";
 
-import type {
-    Notification
-} from "../../types/Notification";
+import type { Notification } from "../../types/Notification";
 
 import "./Header.css";
 
@@ -52,8 +41,8 @@ const Header = () => {
         logout
     } = useAuth();
 
-    const navigate =
-        useNavigate();
+    const navigate = useNavigate();
+    const location = useLocation();
 
 
     /*
@@ -355,6 +344,12 @@ const Header = () => {
 
         };
 
+         /*
+             * Update immediately when
+             * Header is mounted.
+             */
+
+         updateCartCount();
 
         window.addEventListener(
             "cartUpdated",
@@ -379,6 +374,21 @@ const Header = () => {
                 "storage",
                 updateCartCount
             );
+
+            return () => {
+
+                    window.removeEventListener(
+                        "cartUpdated",
+                        updateCartCount
+                    );
+
+
+                    window.removeEventListener(
+                        "storage",
+                        updateCartCount
+                    );
+
+                };
 
         };
 
@@ -665,6 +675,31 @@ const Header = () => {
         navigate("/");
 
     }
+
+    /*
+     * =========================================
+     * ACTIVE NAVIGATION
+     * =========================================
+     */
+
+    const currentCategory =
+        new URLSearchParams(
+            location.search
+        )
+            .get("category")
+            ?.toUpperCase();
+
+
+    const isHomeActive =
+        location.pathname === "/" &&
+        !currentCategory;
+
+
+    const isCategoryActive = (
+        category: string
+    ) =>
+        location.pathname === "/categories" &&
+        currentCategory === category;
 
 
     return (
@@ -1454,53 +1489,105 @@ const Header = () => {
                 <div className="header-container navigation-container">
 
 
+                    {/* =================================
+                        HOME
+                    ================================= */}
+
                     <Link
                         to="/"
-                        className="navigation-link active"
+                        className={`navigation-link ${
+                            isHomeActive
+                                ? "active"
+                                : ""
+                        }`}
                     >
                         Home
                     </Link>
 
 
+                    {/* =================================
+                        VENUES
+                    ================================= */}
+
                     <Link
                         to="/categories?category=HALL"
-                        className="navigation-link"
+                        className={`navigation-link ${
+                            isCategoryActive("HALL")
+                                ? "active"
+                                : ""
+                        }`}
                     >
                         Venues
                     </Link>
 
 
+                    {/* =================================
+                        PHOTOGRAPHY
+                    ================================= */}
+
                     <Link
                         to="/categories?category=PHOTOGRAPHY"
-                        className="navigation-link"
+                        className={`navigation-link ${
+                            isCategoryActive("PHOTOGRAPHY")
+                                ? "active"
+                                : ""
+                        }`}
                     >
                         Photography
                     </Link>
 
 
+                    {/* =================================
+                        MAKEUP
+                    ================================= */}
+
                     <Link
                         to="/categories?category=MAKEUP"
-                        className="navigation-link"
+                        className={`navigation-link ${
+                            isCategoryActive("MAKEUP")
+                                ? "active"
+                                : ""
+                        }`}
                     >
                         Makeup
                     </Link>
 
 
+                    {/* =================================
+                        CATERING
+                    ================================= */}
+
                     <Link
                         to="/categories?category=CATERING"
-                        className="navigation-link"
+                        className={`navigation-link ${
+                            isCategoryActive("CATERING")
+                                ? "active"
+                                : ""
+                        }`}
                     >
                         Catering
                     </Link>
 
 
+                    {/* =================================
+                        DECOR
+                    ================================= */}
+
                     <Link
                         to="/categories?category=DECORATION"
-                        className="navigation-link"
+                        className={`navigation-link ${
+                            isCategoryActive("DECORATION")
+                                ? "active"
+                                : ""
+                        }`}
                     >
                         Decor
                     </Link>
 
+
+                    {/* =================================
+                        MORE
+                    ================================= */}
 
                     <button
                         type="button"
@@ -1514,11 +1601,20 @@ const Header = () => {
                     </button>
 
 
+                    {/* =================================
+                        CUSTOMER BOOKINGS
+                    ================================= */}
+
                     {user?.role === "CUSTOMER" && (
 
                         <Link
                             to="/customer/bookings"
-                            className="navigation-bookings"
+                            className={`navigation-bookings ${
+                                location.pathname ===
+                                "/customer/bookings"
+                                    ? "active"
+                                    : ""
+                            }`}
                         >
                             My Bookings
                         </Link>

@@ -58,7 +58,8 @@ public interface VendorServiceRepository extends MongoRepository<VendorService, 
         {
             'discoveryTags': ?0,
             'active': true,
-            'deleted': false
+            'deleted': false,
+            'moderationStatus': 'APPROVED'
         }
         """)
     List<VendorService>

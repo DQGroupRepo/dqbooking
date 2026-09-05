@@ -1,166 +1,1251 @@
 .bundle-selection-page {
     min-height: 100vh;
-    padding: 50px 20px;
-    background: #f7f8fc;
+    padding: 42px 20px 70px;
+    background: #f6f8fc;
 }
 
+
 .bundle-selection-container {
-    max-width: 1000px;
+    width: 100%;
+    max-width: 1050px;
     margin: 0 auto;
 }
 
-.bundle-selection-header {
-    margin-bottom: 30px;
+
+/* =========================================
+   BUNDLE HERO
+========================================= */
+
+.bundle-hero {
+    position: relative;
+
+    padding: 28px 30px;
+
+    margin-bottom: 22px;
+
+    border-radius: 18px;
+
+    color: #ffffff;
+
+    background:
+        linear-gradient(
+            135deg,
+            #244766,
+            #315b7e
+        );
+
+    box-shadow:
+        0 18px 45px
+        rgba(
+            31,
+            68,
+            99,
+            0.18
+        );
+
+    overflow: hidden;
 }
 
-.bundle-selection-header h1 {
-    margin-bottom: 8px;
+
+.bundle-hero::after {
+    content: "";
+
+    position: absolute;
+
+    width: 280px;
+    height: 280px;
+
+    right: -100px;
+    top: -160px;
+
+    border-radius: 50%;
+
+    background:
+        rgba(
+            255,
+            255,
+            255,
+            0.04
+        );
 }
 
-.bundle-selection-header p {
-    color: #666;
+
+.bundle-hero-content {
+    position: relative;
+    z-index: 1;
+
+    max-width: 650px;
 }
 
-.bundle-card {
-    background: #fff;
-    border-radius: 14px;
-    padding: 25px;
-    margin-bottom: 25px;
-    border: 1px solid #e5e7eb;
-}
 
-.bundle-card-header {
-    display: flex;
-    justify-content: space-between;
-    gap: 20px;
-    align-items: flex-start;
-}
+.bundle-eyebrow {
+    display: block;
 
-.bundle-card-header h2 {
-    margin: 0 0 8px;
-}
+    margin-bottom: 7px;
 
-.bundle-card-header p {
-    margin: 0;
-    color: #666;
-}
-
-.bundle-discount {
-    padding: 8px 14px;
-    border-radius: 20px;
-    background: #e8f7ee;
-    color: #16803c;
+    font-size: 11px;
     font-weight: 700;
-    white-space: nowrap;
+
+    letter-spacing: 1.5px;
+
+    color:
+        rgba(
+            255,
+            255,
+            255,
+            0.65
+        );
 }
 
-.bundle-services {
-    margin-top: 25px;
+
+.bundle-hero h1 {
+    margin: 0 0 8px;
+
+    font-size: 30px;
+    font-weight: 700;
 }
 
-.bundle-services h3,
-.bundle-remaining h3 {
-    margin-bottom: 15px;
+
+.bundle-description {
+    margin: 0;
+
+    max-width: 620px;
+
+    color:
+        rgba(
+            255,
+            255,
+            255,
+            0.78
+        );
+
+    line-height: 1.6;
 }
 
-.bundle-service-list {
+
+/* =========================================
+   DISCOUNT
+========================================= */
+
+.bundle-discount-box {
+    position: absolute;
+
+    z-index: 2;
+
+    top: 30px;
+    right: 30px;
+
+    min-width: 120px;
+
+    padding: 12px 15px;
+
+    border-radius: 13px;
+
+    text-align: center;
+
+    background:
+        rgba(
+            255,
+            255,
+            255,
+            0.08
+        );
+
+    border:
+        1px solid
+        rgba(
+            255,
+            255,
+            255,
+            0.18
+        );
+
+    backdrop-filter:
+        blur(8px);
+}
+
+
+.bundle-discount-box span {
+    display: block;
+
+    margin-bottom: 4px;
+
+    font-size: 10px;
+    font-weight: 600;
+
+    color:
+        rgba(
+            255,
+            255,
+            255,
+            0.55
+        );
+}
+
+
+.bundle-discount-box strong {
+    font-size: 18px;
+
+    color: #ffc247;
+}
+
+
+/* =========================================
+   PROGRESS
+========================================= */
+
+.bundle-progress-section {
+    position: relative;
+    z-index: 1;
+
+    margin-top: 28px;
+}
+
+
+.bundle-progress-header {
+    display: flex;
+
+    align-items: flex-end;
+    justify-content: space-between;
+
+    margin-bottom: 10px;
+}
+
+
+.bundle-progress-header div {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+
+    gap: 3px;
 }
 
-.bundle-service {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    padding: 12px 15px;
-    border-radius: 8px;
-    background: #f7f8fc;
+
+.bundle-progress-header span {
+    font-size: 12px;
+
+    color:
+        rgba(
+            255,
+            255,
+            255,
+            0.7
+        );
 }
 
-.bundle-service span:nth-child(1) {
-    color: #777;
+
+.bundle-progress-header > strong {
     font-size: 14px;
 }
 
-.bundle-service span:nth-child(2) {
-    font-weight: 600;
+
+.bundle-progress-track {
+    width: 100%;
+    height: 6px;
+
+    overflow: hidden;
+
+    border-radius: 100px;
+
+    background:
+        rgba(
+            255,
+            255,
+            255,
+            0.22
+        );
 }
 
-.bundle-service.already-added {
-    background: #eef8f1;
+
+.bundle-progress-fill {
+    height: 100%;
+
+    border-radius: inherit;
+
+    background: #ffc247;
+
+    transition:
+        width
+        0.3s ease;
 }
 
-.service-status {
-    margin-left: auto;
-    color: #16803c;
-    font-weight: 600;
+
+/* =========================================
+   MAIN SERVICES CARD
+========================================= */
+
+.bundle-services-card {
+    overflow: hidden;
+
+    background: #ffffff;
+
+    border-radius: 18px;
+
+    border:
+        1px solid
+        #e2e7ee;
+
+    box-shadow:
+        0 15px 35px
+        rgba(
+            32,
+            54,
+            76,
+            0.06
+        );
 }
 
-.bundle-select-button,
-.remaining-service-button {
-    border: none;
-    cursor: pointer;
-    border-radius: 8px;
-    padding: 12px 20px;
-    font-weight: 600;
-}
 
-.bundle-select-button {
-    margin-top: 25px;
-    background: #111827;
-    color: #fff;
-}
-
-.bundle-remaining {
-    margin-top: 25px;
-    padding-top: 20px;
-    border-top: 1px solid #eee;
-}
-
-.bundle-remaining p {
-    color: #666;
-}
-
-.remaining-services {
+.bundle-services-header {
     display: flex;
-    flex-wrap: wrap;
-    gap: 12px;
+
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 20px;
+
+    padding: 22px 25px;
+
+    border-bottom:
+        1px solid
+        #edf0f4;
 }
 
-.remaining-service-button {
-    background: #f0f2f7;
-    color: #222;
+
+.bundle-services-header h2 {
+    margin: 0 0 6px;
+
+    font-size: 20px;
+
+    color: #25384d;
 }
+
+
+.bundle-services-header p {
+    margin: 0;
+
+    color: #64748b;
+
+    font-size: 14px;
+}
+
+
+.bundle-service-count {
+    padding: 8px 13px;
+
+    border-radius: 100px;
+
+    font-size: 12px;
+    font-weight: 700;
+
+    color: #315b7e;
+
+    background: #edf3f8;
+}
+
+
+/* =========================================
+   SERVICE LIST
+========================================= */
+
+.bundle-service-list {
+    padding: 16px 24px;
+}
+
+
+.bundle-service-item {
+    display: grid;
+
+    grid-template-columns:
+        42px
+        90px
+        minmax(0, 1fr)
+        130px
+        140px;
+
+    align-items: center;
+
+    gap: 18px;
+
+    padding: 14px;
+
+    margin-bottom: 12px;
+
+    border-radius: 14px;
+
+    background: #ffffff;
+
+    border:
+        1px solid
+        #dce4ec;
+
+    transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease,
+        border-color 0.2s ease;
+}
+
+
+.bundle-service-item:hover {
+    transform:
+        translateY(-1px);
+
+    border-color: #b9c8d6;
+
+    box-shadow:
+        0 8px 20px
+        rgba(
+            35,
+            63,
+            87,
+            0.06
+        );
+}
+
+
+/* =========================================
+   ADDED SERVICE
+========================================= */
+
+.bundle-service-added {
+    border-color: #c7dfd0;
+
+    background:
+        linear-gradient(
+            90deg,
+            #f4fbf6,
+            #ffffff
+        );
+}
+
+
+.bundle-service-step {
+    width: 34px;
+    height: 34px;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 50%;
+
+    font-size: 13px;
+    font-weight: 700;
+
+    color: #315b7e;
+
+    background: #edf3f8;
+}
+
+
+.bundle-service-added
+.bundle-service-step {
+    color: #ffffff;
+
+    background: #31805c;
+}
+
+
+/* =========================================
+   IMAGE
+========================================= */
+
+.bundle-service-image {
+    width: 90px;
+    height: 68px;
+
+    overflow: hidden;
+
+    border-radius: 10px;
+
+    background: #edf1f5;
+}
+
+
+.bundle-service-image img {
+    width: 100%;
+    height: 100%;
+
+    display: block;
+
+    object-fit: cover;
+}
+
+
+/* =========================================
+   SERVICE DETAILS
+========================================= */
+
+.bundle-service-details {
+    min-width: 0;
+}
+
+
+.bundle-service-label {
+    display: block;
+
+    margin-bottom: 4px;
+
+    font-size: 10px;
+    font-weight: 700;
+
+    letter-spacing: 1px;
+
+    color: #8492a0;
+}
+
+
+.bundle-service-details h3 {
+    margin: 0 0 4px;
+
+    overflow: hidden;
+
+    color: #25384d;
+
+    font-size: 16px;
+
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+
+.bundle-business-name {
+    margin: 0 0 3px;
+
+    font-size: 13px;
+
+    color: #526477;
+}
+
+
+.bundle-location {
+    margin: 0;
+
+    font-size: 13px;
+
+    color: #64748b;
+}
+
+
+.bundle-service-meta {
+    display: flex;
+
+    gap: 6px;
+
+    margin-top: 6px;
+
+    font-size: 12px;
+
+    color: #c28b14;
+}
+
+
+/* =========================================
+   PRICE
+========================================= */
+
+.bundle-service-price {
+    display: flex;
+    flex-direction: column;
+
+    gap: 3px;
+}
+
+
+.bundle-service-price strong {
+    font-size: 16px;
+
+    color: #25384d;
+}
+
+
+.bundle-service-price span {
+    font-size: 11px;
+
+    color: #8a97a5;
+}
+
+
+/* =========================================
+   SERVICE ACTION
+========================================= */
+
+.bundle-service-action {
+    display: flex;
+    justify-content: flex-end;
+}
+
+
+.bundle-service-action button {
+    min-width: 130px;
+
+    padding: 10px 13px;
+
+    border: none;
+    border-radius: 8px;
+
+    cursor: pointer;
+
+    font-weight: 600;
+
+    color: #ffffff;
+
+    background: #28547a;
+
+    transition:
+        transform 0.2s ease,
+        background 0.2s ease;
+}
+
+
+.bundle-service-action button:hover {
+    transform:
+        translateY(-1px);
+
+    background: #1f4566;
+}
+
+
+.bundle-service-action button span {
+    margin-left: 6px;
+}
+
+
+.bundle-added-status {
+    font-size: 12px;
+    font-weight: 700;
+
+    color: #287050;
+}
+
+
+/* =========================================
+   SERVICE LOADING
+========================================= */
+
+.bundle-services-loading {
+    padding: 35px;
+
+    text-align: center;
+
+    color: #64748b;
+}
+
+
+.bundle-service-note {
+    margin: 0 24px 20px;
+
+    padding: 13px;
+
+    border-radius: 9px;
+
+    font-size: 13px;
+
+    color: #876513;
+
+    background: #fff8e5;
+}
+
+
+/* =========================================
+   COMPLETE STATE
+========================================= */
 
 .bundle-complete {
-    color: #16803c !important;
+    display: flex;
+
+    align-items: center;
+
+    gap: 15px;
+
+    margin: 8px 24px 20px;
+
+    padding: 18px;
+
+    border-radius: 12px;
+
+    color: #21613f;
+
+    background: #edf9f1;
+
+    border:
+        1px solid
+        #ccebd5;
+}
+
+
+.bundle-complete-icon {
+    width: 40px;
+    height: 40px;
+
+    flex-shrink: 0;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 50%;
+
+    color: #ffffff;
+
+    background: #31805c;
+}
+
+
+.bundle-complete h3 {
+    margin: 0 0 4px;
+}
+
+
+.bundle-complete p {
+    margin: 0;
+
+    font-size: 13px;
+
+    color: #4d735d;
+}
+
+
+/* =========================================
+   PAGE ACTIONS
+========================================= */
+
+.bundle-page-actions {
+    display: flex;
+
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 20px;
+
+    padding: 18px 24px;
+
+    border-top:
+        1px solid
+        #edf0f4;
+
+    background: #fafbfd;
+}
+
+
+.bundle-page-actions > p {
+    margin: 0;
+
+    font-size: 12px;
+
+    color: #64748b;
+}
+
+
+.bundle-action-buttons {
+    display: flex;
+
+    align-items: center;
+
+    gap: 10px;
+}
+
+
+.bundle-action-buttons button {
+    padding: 10px 15px;
+
+    border-radius: 8px;
+
+    cursor: pointer;
+
+    font-size: 12px;
+    font-weight: 600;
+
+    transition:
+        transform 0.2s ease,
+        background 0.2s ease;
+}
+
+
+.bundle-action-buttons button:hover {
+    transform:
+        translateY(-1px);
+}
+
+
+.bundle-checkout-button {
+    border: none;
+
+    color: #ffffff;
+
+    background: #28547a;
+}
+
+
+.switch-bundle-button {
+    border:
+        1px solid
+        #28547a;
+
+    color: #28547a;
+
+    background: #ffffff;
+}
+
+
+.cancel-bundle-button {
+    border: none;
+
+    color: #64748b;
+
+    background: transparent;
+}
+
+
+/* =========================================
+   LOADING
+========================================= */
+
+.bundle-loading-card {
+    padding: 70px 30px;
+
+    text-align: center;
+
+    background: #ffffff;
+
+    border-radius: 18px;
+
+    border:
+        1px solid
+        #e2e7ee;
+}
+
+
+.bundle-loading-spinner {
+    width: 38px;
+    height: 38px;
+
+    margin:
+        0 auto 18px;
+
+    border-radius: 50%;
+
+    border:
+        4px solid
+        #e5eaf0;
+
+    border-top-color:
+        #28547a;
+
+    animation:
+        bundle-spin
+        0.8s linear infinite;
+}
+
+
+@keyframes bundle-spin {
+
+    to {
+
+        transform:
+            rotate(
+                360deg
+            );
+
+    }
+
+}
+
+
+/* =========================================
+   NOT FOUND
+========================================= */
+
+.bundle-not-found {
+    padding: 70px 30px;
+
+    text-align: center;
+
+    background: #ffffff;
+
+    border-radius: 18px;
+
+    border:
+        1px solid
+        #e2e7ee;
+}
+
+
+.bundle-not-found-icon {
+    width: 48px;
+    height: 48px;
+
+    margin:
+        0 auto 15px;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 50%;
+
+    color: #b45309;
+
+    font-weight: 700;
+
+    background: #fff3df;
+}
+
+
+.bundle-not-found button {
+    margin-top: 10px;
+
+    padding: 11px 20px;
+
+    border: none;
+    border-radius: 8px;
+
+    cursor: pointer;
+
+    color: #ffffff;
+
+    background: #28547a;
+}
+
+
+/* =========================================
+   MODAL
+========================================= */
+
+.bundle-modal-overlay {
+    position: fixed;
+
+    inset: 0;
+
+    z-index: 1000;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    padding: 20px;
+
+    background:
+        rgba(
+            15,
+            23,
+            42,
+            0.55
+        );
+}
+
+
+.bundle-modal {
+    width: 100%;
+    max-width: 480px;
+
+    padding: 28px;
+
+    border-radius: 16px;
+
+    background: #ffffff;
+
+    box-shadow:
+        0 25px 70px
+        rgba(
+            0,
+            0,
+            0,
+            0.25
+        );
+}
+
+
+.bundle-modal h2 {
+    margin-top: 0;
+
+    color: #25384d;
+}
+
+
+.bundle-modal p {
+    color: #5f6f7e;
+
+    line-height: 1.6;
+}
+
+
+.bundle-modal-actions {
+    display: flex;
+
+    justify-content: flex-end;
+
+    gap: 10px;
+
+    margin-top: 24px;
+}
+
+
+.bundle-modal-actions button {
+    padding: 11px 16px;
+
+    border-radius: 8px;
+
+    cursor: pointer;
+
     font-weight: 600;
 }
 
-.skip-bundle-button {
-    display: block;
-    margin: 35px auto 0;
-    background: transparent;
+
+.bundle-modal-confirm {
     border: none;
-    color: #666;
-    cursor: pointer;
-    text-decoration: underline;
-    font-size: 15px;
+
+    color: #ffffff;
+
+    background: #28547a;
 }
 
-@media (max-width: 700px) {
 
-    .bundle-card-header {
+.bundle-modal-cancel {
+    border:
+        1px solid
+        #d7dee6;
+
+    color: #526477;
+
+    background: #ffffff;
+}
+
+
+/* =========================================
+   RESPONSIVE
+========================================= */
+
+@media (
+    max-width: 900px
+) {
+
+    .bundle-service-item {
+
+        grid-template-columns:
+            42px
+            75px
+            minmax(0, 1fr)
+            130px;
+
+    }
+
+
+    .bundle-service-action {
+
+        grid-column:
+            3 / -1;
+
+        justify-content: flex-start;
+
+    }
+
+
+    .bundle-service-price {
+
+        grid-column:
+            3 / 4;
+
+    }
+
+}
+
+
+@media (
+    max-width: 700px
+) {
+
+    .bundle-selection-page {
+
+        padding:
+            25px 15px 50px;
+
+    }
+
+
+    .bundle-hero {
+
+        padding:
+            25px 20px;
+
+    }
+
+
+    .bundle-discount-box {
+
+        position: static;
+
+        display: inline-block;
+
+        margin-top: 20px;
+
+    }
+
+
+    .bundle-services-header {
+
+        align-items: flex-start;
+
         flex-direction: column;
+
+        padding:
+            20px;
+
     }
 
-    .bundle-discount {
-        align-self: flex-start;
+
+    .bundle-service-list {
+
+        padding:
+            15px;
+
     }
 
-    .bundle-service {
+
+    .bundle-service-item {
+
+        grid-template-columns:
+            38px
+            70px
+            minmax(0, 1fr);
+
+        gap: 12px;
+
+    }
+
+
+    .bundle-service-image {
+
+        width: 70px;
+        height: 60px;
+
+    }
+
+
+    .bundle-service-price {
+
+        grid-column:
+            2 / -1;
+
+    }
+
+
+    .bundle-service-action {
+
+        grid-column:
+            2 / -1;
+
+        width: 100%;
+
+    }
+
+
+    .bundle-service-action button {
+
+        width: 100%;
+
+    }
+
+
+    .bundle-page-actions {
+
+        align-items: flex-start;
+
+        flex-direction: column;
+
+    }
+
+
+    .bundle-action-buttons {
+
+        width: 100%;
+
         flex-wrap: wrap;
+
+    }
+
+
+    .bundle-action-buttons button {
+
+        flex: 1;
+
+    }
+
+
+    .bundle-modal-actions {
+
+        flex-direction: column;
+
+    }
+
+
+    .bundle-modal-actions button {
+
+        width: 100%;
+
+    }
+
+}
+
+
+@media (
+    max-width: 480px
+) {
+
+    .bundle-service-item {
+
+        grid-template-columns:
+            38px
+            minmax(0, 1fr);
+
+    }
+
+
+    .bundle-service-image {
+
+        display: none;
+
+    }
+
+
+    .bundle-service-details {
+
+        grid-column:
+            2 / -1;
+
+    }
+
+
+    .bundle-service-price {
+
+        grid-column:
+            2 / -1;
+
+    }
+
+
+    .bundle-service-action {
+
+        grid-column:
+            2 / -1;
+
+    }
+
+
+    .bundle-action-buttons {
+
+        flex-direction: column;
+
+    }
+
+
+    .bundle-action-buttons button {
+
+        width: 100%;
+
     }
 
 }

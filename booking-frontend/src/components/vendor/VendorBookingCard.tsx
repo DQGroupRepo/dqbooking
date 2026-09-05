@@ -7,6 +7,7 @@ import {
 import type { VendorDetail } from "../../types/VendorDetail";
 import type { Bundle } from "../../types/Bundle";
 import type { ServicePackage } from "../../types/ServicePackage";
+import type { CartItem } from "../../types/CartItem";
 
 import CartService from "../../services/CartService";
 import VendorDetailService from "../../services/VendorDetailService";
@@ -306,7 +307,14 @@ const BookingCard = ({
 
         };
 
+    const getVendorImage =
+        (
+            service: VendorDetail
+        ): string | undefined => {
 
+            return service.imageUrls?.[0];
+
+        };
     /*
      * =========================================
      * ADD CURRENT SERVICE TO CART
@@ -349,7 +357,9 @@ const BookingCard = ({
                 quantity: 1,
 
                 image:
-                    vendor.image,
+                    getVendorImage(
+                            vendor
+                        ),
 
                 eventDate,
 
@@ -753,7 +763,7 @@ const BookingCard = ({
             return (
                 bundleServices[
                     bundleServiceId
-                ]?.image
+                ]?.imageUrls?.[0]
             );
 
         };

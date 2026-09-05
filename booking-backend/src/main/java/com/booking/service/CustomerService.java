@@ -13,4 +13,12 @@ public interface CustomerService {
     List<VendorListingResponse> getVendorListings(String category);
 
     List<VendorListingResponse> getFeaturedServices();
+
+    List<VendorListingResponse> getPopularHalls();
+
+    List<VendorListingResponse> getTopBridalMakeup();
+
+    List<VendorListingResponse> getProfessionalPhotography();
+
+    List<VendorListingResponse> getWeddingVideography();
 }

@@ -58,10 +58,28 @@ class CartService {
         cart: CartItem[]
 
     ): void {
-console.log("saveCart:", cart);
+
+        console.log(
+            "saveCart:",
+            cart
+        );
+
         localStorage.setItem(
             CART_STORAGE_KEY,
             JSON.stringify(cart)
+        );
+
+
+        /*
+         * Notify components in the
+         * current browser tab that
+         * the cart has changed.
+         */
+
+        window.dispatchEvent(
+            new Event(
+                "cartUpdated"
+            )
         );
 
     }
@@ -258,6 +276,18 @@ console.log("addItem:", item);
 
         localStorage.removeItem(
             CART_STORAGE_KEY
+        );
+
+
+        /*
+         * Notify Header and other
+         * components that cart changed.
+         */
+
+        window.dispatchEvent(
+            new Event(
+                "cartUpdated"
+            )
         );
 
     }
