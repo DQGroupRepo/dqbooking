@@ -18,7 +18,6 @@ const VendorInfo = ({ vendor }: Props) => {
         {vendor.businessName}
       </h1>
 
-
       <div className="rating-large">
 
         <span>

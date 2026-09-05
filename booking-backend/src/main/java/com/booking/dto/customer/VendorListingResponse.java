@@ -12,6 +12,8 @@ public class VendorListingResponse {
 
     private String serviceId;
 
+    private String serviceName;
+
     private String businessName;
 
     private String description;

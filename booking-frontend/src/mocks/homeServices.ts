@@ -1,3 +1,4 @@
+/*
 
 export const popularHalls = [
 
@@ -162,3 +163,4 @@ export const videographyServices = [
 }
 
 ];
+ */

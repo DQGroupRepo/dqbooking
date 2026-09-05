@@ -4,8 +4,9 @@ import {
     useState
 } from "react";
 
-import AdminVendorVerificationService
-    from "../../services/AdminVendorVerificationService";
+import AdminVendorVerificationService, {
+    type DiscoveryTag
+} from "../../services/AdminVendorVerificationService";
 
 import type {
     AdminVendorVerification,
@@ -16,7 +17,10 @@ import type {
 import "./AdminVendorVerification.css";
 
 
-const discoveryOptions = [
+const discoveryOptions: {
+    key: DiscoveryTag;
+    label: string;
+}[] = [
 
     {
         key: "FEATURED",
@@ -31,12 +35,33 @@ const discoveryOptions = [
     {
         key: "MOST_BOOKED",
         label: "Most Booked"
+    },
+
+    {
+        key: "POPULAR_HALL",
+        label: "Popular Hall"
+    },
+
+    {
+        key: "TOP_BRIDAL_MAKEUP",
+        label: "Top Bridal Makeup"
+    },
+
+    {
+        key: "PROFESSIONAL_PHOTOGRAPHY",
+        label: "Professional Photography"
+    },
+
+    {
+        key: "WEDDING_VIDEOGRAPHY",
+        label: "Wedding Videography"
     }
 
 ];
 
 
 const AdminVendorVerification = () => {
+
 
     const [
         vendors,
@@ -79,9 +104,9 @@ const AdminVendorVerification = () => {
         selectedVendor,
         setSelectedVendor
     ] =
-        useState<AdminVendorVerification | null>(
-            null
-        );
+        useState<
+            AdminVendorVerification | null
+        >(null);
 
 
     const [
@@ -147,6 +172,45 @@ const AdminVendorVerification = () => {
 
     /*
      * =========================================
+     * REFRESH SELECTED VENDOR
+     * =========================================
+     */
+
+    async function refreshSelectedVendor(
+        vendorId: string
+    ) {
+
+        const updatedVendor =
+            await AdminVendorVerificationService
+                .getVendor(
+                    vendorId
+                );
+
+
+        setSelectedVendor(
+            updatedVendor
+        );
+
+
+        setVendors(
+            current =>
+                current.map(
+                    vendor =>
+
+                        vendor.vendorId ===
+                        updatedVendor.vendorId
+
+                            ? updatedVendor
+
+                            : vendor
+                )
+        );
+
+    }
+
+
+    /*
+     * =========================================
      * FILTER VENDORS
      * =========================================
      */
@@ -154,28 +218,34 @@ const AdminVendorVerification = () => {
     const filteredVendors =
         useMemo(() => {
 
+            const searchValue =
+                search
+                    .toLowerCase()
+                    .trim();
+
+
             return vendors.filter(
                 vendor => {
 
-                    const searchValue =
-                        search
-                            .toLowerCase()
-                            .trim();
-
 
                     const matchesSearch =
+
                         vendor.businessName
                             .toLowerCase()
                             .includes(
                                 searchValue
                             )
+
                         ||
+
                         vendor.ownerName
                             .toLowerCase()
                             .includes(
                                 searchValue
                             )
+
                         ||
+
                         vendor.email
                             .toLowerCase()
                             .includes(
@@ -184,30 +254,40 @@ const AdminVendorVerification = () => {
 
 
                     const matchesStatus =
+
                         statusFilter === "ALL"
+
                         ||
-                        vendor.verificationStatus
-                            === statusFilter;
+
+                        vendor.verificationStatus ===
+                        statusFilter;
 
 
                     return (
-                        matchesSearch &&
+
+                        matchesSearch
+
+                        &&
+
                         matchesStatus
+
                     );
 
                 }
             );
 
         }, [
+
             vendors,
             search,
             statusFilter
+
         ]);
 
 
     /*
      * =========================================
-     * STATUS COUNTS
+     * STATUS COUNT
      * =========================================
      */
 
@@ -216,8 +296,10 @@ const AdminVendorVerification = () => {
             status:
                 VendorVerificationStatus
         ) =>
+
             vendors.filter(
                 vendor =>
+
                     vendor.verificationStatus ===
                     status
             ).length;
@@ -230,63 +312,66 @@ const AdminVendorVerification = () => {
      */
 
     async function handleVendorAction(
+
         vendorId: string,
+
         action:
             | "approve"
             | "reject"
             | "suspend"
             | "reactivate"
+
     ) {
 
         try {
 
             setActionLoading(true);
 
+            setError("");
 
-            if (
-                action === "approve"
+
+            switch (
+                action
             ) {
 
-                await AdminVendorVerificationService
-                    .approveVendor(
-                        vendorId
-                    );
+                case "approve":
 
-            }
+                    await AdminVendorVerificationService
+                        .approveVendor(
+                            vendorId
+                        );
 
-
-            if (
-                action === "reject"
-            ) {
-
-                await AdminVendorVerificationService
-                    .rejectVendor(
-                        vendorId
-                    );
-
-            }
+                    break;
 
 
-            if (
-                action === "suspend"
-            ) {
+                case "reject":
 
-                await AdminVendorVerificationService
-                    .suspendVendor(
-                        vendorId
-                    );
+                    await AdminVendorVerificationService
+                        .rejectVendor(
+                            vendorId
+                        );
 
-            }
+                    break;
 
 
-            if (
-                action === "reactivate"
-            ) {
+                case "suspend":
 
-                await AdminVendorVerificationService
-                    .reactivateVendor(
-                        vendorId
-                    );
+                    await AdminVendorVerificationService
+                        .suspendVendor(
+                            vendorId
+                        );
+
+                    break;
+
+
+                case "reactivate":
+
+                    await AdminVendorVerificationService
+                        .reactivateVendor(
+                            vendorId
+                        );
+
+                    break;
 
             }
 
@@ -314,7 +399,9 @@ const AdminVendorVerification = () => {
         }
         finally {
 
-            setActionLoading(false);
+            setActionLoading(
+                false
+            );
 
         }
 
@@ -323,141 +410,25 @@ const AdminVendorVerification = () => {
 
     /*
      * =========================================
-     * DISCOVERY TAG CHANGE
-     * =========================================
-     */
-
-    async function handleDiscoveryTagChange(
-        serviceId: string,
-        tag: string,
-        checked: boolean
-    ) {
-
-        if (!selectedVendor) {
-
-            return;
-
-        }
-
-
-        try {
-
-            setActionLoading(true);
-
-            setError("");
-
-
-            const service =
-                selectedVendor.services.find(
-                    item =>
-                        item.serviceId ===
-                        serviceId
-                );
-
-
-            if (!service) {
-
-                return;
-
-            }
-
-
-            const currentTags =
-                service.discoveryTags ?? [];
-
-
-            const updatedTags =
-                checked
-
-                    ? Array.from(
-                        new Set([
-                            ...currentTags,
-                            tag
-                        ])
-                    )
-
-                    : currentTags.filter(
-                        existingTag =>
-                            existingTag !== tag
-                    );
-
-
-            await AdminVendorVerificationService
-                .updateServiceDiscoveryTags(
-                    serviceId,
-                    updatedTags
-                );
-
-
-            /*
-             * Reload the vendor so the UI always
-             * reflects the database state.
-             */
-
-            const updatedVendor =
-                await AdminVendorVerificationService
-                    .getVendor(
-                        selectedVendor.vendorId
-                    );
-
-
-            setSelectedVendor(
-                updatedVendor
-            );
-
-
-            setVendors(
-                current =>
-                    current.map(
-                        vendor =>
-                            vendor.vendorId ===
-                            updatedVendor.vendorId
-
-                                ? updatedVendor
-
-                                : vendor
-                    )
-            );
-
-        }
-        catch (error) {
-
-            console.error(
-                "Failed to update discovery tags:",
-                error
-            );
-
-
-            setError(
-                "Unable to update discovery settings."
-            );
-
-        }
-        finally {
-
-            setActionLoading(false);
-
-        }
-
-    }
-
-
-    /*
-     * =========================================
-     * SERVICE MODERATION ACTION
+     * SERVICE ACTION
      * =========================================
      */
 
     async function handleServiceAction(
+
         serviceId: string,
+
         action:
             | "approve"
             | "reject"
             | "suspend"
             | "reactivate"
+
     ) {
 
-        if (!selectedVendor) {
+        if (
+            !selectedVendor
+        ) {
 
             return;
 
@@ -471,77 +442,54 @@ const AdminVendorVerification = () => {
             setError("");
 
 
-            if (
-                action === "approve"
+            switch (
+                action
             ) {
 
-                await AdminVendorVerificationService
-                    .approveService(
-                        serviceId
-                    );
+                case "approve":
+
+                    await AdminVendorVerificationService
+                        .approveService(
+                            serviceId
+                        );
+
+                    break;
+
+
+                case "reject":
+
+                    await AdminVendorVerificationService
+                        .rejectService(
+                            serviceId
+                        );
+
+                    break;
+
+
+                case "suspend":
+
+                    await AdminVendorVerificationService
+                        .suspendService(
+                            serviceId
+                        );
+
+                    break;
+
+
+                case "reactivate":
+
+                    await AdminVendorVerificationService
+                        .reactivateService(
+                            serviceId
+                        );
+
+                    break;
 
             }
 
 
-            if (
-                action === "reject"
-            ) {
-
-                await AdminVendorVerificationService
-                    .rejectService(
-                        serviceId
-                    );
-
-            }
-
-
-            if (
-                action === "suspend"
-            ) {
-
-                await AdminVendorVerificationService
-                    .suspendService(
-                        serviceId
-                    );
-
-            }
-
-
-            if (
-                action === "reactivate"
-            ) {
-
-                await AdminVendorVerificationService
-                    .reactivateService(
-                        serviceId
-                    );
-
-            }
-
-
-            const updatedVendor =
-                await AdminVendorVerificationService
-                    .getVendor(
-                        selectedVendor.vendorId
-                    );
-
-
-            setSelectedVendor(
-                updatedVendor
-            );
-
-
-            setVendors(
-                current =>
-                    current.map(
-                        vendor =>
-                            vendor.vendorId ===
-                            updatedVendor.vendorId
-
-                                ? updatedVendor
-
-                                : vendor
-                    )
+            await refreshSelectedVendor(
+                selectedVendor.vendorId
             );
 
         }
@@ -560,7 +508,131 @@ const AdminVendorVerification = () => {
         }
         finally {
 
-            setActionLoading(false);
+            setActionLoading(
+                false
+            );
+
+        }
+
+    }
+
+
+    /*
+     * =========================================
+     * DISCOVERY TAG CHANGE
+     * =========================================
+     */
+
+    async function handleDiscoveryTagChange(
+
+        serviceId: string,
+
+        tag: DiscoveryTag,
+
+        checked: boolean
+
+    ) {
+
+        if (
+            !selectedVendor
+        ) {
+
+            return;
+
+        }
+
+
+        try {
+
+            setActionLoading(true);
+
+            setError("");
+
+
+            const service =
+                selectedVendor.services.find(
+
+                    item =>
+
+                        item.serviceId ===
+                        serviceId
+
+                );
+
+
+            if (
+                !service
+            ) {
+
+                return;
+
+            }
+
+
+            const currentTags =
+                (
+                    service.discoveryTags ??
+                    []
+                ) as DiscoveryTag[];
+
+
+            const updatedTags:
+                DiscoveryTag[] =
+
+                checked
+
+                    ?
+
+                    Array.from(
+                        new Set<DiscoveryTag>([
+                            ...currentTags,
+                            tag
+                        ])
+                    )
+
+                    :
+
+                    currentTags.filter(
+                        existingTag =>
+
+                            existingTag !==
+                            tag
+                    );
+
+
+            await AdminVendorVerificationService
+                .updateServiceDiscoveryTags(
+
+                    serviceId,
+
+                    updatedTags
+
+                );
+
+
+            await refreshSelectedVendor(
+                selectedVendor.vendorId
+            );
+
+        }
+        catch (error) {
+
+            console.error(
+                "Failed to update discovery tags:",
+                error
+            );
+
+
+            setError(
+                "Unable to update discovery settings."
+            );
+
+        }
+        finally {
+
+            setActionLoading(
+                false
+            );
 
         }
 
@@ -587,46 +659,36 @@ const AdminVendorVerification = () => {
                 <>
 
                     <button
-
                         type="button"
-
                         className="admin-action approve"
-
                         onClick={() =>
                             handleVendorAction(
                                 vendor.vendorId,
                                 "approve"
                             )
                         }
-
-                        disabled={
-                            actionLoading
-                        }
-
+                        disabled={actionLoading}
                     >
+
                         Approve
+
                     </button>
 
 
                     <button
-
                         type="button"
-
                         className="admin-action reject"
-
                         onClick={() =>
                             handleVendorAction(
                                 vendor.vendorId,
                                 "reject"
                             )
                         }
-
-                        disabled={
-                            actionLoading
-                        }
-
+                        disabled={actionLoading}
                     >
+
                         Reject
+
                     </button>
 
                 </>
@@ -644,24 +706,19 @@ const AdminVendorVerification = () => {
             return (
 
                 <button
-
                     type="button"
-
                     className="admin-action suspend"
-
                     onClick={() =>
                         handleVendorAction(
                             vendor.vendorId,
                             "suspend"
                         )
                     }
-
-                    disabled={
-                        actionLoading
-                    }
-
+                    disabled={actionLoading}
                 >
+
                     Suspend
+
                 </button>
 
             );
@@ -677,24 +734,19 @@ const AdminVendorVerification = () => {
             return (
 
                 <button
-
                     type="button"
-
                     className="admin-action approve"
-
                     onClick={() =>
                         handleVendorAction(
                             vendor.vendorId,
                             "reactivate"
                         )
                     }
-
-                    disabled={
-                        actionLoading
-                    }
-
+                    disabled={actionLoading}
                 >
+
                     Reactivate
+
                 </button>
 
             );
@@ -709,7 +761,7 @@ const AdminVendorVerification = () => {
 
     /*
      * =========================================
-     * SERVICE MODERATION BUTTONS
+     * SERVICE ACTION BUTTONS
      * =========================================
      */
 
@@ -731,46 +783,36 @@ const AdminVendorVerification = () => {
                 <>
 
                     <button
-
                         type="button"
-
                         className="admin-action approve"
-
                         onClick={() =>
                             handleServiceAction(
                                 service.serviceId,
                                 "approve"
                             )
                         }
-
-                        disabled={
-                            actionLoading
-                        }
-
+                        disabled={actionLoading}
                     >
+
                         Approve
+
                     </button>
 
 
                     <button
-
                         type="button"
-
                         className="admin-action reject"
-
                         onClick={() =>
                             handleServiceAction(
                                 service.serviceId,
                                 "reject"
                             )
                         }
-
-                        disabled={
-                            actionLoading
-                        }
-
+                        disabled={actionLoading}
                     >
+
                         Reject
+
                     </button>
 
                 </>
@@ -788,24 +830,19 @@ const AdminVendorVerification = () => {
             return (
 
                 <button
-
                     type="button"
-
                     className="admin-action suspend"
-
                     onClick={() =>
                         handleServiceAction(
                             service.serviceId,
                             "suspend"
                         )
                     }
-
-                    disabled={
-                        actionLoading
-                    }
-
+                    disabled={actionLoading}
                 >
+
                     Suspend
+
                 </button>
 
             );
@@ -821,24 +858,19 @@ const AdminVendorVerification = () => {
             return (
 
                 <button
-
                     type="button"
-
                     className="admin-action approve"
-
                     onClick={() =>
                         handleServiceAction(
                             service.serviceId,
                             "reactivate"
                         )
                     }
-
-                    disabled={
-                        actionLoading
-                    }
-
+                    disabled={actionLoading}
                 >
+
                     Reactivate
+
                 </button>
 
             );
@@ -857,7 +889,9 @@ const AdminVendorVerification = () => {
      * =========================================
      */
 
-    if (loading) {
+    if (
+        loading
+    ) {
 
         return (
 
@@ -887,9 +921,7 @@ const AdminVendorVerification = () => {
         <section className="admin-verification-page">
 
 
-            {/* =====================================
-                HEADER
-            ===================================== */}
+            {/* HEADER */}
 
             <div className="admin-verification-header">
 
@@ -900,8 +932,8 @@ const AdminVendorVerification = () => {
                     </h1>
 
                     <p>
-                        Review vendors and manage
-                        their services.
+                        Review vendors, approve services
+                        and control homepage discovery.
                     </p>
 
                 </div>
@@ -909,9 +941,7 @@ const AdminVendorVerification = () => {
             </div>
 
 
-            {/* =====================================
-                STATS
-            ===================================== */}
+            {/* STATUS STATS */}
 
             <div className="admin-verification-stats">
 
@@ -924,16 +954,12 @@ const AdminVendorVerification = () => {
                             : "verification-stat"
                     }
                     onClick={() =>
-                        setStatusFilter(
-                            "ALL"
-                        )
+                        setStatusFilter("ALL")
                     }
                 >
 
                     <strong>
-                        {
-                            vendors.length
-                        }
+                        {vendors.length}
                     </strong>
 
                     <span>
@@ -1061,18 +1087,14 @@ const AdminVendorVerification = () => {
             </div>
 
 
-            {/* =====================================
-                SEARCH
-            ===================================== */}
+            {/* SEARCH */}
 
             <div className="admin-verification-toolbar">
 
                 <input
                     type="text"
                     placeholder="Search vendor, owner or email..."
-                    value={
-                        search
-                    }
+                    value={search}
                     onChange={e =>
                         setSearch(
                             e.target.value
@@ -1083,14 +1105,14 @@ const AdminVendorVerification = () => {
             </div>
 
 
+            {/* ERROR */}
+
             {
                 error && (
 
                     <div className="admin-verification-error">
 
-                        {
-                            error
-                        }
+                        {error}
 
                     </div>
 
@@ -1098,224 +1120,225 @@ const AdminVendorVerification = () => {
             }
 
 
-            {/* =====================================
-                VENDOR TABLE
-            ===================================== */}
+            {/* VENDOR TABLE */}
 
             <div className="admin-vendor-table">
 
 
                 <div className="admin-vendor-table-header">
 
-                    <span>
-                        Vendor
-                    </span>
+                    <span>Vendor</span>
 
-                    <span>
-                        Owner
-                    </span>
+                    <span>Owner</span>
 
-                    <span>
-                        Services
-                    </span>
+                    <span>Services</span>
 
-                    <span>
-                        Status
-                    </span>
+                    <span>Status</span>
 
-                    <span>
-                        Actions
-                    </span>
+                    <span>Actions</span>
 
                 </div>
 
 
                 {
-                    filteredVendors.length === 0 ? (
+                    filteredVendors.length === 0
 
-                        <div className="admin-empty-state">
+                        ?
 
-                            <h3>
-                                No vendors found
-                            </h3>
+                        (
 
-                            <p>
-                                No vendors match
-                                your current filters.
-                            </p>
+                            <div className="admin-empty-state">
 
-                        </div>
+                                <h3>
+                                    No vendors found
+                                </h3>
 
-                    ) : (
+                                <p>
+                                    No vendors match your
+                                    current filters.
+                                </p>
 
-                        filteredVendors.map(
-                            vendor => (
+                            </div>
 
-                                <div
+                        )
 
-                                    className="admin-vendor-row"
+                        :
 
-                                    key={
-                                        vendor.vendorId
-                                    }
+                        (
 
-                                >
+                            filteredVendors.map(
+                                vendor => (
 
-                                    <div>
-
-                                        <strong>
-                                            {
-                                                vendor.businessName
-                                            }
-                                        </strong>
-
-                                        <span>
-                                            {
-                                                vendor.email
-                                            }
-                                        </span>
-
-                                    </div>
-
-
-                                    <span>
-                                        {
-                                            vendor.ownerName
-                                        }
-                                    </span>
-
-
-                                    <span>
-                                        {
-                                            vendor.services.length
-                                        }
-                                    </span>
-
-
-                                    <span
-                                        className={
-                                            `verification-badge ${
-                                                vendor.verificationStatus.toLowerCase()
-                                            }`
+                                    <div
+                                        className="admin-vendor-row"
+                                        key={
+                                            vendor.vendorId
                                         }
                                     >
-                                        {
-                                            vendor.verificationStatus
-                                        }
-                                    </span>
+
+                                        <div>
+
+                                            <strong>
+
+                                                {
+                                                    vendor.businessName
+                                                }
+
+                                            </strong>
 
 
-                                    <div className="admin-vendor-actions">
+                                            <span>
 
-                                        <button
+                                                {
+                                                    vendor.email
+                                                }
 
-                                            type="button"
+                                            </span>
 
-                                            className="admin-action view"
+                                        </div>
 
-                                            onClick={() =>
-                                                setSelectedVendor(
+
+                                        <span>
+
+                                            {
+                                                vendor.ownerName
+                                            }
+
+                                        </span>
+
+
+                                        <span>
+
+                                            {
+                                                vendor.services.length
+                                            }
+
+                                        </span>
+
+
+                                        <span
+                                            className={
+                                                `verification-badge ${
+                                                    vendor
+                                                        .verificationStatus
+                                                        .toLowerCase()
+                                                }`
+                                            }
+                                        >
+
+                                            {
+                                                vendor
+                                                    .verificationStatus
+                                            }
+
+                                        </span>
+
+
+                                        <div className="admin-vendor-actions">
+
+
+                                            <button
+                                                type="button"
+                                                className="admin-action view"
+                                                onClick={() =>
+                                                    setSelectedVendor(
+                                                        vendor
+                                                    )
+                                                }
+                                            >
+
+                                                View
+
+                                            </button>
+
+
+                                            {
+                                                renderVendorActions(
                                                     vendor
                                                 )
                                             }
 
-                                        >
-                                            View
-                                        </button>
-
-
-                                        {
-                                            renderVendorActions(
-                                                vendor
-                                            )
-                                        }
+                                        </div>
 
                                     </div>
 
-                                </div>
-
+                                )
                             )
-                        )
 
-                    )
+                        )
                 }
 
             </div>
 
 
-            {/* =====================================
-                VENDOR MODAL
-            ===================================== */}
+            {/* VENDOR MODAL */}
 
             {
                 selectedVendor && (
 
                     <div
-
                         className="admin-modal-backdrop"
-
                         onClick={() =>
                             setSelectedVendor(
                                 null
                             )
                         }
-
                     >
 
                         <div
-
                             className="admin-vendor-modal"
-
                             onClick={e =>
                                 e.stopPropagation()
                             }
-
                         >
 
 
-                            {/* =================================
-                                MODAL HEADER
-                            ================================= */}
+                            {/* MODAL HEADER */}
 
                             <div className="admin-modal-header">
 
                                 <div>
 
                                     <h2>
+
                                         {
-                                            selectedVendor.businessName
+                                            selectedVendor
+                                                .businessName
                                         }
+
                                     </h2>
 
+
                                     <p>
+
                                         {
-                                            selectedVendor.ownerName
+                                            selectedVendor
+                                                .ownerName
                                         }
+
                                     </p>
 
                                 </div>
 
 
                                 <button
-
                                     type="button"
-
                                     onClick={() =>
                                         setSelectedVendor(
                                             null
                                         )
                                     }
-
+                                    aria-label="Close"
                                 >
+
                                     ×
+
                                 </button>
 
                             </div>
 
 
-                            {/* =================================
-                                VENDOR DETAILS
-                            ================================= */}
+                            {/* VENDOR DETAILS */}
 
                             <div className="admin-modal-details">
 
@@ -1327,9 +1350,12 @@ const AdminVendorVerification = () => {
                                     </span>
 
                                     <strong>
+
                                         {
-                                            selectedVendor.email
+                                            selectedVendor
+                                                .email
                                         }
+
                                     </strong>
 
                                 </div>
@@ -1342,10 +1368,12 @@ const AdminVendorVerification = () => {
                                     </span>
 
                                     <strong>
+
                                         {
-                                            selectedVendor.phone ||
-                                            "—"
+                                            selectedVendor
+                                                .phone || "—"
                                         }
+
                                     </strong>
 
                                 </div>
@@ -1358,10 +1386,12 @@ const AdminVendorVerification = () => {
                                     </span>
 
                                     <strong>
+
                                         {
-                                            selectedVendor.city ||
-                                            "—"
+                                            selectedVendor
+                                                .city || "—"
                                         }
+
                                     </strong>
 
                                 </div>
@@ -1374,7 +1404,6 @@ const AdminVendorVerification = () => {
                                     </span>
 
                                     <strong
-
                                         className={
                                             `verification-badge ${
                                                 selectedVendor
@@ -1382,7 +1411,6 @@ const AdminVendorVerification = () => {
                                                     .toLowerCase()
                                             }`
                                         }
-
                                     >
 
                                         {
@@ -1397,9 +1425,7 @@ const AdminVendorVerification = () => {
                             </div>
 
 
-                            {/* =================================
-                                SERVICES
-                            ================================= */}
+                            {/* SERVICES */}
 
                             <div className="admin-modal-services">
 
@@ -1413,8 +1439,9 @@ const AdminVendorVerification = () => {
                                         </h3>
 
                                         <p>
-                                            Manage services
-                                            belonging to this vendor.
+                                            Approve services and choose
+                                            where approved services appear
+                                            on the EventNest homepage.
                                         </p>
 
                                     </div>
@@ -1423,197 +1450,245 @@ const AdminVendorVerification = () => {
 
 
                                 {
-                                    selectedVendor.services.length === 0 ? (
+                                    selectedVendor.services
+                                        .length === 0
 
-                                        <div className="admin-empty-state">
+                                        ?
 
-                                            No services found.
+                                        (
 
-                                        </div>
+                                            <div className="admin-empty-state">
 
-                                    ) : (
-
-                                        <>
-
-                                            {/* =====================================
-                                                COMMON SERVICE HEADER
-                                            ===================================== */}
-
-                                            {/* =====================================
-                                                GROUP HEADER
-                                            ===================================== */}
-
-                                            <div className="admin-service-group-header">
-
-                                                <div className="service-group-title">
-                                                    Service
-                                                </div>
-
-                                                <div className="moderation-group-title">
-                                                    Moderation
-                                                </div>
-
-                                                <div className="discovery-group-title">
-                                                    Discovery
-                                                </div>
+                                                No services found.
 
                                             </div>
 
+                                        )
 
-                                            {/* =====================================
-                                                COLUMN HEADER
-                                            ===================================== */}
+                                        :
 
-                                            <div className="admin-service-column-header">
+                                        (
 
-                                                <div>
-                                                    Service
-                                                </div>
-
-                                                <div>
-                                                    Status
-                                                </div>
-
-                                                <div>
-                                                    Action
-                                                </div>
-
-                                                <div>
-                                                    Featured
-                                                </div>
-
-                                                <div>
-                                                    Trending Now
-                                                </div>
-
-                                                <div>
-                                                    Most Booked
-                                                </div>
-
-                                            </div>
-
-
-                                            {/* =====================================
-                                                SERVICE ROWS
-                                            ===================================== */}
-
-                                            {
-                                                selectedVendor.services.map(
-                                                    service => (
+                                            selectedVendor.services.map(
+                                                service => (
 
                                                     <div
-                                                        className="admin-service-row"
-                                                        key={service.serviceId}
+                                                        className="admin-service-card"
+                                                        key={
+                                                            service.serviceId
+                                                        }
                                                     >
 
-                                                        {/* =====================================
-                                                            SERVICE
-                                                        ===================================== */}
 
-                                                        <div className="admin-service-name">
+                                                        {/* SERVICE TOP */}
 
-                                                            <strong>
-                                                                {service.serviceName}
-                                                            </strong>
+                                                        <div className="admin-service-card-top">
 
-                                                            <span>
-                                                                {service.category || "—"}
-                                                            </span>
+
+                                                            <div className="admin-service-info">
+
+                                                                <h4>
+
+                                                                    {
+                                                                        service
+                                                                            .serviceName
+                                                                    }
+
+                                                                </h4>
+
+
+                                                                <span>
+
+                                                                    {
+                                                                        service
+                                                                            .category
+                                                                            || "—"
+                                                                    }
+
+                                                                </span>
+
+                                                            </div>
+
+
+                                                            <div className="admin-service-moderation">
+
+
+                                                                <div className="admin-moderation-status">
+
+                                                                    <span>
+                                                                        Status
+                                                                    </span>
+
+
+                                                                    <strong
+                                                                        className={
+                                                                            `verification-badge ${
+                                                                                service
+                                                                                    .moderationStatus
+                                                                                    .toLowerCase()
+                                                                            }`
+                                                                        }
+                                                                    >
+
+                                                                        {
+                                                                            service
+                                                                                .moderationStatus
+                                                                        }
+
+                                                                    </strong>
+
+                                                                </div>
+
+
+                                                                <div className="admin-moderation-actions">
+
+                                                                    {
+                                                                        renderServiceActions(
+                                                                            service
+                                                                        )
+                                                                    }
+
+                                                                </div>
+
+                                                            </div>
 
                                                         </div>
 
 
-                                                        {/* =====================================
-                                                            STATUS
-                                                        ===================================== */}
+                                                        {/* DISCOVERY */}
 
-                                                        <div className="admin-service-status">
-
-                                                            <span
-                                                                className={
-                                                                    `verification-badge ${
-                                                                        service.moderationStatus.toLowerCase()
-                                                                    }`
-                                                                }
-                                                            >
-                                                                {service.moderationStatus}
-                                                            </span>
-
-                                                        </div>
+                                                        <div className="admin-discovery-section">
 
 
-                                                        {/* =====================================
-                                                            ACTION
-                                                        ===================================== */}
-
-                                                        <div className="admin-service-action">
-
-                                                            {renderServiceActions(service)}
-
-                                                        </div>
+                                                            <div className="admin-discovery-section-header">
 
 
-                                                        {/* =====================================
-                                                            DISCOVERY
-                                                        ===================================== */}
+                                                                <div>
 
-                                                        <div className="admin-service-discovery">
+                                                                    <h5>
+                                                                        Show on EventNest
+                                                                    </h5>
 
-                                                            {
-                                                                discoveryOptions.map(
-                                                                    option => (
 
-                                                                        <label
-                                                                            key={option.key}
-                                                                            className="admin-discovery-checkbox"
-                                                                        >
+                                                                    <p>
+                                                                        Select where this approved
+                                                                        service should appear on
+                                                                        the customer homepage.
+                                                                    </p>
 
-                                                                            <input
-                                                                                type="checkbox"
+                                                                </div>
 
-                                                                                checked={
-                                                                                    (
-                                                                                        service.discoveryTags ??
-                                                                                        []
-                                                                                    ).includes(
-                                                                                        option.key
-                                                                                    )
-                                                                                }
 
-                                                                                onChange={e =>
-                                                                                    handleDiscoveryTagChange(
-                                                                                        service.serviceId,
-                                                                                        option.key,
-                                                                                        e.target.checked
-                                                                                    )
-                                                                                }
+                                                                {
+                                                                    service
+                                                                        .moderationStatus !==
+                                                                    "APPROVED"
 
-                                                                                disabled={
-                                                                                    actionLoading ||
-                                                                                    service.moderationStatus ===
-                                                                                        "SUSPENDED" ||
-                                                                                    service.active === false
-                                                                                }
+                                                                    &&
 
-                                                                            />
+                                                                    (
 
-                                                                        </label>
+                                                                        <span className="discovery-locked-message">
+
+                                                                            Approve the service
+                                                                            before enabling discovery.
+
+                                                                        </span>
 
                                                                     )
-                                                                )
-                                                            }
+                                                                }
+
+                                                            </div>
+
+
+                                                            <div className="admin-discovery-options">
+
+
+                                                                {
+                                                                    discoveryOptions.map(
+                                                                        option => {
+
+
+                                                                            const isSelected =
+                                                                                (
+                                                                                    service
+                                                                                        .discoveryTags
+                                                                                    ?? []
+                                                                                ).includes(
+                                                                                    option.key
+                                                                                );
+
+
+                                                                            const isDisabled =
+
+                                                                                actionLoading
+
+                                                                                ||
+
+                                                                                service
+                                                                                    .moderationStatus !==
+                                                                                "APPROVED";
+
+
+                                                                            return (
+
+                                                                                <button
+                                                                                    key={
+                                                                                        option.key
+                                                                                    }
+                                                                                    type="button"
+                                                                                    className={
+                                                                                        isSelected
+
+                                                                                            ? "discovery-option selected"
+
+                                                                                            : "discovery-option"
+                                                                                    }
+                                                                                    disabled={
+                                                                                        isDisabled
+                                                                                    }
+                                                                                    onClick={() =>
+                                                                                        handleDiscoveryTagChange(
+                                                                                            service.serviceId,
+                                                                                            option.key,
+                                                                                            !isSelected
+                                                                                        )
+                                                                                    }
+                                                                                >
+
+                                                                                    <span className="discovery-check">
+
+                                                                                        {
+                                                                                            isSelected
+                                                                                                ? "✓"
+                                                                                                : "+"
+                                                                                        }
+
+                                                                                    </span>
+
+
+                                                                                    {
+                                                                                        option.label
+                                                                                    }
+
+                                                                                </button>
+
+                                                                            );
+
+                                                                        }
+                                                                    )
+                                                                }
+
+                                                            </div>
 
                                                         </div>
 
                                                     </div>
 
-                                                    )
                                                 )
-                                            }
+                                            )
 
-                                        </>
-
-                                    )
+                                        )
                                 }
 
                             </div>

@@ -1,17 +1,193 @@
+/* =========================================================
+   SERVICE SECTION
+========================================================= */
+
 .service-section {
 
-    padding:80px 0;
+    padding: 80px 0;
 
 }
 
 
+/* =========================================================
+   SERVICE GRID
+========================================================= */
+
 .service-grid {
 
-    display:grid;
+    display: grid;
 
     grid-template-columns:
-    repeat(auto-fit,minmax(300px,1fr));
+        repeat(3, minmax(0, 1fr));
 
-    gap:30px;
+    gap: 30px;
+
+}
+
+
+/* =========================================================
+   SECTION HEADER
+========================================================= */
+
+.service-section-header {
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    gap: 24px;
+
+}
+
+
+/* =========================================================
+   CAROUSEL BUTTONS
+========================================================= */
+
+.service-carousel-buttons {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 10px;
+
+    flex-shrink: 0;
+
+}
+
+.service-carousel-buttons button {
+    width: 42px;
+    height: 42px;
+
+    border: none;
+    border-radius: 50%;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    /* Same blue as View Details button */
+    background: #2d5b87;
+
+    color: #ffffff;
+
+    font-size: 28px;
+    line-height: 1;
+
+    cursor: pointer;
+
+    box-shadow:
+        0 6px 14px
+        rgba(45, 91, 135, 0.22);
+
+    transition:
+        transform 0.2s ease,
+        opacity 0.2s ease,
+        background 0.2s ease;
+}
+
+
+.service-carousel-buttons button:hover:not(:disabled) {
+    background: #24496d;
+
+    transform: translateY(-2px);
+}
+
+
+.service-carousel-buttons button:disabled {
+    background: #2d5b87;
+
+    opacity: 0.35;
+
+    cursor: not-allowed;
+
+    box-shadow: none;
+}
+
+
+/* =========================================================
+   EMPTY STATE
+========================================================= */
+
+.service-empty-state {
+
+    padding: 50px 20px;
+
+    text-align: center;
+
+    border: 1px solid #e5e7eb;
+
+    border-radius: 12px;
+
+    background: #ffffff;
+
+}
+
+
+.service-empty-state p {
+
+    margin: 0;
+
+    color: #6b7280;
+
+}
+
+
+/* =========================================================
+   RESPONSIVE
+========================================================= */
+
+@media (
+    max-width: 1000px
+) {
+
+    .service-grid {
+
+        grid-template-columns:
+            repeat(2, minmax(0, 1fr));
+
+    }
+
+}
+
+
+@media (
+    max-width: 768px
+) {
+
+    .service-section {
+
+        padding: 60px 0;
+
+    }
+
+
+    .service-section-header {
+
+        align-items: flex-start;
+
+        flex-direction: column;
+
+    }
+
+
+    .service-carousel-buttons {
+
+        align-self: flex-end;
+
+    }
+
+
+    .service-grid {
+
+        grid-template-columns:
+            1fr;
+
+        gap: 20px;
+
+    }
 
 }

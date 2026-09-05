@@ -1,4 +1,15 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import {
+    BrowserRouter,
+    Routes,
+    Route,
+    useLocation,
+    useNavigationType
+} from "react-router-dom";
+
+import {
+    useEffect,
+    useRef
+} from "react";
 
 import MainLayout from "../layouts/MainLayout";
 import VendorLayout from "../layouts/VendorLayout";
@@ -28,7 +39,7 @@ import ServiceSettings from "../pages/vendor/ServiceSettings";
 import ProtectedRoute from "../components/auth/ProtectedRoute";
 import VendorRegister from "../pages/vendor/VendorRegister";
 import VendorPricing from "../pages/vendor/pricing/VendorPricing";
-import BookingConfirmation from "../pages/BookingConfirmation/BookingConfirmation"
+import BookingConfirmation from "../pages/BookingConfirmation/BookingConfirmation";
 import CustomerBookings from "../pages/Customer/CustomerBookings";
 import CustomerCancelBooking from "../pages/Customer/CustomerCancelBooking";
 import BookingCancellationSuccess from "../pages/Customer/BookingCancellationSuccess";
@@ -41,12 +52,206 @@ import AdminUsers from "../pages/admin/AdminUsers";
 import AdminBookings from "../pages/admin/AdminBookings";
 import AdminReviews from "../pages/admin/AdminReviews";
 import AdminVendorVerification from "../pages/admin/AdminVendorVerification";
+
 import Cart from "../pages/cart/Cart";
+
 import VendorBundles from "../pages/VendorBundles/VendorBundles";
 
 import VendorBundleManagement from "../pages/vendor/VendorBundleManagement";
 import VendorCreateBundle from "../pages/vendor/VendorCreateBundle";
+
 import BundleSelection from "../pages/BundleSelection/BundleSelection";
+
+
+/*
+ * =========================================
+ * SCROLL STORAGE KEY
+ * =========================================
+ */
+
+const CATEGORY_SCROLL_KEY =
+    "eventnest-category-listing-scroll";
+
+
+/*
+ * =========================================
+ * SCROLL MANAGER
+ * =========================================
+ *
+ * Normal pages:
+ *
+ * New navigation
+ *      -> top
+ *
+ * Refresh
+ *      -> top
+ *
+ * Category Listing:
+ *
+ * Browser back navigation
+ *      -> restore saved position
+ */
+
+const ScrollManager = () => {
+
+    const location =
+        useLocation();
+
+
+    const navigationType =
+        useNavigationType();
+
+
+    /*
+     * Used to identify the first render
+     * after the application starts.
+     *
+     * Initial page load should always
+     * start from the top.
+     */
+
+    const isInitialRender =
+        useRef(true);
+
+
+    useEffect(() => {
+
+        /*
+         * =====================================
+         * INITIAL PAGE LOAD / REFRESH
+         * =====================================
+         */
+
+        if (
+            isInitialRender.current
+        ) {
+
+            isInitialRender.current =
+                false;
+
+
+            window.scrollTo({
+                top: 0,
+                left: 0,
+                behavior: "auto"
+            });
+
+
+            return;
+
+        }
+
+
+        /*
+         * =====================================
+         * CATEGORY LISTING BACK RESTORATION
+         * =====================================
+         */
+
+        if (
+            location.pathname ===
+                "/categories" &&
+            navigationType ===
+                "POP"
+        ) {
+
+            const savedScroll =
+                sessionStorage.getItem(
+                    CATEGORY_SCROLL_KEY
+                );
+
+
+            if (
+                savedScroll
+            ) {
+
+                try {
+
+                    const scrollPosition =
+                        JSON.parse(
+                            savedScroll
+                        );
+
+
+                    /*
+                     * Wait until CategoryListing
+                     * has rendered.
+                     */
+
+                    requestAnimationFrame(
+                        () => {
+
+                            window.scrollTo({
+                                top:
+                                    scrollPosition.top ??
+                                    0,
+
+                                left:
+                                    scrollPosition.left ??
+                                    0,
+
+                                behavior:
+                                    "auto"
+                            });
+
+                        }
+                    );
+
+
+                    return;
+
+                }
+                catch {
+
+                    /*
+                     * Invalid saved value.
+                     *
+                     * Fall back to top.
+                     */
+
+                    sessionStorage.removeItem(
+                        CATEGORY_SCROLL_KEY
+                    );
+
+                }
+
+            }
+
+        }
+
+
+        /*
+         * =====================================
+         * ALL OTHER NAVIGATION
+         * =====================================
+         */
+
+        window.scrollTo({
+            top: 0,
+            left: 0,
+            behavior: "auto"
+        });
+
+
+    }, [
+
+        location.pathname,
+        location.search,
+        navigationType
+
+    ]);
+
+
+    return null;
+
+};
+
+
+/*
+ * =========================================
+ * APP ROUTES
+ * =========================================
+ */
 
 const AppRoutes = () => {
 
@@ -54,245 +259,430 @@ const AppRoutes = () => {
 
         <BrowserRouter>
 
+
+            {/* =====================================
+                GLOBAL SCROLL MANAGEMENT
+            ===================================== */}
+
+            <ScrollManager />
+
+
             <Routes>
 
-                {/* Public Website */}
 
-                <Route element={<MainLayout />}>
+                {/* =====================================
+                    PUBLIC WEBSITE
+                ===================================== */}
 
-                    <Route path="/" element={<Home />} />
+                <Route
+                    element={
+                        <MainLayout />
+                    }
+                >
+
+                    <Route
+                        path="/"
+                        element={
+                            <Home />
+                        }
+                    />
+
 
                     <Route
                         path="/categories"
-                        element={<CategoryListing />}
+                        element={
+                            <CategoryListing />
+                        }
                     />
+
 
                     <Route
                         path="/vendor/:serviceId"
-                        element={<VendorDetail />}
+                        element={
+                            <VendorDetail />
+                        }
                     />
+
 
                     <Route
                         path="/checkout"
-                        element={<BookingCheckout />}
+                        element={
+                            <BookingCheckout />
+                        }
                     />
+
 
                     <Route
                         path="/bundles/available/:serviceId"
-                        element={<BundleSelection />}
+                        element={
+                            <BundleSelection />
+                        }
                     />
+
 
                     <Route
                         path="/login"
-                        element={<Login />}
+                        element={
+                            <Login />
+                        }
                     />
+
 
                     <Route
                         path="/register"
-                        element={<Register />}
+                        element={
+                            <Register />
+                        }
                     />
+
 
                     <Route
                         path="/cart"
-                        element={<Cart />}
+                        element={
+                            <Cart />
+                        }
                     />
+
 
                     <Route
                         path="/customer/bookings/:bookingId/review"
-                        element={<Review />}
+                        element={
+                            <Review />
+                        }
                     />
+
 
                     <Route
                         path="/vendor/register"
-                        element={<VendorRegister />}
+                        element={
+                            <VendorRegister />
+                        }
                     />
+
+
                     <Route
                         path="/booking-confirmation/:bookingGroupId"
-                        element={<BookingConfirmation />}
+                        element={
+                            <BookingConfirmation />
+                        }
                     />
+
 
                     <Route
                         path="/customer/bookings"
-                        element={<CustomerBookings />}
+                        element={
+                            <CustomerBookings />
+                        }
                     />
+
 
                     <Route
                         path="/customer/bookings/:bookingId/cancel"
-                        element={<CustomerCancelBooking />}
+                        element={
+                            <CustomerCancelBooking />
+                        }
                     />
+
 
                     <Route
                         path="/customer/bookings/cancelled"
-                        element={<BookingCancellationSuccess/>}
+                        element={
+                            <BookingCancellationSuccess />
+                        }
                     />
+
 
                     <Route
                         path="/customer/bookings/:bookingId"
-                        element={<CustomerBookingDetails />}
+                        element={
+                            <CustomerBookingDetails />
+                        }
                     />
 
 
                 </Route>
 
-                {/* Vendor Portal */}
+
+                {/* =====================================
+                    VENDOR PORTAL
+                ===================================== */}
 
                 <Route
+
                     element={
                         <ProtectedRoute
-                            allowedRoles={["VENDOR"]}
+                            allowedRoles={
+                                ["VENDOR"]
+                            }
                         />
                     }
+
                 >
-                <Route element={<VendorLayout />}>
-
 
                     <Route
-                        path="/vendor/dashboard"
-                        element={<VendorDashboard />}
-                    />
+                        element={
+                            <VendorLayout />
+                        }
+                    >
 
-                    <Route
-                        path="/vendor/create-listing"
-                        element={<CreateListing />}
-                    />
 
-                    <Route
-                        path="/vendor/add-service/:category"
-                        element={<VendorAddService />}
-                    />
+                        <Route
+                            path="/vendor/dashboard"
+                            element={
+                                <VendorDashboard />
+                            }
+                        />
 
-                    <Route
-                        path="/vendor/manage-services"
-                        element={<ManageServices />}
-                    />
 
-                    <Route
-                        path="/vendor/bundles"
-                        element={<VendorBundles />}
-                    />
+                        <Route
+                            path="/vendor/create-listing"
+                            element={
+                                <CreateListing />
+                            }
+                        />
 
-                    <Route
-                        path="/vendor/bundles"
-                        element={<VendorBundleManagement />}
-                    />
 
-                    <Route
-                        path="/vendor/bundles/create"
-                        element={<VendorCreateBundle />}
-                    />
+                        <Route
+                            path="/vendor/add-service/:category"
+                            element={
+                                <VendorAddService />
+                            }
+                        />
 
-                    <Route
-                        path="/vendor/bookings"
-                        element={<VendorBookingSummary />}
-                    />
 
-                    <Route
-                        path="/vendor/bookings/:id"
-                        element={<VendorBookingDetails />}
-                    />
+                        <Route
+                            path="/vendor/manage-services"
+                            element={
+                                <ManageServices />
+                            }
+                        />
 
-                    <Route
-                        path="/vendor/revenue"
-                        element={<VendorRevenue/>}
-                    />
 
-                    <Route
-                        path="/vendor/reviews"
-                        element={<VendorReviews/>}
-                    />
+                        <Route
+                            path="/vendor/bundles"
+                            element={
+                                <VendorBundles />
+                            }
+                        />
 
-                    <Route
-                        path="/vendor/settings"
-                        element={<VendorSettings/>}
-                    />
 
-                    <Route
-                        path="/vendor/services/edit/:id"
-                        element={<VendorAddService />}
-                    />
+                        <Route
+                            path="/vendor/bundles"
+                            element={
+                                <VendorBundleManagement />
+                            }
+                        />
 
-                    <Route
-                        path="/vendor/services/:serviceId"
-                        element={<VendorServiceWorkspace />}>
 
-                    <Route
-                        path="pricing"
-                        element={<VendorPricing />}/>
+                        <Route
+                            path="/vendor/bundles/create"
+                            element={
+                                <VendorCreateBundle />
+                            }
+                        />
 
-                    <Route index
-                        element={<VendorServiceProfile />}/>
 
-                    <Route path="slots"
-                        element={<ManageBookingSlots />}/>
+                        <Route
+                            path="/vendor/bookings"
+                            element={
+                                <VendorBookingSummary />
+                            }
+                        />
 
-                    <Route
-                        path="availability"
-                        element={<ManageAvailability />}
-                    />
 
-                    <Route
-                        path="bookings"
-                        element={<VendorServiceBookings />}
-                    />
+                        <Route
+                            path="/vendor/bookings/:id"
+                            element={
+                                <VendorBookingDetails />
+                            }
+                        />
 
-                    <Route
-                        path="reviews"
-                        element={<VendorServiceReviews />}
-                    />
 
-                    <Route
-                        path="settings"
-                        element={<ServiceSettings />}
-                    />
+                        <Route
+                            path="/vendor/revenue"
+                            element={
+                                <VendorRevenue />
+                            }
+                        />
+
+
+                        <Route
+                            path="/vendor/reviews"
+                            element={
+                                <VendorReviews />
+                            }
+                        />
+
+
+                        <Route
+                            path="/vendor/settings"
+                            element={
+                                <VendorSettings />
+                            }
+                        />
+
+
+                        <Route
+                            path="/vendor/services/edit/:id"
+                            element={
+                                <VendorAddService />
+                            }
+                        />
+
+
+                        <Route
+                            path="/vendor/services/:serviceId"
+                            element={
+                                <VendorServiceWorkspace />
+                            }
+                        >
+
+
+                            <Route
+                                path="pricing"
+                                element={
+                                    <VendorPricing />
+                                }
+                            />
+
+
+                            <Route
+
+                                index
+
+                                element={
+                                    <VendorServiceProfile />
+                                }
+
+                            />
+
+
+                            <Route
+                                path="slots"
+                                element={
+                                    <ManageBookingSlots />
+                                }
+                            />
+
+
+                            <Route
+                                path="availability"
+                                element={
+                                    <ManageAvailability />
+                                }
+                            />
+
+
+                            <Route
+                                path="bookings"
+                                element={
+                                    <VendorServiceBookings />
+                                }
+                            />
+
+
+                            <Route
+                                path="reviews"
+                                element={
+                                    <VendorServiceReviews />
+                                }
+                            />
+
+
+                            <Route
+                                path="settings"
+                                element={
+                                    <ServiceSettings />
+                                }
+                            />
+
+
+                        </Route>
+
+
+                    </Route>
+
 
                 </Route>
-                </Route>
 
-                </Route>
-                {/* Admin Portal */}
+
+                {/* =====================================
+                    ADMIN PORTAL
+                ===================================== */}
 
                 <Route
+
                     element={
                         <ProtectedRoute
-                            allowedRoles={["ADMIN"]}
+                            allowedRoles={
+                                ["ADMIN"]
+                            }
                         />
                     }
+
                 >
-                    <Route element={<AdminLayout />}>
+
+                    <Route
+                        element={
+                            <AdminLayout />
+                        }
+                    >
+
 
                         <Route
                             path="/admin/dashboard"
-                            element={<AdminDashboard />}
+                            element={
+                                <AdminDashboard />
+                            }
                         />
+
 
                         <Route
                             path="/admin/users"
-                            element={<AdminUsers />}
+                            element={
+                                <AdminUsers />
+                            }
                         />
+
 
                         <Route
                             path="/admin/bookings"
-                            element={<AdminBookings />}
+                            element={
+                                <AdminBookings />
+                            }
                         />
+
 
                         <Route
                             path="/admin/reviews"
-                            element={<AdminReviews />}
+                            element={
+                                <AdminReviews />
+                            }
                         />
+
 
                         <Route
                             path="/admin/vendors"
-                            element={<AdminVendorVerification />}
+                            element={
+                                <AdminVendorVerification />
+                            }
                         />
 
+
                     </Route>
+
+
                 </Route>
+
+
             </Routes>
+
 
         </BrowserRouter>
 
     );
 
 };
+
 
 export default AppRoutes;

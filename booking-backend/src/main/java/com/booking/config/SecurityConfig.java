@@ -1,6 +1,7 @@
 package com.booking.config;
 
 import com.booking.security.JwtAuthenticationFilter;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -77,7 +78,9 @@ public class SecurityConfig {
 
                         .requestMatchers(
                                 "/api/health",
-                                "/api/auth/**",
+                                "/api/auth/login",
+                                "/api/auth/register",
+                                "/api/auth/vendor/register",
                                 "/api/customer/services",
                                 "/api/customer/services/**",
                                 "/uploads/**",
@@ -153,6 +156,27 @@ public class SecurityConfig {
                 // ==========================
                 // JWT Filter
                 // ==========================
+                .exceptionHandling(exception -> exception
+
+                        .authenticationEntryPoint(
+                                (request, response, authException) -> {
+
+                                    response.setStatus(
+                                            HttpServletResponse.SC_UNAUTHORIZED
+                                    );
+
+                                    response.setContentType(
+                                            "application/json"
+                                    );
+
+                                    response.getWriter().write(
+                                            "{\"message\":\"Authentication required\"}"
+                                    );
+
+                                }
+                        )
+
+                )
 
                 .addFilterBefore(
                         jwtAuthenticationFilter,

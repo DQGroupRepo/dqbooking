@@ -1,283 +1,177 @@
 import "./Home.css";
 
-import FeaturedVendorCard from "../../components/vendor/FeaturedVendorCard";
-import SearchBar from "../../components/search/SearchBar";
-import CategoryCard from "../../components/home/CategoryCard";
-import { categories } from "../../mocks/categories";
-import ServiceSection from "../../components/home/ServiceSection";
-import { popularLocations, testimonials } from "../../mocks/homeExtraData";
+import SearchBar
+    from "../../components/search/SearchBar";
 
-import { popularHalls, bridalMakeup,
-    photographyServices, videographyServices } from "../../mocks/homeServices";
+import CategoryCard
+    from "../../components/home/CategoryCard";
 
-import { useEffect, useMemo, useState } from "react";
+import ServiceSection
+    from "../../components/home/ServiceSection";
 
-import type { FeaturedService } from "../../types/FeaturedService";
+import {
+    categories
+} from "../../mocks/categories";
+
+import {
+    popularLocations,
+    testimonials
+} from "../../mocks/homeExtraData";
+
+import {
+    useEffect,
+    useState
+} from "react";
+
+import CustomerService
+    from "../../services/CustomerService";
+
+import type {
+    VendorListing
+} from "../../types/VendorListing";
 
 
 const Home = () => {
 
+
+    /*
+     * =========================================
+     * HOME DISCOVERY DATA
+     * =========================================
+     */
+
     const [
         featuredServices,
         setFeaturedServices
-    ] = useState<FeaturedService[]>([]);
+    ] = useState<VendorListing[]>([]);
 
-     /*
-         * =========================================
-         * FEATURED CAROUSEL POSITION
-         * =========================================
-         *
-         * Represents the first real service currently
-         * visible in the 3-card window.
-         */
 
-        const [
-            featuredStartIndex,
-            setFeaturedStartIndex
-        ] = useState(0);
+    const [
+        popularHalls,
+        setPopularHalls
+    ] = useState<VendorListing[]>([]);
+
+
+    const [
+        bridalMakeup,
+        setBridalMakeup
+    ] = useState<VendorListing[]>([]);
+
+
+    const [
+        photographyServices,
+        setPhotographyServices
+    ] = useState<VendorListing[]>([]);
+
+
+    const [
+        videographyServices,
+        setVideographyServices
+    ] = useState<VendorListing[]>([]);
+
+
     /*
      * =========================================
-     * LOAD FEATURED SERVICES
+     * LOAD HOME PAGE DATA
      * =========================================
-     *
-     * These are selected by the admin from
-     * Vendor Verification.
      */
 
     useEffect(() => {
 
-        loadFeaturedServices();
+        loadHomeServices();
 
     }, []);
 
 
-    async function loadFeaturedServices() {
+    async function loadHomeServices() {
 
         try {
 
-            /*
-             * IMPORTANT:
-             *
-             * This should use the CUSTOMER
-             * featured-services endpoint.
-             *
-             * Do NOT use the admin verification
-             * service here.
-             */
+            const [
 
-            const response =
-                await fetch(
-                    "http://localhost:8080/api/customer/services/featured"
-                );
+                featuredData,
 
+                popularHallsData,
 
-            if (!response.ok) {
+                bridalMakeupData,
 
-                throw new Error(
-                    "Failed to load featured services."
-                );
+                photographyData,
 
-            }
+                videographyData
 
+            ] =
+                await Promise.all([
 
-            const data:
-                FeaturedService[] =
-                await response.json();
+                    CustomerService
+                        .getFeaturedServices(),
+
+                    CustomerService
+                        .getPopularHalls(),
+
+                    CustomerService
+                        .getTopBridalMakeup(),
+
+                    CustomerService
+                        .getProfessionalPhotography(),
+
+                    CustomerService
+                        .getWeddingVideography()
+
+                ]);
 
 
             setFeaturedServices(
-                data
+                featuredData
             );
-             /*
-             * Always start from the first service
-             * after loading.
-             */
 
-            setFeaturedStartIndex(
-                0
+
+            setPopularHalls(
+                popularHallsData
+            );
+
+
+            setBridalMakeup(
+                bridalMakeupData
+            );
+
+
+            setPhotographyServices(
+                photographyData
+            );
+
+
+            setVideographyServices(
+                videographyData
             );
 
         }
         catch (error) {
 
             console.error(
-                "Failed to load featured services:",
+                "Failed to load home services:",
                 error
             );
 
 
-            setFeaturedServices(
-                []
-            );
+            setFeaturedServices([]);
 
-            setFeaturedStartIndex(
-                0
-            );
+            setPopularHalls([]);
+
+            setBridalMakeup([]);
+
+            setPhotographyServices([]);
+
+            setVideographyServices([]);
 
         }
 
     }
-     /*
-         * =========================================
-         * DISPLAY SERVICES
-         * =========================================
-         *
-         * Less than 3:
-         *
-         * 1 service -> 1,1,1
-         *
-         * 2 services -> 1,2,1
-         *
-         * 3+ services -> actual carousel window
-         */
-
-        const featuredDisplayServices =
-            useMemo(
-                () => {
-
-                    if (
-                        featuredServices.length === 0
-                    ) {
-
-                        return [];
-
-                    }
-
-
-                    /*
-                     * One featured service.
-                     */
-
-                    if (
-                        featuredServices.length === 1
-                    ) {
-
-                        return [
-
-                            featuredServices[0],
-
-                            featuredServices[0],
-
-                            featuredServices[0]
-
-                        ];
-
-                    }
-
-
-                    /*
-                     * Two featured services.
-                     */
-
-                    if (
-                        featuredServices.length === 2
-                    ) {
-
-                        return [
-
-                            featuredServices[0],
-
-                            featuredServices[1],
-
-                            featuredServices[0]
-
-                        ];
-
-                    }
-
-
-                    /*
-                     * Three or more.
-                     *
-                     * Show three services beginning
-                     * at featuredStartIndex.
-                     */
-
-                    return featuredServices.slice(
-                        featuredStartIndex,
-                        featuredStartIndex + 3
-                    );
-
-                },
-                [
-                    featuredServices,
-                    featuredStartIndex
-                ]
-            );
-
-
-        /*
-         * =========================================
-         * CAROUSEL STATE
-         * =========================================
-         */
-
-        const canGoPrevious =
-            featuredServices.length > 3 &&
-            featuredStartIndex > 0;
-
-
-        const canGoNext =
-            featuredServices.length > 3 &&
-            featuredStartIndex <
-                featuredServices.length - 3;
-
-
-        /*
-         * =========================================
-         * PREVIOUS
-         * =========================================
-         */
-
-        function handlePreviousFeatured() {
-
-            if (!canGoPrevious) {
-
-                return;
-
-            }
-
-
-            setFeaturedStartIndex(
-                previous =>
-                    Math.max(
-                        0,
-                        previous - 1
-                    )
-            );
-
-        }
-
-
-        /*
-         * =========================================
-         * NEXT
-         * =========================================
-         */
-
-        function handleNextFeatured() {
-
-            if (!canGoNext) {
-
-                return;
-
-            }
-
-
-            setFeaturedStartIndex(
-                previous =>
-                    Math.min(
-                        featuredServices.length - 3,
-                        previous + 1
-                    )
-            );
-
-        }
 
 
     return (
 
         <>
+
 
             {/* =========================================
                 HERO
@@ -293,12 +187,14 @@ const Home = () => {
                             Find Everything For Your Special Occasion
                         </h1>
 
+
                         <p>
                             Discover trusted venues,
                             photographers,
                             makeup artists,
                             decorators and event professionals.
                         </p>
+
 
                         <SearchBar />
 
@@ -320,6 +216,7 @@ const Home = () => {
                     <h2 className="section-title">
                         Explore Categories
                     </h2>
+
 
                     <p className="section-subtitle">
                         Everything you need for your celebration
@@ -375,108 +272,17 @@ const Home = () => {
                 FEATURED VENDORS
             ========================================= */}
 
-            <section className="featured-vendors">
+            <ServiceSection
 
-                <div className="container">
+                title="Featured Vendors"
 
+                subtitle="Discover handpicked event professionals"
 
-                    <div className="section-header">
+                services={
+                    featuredServices
+                }
 
-                        <div>
-
-                            <h2>
-                                Featured Vendors
-                            </h2>
-
-                        </div>
-
-
-                        {
-                            featuredServices.length > 3 && (
-
-                                <div className="carousel-buttons">
-
-                                    <button
-                                        type="button"
-                                        onClick={
-                                            handlePreviousFeatured
-                                        }
-                                        disabled={
-                                            !canGoPrevious
-                                        }
-                                        aria-label="Previous featured vendors"
-                                    >
-                                        ‹
-                                    </button>
-
-
-                                    <button
-                                        type="button"
-                                        onClick={
-                                            handleNextFeatured
-                                        }
-                                        disabled={
-                                            !canGoNext
-                                        }
-                                        aria-label="Next featured vendors"
-                                    >
-                                        ›
-                                    </button>
-
-                                </div>
-
-                            )
-                        }
-
-                    </div>
-
-
-                    {
-                        featuredServices.length === 0 ? (
-
-                            <div className="featured-empty-state">
-
-                                <p>
-                                    No featured services available at the moment.
-                                </p>
-
-                            </div>
-
-                        ) : (
-
-                            <div className="vendor-grid">
-
-                                {
-                                    featuredDisplayServices.map(
-                                        (
-                                            service,
-                                            index
-                                        ) => (
-
-                                            <FeaturedVendorCard
-
-                                                key={
-                                                    `${service.serviceId}-${index}`
-                                                }
-
-                                                service={
-                                                    service
-                                                }
-
-                                            />
-
-                                        )
-                                    )
-                                }
-
-                            </div>
-
-                        )
-                    }
-
-                </div>
-
-            </section>
+            />
 
 
             {/* =========================================
@@ -577,15 +383,20 @@ const Home = () => {
                                     >
 
                                         <h3>
+
                                             {
                                                 location.city
                                             }
+
                                         </h3>
 
+
                                         <p>
+
                                             {
                                                 location.vendors
                                             }
+
                                         </p>
 
                                     </div>
@@ -615,6 +426,7 @@ const Home = () => {
 
 
                     <div className="steps-grid">
+
 
                         <div className="step-card">
 
@@ -669,6 +481,7 @@ const Home = () => {
 
                         </div>
 
+
                     </div>
 
                 </div>
@@ -709,16 +522,24 @@ const Home = () => {
                                             ⭐⭐⭐⭐⭐
                                         </div>
 
+
                                         <p>
+
                                             "
                                             {
                                                 item.review
                                             }
                                             "
+
                                         </p>
 
+
                                         <strong>
-                                            - {item.name}
+
+                                            - {
+                                                item.name
+                                            }
+
                                         </strong>
 
                                     </div>
@@ -746,10 +567,12 @@ const Home = () => {
                         Are you an Event Service Provider?
                     </h2>
 
+
                     <p>
                         Join EventNest and reach
                         thousands of customers.
                     </p>
+
 
                     <button
                         type="button"
@@ -760,6 +583,7 @@ const Home = () => {
                 </div>
 
             </section>
+
 
         </>
 

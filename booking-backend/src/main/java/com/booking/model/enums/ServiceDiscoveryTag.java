@@ -6,6 +6,13 @@ public enum ServiceDiscoveryTag {
 
     TRENDING_NOW,
 
-    MOST_BOOKED
+    MOST_BOOKED,
 
+    POPULAR_HALL,
+
+    TOP_BRIDAL_MAKEUP,
+
+    PROFESSIONAL_PHOTOGRAPHY,
+
+    WEDDING_VIDEOGRAPHY
 }

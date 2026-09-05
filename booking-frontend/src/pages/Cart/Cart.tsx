@@ -19,9 +19,58 @@ const Cart = () => {
 
     useEffect(() => {
 
-        setCart(
-            CartService.getCart()
+        const updateCart = () => {
+
+            setCart(
+                CartService.getCart()
+            );
+
+        };
+
+
+        /*
+         * Load cart initially.
+         */
+
+        updateCart();
+
+
+        /*
+         * Listen for cart updates
+         * in the current tab.
+         */
+
+        window.addEventListener(
+            "cartUpdated",
+            updateCart
         );
+
+
+        /*
+         * Listen for changes from
+         * another browser tab.
+         */
+
+        window.addEventListener(
+            "storage",
+            updateCart
+        );
+
+
+        return () => {
+
+            window.removeEventListener(
+                "cartUpdated",
+                updateCart
+            );
+
+
+            window.removeEventListener(
+                "storage",
+                updateCart
+            );
+
+        };
 
     }, []);
 
@@ -214,11 +263,7 @@ const Cart = () => {
 
                     <div className="cart-bundle-header">
 
-                        <div>
-
-                            <span className="cart-bundle-label">
-                                BUNDLE
-                            </span>
+                        <div className="cart-bundle-info">
 
                             <h2>
                                 {
@@ -227,11 +272,18 @@ const Cart = () => {
                                 }
                             </h2>
 
-                            <p>
+
+                            <p
+                                className={
+                                    isComplete
+                                        ? "cart-bundle-status completed"
+                                        : "cart-bundle-status pending"
+                                }
+                            >
 
                                 {
                                     isComplete
-                                        ? "Bundle completed"
+                                        ? "✓ Bundle completed"
                                         : `Bundle in progress — ${bundleItems.length} of ${requiredCount} services selected`
                                 }
 
@@ -322,10 +374,12 @@ const Cart = () => {
                                             </h3>
 
 
-                                            <p>
+                                            <p className="cart-vendor-name">
+
                                                 {
                                                     item.vendorName
                                                 }
+
                                             </p>
 
 
@@ -344,32 +398,42 @@ const Cart = () => {
                                             }
 
 
-                                            {
-                                                item.eventDate && (
+                                            <div className="cart-item-meta">
 
-                                                    <p>
-                                                        Event Date:{" "}
-                                                        {
-                                                            item.eventDate
-                                                        }
-                                                    </p>
+                                                {
+                                                    item.eventDate && (
 
-                                                )
-                                            }
+                                                        <span>
+
+                                                            📅 Event Date:{" "}
+
+                                                            {
+                                                                item.eventDate
+                                                            }
+
+                                                        </span>
+
+                                                    )
+                                                }
 
 
-                                            {
-                                                item.guestCount && (
+                                                {
+                                                    item.guestCount && (
 
-                                                    <p>
-                                                        Guests:{" "}
-                                                        {
-                                                            item.guestCount
-                                                        }
-                                                    </p>
+                                                        <span>
 
-                                                )
-                                            }
+                                                            👥 Guests:{" "}
+
+                                                            {
+                                                                item.guestCount
+                                                            }
+
+                                                        </span>
+
+                                                    )
+                                                }
+
+                                            </div>
 
                                         </div>
 
@@ -429,12 +493,14 @@ const Cart = () => {
                             </span>
 
                             <span>
+
                                 ₹
                                 {
                                     originalPrice.toLocaleString(
                                         "en-IN"
                                     )
                                 }
+
                             </span>
 
                         </div>
@@ -470,12 +536,14 @@ const Cart = () => {
                                         </strong>
 
                                         <strong>
+
                                             ₹
                                             {
                                                 finalPrice.toLocaleString(
                                                     "en-IN"
                                                 )
                                             }
+
                                         </strong>
 
                                     </div>
@@ -508,6 +576,10 @@ const Cart = () => {
 
         <section className="cart-page">
 
+            {/* =====================================
+                HEADER
+            ===================================== */}
+
             <div className="cart-header">
 
                 <div>
@@ -534,7 +606,7 @@ const Cart = () => {
                                 handleClearCart
                             }
                         >
-                            Clear Cart
+                            🗑 Clear Cart
                         </button>
 
                     )
@@ -574,7 +646,12 @@ const Cart = () => {
 
                     <div className="cart-layout">
 
+                        {/* =================================
+                            CART ITEMS
+                        ================================= */}
+
                         <div className="cart-items">
+
 
                             {/* =================================
                                 BUNDLES
@@ -599,12 +676,26 @@ const Cart = () => {
 
                                     <div className="cart-normal-services">
 
+
                                         {
                                             cartBundles.length > 0 && (
 
-                                                <h2>
-                                                    Individual Services
-                                                </h2>
+                                                <div className="cart-section-header">
+
+                                                    <div>
+
+                                                        <h2>
+                                                            Individual Services
+                                                        </h2>
+
+                                                        <p>
+                                                            Services selected
+                                                            outside your bundle.
+                                                        </p>
+
+                                                    </div>
+
+                                                </div>
 
                                             )
                                         }
@@ -650,16 +741,20 @@ const Cart = () => {
                                                         <div className="cart-item-details">
 
                                                             <h3>
+
                                                                 {
                                                                     item.serviceName
                                                                 }
+
                                                             </h3>
 
 
-                                                            <p>
+                                                            <p className="cart-vendor-name">
+
                                                                 {
                                                                     item.vendorName
                                                                 }
+
                                                             </p>
 
 
@@ -678,32 +773,42 @@ const Cart = () => {
                                                             }
 
 
-                                                            {
-                                                                item.eventDate && (
+                                                            <div className="cart-item-meta">
 
-                                                                    <p>
-                                                                        Event Date:{" "}
-                                                                        {
-                                                                            item.eventDate
-                                                                        }
-                                                                    </p>
+                                                                {
+                                                                    item.eventDate && (
 
-                                                                )
-                                                            }
+                                                                        <span>
+
+                                                                            📅 Event Date:{" "}
+
+                                                                            {
+                                                                                item.eventDate
+                                                                            }
+
+                                                                        </span>
+
+                                                                    )
+                                                                }
 
 
-                                                            {
-                                                                item.guestCount && (
+                                                                {
+                                                                    item.guestCount && (
 
-                                                                    <p>
-                                                                        Guests:{" "}
-                                                                        {
-                                                                            item.guestCount
-                                                                        }
-                                                                    </p>
+                                                                        <span>
 
-                                                                )
-                                                            }
+                                                                            👥 Guests:{" "}
+
+                                                                            {
+                                                                                item.guestCount
+                                                                            }
+
+                                                                        </span>
+
+                                                                    )
+                                                                }
+
+                                                            </div>
 
                                                         </div>
 
@@ -733,6 +838,9 @@ const Cart = () => {
                                                                 handleRemove(
                                                                     item.serviceId
                                                                 )
+                                                            }
+                                                            aria-label={
+                                                                `Remove ${item.serviceName}`
                                                             }
                                                         >
                                                             ×
@@ -872,7 +980,7 @@ const Cart = () => {
                                     handleCheckout
                                 }
                             >
-                                Proceed to Checkout
+                                🛒 Proceed to Checkout
                             </button>
 
                         </aside>

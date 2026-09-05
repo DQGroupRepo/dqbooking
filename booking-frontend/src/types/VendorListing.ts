@@ -2,11 +2,11 @@ export interface VendorListing {
 
     serviceId: string;
 
-    vendorId: string;
+    serviceName: string;
 
     businessName: string;
 
-    serviceName: string;
+    description: string;
 
     category: string;
 
@@ -20,8 +20,12 @@ export interface VendorListing {
 
     capacity: number;
 
-    imageUrl: string;
+    imageUrl?: string;
 
-    gallery: string[];
+    gallery?: string[];
+
+    amenities?: string[];
+
+    isActive: boolean;
 
 }

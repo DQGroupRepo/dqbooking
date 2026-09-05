@@ -10,7 +10,7 @@ export type ServiceModerationStatus =
     | "REJECTED"
     | "SUSPENDED";
 
-const discoveryOptions = [
+/* const discoveryOptions = [
     {
         key: "FEATURED",
         label: "Featured"
@@ -23,7 +23,7 @@ const discoveryOptions = [
         key: "MOST_BOOKED",
         label: "Most Booked"
     }
-];
+]; */
 
 export interface AdminVendorService {
     serviceId: string;

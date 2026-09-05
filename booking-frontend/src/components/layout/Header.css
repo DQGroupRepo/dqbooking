@@ -146,6 +146,10 @@
 ========================================================= */
 
 .header-main {
+    position: relative;
+
+    z-index: 20;
+
     background: #073654;
 
     color: #ffffff;
@@ -465,6 +469,8 @@
 
 .notification-wrapper {
     position: relative;
+
+    z-index: 100;
 }
 
 
@@ -478,6 +484,8 @@
     width: 405px;
 
     background: #ffffff;
+
+    z-index: 1000;
 
     color: #17334b;
 
@@ -912,6 +920,7 @@
 
 .profile-wrapper {
     position: relative;
+    z-index: 100;
 }
 
 
@@ -1016,6 +1025,7 @@
 
 .profile-dropdown {
     position: absolute;
+    z-index: 1000;
 
     top: calc(100% + 11px);
 
@@ -1116,56 +1126,96 @@
 /* =========================================================
    GUEST ACTIONS
 ========================================================= */
+/* =========================================================
+   GUEST LOGIN / REGISTER
+========================================================= */
 
 .guest-actions {
     display: flex;
-
     align-items: center;
-
-    gap: 8px;
+    gap: 9px;
 }
 
 
 .header-login,
 .header-register {
-    padding: 9px 15px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 9px 16px;
 
     border-radius: 8px;
 
     text-decoration: none;
 
     font-size: 12px;
-
     font-weight: 700;
+
+    white-space: nowrap;
+
+    transition:
+        background 0.2s ease,
+        color 0.2s ease,
+        border-color 0.2s ease,
+        box-shadow 0.2s ease,
+        transform 0.2s ease;
 }
 
 
-.header-login {
-    color: #073654;
+/* =========================================================
+   LOGIN
+========================================================= */
 
-    border: 1px solid #d4e0e7;
+.header-login {
+    color: #ffffff;
+
+    border: 1px solid rgba(255, 255, 255, 0.75);
+
+    background: transparent;
 }
 
 
 .header-login:hover {
-    border-color: #e6b84a;
+    color: #ffffff;
 
-    color: #073654;
+    border-color: #ffffff;
 
-    background: #fffaf0;
+    background: rgba(255, 255, 255, 0.12);
+
+    box-shadow:
+        0 4px 12px rgba(255, 255, 255, 0.12);
+
+    transform: translateY(-1px);
 }
 
+
+/* =========================================================
+   REGISTER
+========================================================= */
 
 .header-register {
     background: #f4b928;
 
     color: #073654;
+
+    border: 1px solid #f4b928;
 }
 
 
 .header-register:hover {
     background: #ffc940;
+
+    color: #073654;
+
+    border-color: #ffc940;
+
+    box-shadow:
+        0 4px 12px rgba(244, 185, 40, 0.28);
+
+    transform: translateY(-1px);
 }
+
 
 
 /* =========================================================
@@ -1207,6 +1257,10 @@
 ========================================================= */
 
 .header-navigation {
+    position: relative;
+
+    z-index: 10;
+
     background: #ffffff;
 
     border-bottom: 1px solid #e7edf1;
@@ -1267,15 +1321,46 @@
     color: #073654;
 }
 
-
 .navigation-link.active {
     color: #073654;
 
-    font-weight: 700;
+    /*
+     * Active menu is intentionally bold.
+     */
+    font-weight: 800;
 }
 
 
 .navigation-link.active::after {
+    content: "";
+
+    position: absolute;
+
+    left: 0;
+    right: 0;
+
+    bottom: 0;
+
+    height: 3px;
+
+    background: #f4b928;
+
+    border-radius: 3px 3px 0 0;
+}
+
+
+/* =========================================
+   ACTIVE CUSTOMER BOOKINGS
+========================================= */
+
+.navigation-bookings.active {
+    color: #073654;
+
+    font-weight: 800;
+}
+
+
+.navigation-bookings.active::after {
     content: "";
 
     position: absolute;

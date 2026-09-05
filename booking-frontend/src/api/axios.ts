@@ -1,53 +1,131 @@
 import axios from "axios";
 
+
 const api = axios.create({
 
-    baseURL: "http://localhost:8080/api",
+    baseURL:
+        "http://localhost:8080/api",
 
     headers: {
 
-        "Content-Type": "application/json"
+        "Content-Type":
+            "application/json"
 
     }
 
 });
 
+
+/*
+ * =========================================
+ * REQUEST INTERCEPTOR
+ * =========================================
+ *
+ * Attach the stored JWT to every API request.
+ */
+
 api.interceptors.request.use(
 
-    config => {
+    (config) => {
 
-        const token = localStorage.getItem("token");
+        const token =
+            localStorage.getItem(
+                "eventnest_token"
+            );
+
 
         if (token) {
 
-            config.headers.Authorization = `Bearer ${token}`;
+            config.headers.Authorization =
+                `Bearer ${token}`;
 
         }
+
 
         return config;
 
+    },
+
+    (error) => {
+
+        return Promise.reject(
+            error
+        );
+
     }
 
 );
+
+
+/*
+ * =========================================
+ * RESPONSE INTERCEPTOR
+ * =========================================
+ *
+ * Handle expired or invalid authentication.
+ */
 
 api.interceptors.response.use(
 
-    response => response,
+    (response) =>
+        response,
 
-    error => {
+    (error) => {
 
-        if (error.response?.status === 401) {
+        /*
+         * Do not automatically redirect from
+         * the login endpoint itself.
+         */
 
-            localStorage.clear();
+        const requestUrl =
+            error.config?.url ?? "";
 
-            window.location.href = "/login";
+
+        if (
+            error.response?.status === 401 &&
+            !requestUrl.includes(
+                "/auth/login"
+            )
+        ) {
+
+            /*
+             * Remove only authentication data.
+             *
+             * Avoid localStorage.clear() because
+             * other application data may exist.
+             */
+
+            localStorage.removeItem(
+                "eventnest_token"
+            );
+
+            localStorage.removeItem(
+                "eventnest_user"
+            );
+
+
+            /*
+             * Notify AuthContext.
+             */
+
+            window.dispatchEvent(
+
+                new Event(
+                    "eventnest-auth-expired"
+                )
+
+            );
 
         }
 
-        return Promise.reject(error);
+
+        return Promise.reject(
+            error
+        );
 
     }
 
 );
+
 
 export default api;

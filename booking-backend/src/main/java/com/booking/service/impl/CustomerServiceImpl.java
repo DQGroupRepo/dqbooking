@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 import com.booking.model.enums.VendorVerificationStatus;
 
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -216,6 +217,163 @@ public class CustomerServiceImpl implements CustomerService {
                         java.util.Objects::nonNull
                 )
                 .toList();
+
+    }
+
+    @Override
+    public List<VendorListingResponse> getPopularHalls() {
+
+        return vendorServiceRepository
+                .findByDiscoveryTagAndActiveTrueAndDeletedFalse(
+                        ServiceDiscoveryTag.POPULAR_HALL
+                )
+                .stream()
+                .map(
+                        this::toVendorListingResponse
+                )
+                .filter(
+                        Objects::nonNull
+                )
+                .toList();
+
+    }
+
+    @Override
+    public List<VendorListingResponse> getTopBridalMakeup() {
+
+        return vendorServiceRepository
+                .findByDiscoveryTagAndActiveTrueAndDeletedFalse(
+                        ServiceDiscoveryTag.TOP_BRIDAL_MAKEUP
+                )
+                .stream()
+                .map(
+                        this::toVendorListingResponse
+                )
+                .filter(
+                        Objects::nonNull
+                )
+                .toList();
+
+    }
+
+    @Override
+    public List<VendorListingResponse>
+    getProfessionalPhotography() {
+
+        return vendorServiceRepository
+                .findByDiscoveryTagAndActiveTrueAndDeletedFalse(
+                        ServiceDiscoveryTag.PROFESSIONAL_PHOTOGRAPHY
+                )
+                .stream()
+                .map(
+                        this::toVendorListingResponse
+                )
+                .filter(
+                        Objects::nonNull
+                )
+                .toList();
+
+    }
+
+    @Override
+    public List<VendorListingResponse>
+    getWeddingVideography() {
+
+        return vendorServiceRepository
+                .findByDiscoveryTagAndActiveTrueAndDeletedFalse(
+                        ServiceDiscoveryTag.WEDDING_VIDEOGRAPHY
+                )
+                .stream()
+                .map(
+                        this::toVendorListingResponse
+                )
+                .filter(
+                        Objects::nonNull
+                )
+                .toList();
+
+    }
+
+
+    private VendorListingResponse toVendorListingResponse(
+            VendorService service
+    ) {
+
+        User vendor =
+                vendorRepository
+                        .findById(
+                                service.getVendorId()
+                        )
+                        .orElse(null);
+
+
+        /*
+         * Vendor no longer exists
+         */
+
+        if (vendor == null) {
+
+            return null;
+
+        }
+
+
+        /*
+         * Only approved vendors should appear
+         * on the customer home page.
+         */
+
+        if (
+                vendor.getVerificationStatus()
+                        != VendorVerificationStatus.APPROVED
+        ) {
+
+            return null;
+
+        }
+
+
+        /*
+         * Only approved services should appear.
+         */
+
+        if (
+                service.getModerationStatus()
+                        != ServiceModerationStatus.APPROVED
+        ) {
+
+            return null;
+
+        }
+
+
+        /*
+         * Extra safety check.
+         *
+         * Repository already checks active=true
+         * and deleted=false, but keeping this
+         * makes the method reusable.
+         */
+
+        if (
+                !Boolean.TRUE.equals(
+                        service.getActive()
+                )
+                        ||
+                        Boolean.TRUE.equals(
+                                service.getDeleted()
+                        )
+        ) {
+
+            return null;
+
+        }
+
+
+        return customerVendorMapper.toListing(
+                vendor,
+                service
+        );
 
     }
 }

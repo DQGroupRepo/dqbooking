@@ -47,7 +47,7 @@
 
 .verification-stat {
     border: 1px solid #e5e7eb;
-    background: #fff;
+    background: #ffffff;
     border-radius: 12px;
     padding: 18px;
     text-align: left;
@@ -62,8 +62,10 @@
 
 .verification-stat.active {
     border-color: #d4a373;
+
     box-shadow:
-        0 0 0 2px rgba(212, 163, 115, 0.12);
+        0 0 0 2px
+        rgba(212, 163, 115, 0.12);
 }
 
 .verification-stat strong {
@@ -84,7 +86,7 @@
 ========================================================= */
 
 .admin-verification-toolbar {
-    background: #fff;
+    background: #ffffff;
     border: 1px solid #e5e7eb;
     padding: 16px;
     border-radius: 12px;
@@ -95,8 +97,10 @@
     width: 100%;
     max-width: 500px;
     padding: 12px 14px;
+
     border: 1px solid #d1d5db;
     border-radius: 8px;
+
     font-size: 14px;
     outline: none;
 }
@@ -111,7 +115,7 @@
 ========================================================= */
 
 .admin-vendor-table {
-    background: #fff;
+    background: #ffffff;
     border: 1px solid #e5e7eb;
     border-radius: 12px;
     overflow: hidden;
@@ -120,29 +124,38 @@
 .admin-vendor-table-header,
 .admin-vendor-row {
     display: grid;
+
     grid-template-columns:
         2.2fr
         1.3fr
         0.8fr
         1fr
         2fr;
+
     gap: 20px;
     align-items: center;
 }
 
 .admin-vendor-table-header {
     padding: 15px 20px;
+
     background: #f9fafb;
-    border-bottom: 1px solid #e5e7eb;
+
+    border-bottom:
+        1px solid #e5e7eb;
+
     font-size: 12px;
     font-weight: 700;
     color: #6b7280;
+
     text-transform: uppercase;
 }
 
 .admin-vendor-row {
     padding: 18px 20px;
-    border-bottom: 1px solid #f1f1f1;
+
+    border-bottom:
+        1px solid #f1f1f1;
 }
 
 .admin-vendor-row:last-child {
@@ -220,11 +233,16 @@
 
 .admin-action {
     border: none;
+
     border-radius: 7px;
+
     padding: 7px 11px;
+
     font-size: 12px;
     font-weight: 600;
+
     cursor: pointer;
+
     transition: 0.2s ease;
 }
 
@@ -276,8 +294,11 @@
 
 .admin-verification-error {
     margin-bottom: 18px;
+
     padding: 12px 15px;
+
     border-radius: 8px;
+
     background: #fef2f2;
     color: #b91c1c;
 }
@@ -308,9 +329,11 @@
     position: fixed;
     inset: 0;
 
-    background: rgba(15, 23, 42, 0.45);
+    background:
+        rgba(15, 23, 42, 0.45);
 
     display: flex;
+
     align-items: center;
     justify-content: center;
 
@@ -322,16 +345,18 @@
 .admin-vendor-modal {
     width: 100%;
     max-width: 900px;
+
     max-height: 90vh;
 
     overflow-y: auto;
 
-    background: #fff;
+    background: #ffffff;
 
     border-radius: 16px;
 
     box-shadow:
-        0 25px 70px rgba(0, 0, 0, 0.2);
+        0 25px 70px
+        rgba(0, 0, 0, 0.2);
 }
 
 
@@ -341,12 +366,14 @@
 
 .admin-modal-header {
     display: flex;
+
     justify-content: space-between;
     align-items: flex-start;
 
     padding: 24px 28px;
 
-    border-bottom: 1px solid #eee;
+    border-bottom:
+        1px solid #eeeeee;
 }
 
 .admin-modal-header h2 {
@@ -362,8 +389,11 @@
 .admin-modal-header button {
     border: none;
     background: transparent;
+
     font-size: 28px;
+
     color: #6b7280;
+
     cursor: pointer;
 }
 
@@ -394,7 +424,9 @@
 .admin-modal-details span {
     font-size: 11px;
     color: #9ca3af;
+
     text-transform: uppercase;
+
     font-weight: 700;
 }
 
@@ -410,8 +442,6 @@
 
 .admin-modal-services {
     padding: 25px 28px;
-
-    overflow-x: auto;
 }
 
 .admin-modal-section-header {
@@ -425,253 +455,179 @@
 
 .admin-modal-section-header p {
     margin: 0;
+
     color: #6b7280;
+
     font-size: 13px;
 }
 
 
 /* =========================================================
-   SERVICE GROUP HEADER
+   SERVICE CARD
 ========================================================= */
 
-.admin-service-group-header {
-    display: grid;
+.admin-service-card {
+    padding: 20px;
 
-    grid-template-columns:
-        minmax(240px, 2fr)
-        110px
-        110px
-        110px
-        110px
-        110px;
+    border:
+        1px solid #e5e7eb;
 
-    column-gap: 12px;
+    border-radius: 14px;
 
-    align-items: center;
+    background: #ffffff;
 
-    min-width: 850px;
-
-    margin-top: 18px;
-
-    padding-bottom: 8px;
+    margin-bottom: 16px;
 }
 
-
-/* SERVICE TITLE */
-
-.service-group-title {
-    grid-column: 1;
-
-    font-size: 11px;
-    font-weight: 700;
-    color: #6b7280;
-
-    text-transform: uppercase;
-
-    letter-spacing: 0.05em;
-}
-
-
-/* MODERATION GROUP */
-
-.moderation-group-title {
-    grid-column: 2 / 4;
-
-    text-align: center;
-
-    padding: 7px 10px;
-
-    border-radius: 6px;
-
-    background: #f3f4f6;
-
-    color: #374151;
-
-    font-size: 11px;
-
-    font-weight: 700;
-
-    text-transform: uppercase;
-
-    letter-spacing: 0.05em;
-}
-
-
-/* DISCOVERY GROUP */
-
-.discovery-group-title {
-    grid-column: 4 / 7;
-
-    text-align: center;
-
-    padding: 7px 10px;
-
-    border-radius: 6px;
-
-    background: #eff6ff;
-
-    color: #1d4ed8;
-
-    font-size: 11px;
-
-    font-weight: 700;
-
-    text-transform: uppercase;
-
-    letter-spacing: 0.05em;
+.admin-service-card:last-child {
+    margin-bottom: 0;
 }
 
 
 /* =========================================================
-   SERVICE COLUMN HEADER
+   SERVICE TOP
 ========================================================= */
 
-.admin-service-column-header {
-    display: grid;
-
-    grid-template-columns:
-        minmax(240px, 2fr)
-        110px
-        110px
-        110px
-        110px
-        110px;
-
-    column-gap: 12px;
+.admin-service-card-top {
+    display: flex;
 
     align-items: center;
+    justify-content: space-between;
 
-    min-width: 850px;
+    gap: 24px;
 
-    padding: 8px 0 10px;
+    padding-bottom: 18px;
 
-    border-bottom: 1px solid #e5e7eb;
-
-    color: #6b7280;
-
-    font-size: 11px;
-
-    font-weight: 600;
-
-    text-transform: uppercase;
-
-    letter-spacing: 0.04em;
-}
-
-.admin-service-column-header > div {
-    text-align: center;
-
-    white-space: nowrap;
-}
-
-.admin-service-column-header > div:first-child {
-    text-align: left;
+    border-bottom:
+        1px solid #edf0f4;
 }
 
 
 /* =========================================================
-   SERVICE ROW
+   SERVICE INFO
 ========================================================= */
 
-.admin-service-row {
-    display: grid;
-
-    grid-template-columns:
-        minmax(240px, 2fr)
-        110px
-        110px
-        110px
-        110px
-        110px;
-
-    column-gap: 12px;
-
-    align-items: center;
-
-    min-width: 850px;
-
-    min-height: 72px;
-
-    padding: 12px 0;
-
-    border-bottom: 1px solid #e5e7eb;
-}
-
-.admin-service-row:last-child {
-    border-bottom: none;
-}
-
-
-/* =========================================================
-   SERVICE NAME
-========================================================= */
-
-.admin-service-name {
-    grid-column: 1;
-
-    min-width: 0;
-
+.admin-service-info {
     display: flex;
 
     flex-direction: column;
 
-    gap: 4px;
+    gap: 5px;
+
+    min-width: 0;
 }
 
-.admin-service-name strong {
-    font-size: 14px;
+.admin-service-info h4 {
+    margin: 0;
 
+    font-size: 16px;
+    font-weight: 700;
+
+    color: #26374a;
+}
+
+.admin-service-info span {
+    font-size: 12px;
     font-weight: 600;
 
-    color: #1f2937;
+    color: #7b8794;
 
-    overflow: hidden;
+    text-transform: uppercase;
 
-    text-overflow: ellipsis;
-
-    white-space: nowrap;
+    letter-spacing: 0.5px;
 }
 
-.admin-service-name span {
+
+/* =========================================================
+   MODERATION
+========================================================= */
+
+.admin-service-moderation {
+    display: flex;
+
+    align-items: center;
+
+    gap: 18px;
+
+    flex-shrink: 0;
+}
+
+.admin-moderation-status {
+    display: flex;
+
+    align-items: center;
+
+    gap: 8px;
+}
+
+.admin-moderation-status > span {
     font-size: 12px;
 
-    color: #9ca3af;
+    color: #7b8794;
+
+    font-weight: 600;
 }
 
-
-/* =========================================================
-   SERVICE STATUS
-========================================================= */
-
-.admin-service-status {
-    grid-column: 2;
-
-    display: flex;
-
-    justify-content: center;
-
-    align-items: center;
-}
-
-
-/* =========================================================
-   SERVICE ACTION
-========================================================= */
-
-.admin-service-action {
-    grid-column: 3;
-
+.admin-moderation-actions {
     display: flex;
 
     align-items: center;
 
-    justify-content: center;
-
-    gap: 6px;
+    gap: 8px;
 }
 
-.admin-service-action .admin-action {
+
+/* =========================================================
+   DISCOVERY SECTION
+========================================================= */
+
+.admin-discovery-section {
+    padding-top: 20px;
+}
+
+.admin-discovery-section-header {
+    display: flex;
+
+    align-items: flex-start;
+    justify-content: space-between;
+
+    gap: 20px;
+
+    margin-bottom: 16px;
+}
+
+.admin-discovery-section-header h5 {
+    margin: 0 0 5px;
+
+    font-size: 14px;
+    font-weight: 700;
+
+    color: #26374a;
+}
+
+.admin-discovery-section-header p {
     margin: 0;
+
+    font-size: 13px;
+
+    color: #7b8794;
+}
+
+
+/* =========================================================
+   LOCKED MESSAGE
+========================================================= */
+
+.discovery-locked-message {
+    font-size: 12px;
+
+    color: #b7791f;
+
+    background: #fff8e7;
+
+    padding: 7px 10px;
+
+    border-radius: 8px;
 
     white-space: nowrap;
 }
@@ -681,65 +637,108 @@
    DISCOVERY OPTIONS
 ========================================================= */
 
-.admin-service-discovery {
-    grid-column: 4 / 7;
+.admin-discovery-options {
+    display: flex;
 
-    display: grid;
+    flex-wrap: wrap;
 
-    grid-template-columns:
-        repeat(3, 110px);
-
-    align-items: center;
-
-    justify-items: center;
+    gap: 10px;
 }
 
 
 /* =========================================================
-   DISCOVERY CHECKBOX
+   DISCOVERY BUTTON
 ========================================================= */
 
-.admin-discovery-checkbox {
-    width: 110px;
+.discovery-option {
+    display: inline-flex;
 
+    align-items: center;
+
+    gap: 8px;
+
+    min-height: 40px;
+
+    padding: 9px 14px;
+
+    border:
+        1px solid #d8dee6;
+
+    border-radius: 9px;
+
+    background: #ffffff;
+
+    color: #52606d;
+
+    font-size: 13px;
+    font-weight: 600;
+
+    cursor: pointer;
+
+    transition:
+        background 0.2s ease,
+        border-color 0.2s ease,
+        color 0.2s ease,
+        transform 0.2s ease;
+}
+
+.discovery-option:hover:not(:disabled) {
+    border-color: #c89b45;
+
+    color: #8b6427;
+
+    transform:
+        translateY(-1px);
+}
+
+
+/* =========================================================
+   SELECTED DISCOVERY OPTION
+========================================================= */
+
+.discovery-option.selected {
+    background: #fdf6e8;
+
+    border-color: #d5a84f;
+
+    color: #7d5a20;
+}
+
+
+/* =========================================================
+   DISCOVERY CHECK
+========================================================= */
+
+.discovery-check {
     display: flex;
 
     align-items: center;
-
     justify-content: center;
 
-    cursor: pointer;
+    width: 19px;
+    height: 19px;
+
+    border-radius: 50%;
+
+    background: #eef1f4;
+
+    font-size: 13px;
+    font-weight: 700;
 }
 
-.admin-discovery-checkbox input {
-    width: 17px;
-
-    height: 17px;
-
-    margin: 0;
-
-    cursor: pointer;
-
-    accent-color: #2563eb;
-}
-
-.admin-discovery-checkbox input:disabled {
-    cursor: not-allowed;
+.discovery-option.selected .discovery-check {
+    background: #c89b45;
+    color: #ffffff;
 }
 
 
 /* =========================================================
-   SERVICE TABLE SCROLLBAR
+   DISABLED
 ========================================================= */
 
-.admin-modal-services::-webkit-scrollbar {
-    height: 6px;
-}
-
-.admin-modal-services::-webkit-scrollbar-thumb {
-    background: #d1d5db;
-
-    border-radius: 10px;
+.discovery-option:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
 }
 
 
@@ -765,8 +764,29 @@
         gap: 14px;
     }
 
-    .admin-vendor-actions {
-        justify-content: flex-start;
+}
+
+
+@media (max-width: 768px) {
+
+    .admin-service-card-top {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .admin-service-moderation {
+        width: 100%;
+
+        justify-content:
+            space-between;
+    }
+
+    .admin-discovery-section-header {
+        flex-direction: column;
+    }
+
+    .discovery-locked-message {
+        white-space: normal;
     }
 
 }
@@ -814,6 +834,12 @@
 
     .admin-vendor-modal {
         max-height: 95vh;
+    }
+
+    .admin-service-moderation {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
     }
 
 }

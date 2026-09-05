@@ -8,7 +8,10 @@ import com.booking.dto.register.VendorRegisterResponse;
 import com.booking.service.impl.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import com.booking.dto.login.AuthUserResponse;
+import com.booking.model.User;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -48,6 +51,22 @@ public class AuthController {
 
         return authService.registerVendor(
                 request
+        );
+
+    }
+
+    @GetMapping("/me")
+    public AuthUserResponse me(
+            Authentication authentication
+    ) {
+
+        User user =
+                (User) authentication.getPrincipal();
+
+        return new AuthUserResponse(
+                user.getId(),
+                user.getRole(),
+                user.getFullName()
         );
 
     }

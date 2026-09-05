@@ -1,14 +1,31 @@
-import { useEffect, useState } from "react";
+import {
+    useEffect,
+    useMemo,
+    useState
+} from "react";
+
 import {
     useLocation,
     useNavigate,
     useParams
 } from "react-router-dom";
 
-import BundleService from "../../services/BundleService";
-import CartService from "../../services/CartService";
+import BundleService
+    from "../../services/BundleService";
 
-import type { Bundle } from "../../types/Bundle";
+import CartService
+    from "../../services/CartService";
+
+import VendorListingService
+    from "../../services/VendorListingService";
+
+import type {
+    Bundle
+} from "../../types/Bundle";
+
+import type {
+    VendorListing
+} from "../../types/VendorListing";
 
 import "./BundleSelection.css";
 
@@ -28,7 +45,8 @@ interface BundleNavigationState {
     bundleServiceIds?: string[];
 
     bundleDiscountType?:
-        "PERCENTAGE" | "FIXED";
+        | "PERCENTAGE"
+        | "FIXED";
 
     bundleDiscountValue?: number;
 
@@ -37,10 +55,16 @@ interface BundleNavigationState {
 
 const BundleSelection = () => {
 
-    const { serviceId } = useParams();
+
+    const {
+        serviceId
+    } =
+        useParams();
+
 
     const navigate =
         useNavigate();
+
 
     const location =
         useLocation();
@@ -51,12 +75,57 @@ const BundleSelection = () => {
         BundleNavigationState | null;
 
 
-    const [bundle, setBundle] =
-        useState<Bundle | null>(null);
+    /*
+     * =========================================
+     * BUNDLE STATE
+     * =========================================
+     */
+
+    const [
+        bundle,
+        setBundle
+    ] =
+        useState<Bundle | null>(
+            null
+        );
 
 
-    const [loading, setLoading] =
-        useState(true);
+    const [
+        loading,
+        setLoading
+    ] =
+        useState(
+            true
+        );
+
+
+    /*
+     * =========================================
+     * BUNDLE SERVICE DETAILS
+     * =========================================
+     *
+     * These are loaded from the existing
+     * customer service listing API.
+     *
+     * We do NOT change the existing bundle API.
+     */
+
+    const [
+        availableServices,
+        setAvailableServices
+    ] =
+        useState<
+            VendorListing[]
+        >([]);
+
+
+    const [
+        servicesLoading,
+        setServicesLoading
+    ] =
+        useState(
+            false
+        );
 
 
     /*
@@ -65,8 +134,13 @@ const BundleSelection = () => {
      * =========================================
      */
 
-    const [cartServiceIds, setCartServiceIds] =
-        useState<string[]>([]);
+    const [
+        cartServiceIds,
+        setCartServiceIds
+    ] =
+        useState<
+            string[]
+        >([]);
 
 
     /*
@@ -75,8 +149,13 @@ const BundleSelection = () => {
      * =========================================
      */
 
-    const [showSwitchPopup, setShowSwitchPopup] =
-        useState(false);
+    const [
+        showSwitchPopup,
+        setShowSwitchPopup
+    ] =
+        useState(
+            false
+        );
 
 
     /*
@@ -91,21 +170,27 @@ const BundleSelection = () => {
             const cartItems =
                 CartService.getCart();
 
+
             setCartServiceIds(
+
                 cartItems.map(
                     item =>
                         item.serviceId
                 )
+
             );
 
         };
 
 
-    useEffect(() => {
+    useEffect(
+        () => {
 
-        refreshCart();
+            refreshCart();
 
-    }, []);
+        },
+        []
+    );
 
 
     /*
@@ -114,156 +199,317 @@ const BundleSelection = () => {
      * =========================================
      */
 
-    useEffect(() => {
-
-        if (!serviceId) {
-            return;
-        }
-
-        loadBundle(serviceId);
-
-    }, [serviceId]);
-
-
-    const loadBundle = async (
-        rootServiceId: string
-    ) => {
-
-        try {
-
-            setLoading(true);
-
-
-            /*
-             * =========================================
-             * CASE 1
-             * Bundle passed through navigation
-             * =========================================
-             */
+    useEffect(
+        () => {
 
             if (
-                navigationState?.bundleId &&
-                navigationState?.bundleServiceIds
+                !serviceId
             ) {
-
-                const selectedBundle: Bundle = {
-
-                    id:
-                        navigationState.bundleId,
-
-                    vendorId:
-                        "",
-
-                    name:
-                        navigationState.bundleName ||
-                        "Selected Bundle",
-
-                    description:
-                        navigationState.bundleDescription,
-
-                    serviceIds:
-                        navigationState.bundleServiceIds,
-
-                    discountType:
-                        navigationState.bundleDiscountType ||
-                        "PERCENTAGE",
-
-                    discountValue:
-                        navigationState.bundleDiscountValue ||
-                        0,
-
-                    active: true
-
-                };
-
-
-                setBundle(
-                    selectedBundle
-                );
 
                 return;
 
             }
 
 
-            /*
-             * =========================================
-             * CASE 2
-             * Direct bundle URL
-             * =========================================
-             */
+            loadBundle(
+                serviceId
+            );
 
-            const bundles =
-                await BundleService
-                    .getBundlesForService(
-                        rootServiceId
+        },
+        [
+            serviceId
+        ]
+    );
+
+
+    const loadBundle =
+        async (
+            rootServiceId: string
+        ) => {
+
+            try {
+
+                setLoading(
+                    true
+                );
+
+
+                /*
+                 * =====================================
+                 * CASE 1
+                 *
+                 * Bundle passed through navigation.
+                 * =====================================
+                 */
+
+                if (
+
+                    navigationState?.bundleId &&
+
+                    navigationState?.bundleServiceIds
+
+                ) {
+
+                    const selectedBundle:
+                        Bundle = {
+
+                            id:
+                                navigationState.bundleId,
+
+                            vendorId:
+                                "",
+
+                            name:
+                                navigationState.bundleName ||
+                                "Selected Bundle",
+
+                            description:
+                                navigationState.bundleDescription,
+
+                            serviceIds:
+                                navigationState.bundleServiceIds,
+
+                            discountType:
+                                navigationState.bundleDiscountType ||
+                                "PERCENTAGE",
+
+                            discountValue:
+                                navigationState.bundleDiscountValue ||
+                                0,
+
+                            active:
+                                true
+
+                        };
+
+
+                    setBundle(
+                        selectedBundle
                     );
 
 
-            /*
-             * One bundle = automatically select it.
-             */
+                    return;
 
-            if (
-                bundles.length === 1
-            ) {
+                }
 
-                setBundle(
-                    bundles[0]
-                );
-
-                return;
-
-            }
-
-
-            /*
-             * Multiple bundles without a selected
-             * bundle.
-             */
-
-            if (
-                bundles.length > 1
-            ) {
 
                 /*
-                 * Go back to the service page and
-                 * allow VendorBookingCard to display
-                 * the bundle selection popup.
+                 * =====================================
+                 * CASE 2
+                 *
+                 * Direct bundle URL.
+                 * =====================================
                  */
 
-                navigate(
-                    `/vendor/${rootServiceId}`,
-                    {
-                        state: {
-                            openBundlePopup: true
+                const bundles =
+                    await BundleService
+                        .getBundlesForService(
+                            rootServiceId
+                        );
+
+
+                /*
+                 * One bundle.
+                 */
+
+                if (
+                    bundles.length === 1
+                ) {
+
+                    setBundle(
+                        bundles[0]
+                    );
+
+                    return;
+
+                }
+
+
+                /*
+                 * Multiple bundles.
+                 */
+
+                if (
+                    bundles.length > 1
+                ) {
+
+                    navigate(
+                        `/vendor/${rootServiceId}`,
+                        {
+
+                            state: {
+
+                                openBundlePopup:
+                                    true
+
+                            }
+
                         }
-                    }
+                    );
+
+                    return;
+
+                }
+
+
+                setBundle(
+                    null
                 );
+
+            }
+            catch (
+                error
+            ) {
+
+                console.error(
+                    "Failed to load selected bundle:",
+                    error
+                );
+
+
+                setBundle(
+                    null
+                );
+
+            }
+            finally {
+
+                setLoading(
+                    false
+                );
+
+            }
+
+        };
+
+
+    /*
+     * =========================================
+     * LOAD SERVICE DETAILS
+     * =========================================
+     *
+     * Uses the existing:
+     *
+     * GET /customer/services
+     *
+     * Then matches the returned services with
+     * bundle.serviceIds.
+     */
+
+    useEffect(
+        () => {
+
+            if (
+                !bundle
+            ) {
 
                 return;
 
             }
 
 
-            setBundle(null);
+            loadBundleServiceDetails();
 
-        } catch (error) {
+        },
+        [
+            bundle
+        ]
+    );
 
-            console.error(
-                "Failed to load selected bundle:",
+
+    const loadBundleServiceDetails =
+        async () => {
+
+            try {
+
+                setServicesLoading(
+                    true
+                );
+
+
+                const services =
+                    await VendorListingService
+                        .getListings();
+
+
+                setAvailableServices(
+                    services
+                );
+
+            }
+            catch (
                 error
-            );
+            ) {
 
-            setBundle(null);
+                console.error(
+                    "Failed to load bundle service details:",
+                    error
+                );
 
-        } finally {
 
-            setLoading(false);
+                setAvailableServices(
+                    []
+                );
 
-        }
+            }
+            finally {
 
-    };
+                setServicesLoading(
+                    false
+                );
+
+            }
+
+        };
+
+
+    /*
+     * =========================================
+     * MATCH BUNDLE SERVICES
+     * =========================================
+     *
+     * Keep the same order as bundle.serviceIds.
+     */
+
+    const bundleServices =
+        useMemo(
+            () => {
+
+                if (
+                    !bundle
+                ) {
+
+                    return [];
+
+                }
+
+
+                return bundle.serviceIds
+                    .map(
+                        id =>
+
+                            availableServices.find(
+                                service =>
+                                    service.serviceId ===
+                                    id
+                            )
+                    )
+                    .filter(
+                        (
+                            service
+                        ):
+                            service is VendorListing =>
+                                Boolean(
+                                    service
+                                )
+                    );
+
+            },
+            [
+                bundle,
+                availableServices
+            ]
+        );
 
 
     /*
@@ -274,68 +520,129 @@ const BundleSelection = () => {
 
     const remainingServiceIds =
         bundle
+
             ? bundle.serviceIds.filter(
+
                 id =>
+
                     !cartServiceIds.includes(
                         id
                     )
+
             )
+
             : [];
 
 
     const allServicesAdded =
         !!bundle &&
-        remainingServiceIds.length === 0;
+
+        remainingServiceIds.length ===
+        0;
+
+
+    /*
+     * =========================================
+     * PROGRESS
+     * =========================================
+     */
+
+    const completedServiceCount =
+        bundle
+
+            ? bundle.serviceIds.filter(
+
+                id =>
+
+                    cartServiceIds.includes(
+                        id
+                    )
+
+            ).length
+
+            : 0;
+
+
+    const totalServiceCount =
+        bundle?.serviceIds.length ||
+        0;
+
+
+    const bundleProgress =
+        totalServiceCount > 0
+
+            ? (
+                completedServiceCount /
+                totalServiceCount
+            ) * 100
+
+            : 0;
 
 
     /*
      * =========================================
      * OPEN SERVICE DETAILS
      * =========================================
+     *
+     * IMPORTANT:
+     *
+     * This is kept exactly compatible with
+     * your existing flow.
+     *
+     * All bundle values continue to be passed
+     * to the Vendor Detail page.
      */
 
-    const handleOpenService = (
-        nextServiceId: string
-    ) => {
+    const handleOpenService =
+        (
+            nextServiceId: string
+        ) => {
 
-        if (!bundle) {
-            return;
-        }
+            if (
+                !bundle
+            ) {
 
+                return;
 
-        navigate(
-            `/vendor/${nextServiceId}`,
-            {
-                state: {
-
-                    fromBundle: true,
-
-                    bundleRootServiceId:
-                        serviceId,
-
-                    bundleId:
-                        bundle.id,
-
-                    bundleName:
-                        bundle.name,
-
-                    bundleDescription:
-                        bundle.description,
-
-                    bundleServiceIds:
-                        bundle.serviceIds,
-
-                    bundleDiscountType:
-                        bundle.discountType,
-
-                    bundleDiscountValue:
-                        bundle.discountValue
-
-                } as BundleNavigationState
             }
-        );
 
-    };
+
+            navigate(
+                `/vendor/${nextServiceId}`,
+                {
+
+                    state: {
+
+                        fromBundle:
+                            true,
+
+                        bundleRootServiceId:
+                            serviceId,
+
+                        bundleId:
+                            bundle.id,
+
+                        bundleName:
+                            bundle.name,
+
+                        bundleDescription:
+                            bundle.description,
+
+                        bundleServiceIds:
+                            bundle.serviceIds,
+
+                        bundleDiscountType:
+                            bundle.discountType,
+
+                        bundleDiscountValue:
+                            bundle.discountValue
+
+                    } as BundleNavigationState
+
+                }
+            );
+
+        };
 
 
     /*
@@ -344,13 +651,14 @@ const BundleSelection = () => {
      * =========================================
      */
 
-    const handleGoToCart = () => {
+    const handleGoToCart =
+        () => {
 
-        navigate(
-            "/cart"
-        );
+            navigate(
+                "/cart"
+            );
 
-    };
+        };
 
 
     /*
@@ -362,12 +670,6 @@ const BundleSelection = () => {
     const handleSwitchBundle =
         () => {
 
-            /*
-             * If everything is already completed,
-             * there is no reason to warn about losing
-             * a partial bundle.
-             */
-
             if (
                 allServicesAdded
             ) {
@@ -375,9 +677,14 @@ const BundleSelection = () => {
                 navigate(
                     `/vendor/${serviceId}`,
                     {
+
                         state: {
-                            openBundlePopup: true
+
+                            openBundlePopup:
+                                true
+
                         }
+
                     }
                 );
 
@@ -385,10 +692,6 @@ const BundleSelection = () => {
 
             }
 
-
-            /*
-             * Show confirmation before switching.
-             */
 
             setShowSwitchPopup(
                 true
@@ -411,19 +714,9 @@ const BundleSelection = () => {
             );
 
 
-            /*
-             * We intentionally do NOT remove cart
-             * items here.
-             *
-             * The cart remains intact.
-             *
-             * The bundle discount is not applied to
-             * partially selected services.
-             *
-             * The customer can now select another bundle.
-             */
-
-            if (!serviceId) {
+            if (
+                !serviceId
+            ) {
 
                 navigate(
                     "/cart"
@@ -437,9 +730,14 @@ const BundleSelection = () => {
             navigate(
                 `/vendor/${serviceId}`,
                 {
+
                     state: {
-                        openBundlePopup: true
+
+                        openBundlePopup:
+                            true
+
                     }
+
                 }
             );
 
@@ -468,7 +766,9 @@ const BundleSelection = () => {
      * =========================================
      */
 
-    if (loading) {
+    if (
+        loading
+    ) {
 
         return (
 
@@ -476,9 +776,20 @@ const BundleSelection = () => {
 
                 <div className="bundle-selection-container">
 
-                    <h2>
-                        Loading bundle...
-                    </h2>
+                    <div className="bundle-loading-card">
+
+                        <div className="bundle-loading-spinner" />
+
+                        <h2>
+                            Loading your bundle...
+                        </h2>
+
+                        <p>
+                            Please wait while we prepare
+                            your selected services.
+                        </p>
+
+                    </div>
 
                 </div>
 
@@ -495,7 +806,9 @@ const BundleSelection = () => {
      * =========================================
      */
 
-    if (!bundle) {
+    if (
+        !bundle
+    ) {
 
         return (
 
@@ -503,19 +816,35 @@ const BundleSelection = () => {
 
                 <div className="bundle-selection-container">
 
-                    <h2>
-                        Bundle not found
-                    </h2>
+                    <div className="bundle-not-found">
 
+                        <div className="bundle-not-found-icon">
 
-                    <button
-                        type="button"
-                        onClick={
-                            handleGoToCart
-                        }
-                    >
-                        Go to Cart
-                    </button>
+                            !
+
+                        </div>
+
+                        <h2>
+                            Bundle not found
+                        </h2>
+
+                        <p>
+                            We couldn't find the selected
+                            bundle.
+                        </p>
+
+                        <button
+                            type="button"
+                            onClick={
+                                handleGoToCart
+                            }
+                        >
+
+                            Go to Cart
+
+                        </button>
+
+                    </div>
 
                 </div>
 
@@ -536,83 +865,234 @@ const BundleSelection = () => {
 
         <div className="bundle-selection-page">
 
+
             <div className="bundle-selection-container">
 
 
-                {/* =========================================
-                    HEADER
-                   ========================================= */}
+                {/* =====================================
+                    BUNDLE HERO
+                ===================================== */}
 
-                <div className="bundle-selection-header">
-
-                    <h1>
-                        {bundle.name}
-                    </h1>
+                <section className="bundle-hero">
 
 
-                    {
-                        bundle.description && (
-
-                            <p>
-                                {bundle.description}
-                            </p>
-
-                        )
-                    }
+                    <div className="bundle-hero-content">
 
 
-                    <div className="bundle-discount">
+                        <span className="bundle-eyebrow">
+
+                            BUNDLE SELECTION
+
+                        </span>
+
+
+                        <h1>
+
+                            {bundle.name}
+
+                        </h1>
+
 
                         {
-                            bundle.discountType ===
-                            "PERCENTAGE"
+                            bundle.description && (
 
-                                ? `${bundle.discountValue}% OFF`
+                                <p className="bundle-description">
 
-                                : `₹${Number(
-                                    bundle.discountValue
-                                ).toLocaleString(
-                                    "en-IN"
-                                )} OFF`
+                                    {
+                                        bundle.description
+                                    }
 
+                                </p>
+
+                            )
                         }
+
 
                     </div>
 
-                </div>
+
+                    <div className="bundle-discount-box">
 
 
-                {/* =========================================
-                    SERVICES
-                   ========================================= */}
+                        <span>
 
-                <div className="bundle-card">
+                            Bundle Savings
 
-                    <div className="bundle-card-header">
+                        </span>
+
+
+                        <strong>
+
+                            {
+                                bundle.discountType ===
+                                "PERCENTAGE"
+
+                                    ? `${bundle.discountValue}% OFF`
+
+                                    : `₹${Number(
+                                        bundle.discountValue
+                                    ).toLocaleString(
+                                        "en-IN"
+                                    )} OFF`
+                            }
+
+                        </strong>
+
+                    </div>
+
+
+                    {/* =============================
+                        PROGRESS
+                    ============================= */}
+
+                    <div className="bundle-progress-section">
+
+
+                        <div className="bundle-progress-header">
+
+                            <div>
+
+                                <strong>
+                                    Bundle Progress
+                                </strong>
+
+                                <span>
+
+                                    {
+                                        completedServiceCount
+                                    }
+
+                                    {" of "}
+
+                                    {
+                                        totalServiceCount
+                                    }
+
+                                    {" services completed"}
+
+                                </span>
+
+                            </div>
+
+
+                            <strong>
+
+                                {
+                                    Math.round(
+                                        bundleProgress
+                                    )
+                                }
+
+                                %
+
+                            </strong>
+
+                        </div>
+
+
+                        <div className="bundle-progress-track">
+
+                            <div
+                                className="bundle-progress-fill"
+                                style={{
+
+                                    width:
+                                        `${bundleProgress}%`
+
+                                }}
+                            />
+
+                        </div>
+
+
+                    </div>
+
+
+                </section>
+
+
+                {/* =====================================
+                    SERVICES CARD
+                ===================================== */}
+
+                <section className="bundle-services-card">
+
+
+                    <div className="bundle-services-header">
+
 
                         <div>
 
                             <h2>
+
                                 Services Included
+
                             </h2>
 
+
                             <p>
-                                Select a service to view
-                                its details.
+
+                                Open each service and add it
+                                to your cart to complete
+                                the bundle.
+
                             </p>
 
                         </div>
 
+
+                        <span className="bundle-service-count">
+
+                            {
+                                totalServiceCount
+                            }
+
+                            {" "}
+
+                            {
+                                totalServiceCount === 1
+                                    ? "Service"
+                                    : "Services"
+                            }
+
+                        </span>
+
+
                     </div>
 
 
-                    <div className="bundle-services">
+                    {/* =================================
+                        SERVICE LIST
+                    ================================= */}
 
-                        <div className="bundle-service-list">
+                    <div className="bundle-service-list">
 
-                            {
+
+                        {
+                            servicesLoading ? (
+
+                                <div className="bundle-services-loading">
+
+                                    Loading service details...
+
+                                </div>
+
+                            ) : (
+
                                 bundle.serviceIds.map(
-                                    id => {
+                                    (
+                                        id,
+                                        index
+                                    ) => {
+
+
+                                        const service =
+                                            bundleServices.find(
+                                                item =>
+                                                    item.serviceId ===
+                                                    id
+                                            );
+
 
                                         const alreadyAdded =
                                             cartServiceIds.includes(
@@ -620,172 +1100,436 @@ const BundleSelection = () => {
                                             );
 
 
+                                        const serviceImage =
+                                            service?.imageUrl ||
+                                            "/images/no-image.png";
+
+
                                         return (
 
-                                            <button
+                                            <div
                                                 key={id}
-                                                type="button"
                                                 className={
                                                     alreadyAdded
-                                                        ? "bundle-service already-added"
-                                                        : "bundle-service"
-                                                }
-                                                onClick={() =>
-                                                    !alreadyAdded &&
-                                                    handleOpenService(
-                                                        id
-                                                    )
-                                                }
-                                                disabled={
-                                                    alreadyAdded
+
+                                                        ? "bundle-service-item bundle-service-added"
+
+                                                        : "bundle-service-item"
                                                 }
                                             >
 
-                                                <span>
-                                                    Service
-                                                </span>
+
+                                                {/* NUMBER / STATUS */}
+
+                                                <div className="bundle-service-step">
 
 
-                                                <span>
-                                                    {id}
-                                                </span>
+                                                    {
+                                                        alreadyAdded
+
+                                                            ? "✓"
+
+                                                            : index + 1
+                                                    }
+
+                                                </div>
 
 
-                                                {
-                                                    alreadyAdded && (
+                                                {/* IMAGE */}
 
-                                                        <span className="service-status">
+                                                <div className="bundle-service-image">
 
-                                                            ✓ Added
+                                                    <img
+                                                        src={
+                                                            serviceImage
+                                                        }
+                                                        alt={
+                                                            service?.serviceName ||
+                                                            "Service"
+                                                        }
+                                                    />
 
-                                                        </span>
-
-                                                    )
-                                                }
+                                                </div>
 
 
-                                                {
-                                                    !alreadyAdded && (
+                                                {/* DETAILS */}
 
-                                                        <span className="service-status">
+                                                <div className="bundle-service-details">
 
-                                                            View Details →
 
-                                                        </span>
+                                                    <span className="bundle-service-label">
 
-                                                    )
-                                                }
+                                                        SERVICE
 
-                                            </button>
+                                                        {" "}
+
+                                                        {
+                                                            index + 1
+                                                        }
+
+                                                    </span>
+
+
+                                                    <h3>
+
+                                                        {
+                                                            service?.serviceName ||
+                                                            "Service"
+                                                        }
+
+                                                    </h3>
+
+
+                                                    {
+                                                        service?.businessName && (
+
+                                                            <p className="bundle-business-name">
+
+                                                                {
+                                                                    service.businessName
+                                                                }
+
+                                                            </p>
+
+                                                        )
+                                                    }
+
+
+                                                    {
+                                                        service?.city && (
+
+                                                            <p className="bundle-location">
+
+                                                                📍
+
+                                                                {" "}
+
+                                                                {
+                                                                    service.city
+                                                                }
+
+                                                            </p>
+
+                                                        )
+                                                    }
+
+
+                                                    {
+                                                        service && (
+
+                                                            <div className="bundle-service-meta">
+
+                                                                <span>
+
+                                                                    ⭐
+
+                                                                    {" "}
+
+                                                                    {
+                                                                        service.rating ??
+                                                                        0
+                                                                    }
+
+                                                                </span>
+
+
+                                                                {
+                                                                    (
+                                                                        service.reviewCount ??
+                                                                        0
+                                                                    ) > 0 && (
+
+                                                                        <span>
+
+                                                                            (
+
+                                                                            {
+                                                                                service.reviewCount
+                                                                            }
+
+                                                                            {" reviews)"}
+
+                                                                        </span>
+
+                                                                    )
+                                                                }
+
+                                                            </div>
+
+                                                        )
+
+                                                    }
+
+
+                                                </div>
+
+
+                                                {/* PRICE */}
+
+                                                <div className="bundle-service-price">
+
+
+                                                    {
+                                                        service && (
+
+                                                            <strong>
+
+                                                                ₹
+
+                                                                {
+                                                                    Number(
+                                                                        service.startingPrice ??
+                                                                        0
+                                                                    ).toLocaleString(
+                                                                        "en-IN"
+                                                                    )
+                                                                }
+
+                                                            </strong>
+
+                                                        )
+
+                                                    }
+
+
+                                                    <span>
+
+                                                        Starting price
+
+                                                    </span>
+
+                                                </div>
+
+
+                                                {/* ACTION */}
+
+                                                <div className="bundle-service-action">
+
+
+                                                    {
+                                                        alreadyAdded ? (
+
+                                                            <span className="bundle-added-status">
+
+                                                                ✓ Added to Cart
+
+                                                            </span>
+
+                                                        ) : (
+
+                                                            <button
+                                                                type="button"
+                                                                onClick={() =>
+                                                                    handleOpenService(
+                                                                        id
+                                                                    )
+                                                                }
+                                                            >
+
+                                                                View Details
+
+                                                                <span>
+
+                                                                    →
+
+                                                                </span>
+
+                                                            </button>
+
+                                                        )
+                                                    }
+
+
+                                                </div>
+
+
+                                            </div>
 
                                         );
 
                                     }
                                 )
-                            }
 
-                        </div>
+                            )
+                        }
+
 
                     </div>
 
 
-                    {/* =========================================
+                    {/* =================================
+                        EMPTY API FALLBACK
+                    ================================= */}
+
+                    {
+                        !servicesLoading &&
+
+                        availableServices.length === 0 && (
+
+                            <p className="bundle-service-note">
+
+                                Service details could not be
+                                loaded, but you can still open
+                                each service using the available
+                                bundle actions.
+
+                            </p>
+
+                        )
+                    }
+
+
+                    {/* =================================
                         COMPLETION
-                       ========================================= */}
+                    ================================= */}
 
                     {
                         allServicesAdded && (
 
                             <div className="bundle-complete">
 
-                                <h3>
-                                    🎉 Bundle Complete
-                                </h3>
+                                <div className="bundle-complete-icon">
 
-                                <p>
-                                    All services in this
-                                    bundle have been added
-                                    to your cart.
-                                </p>
+                                    ✓
+
+                                </div>
+
+
+                                <div>
+
+                                    <h3>
+
+                                        Bundle Complete!
+
+                                    </h3>
+
+
+                                    <p>
+
+                                        All services in this bundle
+                                        have been added to your cart.
+                                        Your bundle is ready for
+                                        checkout.
+
+                                    </p>
+
+                                </div>
 
                             </div>
 
                         )
+
                     }
 
 
-                    {/* =========================================
-                        ACTIONS
-                       ========================================= */}
+                    {/* =================================
+                        FOOTER ACTIONS
+                    ================================= */}
 
                     <div className="bundle-page-actions">
 
-                        {
-                            allServicesAdded && (
 
-                                <button
-                                    type="button"
-                                    className="bundle-checkout-button"
-                                    onClick={
-                                        handleGoToCart
-                                    }
-                                >
-                                    Go to Cart & Checkout
-                                </button>
+                        <p>
 
-                            )
-                        }
+                            {
+                                allServicesAdded
 
+                                    ? "Your bundle is complete and ready for checkout."
 
-                        <button
-                            type="button"
-                            className="switch-bundle-button"
-                            onClick={
-                                handleSwitchBundle
+                                    : "Complete all services to unlock your bundle discount."
                             }
-                        >
-                            Switch Bundle
-                        </button>
+
+                        </p>
 
 
-                        <button
-                            type="button"
-                            className="cancel-bundle-button"
-                            onClick={
-                                handleGoToCart
+                        <div className="bundle-action-buttons">
+
+
+                            {
+                                allServicesAdded && (
+
+                                    <button
+                                        type="button"
+                                        className="bundle-checkout-button"
+                                        onClick={
+                                            handleGoToCart
+                                        }
+                                    >
+
+                                        Go to Cart & Checkout
+
+                                    </button>
+
+                                )
                             }
-                        >
-                            Cancel Bundle & Go to Cart
-                        </button>
+
+
+                            <button
+                                type="button"
+                                className="switch-bundle-button"
+                                onClick={
+                                    handleSwitchBundle
+                                }
+                            >
+
+                                Switch Bundle
+
+                            </button>
+
+
+                            <button
+                                type="button"
+                                className="cancel-bundle-button"
+                                onClick={
+                                    handleGoToCart
+                                }
+                            >
+
+                                Cancel & Go to Cart
+
+                            </button>
+
+
+                        </div>
+
 
                     </div>
 
-                </div>
+
+                </section>
+
 
             </div>
 
 
             {/* =========================================
-                SWITCH BUNDLE CONFIRMATION
-               ========================================= */}
+                SWITCH BUNDLE MODAL
+            ========================================= */}
 
             {
                 showSwitchPopup && (
 
                     <div className="bundle-modal-overlay">
 
+
                         <div className="bundle-modal">
 
+
                             <h2>
+
                                 Switch Bundle?
+
                             </h2>
 
 
                             <p>
 
                                 You are currently building{" "}
+
                                 <strong>
+
                                     {bundle.name}
+
                                 </strong>.
 
                             </p>
@@ -793,10 +1537,13 @@ const BundleSelection = () => {
 
                             {
                                 cartServiceIds.some(
+
                                     id =>
+
                                         bundle.serviceIds.includes(
                                             id
                                         )
+
                                 ) && (
 
                                     <p>
@@ -807,53 +1554,70 @@ const BundleSelection = () => {
 
                                         <br />
 
-                                        If you switch to another
-                                        bundle, the current bundle
-                                        discount will not be applied
-                                        to these partially selected
-                                        services.
+                                        <br />
+
+                                        If you switch bundles, your
+                                        existing cart items will remain
+                                        in the cart, but the current
+                                        bundle discount will not apply
+                                        to partially completed bundles.
 
                                     </p>
 
                                 )
+
                             }
 
 
                             <p>
+
                                 Do you want to continue and
                                 choose another bundle?
+
                             </p>
 
 
                             <div className="bundle-modal-actions">
 
+
                                 <button
                                     type="button"
+                                    className="bundle-modal-confirm"
                                     onClick={
                                         confirmSwitchBundle
                                     }
                                 >
+
                                     Yes, Switch Bundle
+
                                 </button>
 
 
                                 <button
                                     type="button"
+                                    className="bundle-modal-cancel"
                                     onClick={
                                         cancelSwitchBundle
                                     }
                                 >
+
                                     No, Stay With This Bundle
+
                                 </button>
+
 
                             </div>
 
+
                         </div>
+
 
                     </div>
 
                 )
+
             }
+
 
         </div>
 

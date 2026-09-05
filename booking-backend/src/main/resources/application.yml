@@ -22,7 +22,7 @@ logging:
 
 jwt:
   secret: 4A6B4D6E5A715564586E3272357538782F413F4428472B4B6250655368566D5971
-  expiration: 86400000
+  expiration: 3600000
 
 app:
   upload:
