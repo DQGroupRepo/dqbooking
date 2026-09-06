@@ -6,9 +6,9 @@ export interface BookingGroup {
 
     customerId: string;
 
-    eventType: string;
+    eventType?: string | null;
 
-    specialRequest: string;
+    specialRequest?: string | null;
 
     originalTotal: number;
 

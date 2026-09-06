@@ -8,7 +8,13 @@ export interface Booking {
 
     bookingNumber: string;
 
+    serviceId?: string;
+
     serviceName: string;
+
+    serviceImage?: string | null;
+
+    serviceCategory?: string | null;
 
     totalAmount: number;
 
@@ -37,6 +43,17 @@ export interface Booking {
     pricing: BookingPricingResponse;
 
     packageId?: string;
+
     packageType?: "SILVER" | "GOLD" | "PREMIUM";
+
+    cancellable?: boolean;
+
+    cancelledAt?: string | null;
+
+    refundPercentage?: number | null;
+
+    cancellationCharge?: number | null;
+
+    refundableAmount?: number | null;
 
 }

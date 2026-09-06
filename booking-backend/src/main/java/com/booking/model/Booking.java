@@ -169,4 +169,5 @@ public class Booking extends BaseEntity {
     private String packageId;
 
     private String packageType;
+
 }
