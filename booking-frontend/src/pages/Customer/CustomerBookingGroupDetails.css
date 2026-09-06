@@ -1,0 +1,1031 @@
+.customer-booking-group-page {
+    width: min(1200px, calc(100% - 48px));
+    margin: 0 auto;
+    padding: 28px 0 40px;
+}
+
+
+/* =========================================
+   BACK
+========================================= */
+
+.customer-booking-group-back {
+    border: none;
+    background: transparent;
+
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+
+    color: #4a6179;
+
+    font-size: 13px;
+    font-weight: 600;
+
+    cursor: pointer;
+
+    padding: 0;
+    margin-bottom: 12px;
+}
+
+
+.customer-booking-group-back:hover {
+    color: #173a5e;
+}
+
+
+/* =========================================
+   HEADER
+========================================= */
+
+.customer-booking-group-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+
+    margin-bottom: 24px;
+}
+
+
+.customer-booking-group-header h1 {
+    margin: 0;
+
+    font-size: 28px;
+    font-weight: 700;
+
+    color: #263b52;
+}
+
+
+.customer-booking-group-header p {
+    margin: 6px 0 0;
+
+    color: #65778a;
+    font-size: 13px;
+}
+
+
+/* =========================================
+   TOP SUMMARY
+========================================= */
+
+.customer-booking-group-summary-cards {
+    display: grid;
+
+    grid-template-columns:
+        repeat(
+            3,
+            minmax(0, 1fr)
+        );
+
+    gap: 14px;
+
+    margin-bottom: 22px;
+}
+
+
+.customer-booking-group-summary-card {
+    min-height: 78px;
+
+    display: flex;
+    align-items: center;
+    gap: 14px;
+
+    padding: 14px 18px;
+
+    border:
+        1px solid
+        #d6e0eb;
+
+    border-radius: 12px;
+
+    background:
+        #ffffff;
+
+    box-shadow:
+        0 4px 16px
+        rgba(
+            26,
+            56,
+            89,
+            0.05
+        );
+}
+
+
+.summary-icon {
+    width: 36px;
+    height: 36px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 10px;
+
+    background:
+        #f1f4f8;
+
+    color:
+        #34495e;
+
+    font-size: 13px;
+}
+
+
+.customer-booking-group-summary-card span {
+    display: block;
+
+    font-size: 11px;
+
+    color:
+        #748396;
+
+    margin-bottom: 4px;
+}
+
+
+.customer-booking-group-summary-card strong {
+    font-size: 14px;
+
+    color:
+        #25394f;
+}
+
+
+/* =========================================
+   MAIN
+========================================= */
+
+.customer-booking-group-main {
+    display: grid;
+
+    grid-template-columns:
+        minmax(0, 1fr)
+        310px;
+
+    gap: 18px;
+
+    align-items: start;
+}
+
+
+.customer-booking-group-left {
+    min-width: 0;
+}
+
+
+.customer-booking-group-right {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+
+/* =========================================
+   SECTION
+========================================= */
+
+.customer-booked-services-section,
+.customer-event-information-section,
+.customer-payment-summary-card,
+.customer-bundle-summary-card,
+.customer-cancellation-policy-card {
+    border:
+        1px solid
+        #d7e0e9;
+
+    border-radius: 14px;
+
+    background:
+        #ffffff;
+
+    box-shadow:
+        0 5px 20px
+        rgba(
+            23,
+            51,
+            80,
+            0.05
+        );
+}
+
+
+.customer-booked-services-section {
+    padding: 18px;
+}
+
+
+.customer-booked-services-section h2,
+.customer-event-information-section h2,
+.customer-payment-summary-card h2,
+.customer-bundle-summary-card h2,
+.customer-cancellation-policy-card h2 {
+    margin: 0;
+
+    font-size: 16px;
+
+    color:
+        #273b50;
+}
+
+
+/* =========================================
+   BOOKED SERVICES
+========================================= */
+
+.customer-booked-services-list {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+
+    margin-top: 16px;
+}
+
+
+.customer-booked-service-card {
+    display: flex;
+
+    overflow: hidden;
+
+    border:
+        1px solid
+        #d4dee8;
+
+    border-radius: 14px;
+
+    background:
+        #ffffff;
+
+    min-height: 144px;
+}
+
+
+/*
+ * =========================================
+ * FIXED IMAGE COLUMN
+ *
+ * THIS PREVENTS IMAGE EXPANSION
+ * WHEN DETAILS ARE OPENED.
+ * =========================================
+ */
+
+.customer-booked-service-image {
+    width: 128px;
+    min-width: 128px;
+    max-width: 128px;
+
+    height: 144px;
+
+    flex:
+        0 0 128px;
+
+    align-self:
+        flex-start;
+
+    position: relative;
+
+    overflow: hidden;
+
+    background:
+        #eef2f6;
+}
+
+
+.customer-booked-service-image img {
+    width: 100%;
+    height: 100%;
+
+    object-fit:
+        cover;
+
+    display: block;
+}
+
+
+.customer-booked-service-no-image {
+    width: 100%;
+    height: 100%;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    color:
+        #718094;
+
+    font-size: 14px;
+
+    background:
+        #e9eef4;
+}
+
+
+/*
+ * IMPORTANT:
+ *
+ * Even when card expands,
+ * image stays exactly 128 × 144.
+ */
+
+.customer-booked-service-card.expanded
+.customer-booked-service-image {
+    height: 144px;
+    min-height: 144px;
+    max-height: 144px;
+
+    flex:
+        0 0 128px;
+
+    align-self:
+        flex-start;
+}
+
+
+/* =========================================
+   SERVICE CONTENT
+========================================= */
+
+.customer-booked-service-content {
+    flex: 1;
+
+    min-width: 0;
+
+    padding: 14px 16px 16px;
+}
+
+
+.customer-booked-service-top {
+    display: flex;
+    justify-content: space-between;
+    gap: 18px;
+
+    align-items: flex-start;
+}
+
+
+.customer-booked-service-top h3 {
+    margin: 0 0 9px;
+
+    font-size: 16px;
+    font-weight: 700;
+
+    color:
+        #263b52;
+}
+
+
+.customer-booked-service-meta {
+    display: flex;
+    flex-wrap: wrap;
+
+    gap: 14px;
+}
+
+
+.customer-booked-service-meta span {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+
+    font-size: 12px;
+
+    color:
+        #68798c;
+}
+
+
+.customer-booked-service-divider {
+    height: 1px;
+
+    background:
+        #dce3ea;
+
+    margin: 12px 0;
+}
+
+
+.customer-booked-service-bottom {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    gap: 20px;
+}
+
+
+.customer-booked-service-basic-details {
+    display: flex;
+    gap: 42px;
+}
+
+
+.customer-booked-service-basic-details div {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+
+.customer-booked-service-basic-details span {
+    font-size: 10px;
+
+    color:
+        #758497;
+}
+
+
+.customer-booked-service-basic-details strong {
+    font-size: 12px;
+
+    color:
+        #34485e;
+}
+
+
+.customer-booked-service-toggle {
+    min-width: 128px;
+
+    height: 34px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+
+    border:
+        1px solid
+        #9db7d6;
+
+    border-radius: 8px;
+
+    background:
+        #ffffff;
+
+    color:
+        #31577f;
+
+    font-size: 12px;
+    font-weight: 600;
+
+    cursor: pointer;
+}
+
+
+.customer-booked-service-toggle:hover {
+    background:
+        #f4f8fc;
+}
+
+
+/* =========================================
+   EXPANDED DETAILS
+========================================= */
+
+.customer-booked-service-expanded {
+    margin-top: 16px;
+
+    padding-top: 14px;
+
+    border-top:
+        1px solid
+        #dce4ec;
+}
+
+
+.customer-booked-service-expanded h4 {
+    margin:
+        0 0 10px;
+
+    font-size: 13px;
+
+    color:
+        #34485e;
+}
+
+
+.customer-booked-service-expanded h4:not(:first-child) {
+    margin-top: 18px;
+}
+
+
+.customer-expanded-grid {
+    display: grid;
+
+    grid-template-columns:
+        repeat(
+            3,
+            minmax(0, 1fr)
+        );
+
+    gap: 10px;
+}
+
+
+.customer-expanded-field {
+    min-height: 64px;
+
+    padding:
+        11px 12px;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 5px;
+
+    border-radius: 9px;
+
+    background:
+        #f5f7fa;
+}
+
+
+.customer-expanded-field span {
+    font-size: 10px;
+
+    color:
+        #718094;
+}
+
+
+.customer-expanded-field strong {
+    font-size: 12px;
+
+    color:
+        #34475d;
+}
+
+
+.customer-booked-service-details-loading {
+    padding: 18px 0;
+
+    color:
+        #718094;
+
+    font-size: 13px;
+}
+
+
+/* =========================================
+   EVENT INFORMATION
+========================================= */
+
+.customer-event-information-section {
+    padding: 18px;
+
+    margin-top: 18px;
+}
+
+
+.customer-event-information-grid {
+    display: grid;
+
+    grid-template-columns:
+        1fr 1fr;
+
+    gap: 12px;
+
+    margin-top: 14px;
+}
+
+
+.customer-event-information-field {
+    min-height: 62px;
+
+    padding:
+        12px 14px;
+
+    border-radius: 9px;
+
+    background:
+        #f5f7fa;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 5px;
+}
+
+
+.customer-event-information-field span {
+    font-size: 10px;
+
+    color:
+        #748397;
+}
+
+
+.customer-event-information-field strong {
+    font-size: 12px;
+
+    color:
+        #34475d;
+}
+
+
+/* =========================================
+   PAYMENT SUMMARY
+========================================= */
+
+.customer-payment-summary-card,
+.customer-bundle-summary-card,
+.customer-cancellation-policy-card {
+    padding: 18px;
+}
+
+
+.customer-payment-summary-row {
+    display: flex;
+    justify-content: space-between;
+
+    padding: 11px 0;
+
+    border-bottom:
+        1px solid
+        #e0e6ed;
+
+    font-size: 12px;
+
+    color:
+        #66778a;
+}
+
+
+.customer-payment-summary-row strong {
+    color:
+        #34475d;
+}
+
+
+.customer-payment-summary-row.discount strong {
+    color:
+        #39835b;
+}
+
+
+.customer-payment-summary-row.total {
+    border-bottom: none;
+
+    padding-bottom: 0;
+
+    font-size: 14px;
+}
+
+
+.customer-payment-summary-row.total strong {
+    font-size: 18px;
+
+    color:
+        #273b50;
+}
+
+
+/* =========================================
+   BUNDLE
+========================================= */
+
+.customer-bundle-summary-card p {
+    margin:
+        14px 0;
+
+    font-size: 12px;
+
+    color:
+        #68798c;
+}
+
+
+.customer-bundle-saving {
+    display: flex;
+    justify-content: space-between;
+
+    font-size: 11px;
+
+    color:
+        #748397;
+}
+
+
+.customer-bundle-saving strong {
+    color:
+        #39835b;
+}
+
+
+/* =========================================
+   CANCELLATION POLICY
+========================================= */
+
+.customer-cancellation-policy-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+
+.customer-cancellation-policy-title svg {
+    color:
+        #2385b8;
+}
+
+
+.customer-cancellation-policy-card ul {
+    margin:
+        14px 0 10px;
+
+    padding-left: 17px;
+}
+
+
+.customer-cancellation-policy-card li {
+    margin-bottom: 8px;
+
+    font-size: 11px;
+    line-height: 1.5;
+
+    color:
+        #68798c;
+}
+
+
+.customer-cancellation-policy-link {
+    padding: 0;
+
+    border: none;
+    background: transparent;
+
+    color:
+        #2670b5;
+
+    font-size: 11px;
+    font-weight: 600;
+
+    cursor: pointer;
+}
+
+
+/* =========================================
+   CANCEL
+========================================= */
+
+.customer-group-cancel-button {
+    height: 40px;
+
+    border:
+        1px solid
+        #e34b47;
+
+    border-radius: 9px;
+
+    background:
+        #ffffff;
+
+    color:
+        #d83b37;
+
+    font-size: 12px;
+    font-weight: 600;
+
+    cursor: pointer;
+}
+
+
+.customer-group-cancel-button:hover {
+    background:
+        #fff5f5;
+}
+
+
+/* =========================================
+   NEED SUPPORT
+========================================= */
+
+.customer-support-banner {
+    margin-top: 22px;
+
+    min-height: 78px;
+
+    display: flex;
+    align-items: center;
+
+    padding:
+        14px 20px;
+
+    border:
+        1px solid
+        #d7e1ea;
+
+    border-radius: 14px;
+
+    background:
+        #ffffff;
+
+    box-shadow:
+        0 5px 20px
+        rgba(
+            23,
+            51,
+            80,
+            0.05
+        );
+}
+
+
+.customer-support-icon {
+    width: 44px;
+    height: 44px;
+
+    min-width: 44px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 50%;
+
+    background:
+        #edf3f9;
+
+    color:
+        #3771a9;
+
+    font-size: 18px;
+
+    margin-right: 14px;
+}
+
+
+.customer-support-content {
+    flex: 1;
+}
+
+
+.customer-support-content h3 {
+    margin: 0 0 4px;
+
+    font-size: 13px;
+
+    color:
+        #31455b;
+}
+
+
+.customer-support-content p {
+    margin: 0;
+
+    font-size: 11px;
+
+    color:
+        #718094;
+}
+
+
+.customer-support-button {
+    min-width: 130px;
+
+    height: 34px;
+
+    border:
+        1px solid
+        #7ea6d3;
+
+    border-radius: 7px;
+
+    background:
+        #ffffff;
+
+    color:
+        #35618e;
+
+    font-size: 12px;
+    font-weight: 600;
+
+    cursor: pointer;
+}
+
+
+/* =========================================
+   LOADING / ERROR
+========================================= */
+
+.customer-booking-group-loading,
+.customer-booking-group-error {
+    padding: 60px 20px;
+
+    text-align: center;
+
+    color:
+        #68798c;
+}
+
+
+/* =========================================
+   RESPONSIVE
+========================================= */
+
+@media (
+    max-width: 900px
+) {
+
+    .customer-booking-group-main {
+        grid-template-columns:
+            1fr;
+    }
+
+
+    .customer-booking-group-summary-cards {
+        grid-template-columns:
+            1fr;
+    }
+
+
+    .customer-expanded-grid {
+        grid-template-columns:
+            1fr 1fr;
+    }
+
+}
+
+
+@media (
+    max-width: 650px
+) {
+
+    .customer-booking-group-page {
+        width:
+            min(
+                100% - 24px,
+                1200px
+            );
+
+        padding-top:
+            20px;
+    }
+
+
+    .customer-booked-service-card {
+        flex-direction:
+            column;
+    }
+
+
+    .customer-booked-service-image {
+        width: 100%;
+        max-width: none;
+
+        flex:
+            0 0 auto;
+
+        height: 180px;
+    }
+
+
+    .customer-booked-service-card.expanded
+    .customer-booked-service-image {
+        height: 180px;
+    }
+
+
+    .customer-booked-service-bottom {
+        flex-direction:
+            column;
+
+        align-items:
+            stretch;
+    }
+
+
+    .customer-booked-service-toggle {
+        width: 100%;
+    }
+
+
+    .customer-expanded-grid {
+        grid-template-columns:
+            1fr;
+    }
+
+
+    .customer-event-information-grid {
+        grid-template-columns:
+            1fr;
+    }
+
+
+    .customer-support-banner {
+        align-items:
+            flex-start;
+
+        flex-wrap:
+            wrap;
+    }
+
+
+    .customer-support-button {
+        width: 100%;
+
+        margin-top:
+            12px;
+    }
+
+}

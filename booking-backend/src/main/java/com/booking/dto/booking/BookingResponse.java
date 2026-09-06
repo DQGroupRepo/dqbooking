@@ -11,6 +11,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
+
 @Getter
 @Builder
 public class BookingResponse extends BaseEntity {
@@ -21,7 +22,31 @@ public class BookingResponse extends BaseEntity {
 
     private String bookingNumber;
 
+
+    /*
+     * =========================================
+     * SERVICE INFORMATION
+     * =========================================
+     *
+     * serviceName is a booking snapshot.
+     *
+     * serviceImage and serviceCategory are
+     * enriched from VendorService when required
+     * for UI display.
+     */
+
     private String serviceName;
+
+    private String serviceImage;
+
+    private String serviceCategory;
+
+
+    /*
+     * =========================================
+     * BOOKING AMOUNT
+     * =========================================
+     */
 
     private BigDecimal totalAmount;
 
@@ -37,23 +62,52 @@ public class BookingResponse extends BaseEntity {
 
     private String eventType;
 
+
+    /*
+     * =========================================
+     * CUSTOMER
+     * =========================================
+     */
+
     private String customerName;
 
     private String customerPhone;
 
     private String customerEmail;
 
+
+    /*
+     * =========================================
+     * VENUE
+     * =========================================
+     */
+
     private String venue;
+
+
+    /*
+     * =========================================
+     * PAYMENT
+     * =========================================
+     */
 
     private BigDecimal paidAmount;
 
+
     /*
-     * Locked pricing snapshot.
-     *
-     * This represents the pricing that was applicable
-     * when this booking was created.
+     * =========================================
+     * PRICING SNAPSHOT
+     * =========================================
      */
+
     private BookingPricingResponse pricing;
+
+
+    /*
+     * =========================================
+     * CANCELLATION
+     * =========================================
+     */
 
     private boolean cancellable;
 
@@ -64,4 +118,16 @@ public class BookingResponse extends BaseEntity {
     private BigDecimal cancellationCharge;
 
     private BigDecimal refundableAmount;
+
+
+    /*
+     * =========================================
+     * PACKAGE
+     * =========================================
+     */
+
+    private String packageId;
+
+    private String packageType;
+
 }

@@ -1,8 +1,22 @@
-import { useNavigate } from "react-router-dom";
+import {
+    useState
+} from "react";
+
+import {
+    useNavigate
+} from "react-router-dom";
+
+import {
+    FaCalendarAlt,
+    FaMapMarkerAlt,
+    FaUsers
+} from "react-icons/fa";
 
 import BookingStatusBadge from "./BookingStatusBadge";
 
-import type { Booking } from "../../types/Booking";
+import type {
+    Booking
+} from "../../types/Booking";
 
 import "./CustomerBookingCard.css";
 
@@ -10,7 +24,9 @@ import "./CustomerBookingCard.css";
 interface Props {
 
     bookingGroupId: string;
+
     bookings: Booking[];
+
 }
 
 
@@ -25,26 +41,41 @@ const BookingCard = ({
 
     /*
      * =========================================
-     * FIRST BOOKING
+     * IMAGE ERROR STATE
      * =========================================
-     *
-     * Used for common information such as:
-     *
-     * - image
-     * - status
-     * - vendor/service information
-     *
      */
 
-    const firstBooking =
-        bookings[0];
+    const [
+        imageError,
+        setImageError
+    ] =
+        useState(false);
 
 
-    if (!firstBooking) {
+    /*
+     * =========================================
+     * SAFETY CHECK
+     * =========================================
+     */
+
+    if (
+        !bookings ||
+        bookings.length === 0
+    ) {
 
         return null;
 
     }
+
+
+    /*
+     * =========================================
+     * FIRST BOOKING
+     * =========================================
+     */
+
+    const firstBooking =
+        bookings[0];
 
 
     /*
@@ -61,7 +92,8 @@ const BookingCard = ({
             ) =>
                 total +
                 Number(
-                    booking.totalAmount || 0
+                    booking.totalAmount ||
+                    0
                 ),
             0
         );
@@ -71,9 +103,6 @@ const BookingCard = ({
      * =========================================
      * GROUP STATUS
      * =========================================
-     *
-     * We use the first booking status for the
-     * group badge.
      */
 
     const groupStatus =
@@ -82,21 +111,43 @@ const BookingCard = ({
 
     /*
      * =========================================
-     * CANCELLATION
+     * CANCELLABLE BOOKING
      * =========================================
-     *
-     * A group can contain multiple independent
-     * bookings.
-     *
-     * Therefore cancellation remains per
-     * individual booking.
      */
 
     const cancellableBooking =
         bookings.find(
             booking =>
-                booking.cancellable
+                booking.cancellable ===
+                true
         );
+
+
+    /*
+     * =========================================
+     * IMAGE
+     * =========================================
+     */
+
+    const serviceImage =
+        firstBooking.serviceImage;
+
+
+    const hasValidImage =
+        Boolean(
+            serviceImage
+        ) &&
+        !imageError;
+
+
+    /*
+     * =========================================
+     * ADDITIONAL SERVICES
+     * =========================================
+     */
+
+    const additionalServiceCount =
+        bookings.length - 1;
 
 
     return (
@@ -105,162 +156,255 @@ const BookingCard = ({
 
 
             {/* =========================================
-                LEFT
+                IMAGE
                ========================================= */}
 
-            <div className="customer-booking-card-left">
+            <div className="customer-booking-card-image">
 
-                <img
+                {
+                    hasValidImage
+                        ? (
 
-                    src={
-                        firstBooking.serviceImage ??
-                        "/images/no-image.png"
-                    }
+                            <img
+                                src={
+                                    serviceImage
+                                }
+                                alt={
+                                    firstBooking.serviceName
+                                }
+                                onError={() =>
+                                    setImageError(
+                                        true
+                                    )
+                                }
+                            />
 
-                    alt={
-                        firstBooking.serviceName
-                    }
+                        )
+                        : (
 
-                />
+                            <div
+                                className="
+                                    customer-booking-no-image
+                                "
+                            >
+
+                                No Image Available
+
+                            </div>
+
+                        )
+                }
 
             </div>
 
 
             {/* =========================================
-                CENTER
+                SERVICE INFORMATION
                ========================================= */}
 
-            <div className="customer-booking-card-center">
+            <div className="customer-booking-card-info">
 
 
                 <h3>
-                    Booking Group
+
+                    {
+                        firstBooking.serviceName
+                    }
+
                 </h3>
 
 
-                <p>
+                {
+                    additionalServiceCount >
+                    0 && (
 
-                    Booking Group :
-                    <strong>
-                        {" "}
-                        {bookingGroupId}
-                    </strong>
+                        <div
+                            className="
+                                customer-booking-service-count
+                            "
+                        >
 
-                </p>
+                            +
+                            {
+                                additionalServiceCount
+                            }
+
+                            {" "}
+
+                            more service
+                            {
+                                additionalServiceCount >
+                                1
+                                    ? "s"
+                                    : ""
+                            }
+
+                        </div>
+
+                    )
+                }
 
 
-                {/* =========================================
-                    SERVICES
-                   ========================================= */}
-
-                <div className="customer-booking-services">
+                <span
+                    className="
+                        customer-booking-category
+                    "
+                >
 
                     {
-                        bookings.map(
-                            booking => (
+                        firstBooking.serviceCategory ||
+                        "Booking Service"
+                    }
 
-                                <div
-                                    key={
-                                        booking.bookingGroupId
-                                    }
-                                    className="customer-booking-service"
-                                >
-
-                                    <h4>
-                                        {
-                                            booking.serviceName
-                                        }
-                                    </h4>
+                </span>
 
 
-                                    <p>
-
-                                        Booking No :
-                                        <strong>
-                                            {" "}
-                                            {
-                                                booking.bookingNumber
-                                            }
-                                        </strong>
-
-                                    </p>
+                <div
+                    className="
+                        customer-booking-meta
+                    "
+                >
 
 
-                                    <p>
+                    <span>
 
-                                        Event :
-                                        {" "}
-                                        {
-                                            booking.eventDate
-                                        }
+                        <FaCalendarAlt />
 
-                                    </p>
+                        {
+                            firstBooking.eventDate
+                        }
 
-
-                                    <p>
-
-                                        Guests :
-                                        {" "}
-                                        {
-                                            booking.guestCount
-                                        }
-
-                                    </p>
+                    </span>
 
 
-                                    <p>
+                    <span>
 
-                                        Amount :
-                                        {" "}
-                                        ₹
-                                        {
-                                            Number(
-                                                booking.totalAmount
-                                            ).toLocaleString(
-                                                "en-IN"
-                                            )
-                                        }
+                        <FaUsers />
 
-                                    </p>
+                        {
+                            firstBooking.guestCount
+                        }
 
-                                </div>
+                        {" "}
 
-                            )
+                        Guests
+
+                    </span>
+
+
+                    {
+                        firstBooking.venue && (
+
+                            <span>
+
+                                <FaMapMarkerAlt />
+
+                                {
+                                    firstBooking.venue
+                                }
+
+                            </span>
+
                         )
+                    }
+
+
+                </div>
+
+
+                <div
+                    className="
+                        customer-booking-group-id
+                    "
+                >
+
+                    Group:
+
+                    {" "}
+
+                    {
+                        bookingGroupId
                     }
 
                 </div>
 
 
-                {/* =========================================
-                    GROUP TOTAL
-                   ========================================= */}
+            </div>
 
-                <p className="customer-booking-group-total">
+
+            {/* =========================================
+                BOOKING INFORMATION
+               ========================================= */}
+
+            <div
+                className="
+                    customer-booking-card-booking-info
+                "
+            >
+
+
+                <div
+                    className="
+                        customer-booking-number
+                    "
+                >
+
+                    <span>
+
+                        Booking No
+
+                    </span>
 
                     <strong>
-                        Group Total :
+
+                        {
+                            firstBooking.bookingNumber
+                        }
+
                     </strong>
 
-                    {" "}
+                </div>
 
-                    ₹
-                    {
-                        groupTotal.toLocaleString(
-                            "en-IN"
-                        )
-                    }
 
-                </p>
+                <div
+                    className="
+                        customer-booking-amount
+                    "
+                >
+
+                    <span>
+
+                        Total Amount
+
+                    </span>
+
+                    <strong>
+
+                        ₹
+                        {
+                            groupTotal
+                                .toLocaleString(
+                                    "en-IN"
+                                )
+                        }
+
+                    </strong>
+
+                </div>
+
 
             </div>
 
 
             {/* =========================================
-                RIGHT
+                ACTIONS
                ========================================= */}
 
-            <div className="customer-booking-card-right">
+            <div
+                className="
+                    customer-booking-card-actions
+                "
+            >
 
 
                 <BookingStatusBadge
@@ -270,49 +414,58 @@ const BookingCard = ({
                 />
 
 
-                {/* =========================================
-                    VIEW GROUP
-                   ========================================= */}
+                <div
+                    className="
+                        customer-booking-buttons
+                    "
+                >
 
-                <button
-                    type="button"
-                    onClick={() =>
-                        navigate(
-                            `/booking-confirmation/${bookingGroupId}`
+
+                    <button
+                        type="button"
+                        className="
+                            customer-booking-view-button
+                        "
+                        onClick={() =>
+                            navigate(
+                                `/customer/bookings/group/${bookingGroupId}`
+                            )
+                        }
+                    >
+
+                        View Details
+
+                    </button>
+
+
+                    {
+                        cancellableBooking && (
+
+                            <button
+                                type="button"
+                                className="
+                                    customer-booking-cancel-button
+                                "
+                                onClick={() =>
+                                    navigate(
+                                        `/customer/bookings/group/${bookingGroupId}/cancel`
+                                    )
+                                }
+                            >
+
+                                Cancel Booking
+
+                            </button>
+
                         )
                     }
-                >
-                    View Details
-                </button>
 
 
-                {/* =========================================
-                    CANCEL
-                   =========================================
+                </div>
 
-                   Keep cancellation at individual
-                   booking level.
-                */}
-
-                {
-                    cancellableBooking && (
-
-                        <button
-                            type="button"
-                            className="cancel"
-                            onClick={() =>
-                                navigate(
-                                    `/customer/bookings/${cancellableBooking.bookingGroupId}/cancel`
-                                )
-                            }
-                        >
-                            Cancel Booking
-                        </button>
-
-                    )
-                }
 
             </div>
+
 
         </div>
 

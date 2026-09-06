@@ -45,6 +45,7 @@ import CustomerCancelBooking from "../pages/Customer/CustomerCancelBooking";
 import BookingCancellationSuccess from "../pages/Customer/BookingCancellationSuccess";
 import CustomerBookingDetails from "../pages/customer/CustomerBookingDetails";
 import Review from "../pages/customer/Review";
+import CustomerBookingGroupDetails from "../pages/customer/CustomerBookingGroupDetails";
 
 import AdminLayout from "../layouts/AdminLayout";
 import AdminDashboard from "../pages/Admin/AdminDashboard";
@@ -367,6 +368,13 @@ const AppRoutes = () => {
                         }
                     />
 
+                    <Route
+                        path="/customer/bookings/group/:bookingGroupId"
+                        element={
+                            <CustomerBookingGroupDetails />
+                        }
+                    />
+
 
                     <Route
                         path="/customer/bookings"
@@ -377,7 +385,7 @@ const AppRoutes = () => {
 
 
                     <Route
-                        path="/customer/bookings/:bookingId/cancel"
+                        path="/customer/bookings/group/:bookingGroupId/cancel"
                         element={
                             <CustomerCancelBooking />
                         }
@@ -456,15 +464,6 @@ const AppRoutes = () => {
                                 <ManageServices />
                             }
                         />
-
-
-                        <Route
-                            path="/vendor/bundles"
-                            element={
-                                <VendorBundles />
-                            }
-                        />
-
 
                         <Route
                             path="/vendor/bundles"

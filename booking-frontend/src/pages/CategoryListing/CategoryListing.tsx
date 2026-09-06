@@ -7,8 +7,6 @@ import {
     useState
 } from "react";
 
-import SearchBar from "../../components/search/SearchBar";
-
 import FilterPanel
     from "../../components/search/FilterPanel";
 
@@ -119,18 +117,6 @@ const CategoryListing = () => {
      *
      * When the user leaves this page,
      * remember exactly where they were.
-     *
-     * Example:
-     *
-     * Category Listing
-     *      ↓
-     * Scroll to 1400px
-     *      ↓
-     * Click Vendor
-     *      ↓
-     * Vendor Details
-     *
-     * Position 1400px is saved.
      */
 
     useEffect(() => {
@@ -165,115 +151,98 @@ const CategoryListing = () => {
 
     return (
 
-        <>
+        <section className="results-section">
 
 
-            {/* =====================================
-                SEARCH
-            ===================================== */}
-
-            <SearchBar />
+            <div className="container results-layout">
 
 
-            {/* =====================================
-                RESULTS
-            ===================================== */}
+                {/* =================================
+                    FILTER PANEL
+                ================================= */}
 
-            <section className="results-section">
-
-
-                <div className="container results-layout">
+                <FilterPanel />
 
 
-                    {/* =================================
-                        FILTER PANEL
-                    ================================= */}
+                {/* =================================
+                    RESULTS CONTENT
+                ================================= */}
 
-                    <FilterPanel />
-
-
-                    {/* =================================
-                        RESULTS CONTENT
-                    ================================= */}
-
-                    <div className="results-content">
+                <div className="results-content">
 
 
-                        {/* =============================
-                            HEADER
-                        ============================= */}
+                    {/* =============================
+                        HEADER
+                    ============================= */}
 
-                        <div className="results-header">
-
-
-                            <h2>
-
-                                {
-                                    vendors.length
-                                }
-
-                                {" "}
-
-                                Vendors Found
-
-                            </h2>
+                    <div className="results-header">
 
 
-                            <select>
-
-                                <option>
-                                    Sort by Popularity
-                                </option>
-
-
-                                <option>
-                                    Price Low to High
-                                </option>
-
-
-                                <option>
-                                    Rating
-                                </option>
-
-
-                            </select>
-
-
-                        </div>
-
-
-                        {/* =============================
-                            VENDOR RESULTS
-                        ============================= */}
-
-                        <div className="vendor-results">
-
+                        <h2>
 
                             {
-                                vendors.map(
-                                    vendor => (
-
-                                        <VendorCard
-
-                                            key={
-                                                vendor.serviceId
-                                            }
-
-                                            vendor={
-                                                vendor
-                                            }
-
-                                        />
-
-                                    )
-                                )
+                                vendors.length
                             }
 
+                            {" "}
 
-                            <Pagination />
+                            Vendors Found
+
+                        </h2>
 
 
-                        </div>
+                        <select>
+
+                            <option>
+                                Sort by Popularity
+                            </option>
+
+
+                            <option>
+                                Price Low to High
+                            </option>
+
+
+                            <option>
+                                Rating
+                            </option>
+
+
+                        </select>
+
+
+                    </div>
+
+
+                    {/* =============================
+                        VENDOR RESULTS
+                    ============================= */}
+
+                    <div className="vendor-results">
+
+
+                        {
+                            vendors.map(
+                                vendor => (
+
+                                    <VendorCard
+
+                                        key={
+                                            vendor.serviceId
+                                        }
+
+                                        vendor={
+                                            vendor
+                                        }
+
+                                    />
+
+                                )
+                            )
+                        }
+
+
+                        <Pagination />
 
 
                     </div>
@@ -282,10 +251,10 @@ const CategoryListing = () => {
                 </div>
 
 
-            </section>
+            </div>
 
 
-        </>
+        </section>
 
     );
 

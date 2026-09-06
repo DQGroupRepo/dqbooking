@@ -1,0 +1,430 @@
+.customer-bookings-page {
+    width:
+        100%;
+
+    max-width:
+        1280px;
+
+    margin:
+        0 auto;
+
+    padding:
+        36px 24px 60px;
+
+    box-sizing:
+        border-box;
+}
+
+
+/*
+ * =========================================
+ * HEADER
+ * =========================================
+ */
+
+.customer-bookings-header {
+    display:
+        flex;
+
+    align-items:
+        center;
+
+    justify-content:
+        space-between;
+
+    margin-bottom:
+        26px;
+}
+
+
+.customer-bookings-title h1 {
+    margin:
+        0;
+
+    color:
+        #1e293b;
+
+    font-size:
+        34px;
+
+    font-weight:
+        700;
+}
+
+
+.customer-bookings-title p {
+    margin:
+        8px 0 0;
+
+    color:
+        #64748b;
+
+    font-size:
+        16px;
+}
+
+
+.customer-new-booking-button {
+    border:
+        none;
+
+    border-radius:
+        9px;
+
+    padding:
+        13px 20px;
+
+    background:
+        #2f67c7;
+
+    color:
+        #ffffff;
+
+    font-size:
+        14px;
+
+    font-weight:
+        700;
+
+    cursor:
+        pointer;
+
+    box-shadow:
+        0 6px 14px
+        rgba(
+            47,
+            103,
+            199,
+            0.20
+        );
+
+    transition:
+        all 0.2s ease;
+}
+
+
+.customer-new-booking-button:hover {
+    background:
+        #2455a7;
+
+    transform:
+        translateY(
+            -1px
+        );
+}
+
+
+/*
+ * =========================================
+ * FILTER SECTION
+ * =========================================
+ */
+
+.customer-bookings-filter-panel {
+    background:
+        #ffffff;
+
+    border:
+        1px solid
+        #e4e9f0;
+
+    border-radius:
+        16px;
+
+    margin-bottom:
+        18px;
+
+    overflow:
+        hidden;
+
+    box-shadow:
+        0 5px 18px
+        rgba(
+            15,
+            23,
+            42,
+            0.04
+        );
+}
+
+
+/*
+ * TABS
+ */
+
+.customer-booking-tabs {
+    display:
+        flex;
+
+    border-bottom:
+        1px solid
+        #e5e7eb;
+}
+
+
+.customer-booking-tab {
+    flex:
+        1;
+
+    border:
+        none;
+
+    border-bottom:
+        3px solid
+        transparent;
+
+    background:
+        transparent;
+
+    padding:
+        17px 12px;
+
+    color:
+        #475569;
+
+    font-size:
+        15px;
+
+    cursor:
+        pointer;
+
+    transition:
+        all 0.2s ease;
+}
+
+
+.customer-booking-tab:hover {
+    background:
+        #f8fafc;
+}
+
+
+.customer-booking-tab.active {
+    color:
+        #2f67c7;
+
+    border-bottom-color:
+        #2f67c7;
+
+    font-weight:
+        700;
+}
+
+
+/*
+ * FILTERS
+ */
+
+.customer-booking-filters {
+    display:
+        grid;
+
+    grid-template-columns:
+        1.5fr
+        1fr
+        1fr
+        1fr;
+
+    gap:
+        12px;
+
+    padding:
+        16px;
+}
+
+
+.customer-booking-search,
+.customer-booking-select {
+    width:
+        100%;
+
+    height:
+        48px;
+
+    box-sizing:
+        border-box;
+
+    border:
+        1px solid
+        #d7dee8;
+
+    border-radius:
+        9px;
+
+    background:
+        #ffffff;
+
+    padding:
+        0 16px;
+
+    color:
+        #334155;
+
+    font-size:
+        15px;
+
+    outline:
+        none;
+
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+
+.customer-booking-search:focus,
+.customer-booking-select:focus {
+    border-color:
+        #2f67c7;
+
+    box-shadow:
+        0 0 0 3px
+        rgba(
+            47,
+            103,
+            199,
+            0.10
+        );
+}
+
+
+/*
+ * =========================================
+ * RESULTS
+ * =========================================
+ */
+
+.customer-bookings-results-info {
+    margin:
+        12px 0 16px;
+
+    color:
+        #64748b;
+
+    font-size:
+        14px;
+}
+
+
+.customer-bookings-results-info strong {
+    color:
+        #1e293b;
+}
+
+
+/*
+ * =========================================
+ * EMPTY STATE
+ * =========================================
+ */
+
+.customer-bookings-empty {
+    background:
+        #ffffff;
+
+    border:
+        1px solid
+        #e4e9f0;
+
+    border-radius:
+        16px;
+
+    padding:
+        60px 20px;
+
+    text-align:
+        center;
+
+    color:
+        #64748b;
+}
+
+
+/*
+ * =========================================
+ * RESPONSIVE
+ * =========================================
+ */
+
+@media (
+    max-width:
+    900px
+) {
+
+    .customer-booking-filters {
+
+        grid-template-columns:
+            1fr 1fr;
+
+    }
+
+}
+
+
+@media (
+    max-width:
+    700px
+) {
+
+    .customer-bookings-page {
+
+        padding:
+            24px 14px 40px;
+
+    }
+
+
+    .customer-bookings-header {
+
+        align-items:
+            flex-start;
+
+        flex-direction:
+            column;
+
+        gap:
+            18px;
+
+    }
+
+
+    .customer-bookings-title h1 {
+
+        font-size:
+            28px;
+
+    }
+
+
+    .customer-new-booking-button {
+
+        width:
+            100%;
+
+    }
+
+
+    .customer-booking-tabs {
+
+        overflow-x:
+            auto;
+
+    }
+
+
+    .customer-booking-tab {
+
+        min-width:
+            110px;
+
+    }
+
+
+    .customer-booking-filters {
+
+        grid-template-columns:
+            1fr;
+
+    }
+
+}

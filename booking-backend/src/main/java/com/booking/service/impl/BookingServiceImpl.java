@@ -30,6 +30,8 @@ import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -1167,6 +1169,76 @@ public class BookingServiceImpl implements BookingService
 
     }
 
+    /*
+     * =========================================
+     * ENRICH BOOKING RESPONSES
+     * =========================================
+     *
+     * Booking stores serviceId.
+     * UI-only service information such as:
+     *
+     * - serviceImage
+     * - serviceCategory
+     *
+     * is enriched from VendorService.
+     *
+     * All related services are loaded in one query.
+     */
+    private List<BookingResponse> enrichBookingResponses(
+            List<Booking> bookings
+    ) {
+
+        if (
+                bookings == null ||
+                        bookings.isEmpty()
+        ) {
+
+            return List.of();
+
+        }
+
+        List<String> serviceIds =
+                bookings
+                        .stream()
+                        .map(
+                                Booking::getServiceId
+                        )
+                        .filter(
+                                serviceId ->
+                                        serviceId != null &&
+                                                !serviceId.isBlank()
+                        )
+                        .distinct()
+                        .toList();
+
+        Map<String, VendorService> serviceMap =
+                vendorServiceRepository
+                        .findAllById(
+                                serviceIds
+                        )
+                        .stream()
+                        .collect(
+                                Collectors.toMap(
+                                        VendorService::getId,
+                                        service -> service
+                                )
+                        );
+
+        return bookings
+                .stream()
+                .map(
+                        booking ->
+                                bookingMapper.toResponse(
+                                        booking,
+                                        serviceMap.get(
+                                                booking.getServiceId()
+                                        )
+                                )
+                )
+                .toList();
+
+    }
+
     @Override
     public List<BookingResponse> getCustomerBookings() {
 
@@ -1175,11 +1247,15 @@ public class BookingServiceImpl implements BookingService
                         .getCurrentUser()
                         .getId();
 
-        return bookingRepository
-                .findByCustomerId(customerId)
-                .stream()
-                .map(bookingMapper::toResponse)
-                .toList();
+        List<Booking> bookings =
+                bookingRepository
+                        .findByCustomerId(
+                                customerId
+                        );
+
+        return enrichBookingResponses(
+                bookings
+        );
 
     }
 
@@ -1891,12 +1967,15 @@ public class BookingServiceImpl implements BookingService
 
         }
 
+        /*
+         * Enrich service information for the group so
+         * serviceImage and serviceCategory are available
+         * on the details screen as well.
+         */
         List<BookingResponse> bookingResponses =
-                bookings.stream()
-                        .map(
-                                bookingMapper::toResponse
-                        )
-                        .toList();
+                enrichBookingResponses(
+                        bookings
+                );
 
         BigDecimal finalTotal =
                 bookings.stream()
