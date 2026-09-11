@@ -3,13 +3,27 @@ package com.booking.mapper.impl;
 import com.booking.dto.customer.VendorDetailResponse;
 import com.booking.dto.customer.VendorListingResponse;
 import com.booking.mapper.CustomerVendorMapper;
+import com.booking.mapper.ServiceDetailSectionMapper;
+import com.booking.model.Review;
 import com.booking.model.User;
 import com.booking.model.VendorService;
+import com.booking.repository.ReviewRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
+
 @Component
+@RequiredArgsConstructor
 public class CustomerVendorMapperImpl
         implements CustomerVendorMapper {
+
+    private final ServiceDetailSectionMapper
+            serviceDetailSectionMapper;
+
+    private final ReviewRepository
+            reviewRepository;
+
 
     @Override
     public VendorListingResponse toListing(
@@ -17,29 +31,88 @@ public class CustomerVendorMapperImpl
             VendorService service
     ) {
 
+        List<Review> reviews =
+                getVendorReviews(
+                        vendor.getId()
+                );
+
+        double averageRating =
+                calculateAverageRating(
+                        reviews
+                );
+
+        int reviewCount =
+                reviews.size();
+
         return VendorListingResponse.builder()
-                .serviceId(service.getId())
-                .serviceName(service.getServiceName())
-                .businessName(vendor.getBusinessName())
-                .description(service.getDescription())
-                .category(service.getCategory().name())
-                .city(vendor.getCity())
-                .startingPrice(service.getPrice())
-                .rating(vendor.getRating())
-                .reviewCount(vendor.getTotalReviews())
-                .capacity(service.getCapacity())
+
+                .serviceId(
+                        service.getId()
+                )
+
+                .serviceName(
+                        service.getServiceName()
+                )
+
+                .businessName(
+                        vendor.getBusinessName()
+                )
+
+                .description(
+                        service.getDescription()
+                )
+
+                .category(
+                        service.getCategory().name()
+                )
+
+                .city(
+                        vendor.getCity()
+                )
+
+                .startingPrice(
+                        service.getPrice()
+                )
+
+                .rating(
+                        averageRating
+                )
+
+                .reviewCount(
+                        reviewCount
+                )
+
+                .capacity(
+                        service.getCapacity()
+                )
+
                 .imageUrl(
-                        service.getImageUrls() != null &&
+
+                        service.getImageUrls() != null
+                                &&
                                 !service.getImageUrls().isEmpty()
+
                                 ? service.getImageUrls().get(0)
+
                                 : null
                 )
-                .gallery(service.getImageUrls())
-                .amenities(service.getAmenities())
-                .isActive(service.getActive())
+
+                .gallery(
+                        service.getImageUrls()
+                )
+
+                .amenities(
+                        service.getAmenities()
+                )
+
+                .isActive(
+                        service.getActive()
+                )
+
                 .build();
 
     }
+
 
     @Override
     public VendorDetailResponse toDetail(
@@ -47,47 +120,144 @@ public class CustomerVendorMapperImpl
             VendorService service
     ) {
 
+        List<Review> reviews =
+                getVendorReviews(
+                        vendor.getId()
+                );
+
+        double averageRating =
+                calculateAverageRating(
+                        reviews
+                );
+
+        int reviewCount =
+                reviews.size();
+
         return VendorDetailResponse.builder()
 
-                .serviceId(service.getId())
+                .serviceId(
+                        service.getId()
+                )
 
-                .vendorId(vendor.getId())
+                .vendorId(
+                        vendor.getId()
+                )
 
-                .businessName(vendor.getBusinessName())
+                .businessName(
+                        vendor.getBusinessName()
+                )
 
-                .serviceName(service.getServiceName())
+                .serviceName(
+                        service.getServiceName()
+                )
 
-                .description(service.getDescription())
+                .description(
+                        service.getDescription()
+                )
 
-                .category(service.getCategory().name())
+                .category(
+                        service.getCategory().name()
+                )
 
-                .city(vendor.getCity())
+                .city(
+                        vendor.getCity()
+                )
 
-                .startingPrice(service.getPrice())
+                .startingPrice(
+                        service.getPrice()
+                )
 
-                .rating(vendor.getRating())
+                .rating(
+                        averageRating
+                )
 
-                .reviewCount(vendor.getTotalReviews())
+                .reviewCount(
+                        reviewCount
+                )
 
-                .capacity(service.getCapacity())
+                .capacity(
+                        service.getCapacity()
+                )
 
-                .imageUrls(service.getImageUrls())
+                .imageUrls(
+                        service.getImageUrls()
+                )
 
-                .amenities(service.getAmenities())
+                .amenities(
+                        service.getAmenities()
+                )
 
-                .attributes(service.getAttributes())
+                /*
+                 * Convert entity sections
+                 * to API response sections.
+                 */
+                .detailSections(
+                        serviceDetailSectionMapper
+                                .toResponseList(
+                                        service.getDetailSections()
+                                )
+                )
 
-                .contactInfo(service.getContactInfo())
+                .contactInfo(
+                        service.getContactInfo()
+                )
 
-                .bookingSettings(service.getBookingSettings())
+                .bookingSettings(
+                        service.getBookingSettings()
+                )
 
-                .availability(service.getAvailability())
+                .availability(
+                        service.getAvailability()
+                )
 
-                .location(service.getLocation())
+                .location(
+                        service.getLocation()
+                )
 
-                .packages(service.getPackages())
+                .packages(
+                        service.getPackages()
+                )
 
                 .build();
+
+    }
+
+    private List<Review> getVendorReviews(
+            String vendorId
+    ) {
+
+        return reviewRepository
+                .findByVendorIdAndDeletedFalse(
+                        vendorId
+                );
+
+    }
+
+
+    private double calculateAverageRating(
+            List<Review> reviews
+    ) {
+
+        if (reviews == null || reviews.isEmpty()) {
+
+            return 0.0;
+
+        }
+
+        return reviews.stream()
+
+                .filter(
+                        review ->
+                                review.getRating() != null
+                )
+
+                .mapToInt(
+                        Review::getRating
+                )
+
+                .average()
+
+                .orElse(0.0);
 
     }
 

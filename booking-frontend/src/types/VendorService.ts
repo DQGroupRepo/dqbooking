@@ -1,7 +1,38 @@
-import type { ContactInfo } from "./ContactInfo";
-import type { Availability } from "./Availability";
-import type { BookingSettings } from "./BookingSettings";
-import type { ServiceAttribute } from "./ServiceAttribute";
+import type {
+    ContactInfo
+} from "./ContactInfo";
+
+import type {
+    Availability
+} from "./Availability";
+
+import type {
+    BookingSettings
+} from "./BookingSettings";
+
+import type {
+    ServiceDetailSection
+} from "./ServiceDetailSection";
+
+export type ModerationStatus =
+    | "PENDING"
+    | "APPROVED"
+    | "REJECTED";
+
+export interface ServicePackage {
+
+    id: string;
+
+    type: string;
+
+    price: number;
+
+    features: string[];
+
+    active: boolean;
+
+}
+
 
 export interface VendorService {
 
@@ -25,6 +56,11 @@ export interface VendorService {
 
     pricingConfigured: boolean;
 
+
+    /* =====================================
+       COMMON DETAILS
+    ===================================== */
+
     contactInfo: ContactInfo;
 
     availability: Availability;
@@ -35,8 +71,32 @@ export interface VendorService {
 
     amenities: string[];
 
-    attributes: ServiceAttribute[];
+
+    /* =====================================
+       GENERIC CATEGORY DETAILS
+    ===================================== */
+
+    detailSections: ServiceDetailSection[];
+
+
+    /* =====================================
+       SERVICE PACKAGES
+    ===================================== */
+
+    packages?: ServicePackage[];
+
 
     location: string;
+
+
+    /* =====================================
+       OPTIONAL DISPLAY FIELDS
+    ===================================== */
+
+    rating?: number;
+
+    reviewCount?: number;
+
+    moderationStatus?: ModerationStatus;
 
 }

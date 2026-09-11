@@ -1,46 +1,100 @@
 import {
-  FaCalendarCheck,
-  FaClock,
-  FaCheckCircle,
-  FaRupeeSign,
+    FaCalendarCheck,
+    FaClock,
+    FaCheckCircle,
+    FaRupeeSign,
 } from "react-icons/fa";
 
 import DashboardCard from "../DashboardCard/DashboardCard";
 
-import type { VendorDashboardSummary } from "../../../types/VendorDashboard";
+import type {
+    VendorDashboardSummary
+} from "../../../types/VendorDashboard";
 
 import styles from "./DashboardStats.module.css";
 
+
 interface Props {
-  summary: VendorDashboardSummary;
+
+    summary: VendorDashboardSummary;
+
 }
 
-export default function DashboardStats({ summary }: Props) {
-  return (
-    <div className={styles.statsGrid}>
-      <DashboardCard
-        title="Total Bookings"
-        value={summary.totalBookings}
-        icon={FaCalendarCheck}
-      />
 
-      <DashboardCard
-        title="Pending"
-        value={summary.pendingBookings}
-        icon={FaClock}
-      />
+export default function DashboardStats({
 
-      <DashboardCard
-        title="Confirmed"
-        value={summary.confirmedBookings}
-        icon={FaCheckCircle}
-      />
+    summary
 
-      <DashboardCard
-        title="Revenue"
-        value={`₹${(summary.totalRevenue / 100000).toFixed(1)} L`}
-        icon={FaRupeeSign}
-      />
-    </div>
-  );
+}: Props) {
+
+
+    const totalBookings =
+        summary.totalBookings ?? 0;
+
+
+    const pendingBookings =
+        summary.pendingBookings ?? 0;
+
+
+    const completedBookings =
+        summary.completedBookings ?? 0;
+
+
+    const monthlyRevenue =
+        summary.monthlyRevenue ?? 0;
+
+
+    return (
+
+        <div className={styles.statsGrid}>
+
+
+            <DashboardCard
+
+                title="Total Bookings"
+
+                value={totalBookings}
+
+                icon={FaCalendarCheck}
+
+            />
+
+
+            <DashboardCard
+
+                title="Pending"
+
+                value={pendingBookings}
+
+                icon={FaClock}
+
+            />
+
+
+            <DashboardCard
+
+                title="Completed"
+
+                value={completedBookings}
+
+                icon={FaCheckCircle}
+
+            />
+
+
+            <DashboardCard
+
+                title="Revenue"
+
+                value={`₹${monthlyRevenue.toLocaleString("en-IN")}`}
+
+                icon={FaRupeeSign}
+
+            />
+
+
+        </div>
+
+    );
+
 }

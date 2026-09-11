@@ -22,8 +22,6 @@ public class ServiceSettingsResponse {
 
     private CancellationPolicyResponse cancellationPolicy;
 
-    private Boolean active;
-
     private Boolean instantBooking;
 
 }

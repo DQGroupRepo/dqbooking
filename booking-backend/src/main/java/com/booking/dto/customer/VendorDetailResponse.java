@@ -1,6 +1,6 @@
 package com.booking.dto.customer;
 
-import com.booking.model.ServiceAttribute;
+import com.booking.dto.service.ServiceDetailSectionResponse;
 import com.booking.model.embedded.Availability;
 import com.booking.model.embedded.BookingSettings;
 import com.booking.model.embedded.ContactInfo;
@@ -41,7 +41,7 @@ public class VendorDetailResponse {
 
     private List<String> amenities;
 
-    private List<ServiceAttribute> attributes;
+    private List<ServiceDetailSectionResponse> detailSections;
 
     private ContactInfo contactInfo;
 

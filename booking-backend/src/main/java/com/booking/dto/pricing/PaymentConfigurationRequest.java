@@ -1,6 +1,6 @@
 package com.booking.dto.pricing;
 
-import jakarta.validation.constraints.DecimalMax;
+import com.booking.model.enums.AdvancePaymentType;
 import jakarta.validation.constraints.DecimalMin;
 import lombok.Getter;
 import lombok.Setter;
@@ -11,11 +11,13 @@ import java.math.BigDecimal;
 @Setter
 public class PaymentConfigurationRequest {
 
-    private Boolean advancePaymentAllowed = true;
+    private AdvancePaymentType advancePaymentType;
 
-    @DecimalMin(value = "0.0")
-    @DecimalMax(value = "100.0")
-    private BigDecimal advancePercentage;
+    @DecimalMin(
+            value = "0.0",
+            inclusive = true
+    )
+    private BigDecimal advancePaymentValue;
 
     private Boolean payAfterConfirmation = true;
 

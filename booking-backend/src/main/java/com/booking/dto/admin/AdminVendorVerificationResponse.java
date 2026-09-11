@@ -26,7 +26,5 @@ public class AdminVendorVerificationResponse {
 
     private VendorVerificationStatus verificationStatus;
 
-    private Boolean verified;
-
     private List<AdminVendorServiceResponse> services;
 }

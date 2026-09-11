@@ -588,3 +588,273 @@
     margin-top:20px;
 
 }
+
+/* =========================================
+   SERVICE OVERVIEW DETAILS
+========================================= */
+
+.service-description{
+
+    line-height:1.7;
+
+    color:#555;
+
+    margin-bottom:25px;
+
+}
+
+
+.service-details-grid{
+
+    display:grid;
+
+    grid-template-columns:
+        repeat(2, minmax(0, 1fr));
+
+    gap:15px;
+
+}
+
+
+.detail-item{
+
+    background:#f8fafc;
+
+    border:1px solid #edf0f4;
+
+    border-radius:10px;
+
+    padding:16px;
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:8px;
+
+}
+
+
+.detail-item span{
+
+    color:#777;
+
+    font-size:13px;
+
+    display:flex;
+
+    align-items:center;
+
+    gap:7px;
+
+}
+
+
+.detail-item strong{
+
+    color:#222;
+
+    font-size:16px;
+
+}
+
+
+/* =========================================
+   DYNAMIC SERVICE ATTRIBUTES
+========================================= */
+
+.attributes-grid{
+
+    display:grid;
+
+    grid-template-columns:
+        repeat(2, minmax(0, 1fr));
+
+    gap:15px;
+
+}
+
+
+.attribute-item{
+
+    border:1px solid #eee;
+
+    border-radius:10px;
+
+    padding:15px;
+
+    background:#fff;
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:7px;
+
+}
+
+
+.attribute-item span{
+
+    font-size:13px;
+
+    color:#777;
+
+}
+
+
+.attribute-item strong{
+
+    font-size:16px;
+
+    color:#222;
+
+}
+
+
+/* =========================================
+   PACKAGES
+========================================= */
+
+.packages{
+
+    display:grid;
+
+    grid-template-columns:
+        repeat(
+            auto-fit,
+            minmax(220px, 1fr)
+        );
+
+    gap:20px;
+
+}
+
+
+.package-card{
+
+    border:1px solid #e5e7eb;
+
+    border-radius:12px;
+
+    padding:20px;
+
+    text-align:left;
+
+    transition:.2s;
+
+    background:#fff;
+
+}
+
+
+.package-card:hover{
+
+    transform:
+        translateY(-3px);
+
+    box-shadow:
+        0 10px 25px
+        rgba(0,0,0,.08);
+
+}
+
+
+.inactive-package{
+
+    opacity:.65;
+
+}
+
+
+.package-type{
+
+    display:inline-flex;
+
+    padding:6px 12px;
+
+    border-radius:20px;
+
+    background:#f3f4f6;
+
+    font-size:13px;
+
+    font-weight:600;
+
+    margin-bottom:12px;
+
+}
+
+
+.package-card h2{
+
+    margin:0 0 10px;
+
+    color:#d9974d;
+
+}
+
+
+.package-status{
+
+    font-size:13px;
+
+    color:#777;
+
+    margin-bottom:15px;
+
+}
+
+
+.package-features{
+
+    list-style:none;
+
+    padding:0;
+
+    margin:0;
+
+}
+
+
+.package-features li{
+
+    display:flex;
+
+    align-items:flex-start;
+
+    gap:8px;
+
+    padding:7px 0;
+
+    font-size:14px;
+
+    color:#444;
+
+}
+
+
+.package-features svg{
+
+    color:#22c55e;
+
+    margin-top:2px;
+
+}
+
+
+/* =========================================
+   RESPONSIVE
+========================================= */
+
+@media(max-width:700px){
+
+    .service-details-grid,
+
+    .attributes-grid{
+
+        grid-template-columns:1fr;
+
+    }
+
+}

@@ -1,6 +1,7 @@
 package com.booking.dto.vendorservice;
 
 import com.booking.dto.pricing.VendorServicePricingRequest;
+import com.booking.dto.service.ServiceDetailSectionRequest;
 import com.booking.dto.service.ServicePackageRequest;
 import com.booking.model.enums.DiscountType;
 import com.booking.model.enums.ServiceCategory;
@@ -11,6 +12,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 
 @Getter
@@ -45,7 +47,9 @@ public class VendorServiceRequest {
 
     private List<String> amenities;
 
-    private List<ServiceAttributeDto> attributes;
+    @Valid
+    private List<ServiceDetailSectionRequest> detailSections =
+            new ArrayList<>();
 
     private String location;
 

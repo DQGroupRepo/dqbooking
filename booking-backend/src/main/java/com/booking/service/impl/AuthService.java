@@ -27,11 +27,18 @@ public class AuthService {
     private final JwtService jwtService;
 
 
-    public LoginResponse login(LoginRequest request) {
+    public LoginResponse login(
+            LoginRequest request
+    ) {
 
-        User user = userRepository
-                .findByEmail(request.getEmail())
-                .orElseThrow(InvalidCredentialsException::new);
+        User user =
+                userRepository
+                        .findByEmail(
+                                request.getEmail()
+                        )
+                        .orElseThrow(
+                                InvalidCredentialsException::new
+                        );
 
 
         if (!passwordEncoder.matches(
@@ -45,16 +52,9 @@ public class AuthService {
 
 
         /*
-         * Determine the display name.
-         *
-         * Vendor:
-         *     Display the vendor business name.
-         *
-         * Customer:
-         *     Display the customer's full name.
-         *
-         * Admin:
-         *     Display the admin's full name.
+         * =========================================
+         * DISPLAY NAME
+         * =========================================
          */
 
         String name;
@@ -62,50 +62,56 @@ public class AuthService {
 
         if (user.getRole() == Role.VENDOR) {
 
-            User vendor = userRepository
-                    .findById(user.getId())
-                    .orElse(null);
+            if (
+                    user.getBusinessName() != null &&
+                            !user.getBusinessName().isBlank()
+            ) {
 
-
-            if (vendor != null &&
-                    vendor.getBusinessName() != null) {
-
-                name = vendor.getBusinessName();
+                name =
+                        user.getBusinessName();
 
             } else {
 
-                name = user.getFullName();
+                name =
+                        user.getFullName();
 
             }
 
         } else {
 
-            name = user.getFullName();
+            name =
+                    user.getFullName();
 
         }
 
 
         /*
-         * Generate JWT.
-         *
-         * JWT contains:
-         *     subject = userId
-         *     role    = user role
+         * =========================================
+         * GENERATE JWT
+         * =========================================
          */
 
-        String token = jwtService.generateToken(
-                user.getId(),
-                user.getRole().name()
-        );
+        String token =
+                jwtService.generateToken(
+
+                        user.getId(),
+
+                        user.getRole().name()
+
+                );
 
 
         return LoginResponse.builder()
 
                 .token(token)
 
-                .userId(user.getId())
+                .userId(
+                        user.getId()
+                )
 
-                .role(user.getRole().name())
+                .role(
+                        user.getRole().name()
+                )
 
                 .name(name)
 
@@ -113,13 +119,24 @@ public class AuthService {
 
     }
 
-    public void register(RegisterRequest request) {
 
-        /*
-         * Check whether email already exists
-         */
+    /*
+     * =========================================
+     * CUSTOMER REGISTRATION
+     * =========================================
+     */
 
-        if (userRepository.findByEmail(request.getEmail()).isPresent()) {
+    public void register(
+            RegisterRequest request
+    ) {
+
+        if (
+                userRepository
+                        .findByEmail(
+                                request.getEmail()
+                        )
+                        .isPresent()
+        ) {
 
             throw new IllegalArgumentException(
                     "Email already registered"
@@ -128,66 +145,80 @@ public class AuthService {
         }
 
 
-        /*
-         * Create new customer
-         */
+        User user =
+                new User();
 
-        User user = new User();
 
-        user.setEmail(request.getEmail());
+        user.setEmail(
+                request.getEmail()
+        );
 
-        user.setPhone(request.getPhone());
+        user.setPhone(
+                request.getPhone()
+        );
 
         user.setPassword(
+
                 passwordEncoder.encode(
                         request.getPassword()
                 )
+
         );
 
-        user.setRole(Role.CUSTOMER);
+        user.setRole(
+                Role.CUSTOMER
+        );
+
+        user.setStatus(
+                UserStatus.ACTIVE
+        );
 
 
-        /*
-         * Save customer
-         */
-
-        userRepository.save(user);
+        userRepository.save(
+                user
+        );
 
     }
+
+
+    /*
+     * =========================================
+     * VENDOR REGISTRATION
+     * =========================================
+     */
 
     public VendorRegisterResponse registerVendor(
             VendorRegisterRequest request
     ) {
 
         /*
-         * =========================================
-         * CHECK EMAIL
-         * =========================================
+         * Check email
          */
 
-        if (userRepository
-                .findByEmail(request.getEmail())
-                .isPresent()) {
+        if (
+                userRepository
+                        .findByEmail(
+                                request.getEmail()
+                        )
+                        .isPresent()
+        ) {
 
             throw new RuntimeException(
                     "An account with this email already exists"
             );
+
         }
 
 
         /*
          * =========================================
-         * CREATE VENDOR USER
+         * CREATE VENDOR
          * =========================================
-         *
-         * A vendor is now simply a User whose
-         * role is VENDOR.
-         *
-         * We intentionally create only ONE User
-         * document.
          */
 
-        User vendor = new User();
+        User vendor =
+                new User();
+
 
         /*
          * Account information
@@ -198,14 +229,24 @@ public class AuthService {
         );
 
         vendor.setPassword(
+
                 passwordEncoder.encode(
                         request.getPassword()
                 )
+
         );
 
         vendor.setRole(
                 Role.VENDOR
         );
+
+
+        /*
+         * Account exists and is enabled.
+         *
+         * Approval is controlled separately by
+         * verificationStatus.
+         */
 
         vendor.setStatus(
                 UserStatus.ACTIVE
@@ -224,35 +265,43 @@ public class AuthService {
 
 
         /*
-         * ownerName is stored as
-         * firstName + lastName.
+         * Owner name
          */
 
         String ownerName =
                 request.getOwnerName();
 
-        if (ownerName != null &&
-                !ownerName.isBlank()) {
+
+        if (
+                ownerName != null &&
+                        !ownerName.isBlank()
+        ) {
 
             String trimmed =
                     ownerName.trim();
 
+
             int spaceIndex =
                     trimmed.indexOf(" ");
+
 
             if (spaceIndex > 0) {
 
                 vendor.setFirstName(
+
                         trimmed.substring(
                                 0,
                                 spaceIndex
                         )
+
                 );
 
                 vendor.setLastName(
+
                         trimmed.substring(
                                 spaceIndex + 1
                         )
+
                 );
 
             } else {
@@ -264,7 +313,9 @@ public class AuthService {
                 vendor.setLastName(
                         ""
                 );
+
             }
+
         }
 
 
@@ -284,30 +335,27 @@ public class AuthService {
                 request.getDescription()
         );
 
-
         /*
-         * Default vendor values
+         * Vendor approval starts as pending.
          */
 
-        vendor.setRating(0.0);
-
-        vendor.setTotalReviews(0);
-
-        vendor.setVerified(false);
-
         vendor.setVerificationStatus(
+
                 VendorVerificationStatus.PENDING
+
         );
 
 
         /*
          * =========================================
-         * SAVE ONCE
+         * SAVE
          * =========================================
          */
 
         User savedVendor =
-                userRepository.save(vendor);
+                userRepository.save(
+                        vendor
+                );
 
 
         /*
@@ -340,6 +388,7 @@ public class AuthService {
                 )
 
                 .build();
+
     }
 
 }

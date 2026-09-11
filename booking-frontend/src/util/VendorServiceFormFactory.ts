@@ -1,10 +1,20 @@
-import type { VendorServiceForm } from "../types/VendorServiceForm";
+import type {
+    VendorServiceForm
+} from "../types/VendorServiceForm";
+
 
 export default class VendorServiceFormFactory {
 
-    static create(category: string): VendorServiceForm {
+
+    static create(
+        category: string
+    ): VendorServiceForm {
 
         return {
+
+            /* =====================================
+               COMMON INFORMATION
+            ===================================== */
 
             category,
 
@@ -20,45 +30,50 @@ export default class VendorServiceFormFactory {
 
             description: "",
 
+
+            /* =====================================
+               CONTACT
+            ===================================== */
+
             contactPerson: "",
 
             mobile: "",
 
             email: "",
 
+
+            /* =====================================
+               AVAILABILITY
+            ===================================== */
+
             availableFrom: "",
 
             availableTo: "",
+
+
+            /* =====================================
+               BOOKING SETTINGS
+            ===================================== */
 
             maxSimultaneousBookings: "1",
 
             bundleOfferEnabled: false,
 
+
+            /* =====================================
+               COMMON COLLECTIONS
+            ===================================== */
+
             amenities: [],
 
             imageUrls: [],
 
-            attributes: [],
 
-            hallCapacity: "",
+            /* =====================================
+               CATEGORY-SPECIFIC DETAILS
+            ===================================== */
 
-            diningCapacity: "",
-
-            parkingCapacity: "",
-
-            rooms: "",
-
-            parking: false,
-
-            acHall: false,
-
-            generator: false,
-
-            diningHall: false,
-
-            outdoorVenue: false,
-
-            bridalRoom: false
+            detailSections: []
 
         };
 

@@ -793,9 +793,7 @@ const AdminVendorVerification = () => {
                         }
                         disabled={actionLoading}
                     >
-
                         Approve
-
                     </button>
 
 
@@ -810,9 +808,7 @@ const AdminVendorVerification = () => {
                         }
                         disabled={actionLoading}
                     >
-
                         Reject
-
                     </button>
 
                 </>
@@ -840,9 +836,7 @@ const AdminVendorVerification = () => {
                     }
                     disabled={actionLoading}
                 >
-
                     Suspend
-
                 </button>
 
             );
@@ -868,9 +862,40 @@ const AdminVendorVerification = () => {
                     }
                     disabled={actionLoading}
                 >
-
                     Reactivate
+                </button>
 
+            );
+
+        }
+
+
+        /*
+         * REJECTED
+         *
+         * Admin can approve the service
+         * again if it becomes acceptable.
+         */
+
+        if (
+            service.moderationStatus ===
+            "REJECTED"
+        ) {
+
+            return (
+
+                <button
+                    type="button"
+                    className="admin-action approve"
+                    onClick={() =>
+                        handleServiceAction(
+                            service.serviceId,
+                            "approve"
+                        )
+                    }
+                    disabled={actionLoading}
+                >
+                    Approve
                 </button>
 
             );

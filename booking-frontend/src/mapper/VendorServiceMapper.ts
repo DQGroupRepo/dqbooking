@@ -1,91 +1,136 @@
-import type { VendorService } from "../types/VendorService";
-import type { VendorServiceForm } from "../types/VendorServiceForm";
-import type { VendorServiceRequest } from "../types/VendorServiceRequest";
+import type {
+    VendorService
+} from "../types/VendorService";
+
+import type {
+    VendorServiceForm
+} from "../types/VendorServiceForm";
+
+import type {
+    VendorServiceRequest
+} from "../types/VendorServiceRequest";
+
 
 export default class VendorServiceMapper {
+
+
+    /*
+     * =====================================
+     * RESPONSE → FORM
+     * =====================================
+     */
 
     static responseToForm(
         service: VendorService
     ): VendorServiceForm {
 
-        const attributeMap = new Map(
-            service.attributes.map(attribute => [
-                attribute.key,
-                attribute.value
-            ])
-        );
-
         return {
 
-            category: service.category,
+            /* =============================
+               BASIC INFORMATION
+            ============================= */
 
-            serviceName: service.serviceName,
+            category:
+                service.category,
 
-            location: service.location,
+            serviceName:
+                service.serviceName,
 
-            price: service.price.toString(),
+            location:
+                service.location,
 
-            capacity: service.capacity.toString(),
+            price:
+                service.price?.toString() ?? "",
 
-            durationHours: service.durationHours.toString(),
+            capacity:
+                service.capacity?.toString() ?? "",
 
-            description: service.description,
+            durationHours:
+                service.durationHours?.toString() ?? "",
 
-            contactPerson: service.contactInfo.contactPerson,
+            description:
+                service.description ?? "",
 
-            mobile: service.contactInfo.mobile,
 
-            email: service.contactInfo.email,
+            /* =============================
+               CONTACT
+            ============================= */
 
-            availableFrom: service.availability.availableFrom,
+            contactPerson:
+                service.contactInfo
+                    ?.contactPerson ?? "",
 
-            availableTo: service.availability.availableTo,
+            mobile:
+                service.contactInfo
+                    ?.mobile ?? "",
+
+            email:
+                service.contactInfo
+                    ?.email ?? "",
+
+
+            /* =============================
+               AVAILABILITY
+            ============================= */
+
+            availableFrom:
+                service.availability
+                    ?.availableFrom ?? "",
+
+            availableTo:
+                service.availability
+                    ?.availableTo ?? "",
+
+
+            /* =============================
+               BOOKING SETTINGS
+            ============================= */
 
             maxSimultaneousBookings:
-                service.bookingSettings.maxSimultaneousBookings.toString(),
+
+                service.bookingSettings
+                    ?.maxSimultaneousBookings
+                    ?.toString() ?? "",
 
             bundleOfferEnabled:
-                service.bookingSettings.bundleOfferEnabled,
 
-            amenities: service.amenities,
+                service.bookingSettings
+                    ?.bundleOfferEnabled ?? false,
 
-            imageUrls: service.imageUrls,
 
-            attributes: service.attributes,
+            /* =============================
+               MEDIA
+            ============================= */
 
-            hallCapacity:
-                attributeMap.get("hallCapacity") ?? "",
+            imageUrls:
+                service.imageUrls ?? [],
 
-            diningCapacity:
-                attributeMap.get("diningCapacity") ?? "",
 
-            parkingCapacity:
-                attributeMap.get("parkingCapacity") ?? "",
+            /* =============================
+               AMENITIES
+            ============================= */
 
-            rooms:
-                attributeMap.get("rooms") ?? "",
+            amenities:
+                service.amenities ?? [],
 
-            parking:
-                attributeMap.get("parking") === "true",
 
-            acHall:
-                attributeMap.get("acHall") === "true",
+            /* =============================
+               GENERIC DETAIL SECTIONS
+            ============================= */
 
-            generator:
-                attributeMap.get("generator") === "true",
-
-            diningHall:
-                attributeMap.get("diningHall") === "true",
-
-            outdoorVenue:
-                attributeMap.get("outdoorVenue") === "true",
-
-            bridalRoom:
-                attributeMap.get("bridalRoom") === "true"
+            detailSections:
+                service.detailSections ?? []
 
         };
 
     }
+
+
+    /*
+     * =====================================
+     * FORM → REQUEST
+     * =====================================
+     */
 
     static formToRequest(
         form: VendorServiceForm
@@ -93,115 +138,110 @@ export default class VendorServiceMapper {
 
         return {
 
-            serviceName: form.serviceName,
+            serviceName:
+                form.serviceName,
 
-            category: form.category.toUpperCase(),
+            category:
+                form.category
+                    .toUpperCase(),
 
-            location: form.location,
+            location:
+                form.location,
 
-            description: form.description,
+            description:
+                form.description,
 
-            price: Number(form.price),
+            price:
+                Number(
+                    form.price
+                ),
 
-            capacity: Number(form.capacity),
+            capacity:
+                Number(
+                    form.capacity
+                ),
 
-            durationHours: Number(form.durationHours),
+            durationHours:
+                Number(
+                    form.durationHours
+                ),
+
+
+            /* =============================
+               CONTACT
+            ============================= */
 
             contactInfo: {
 
-                contactPerson: form.contactPerson,
+                contactPerson:
+                    form.contactPerson,
 
-                mobile: form.mobile,
+                mobile:
+                    form.mobile,
 
-                email: form.email
+                email:
+                    form.email
 
             },
+
+
+            /* =============================
+               AVAILABILITY
+            ============================= */
 
             availability: {
 
-                availableFrom: form.availableFrom,
+                availableFrom:
+                    form.availableFrom,
 
-                availableTo: form.availableTo
+                availableTo:
+                    form.availableTo
 
             },
+
+
+            /* =============================
+               BOOKING SETTINGS
+            ============================= */
 
             bookingSettings: {
 
                 maxSimultaneousBookings:
-                    Number(form.maxSimultaneousBookings),
+
+                    Number(
+                        form.maxSimultaneousBookings
+                    ),
 
                 bundleOfferEnabled:
                     form.bundleOfferEnabled
 
             },
 
-            imageUrls: form.imageUrls,
 
-            amenities: form.amenities,
+            /* =============================
+               MEDIA
+            ============================= */
 
-            attributes:
-                this.buildAttributes(form)
+            imageUrls:
+                form.imageUrls,
+
+
+            /* =============================
+               AMENITIES
+            ============================= */
+
+            amenities:
+                form.amenities,
+
+
+            /* =============================
+               GENERIC DETAIL SECTIONS
+            ============================= */
+
+            detailSections:
+                form.detailSections
 
         };
-
-    }
-
-    static buildAttributes(
-        form: VendorServiceForm
-    ) {
-
-        const attributes:
-            VendorServiceRequest["attributes"] = [];
-
-        if (form.category.toLowerCase() === "hall") {
-
-            this.add(attributes, "hallCapacity", form.hallCapacity);
-
-            this.add(attributes, "diningCapacity", form.diningCapacity);
-
-            this.add(attributes, "parkingCapacity", form.parkingCapacity);
-
-            this.add(attributes, "rooms", form.rooms);
-
-            this.add(attributes, "parking", form.parking);
-
-            this.add(attributes, "acHall", form.acHall);
-
-            this.add(attributes, "generator", form.generator);
-
-            this.add(attributes, "diningHall", form.diningHall);
-
-            this.add(attributes, "outdoorVenue", form.outdoorVenue);
-
-            this.add(attributes, "bridalRoom", form.bridalRoom);
-
-        }
-
-        return attributes;
-
-    }
-
-    private static add(
-
-        attributes:
-            VendorServiceRequest["attributes"],
-
-        key: string,
-
-        value: unknown
-
-    ) {
-
-        if (value === undefined || value === "")
-            return;
-
-        attributes.push({
-
-            key,
-
-            value: String(value)
-
-        });
 
     }
 

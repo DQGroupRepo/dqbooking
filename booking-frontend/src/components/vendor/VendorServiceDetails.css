@@ -1,0 +1,233 @@
+.vendor-details-card {
+    background: #ffffff;
+    border-radius: 14px;
+    padding: 28px;
+    margin-bottom: 24px;
+    box-shadow:
+        0 6px 20px
+        rgba(0, 0, 0, 0.06);
+}
+
+
+.vendor-details-card h2 {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    margin: 0 0 24px;
+
+    font-size: 25px;
+    font-weight: 700;
+
+    color: #24364b;
+}
+
+
+.vendor-details-card h2 svg {
+    color: #2d567d;
+}
+
+
+.venue-information-grid {
+    display: grid;
+
+    grid-template-columns:
+        repeat(
+            2,
+            minmax(0, 1fr)
+        );
+
+    gap: 16px;
+}
+
+
+.venue-info-item {
+    padding: 18px;
+
+    border: 1px solid #edf0f4;
+
+    border-radius: 10px;
+
+    background: #fafbfd;
+}
+
+
+.venue-info-label {
+    display: flex;
+
+    align-items: center;
+
+    gap: 8px;
+
+    margin-bottom: 10px;
+
+    font-size: 14px;
+
+    color: #6b7280;
+}
+
+
+.venue-info-label svg {
+    color: #b8874d;
+}
+
+
+.venue-info-item strong {
+    display: block;
+
+    font-size: 17px;
+
+    color: #26384c;
+}
+
+
+.venue-description {
+    margin-top: 25px;
+
+    padding-top: 20px;
+
+    border-top:
+        1px solid #edf0f4;
+}
+
+
+.venue-description h3 {
+    margin:
+        0
+        0
+        10px;
+
+    color: #26384c;
+}
+
+
+.venue-description p {
+    margin: 0;
+
+    line-height: 1.7;
+
+    color: #667085;
+}
+
+
+.detail-sections-grid {
+    display: grid;
+
+    grid-template-columns:
+        repeat(
+            2,
+            minmax(0, 1fr)
+        );
+
+    gap: 14px;
+}
+
+
+.facility-item {
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: center;
+
+    padding: 16px;
+
+    border-radius: 10px;
+
+    background: #f8fafc;
+
+    border:
+        1px solid #edf0f4;
+}
+
+
+.facility-label {
+    font-size: 15px;
+
+    color: #475467;
+}
+
+
+.detail-value {
+    display: flex;
+
+    align-items: center;
+
+    gap: 7px;
+
+    font-size: 14px;
+}
+
+
+.detail-value.available {
+    color: #1f8a57;
+}
+
+
+.detail-value.unavailable {
+    color: #c0392b;
+}
+
+
+.availability-grid {
+    display: grid;
+
+    grid-template-columns:
+        repeat(
+            2,
+            minmax(0, 1fr)
+        );
+
+    gap: 16px;
+}
+
+
+.availability-item {
+    padding: 18px;
+
+    border-radius: 10px;
+
+    background: #f8fafc;
+}
+
+
+.availability-item span {
+    display: block;
+
+    margin-bottom: 8px;
+
+    font-size: 14px;
+
+    color: #6b7280;
+}
+
+
+.availability-item strong {
+    font-size: 17px;
+
+    color: #26384c;
+}
+
+
+@media (
+    max-width: 768px
+) {
+
+
+    .venue-information-grid,
+    .detail-sections-grid,
+    .availability-grid {
+        grid-template-columns:
+            1fr;
+    }
+
+
+    .facility-item {
+        flex-direction: column;
+
+        align-items: flex-start;
+
+        gap: 8px;
+    }
+
+}

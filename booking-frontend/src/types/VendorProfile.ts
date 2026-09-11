@@ -1,53 +1,80 @@
-export interface VendorProfile{
+export type VendorVerificationStatus =
 
-    businessName:string;
+    | "PENDING"
 
-    ownerName:string;
+    | "APPROVED"
 
-    email:string;
+    | "REJECTED"
 
-    phone:string;
+    | "SUSPENDED";
 
-    address:string;
 
-    city:string;
+export interface VendorProfile {
 
-    state:string;
+    businessName: string;
 
-    pincode:string;
+    ownerName: string;
 
-    logo:string;
+    email: string;
 
-    accountHolder:string;
+    phone: string;
 
-    bankName:string;
+    address: string;
 
-    accountNumber:string;
+    city: string;
 
-    ifsc:string;
+    state: string;
 
-    upiId:string;
+    pincode: string;
 
-    gstNumber:string;
+    logo: string;
 
-    panNumber:string;
+    accountHolder: string;
 
-    businessLicense:string;
+    bankName: string;
 
-    verificationStatus:string;
+    accountNumber: string;
 
-    emailNotifications:boolean;
+    ifsc: string;
 
-    smsNotifications:boolean;
+    upiId: string;
 
-    bookingAlerts:boolean;
+    gstNumber: string;
 
-    reviewAlerts:boolean;
+    panNumber: string;
 
-    paymentAlerts:boolean;
+    businessLicense: string;
 
-    marketingEmails:boolean;
 
-    description:string;
+    /*
+     * =========================================
+     * VENDOR VERIFICATION
+     * =========================================
+     *
+     * Single source of truth.
+     *
+     * PENDING
+     * APPROVED
+     * REJECTED
+     * SUSPENDED
+     */
+
+    verificationStatus:
+        VendorVerificationStatus;
+
+
+    emailNotifications: boolean;
+
+    smsNotifications: boolean;
+
+    bookingAlerts: boolean;
+
+    reviewAlerts: boolean;
+
+    paymentAlerts: boolean;
+
+    marketingEmails: boolean;
+
+    description: string;
 
 }

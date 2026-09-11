@@ -1609,16 +1609,31 @@ public class BookingServiceImpl implements BookingService
             String bookingId
     ) {
 
+        /*
+         * =========================================
+         * GET AUTHENTICATED USER
+         * =========================================
+         */
+
         String email =
                 SecurityUtil.getCurrentUserEmail();
 
-        User customer =
+
+        User currentUser =
                 userRepository
                         .findByEmail(email)
                         .orElseThrow(() ->
                                 new ResourceNotFoundException(
                                         "Authenticated user not found."
-                                ));
+                                )
+                        );
+
+
+        /*
+         * =========================================
+         * GET BOOKING
+         * =========================================
+         */
 
         Booking booking =
                 bookingRepository
@@ -1626,68 +1641,254 @@ public class BookingServiceImpl implements BookingService
                         .orElseThrow(() ->
                                 new ResourceNotFoundException(
                                         "Booking not found."
-                                ));
+                                )
+                        );
 
-        if (!booking.getCustomerId().equals(customer.getId())) {
 
-            throw new AccessDeniedException(
-                    "You cannot view this booking."
-            );
+        /*
+         * =========================================
+         * ACCESS CONTROL
+         * =========================================
+         *
+         * CUSTOMER
+         * --------
+         * Customer can view only their own booking.
+         *
+         * VENDOR
+         * ------
+         * Vendor can view only bookings made for
+         * their own services.
+         */
+
+        switch (
+                currentUser
+                        .getRole()
+        ) {
+
+            case CUSTOMER -> {
+
+                if (
+                        !booking
+                                .getCustomerId()
+                                .equals(
+                                        currentUser
+                                                .getId()
+                                )
+                ) {
+
+                    throw new AccessDeniedException(
+                            "You cannot view this booking."
+                    );
+
+                }
+
+            }
+
+
+            case VENDOR -> {
+
+                if (
+                        !booking
+                                .getVendorId()
+                                .equals(
+                                        currentUser
+                                                .getId()
+                                )
+                ) {
+
+                    throw new AccessDeniedException(
+                            "You cannot view this booking."
+                    );
+
+                }
+
+            }
+
+
+            default ->
+
+                    throw new AccessDeniedException(
+                            "You are not authorized to view this booking."
+                    );
 
         }
 
+
+        /*
+         * =========================================
+         * GET VENDOR
+         * =========================================
+         */
+
         User vendor =
                 userRepository
-                        .findById(booking.getVendorId())
+                        .findById(
+                                booking
+                                        .getVendorId()
+                        )
                         .orElseThrow(() ->
                                 new ResourceNotFoundException(
                                         "Vendor not found."
-                                ));
+                                )
+                        );
+
+
+        /*
+         * =========================================
+         * PRICING SNAPSHOT
+         * =========================================
+         */
 
         BookingPricingSnapshot snapshot =
                 booking.getPricingSnapshot();
 
+
+        /*
+         * =========================================
+         * BUILD RESPONSE
+         * =========================================
+         */
+
         return CustomerBookingDetailsResponse
                 .builder()
 
-                .bookingId(booking.getId())
-                .bookingNumber(booking.getBookingNumber())
-
-                .serviceId(booking.getServiceId())
-                .serviceName(booking.getServiceName())
-
-                .vendorId(vendor.getId())
-                .vendorName(vendor.getFullName())
-                .vendorPhone(vendor.getPhone())
-                .vendorEmail(vendor.getEmail())
-
-                .bookingDate(
-                        booking.getCreatedAt().toLocalDate()
+                .bookingId(
+                        booking.getId()
                 )
 
-                .eventDate(booking.getEventDate())
+                .bookingNumber(
+                        booking.getBookingNumber()
+                )
 
-                .guestCount(booking.getGuestCount())
 
-                .eventType(booking.getEventType())
+                /*
+                 * SERVICE
+                 */
 
-                .specialRequest(booking.getSpecialRequest())
+                .serviceId(
+                        booking.getServiceId()
+                )
 
-                .bookingStatus(booking.getStatus())
+                .serviceName(
+                        booking.getServiceName()
+                )
 
-                .paymentStatus(booking.getPaymentStatus())
 
-                .baseAmount(snapshot.getBaseAmount())
-                .subtotal(snapshot.getSubtotal())
-                .discountAmount(snapshot.getDiscountAmount())
-                .totalAmount(snapshot.getTotalAmount())
-                .advanceAmount(snapshot.getAdvanceAmount())
-                .balanceAmount(snapshot.getBalanceAmount())
+                /*
+                 * VENDOR
+                 */
 
-                .paidAmount(booking.getPaidAmount())
+                .vendorId(
+                        vendor.getId()
+                )
 
-                .pricingHeads(snapshot.getPricingHeads())
-                .discounts(snapshot.getDiscounts())
+                .vendorName(
+                        vendor.getFullName()
+                )
+
+                .vendorPhone(
+                        vendor.getPhone()
+                )
+
+                .vendorEmail(
+                        vendor.getEmail()
+                )
+
+
+                /*
+                 * BOOKING
+                 */
+
+                .bookingDate(
+                        booking
+                                .getCreatedAt()
+                                .toLocalDate()
+                )
+
+                .eventDate(
+                        booking.getEventDate()
+                )
+
+                .guestCount(
+                        booking.getGuestCount()
+                )
+
+                .eventType(
+                        booking.getEventType()
+                )
+
+                .specialRequest(
+                        booking.getSpecialRequest()
+                )
+
+
+                /*
+                 * STATUS
+                 */
+
+                .bookingStatus(
+                        booking.getStatus()
+                )
+
+                .paymentStatus(
+                        booking.getPaymentStatus()
+                )
+
+
+                /*
+                 * PRICING
+                 */
+
+                .baseAmount(
+                        snapshot.getBaseAmount()
+                )
+
+                .subtotal(
+                        snapshot.getSubtotal()
+                )
+
+                .discountAmount(
+                        snapshot.getDiscountAmount()
+                )
+
+                .totalAmount(
+                        snapshot.getTotalAmount()
+                )
+
+                .advanceAmount(
+                        snapshot.getAdvanceAmount()
+                )
+
+                .balanceAmount(
+                        snapshot.getBalanceAmount()
+                )
+
+
+                /*
+                 * PAYMENT
+                 */
+
+                .paidAmount(
+                        booking.getPaidAmount()
+                )
+
+
+                /*
+                 * PRICING DETAILS
+                 */
+
+                .pricingHeads(
+                        snapshot.getPricingHeads()
+                )
+
+                .discounts(
+                        snapshot.getDiscounts()
+                )
+
+
+                /*
+                 * CANCELLATION
+                 */
 
                 .cancelledAt(
                         booking.getCancelledAt()
@@ -1704,6 +1905,7 @@ public class BookingServiceImpl implements BookingService
                 .refundableAmount(
                         booking.getRefundableAmount()
                 )
+
 
                 .build();
 

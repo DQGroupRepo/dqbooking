@@ -8,6 +8,52 @@
 
 }
 
+.service-status-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+
+.moderation-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+
+    padding: 5px 10px;
+
+    border-radius: 999px;
+
+    font-size: 12px;
+    font-weight: 600;
+
+    white-space: nowrap;
+}
+
+
+.pending-approval-status {
+    background: #fff7e6;
+    color: #d97706;
+}
+
+
+.approved-status {
+    background: #ecfdf3;
+    color: #16a34a;
+}
+
+
+.rejected-status {
+    background: #fef2f2;
+    color: #dc2626;
+}
+
+
+.draft-status {
+    background: #f3f4f6;
+    color: #6b7280;
+}
 
 
 .services-container {

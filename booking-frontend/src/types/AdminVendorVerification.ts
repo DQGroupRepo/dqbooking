@@ -10,21 +10,6 @@ export type ServiceModerationStatus =
     | "REJECTED"
     | "SUSPENDED";
 
-/* const discoveryOptions = [
-    {
-        key: "FEATURED",
-        label: "Featured"
-    },
-    {
-        key: "TRENDING_NOW",
-        label: "Trending Now"
-    },
-    {
-        key: "MOST_BOOKED",
-        label: "Most Booked"
-    }
-]; */
-
 export interface AdminVendorService {
     serviceId: string;
     serviceName: string;
