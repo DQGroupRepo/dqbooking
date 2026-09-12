@@ -118,23 +118,6 @@ public class ReviewServiceImpl
                 review.getId()
         );
 
-        User vendor =
-                userRepository.findById(
-                        booking.getVendorId()
-                ).orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "Vendor not found"
-                        ));
-
-        reviewHelper.updateVendorRating(
-                vendor,
-                reviewRepository.findByVendorIdAndDeletedFalse(
-                        vendor.getId()
-                )
-        );
-
-        userRepository.save(vendor);
-
         ReviewResponse response =
                 reviewMapper.toResponse(review);
 

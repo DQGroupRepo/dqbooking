@@ -13,6 +13,7 @@ import com.booking.model.enums.PricingCalculationType;
 import com.booking.repository.VendorServicePricingRepository;
 import com.booking.repository.VendorServiceRepository;
 import com.booking.service.PricingCalculationService;
+import com.booking.model.enums.AdvancePaymentType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -692,12 +693,24 @@ public class PricingCalculationServiceImpl
         }
 
 
-        if (
-                !Boolean.TRUE.equals(
+        AdvancePaymentType paymentType =
+
+                pricing
+                        .getPaymentConfiguration()
+                        .getAdvancePaymentType();
+
+
+        BigDecimal paymentValue =
+
+                safe(
                         pricing
                                 .getPaymentConfiguration()
-                                .getAdvancePaymentAllowed()
-                )
+                                .getAdvancePaymentValue()
+                );
+
+
+        if (
+                paymentType == null
         ) {
 
             return BigDecimal.ZERO;
@@ -705,26 +718,70 @@ public class PricingCalculationServiceImpl
         }
 
 
-        BigDecimal percentage =
+        /*
+         * =========================================
+         * PERCENTAGE ADVANCE
+         * =========================================
+         */
 
-                safe(
-                        pricing
-                                .getPaymentConfiguration()
-                                .getAdvancePercentage()
-                );
+        if (
+                paymentType
+                        ==
+                        AdvancePaymentType.PERCENTAGE
+        ) {
+
+            BigDecimal advanceAmount =
+
+                    totalAmount
+
+                            .multiply(
+                                    paymentValue
+                            )
+
+                            .divide(
+                                    BigDecimal.valueOf(100),
+                                    2,
+                                    RoundingMode.HALF_UP
+                            );
 
 
-        return totalAmount
+            /*
+             * Never allow advance amount
+             * to exceed the total amount.
+             */
 
-                .multiply(
-                        percentage
-                )
+            return advanceAmount.min(
+                    totalAmount
+            );
 
-                .divide(
-                        BigDecimal.valueOf(100),
-                        2,
-                        RoundingMode.HALF_UP
-                );
+        }
+
+
+        /*
+         * =========================================
+         * FIXED AMOUNT ADVANCE
+         * =========================================
+         */
+
+        if (
+                paymentType
+                        ==
+                        AdvancePaymentType.FIXED_AMOUNT
+        ) {
+
+            /*
+             * Never allow fixed advance
+             * to exceed total amount.
+             */
+
+            return paymentValue.min(
+                    totalAmount
+            );
+
+        }
+
+
+        return BigDecimal.ZERO;
 
     }
 

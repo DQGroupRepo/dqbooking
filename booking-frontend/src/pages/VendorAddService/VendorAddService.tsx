@@ -14,6 +14,10 @@ import type {
     VendorServiceForm
 } from "../../types/VendorServiceForm";
 
+import {
+    getCategorySections
+} from "../../util/ServiceDetailSectionUtil";
+
 import VendorServiceMapper
     from "../../mapper/VendorServiceMapper";
 
@@ -273,6 +277,175 @@ const AddService = () => {
                         : e.target.value
 
             })
+        );
+
+    };
+
+    const handleDetailChange = (
+
+        sectionKey: string,
+
+        attributeKey: string,
+
+        value: string | boolean
+
+    ) => {
+
+        setFormData(
+            previous => {
+
+
+                const sectionDefinitions =
+                    getCategorySections(
+                        previous.category
+                    );
+
+
+                const sectionDefinition =
+                    sectionDefinitions.find(
+                        section =>
+                            section.key ===
+                            sectionKey
+                    );
+
+
+                const existingSection =
+                    previous.detailSections.find(
+                        section =>
+                            section.key ===
+                            sectionKey
+                    );
+
+
+                let updatedSections;
+
+
+                if (
+                    existingSection
+                ) {
+
+                    updatedSections =
+                        previous.detailSections.map(
+                            section => {
+
+                                if (
+                                    section.key !==
+                                    sectionKey
+                                ) {
+
+                                    return section;
+
+                                }
+
+
+                                const attributeExists =
+                                    section.attributes.some(
+                                        attribute =>
+                                            attribute.key ===
+                                            attributeKey
+                                    );
+
+
+                                return {
+
+                                    ...section,
+
+                                    attributes:
+
+                                        attributeExists
+
+                                            ? section.attributes.map(
+                                                attribute =>
+
+                                                    attribute.key ===
+                                                    attributeKey
+
+                                                        ? {
+
+                                                            ...attribute,
+
+                                                            value:
+                                                                String(
+                                                                    value
+                                                                )
+
+                                                        }
+
+                                                        : attribute
+                                            )
+
+                                            : [
+
+                                                ...section.attributes,
+
+                                                {
+
+                                                    key:
+                                                        attributeKey,
+
+                                                    value:
+                                                        String(
+                                                            value
+                                                        )
+
+                                                }
+
+                                            ]
+
+                                };
+
+                            }
+                        );
+
+                }
+                else {
+
+                    updatedSections = [
+
+                        ...previous.detailSections,
+
+                        {
+
+                            key:
+                                sectionKey,
+
+                            title:
+                                sectionDefinition?.title ??
+                                sectionKey,
+
+                            attributes: [
+
+                                {
+
+                                    key:
+                                        attributeKey,
+
+                                    value:
+                                        String(
+                                            value
+                                        )
+
+                                }
+
+                            ]
+
+                        }
+
+                    ];
+
+                }
+
+
+                return {
+
+                    ...previous,
+
+                    detailSections:
+                        updatedSections
+
+                };
+
+            }
         );
 
     };
@@ -851,8 +1024,8 @@ const AddService = () => {
                                 formData
                             }
 
-                            handleChange={
-                                handleChange
+                            onDetailChange={
+                                handleDetailChange
                             }
 
                             amenities={

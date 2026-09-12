@@ -4,44 +4,81 @@ import { Link, useNavigate } from "react-router-dom";
 import {
     FaEye,
     FaEdit,
-    FaTrash,
     FaMapMarkerAlt,
     FaUsers,
-    FaStar
+    FaStar,
+    FaToggleOn,
+    FaToggleOff,
+    FaClock,
+    FaCheckCircle,
+    FaTimesCircle
 } from "react-icons/fa";
 
-import VendorServiceService from "../../services/VendorServiceService";
-import Button from "../../components/common/ui/Button/Button";
+import VendorServiceService
+    from "../../services/VendorServiceService";
 
-import type { VendorService } from "../../types/VendorService";
-import ConfirmationModal from "../../components/common/ui/ConfirmationModal/ConfirmationModal";
+import Button
+    from "../../components/common/ui/Button/Button";
+
+import type {
+    VendorService
+} from "../../types/VendorService";
+
+import ConfirmationModal
+    from "../../components/common/ui/ConfirmationModal/ConfirmationModal";
 
 import toast from "react-hot-toast";
 
 import "./ManageServices.css";
 
+
 const ManageServices = () => {
+
 
     const [services, setServices] =
         useState<VendorService[]>([]);
 
+
     const [search, setSearch] =
         useState("");
 
-    const [showDeleteModal, setShowDeleteModal] =
-        useState(false);
-
-    const [selectedServiceId, setSelectedServiceId] =
-        useState<string | null>(null);
 
     const [statusFilter, setStatusFilter] =
         useState("All");
 
+
     const [categoryFilter, setCategoryFilter] =
         useState("All");
 
+
+    const [
+        showStatusModal,
+        setShowStatusModal
+    ] = useState(false);
+
+
+    const [
+        selectedService,
+        setSelectedService
+    ] = useState<VendorService | null>(
+        null
+    );
+
+
+    const [
+        updatingStatus,
+        setUpdatingStatus
+    ] = useState(false);
+
+
     const navigate = useNavigate();
 
+
+    /*
+     * =========================================
+     * LOAD SERVICES
+     * =========================================
+     */
 
     useEffect(() => {
 
@@ -55,9 +92,14 @@ const ManageServices = () => {
         try {
 
             const data =
-                await VendorServiceService.getServices();
+                await VendorServiceService
+                    .getServices();
 
-            setServices(data);
+            setServices(
+                Array.isArray(data)
+                    ? data
+                    : []
+            );
 
         } catch (error) {
 
@@ -72,104 +114,338 @@ const ManageServices = () => {
     };
 
 
+    /*
+     * =========================================
+     * CATEGORIES
+     * =========================================
+     */
+
     const categories = useMemo(() => {
 
         return [
+
             "All",
+
             ...new Set(
-                services.map(
-                    service => service.category
-                )
+
+                services
+                    .map(
+                        service =>
+                            service.category
+                    )
+                    .filter(Boolean)
+
             )
+
         ];
 
     }, [services]);
 
 
-    const handleDelete = (id: string) => {
+    /*
+     * =========================================
+     * OPEN STATUS MODAL
+     * =========================================
+     */
 
-        setSelectedServiceId(id);
+    const handleStatusChange = (
+        service: VendorService
+    ) => {
 
-        setShowDeleteModal(true);
+        setSelectedService(
+            service
+        );
+
+        setShowStatusModal(
+            true
+        );
 
     };
 
 
-    const confirmDelete = async () => {
+    /*
+     * =========================================
+     * CONFIRM STATUS CHANGE
+     * =========================================
+     */
 
-        if (selectedServiceId === null)
-            return;
+    const confirmStatusChange =
+        async () => {
 
-        try {
 
-            await VendorServiceService.deleteService(
-                selectedServiceId
-            );
+            if (!selectedService) {
 
-            await loadServices();
+                return;
 
-            toast.success(
-                "Service deleted successfully."
-            );
+            }
 
-            setShowDeleteModal(false);
 
-            setSelectedServiceId(null);
+            const newActiveStatus =
+                !selectedService.active;
 
-        } catch (error) {
 
-            console.error(error);
+            try {
 
-            toast.error(
-                "Unable to delete service."
-            );
+                setUpdatingStatus(
+                    true
+                );
+
+
+                /*
+                 * API RETURNS THE UPDATED SERVICE
+                 */
+
+                const updatedService =
+                    await VendorServiceService
+                        .changeStatus(
+
+                            selectedService.id,
+
+                            newActiveStatus
+
+                        );
+
+
+                /*
+                 * UPDATE UI IMMEDIATELY
+                 */
+
+                setServices(
+                    currentServices =>
+
+                        currentServices.map(
+                            service =>
+
+                                service.id ===
+                                updatedService.id
+
+                                    ? {
+                                        ...service,
+                                        ...updatedService
+                                    }
+
+                                    : service
+                        )
+                );
+
+
+                /*
+                 * SUCCESS MESSAGE
+                 */
+
+                if (newActiveStatus) {
+
+                    toast.success(
+                        "Service activated. It is now pending admin approval."
+                    );
+
+                } else {
+
+                    toast.success(
+                        "Service made inactive."
+                    );
+
+                }
+
+
+                setShowStatusModal(
+                    false
+                );
+
+
+                setSelectedService(
+                    null
+                );
+
+
+            } catch (error) {
+
+                console.error(error);
+
+
+                toast.error(
+                    "Unable to update service status."
+                );
+
+
+            } finally {
+
+                setUpdatingStatus(
+                    false
+                );
+
+            }
+
+        };
+
+
+    /*
+     * =========================================
+     * FILTER SERVICES
+     * =========================================
+     */
+
+    const filteredServices =
+        services.filter(
+            service => {
+
+
+                const matchesSearch =
+
+                    service.serviceName
+                        .toLowerCase()
+                        .includes(
+                            search.toLowerCase()
+                        );
+
+
+                const matchesStatus =
+
+                    statusFilter === "All"
+
+                    ||
+
+                    (
+                        statusFilter === "Active"
+                        &&
+                        service.active === true
+                    )
+
+                    ||
+
+                    (
+                        statusFilter === "Inactive"
+                        &&
+                        service.active === false
+                    );
+
+
+                const matchesCategory =
+
+                    categoryFilter === "All"
+
+                    ||
+
+                    service.category ===
+                    categoryFilter;
+
+
+                return (
+
+                    matchesSearch
+
+                    &&
+
+                    matchesStatus
+
+                    &&
+
+                    matchesCategory
+
+                );
+
+            }
+        );
+
+
+    /*
+     * =========================================
+     * MODERATION BADGE
+     * =========================================
+     */
+
+    const renderModerationStatus = (
+        moderationStatus?: string
+    ) => {
+
+
+        switch (
+            moderationStatus
+        ) {
+
+
+            case "PENDING":
+
+                return (
+
+                    <span
+                        className="
+                            moderation-status
+                            pending-approval-status
+                        "
+                    >
+
+                        <FaClock />
+
+                        Pending Approval
+
+                    </span>
+
+                );
+
+
+            case "APPROVED":
+
+                return (
+
+                    <span
+                        className="
+                            moderation-status
+                            approved-status
+                        "
+                    >
+
+                        <FaCheckCircle />
+
+                        Approved
+
+                    </span>
+
+                );
+
+
+            case "REJECTED":
+
+                return (
+
+                    <span
+                        className="
+                            moderation-status
+                            rejected-status
+                        "
+                    >
+
+                        <FaTimesCircle />
+
+                        Rejected
+
+                    </span>
+
+                );
+
+
+            default:
+
+                return null;
 
         }
 
     };
 
 
-    const filteredServices =
-        services.filter(service => {
-
-            const matchesSearch =
-                service.serviceName
-                    .toLowerCase()
-                    .includes(
-                        search.toLowerCase()
-                    );
-
-            const matchesStatus =
-                statusFilter === "All" ||
-                (
-                    statusFilter === "Active" &&
-                    service.active
-                ) ||
-                (
-                    statusFilter === "Inactive" &&
-                    !service.active
-                );
-
-            const matchesCategory =
-                categoryFilter === "All" ||
-                service.category === categoryFilter;
-
-            return (
-                matchesSearch &&
-                matchesStatus &&
-                matchesCategory
-            );
-
-        });
-
-
     return (
+
 
         <section className="manage-services">
 
+
             <div className="services-container">
 
+
+                {/* HEADER */}
+
                 <div className="services-header">
+
 
                     <div>
 
@@ -198,17 +474,23 @@ const ManageServices = () => {
 
                     </Link>
 
+
                 </div>
 
 
+                {/* FILTERS */}
+
                 <div className="service-filters">
+
 
                     <input
                         type="text"
                         placeholder="Search services..."
                         value={search}
                         onChange={(e) =>
-                            setSearch(e.target.value)
+                            setSearch(
+                                e.target.value
+                            )
                         }
                     />
 
@@ -222,16 +504,18 @@ const ManageServices = () => {
                         }
                     >
 
-                        {categories.map(category => (
+                        {categories.map(
+                            category => (
 
-                            <option
-                                key={category}
-                                value={category}
-                            >
-                                {category}
-                            </option>
+                                <option
+                                    key={category}
+                                    value={category}
+                                >
+                                    {category}
+                                </option>
 
-                        ))}
+                            )
+                        )}
 
                     </select>
 
@@ -245,30 +529,36 @@ const ManageServices = () => {
                         }
                     >
 
-                        <option>
+                        <option value="All">
                             All
                         </option>
 
-                        <option>
+                        <option value="Active">
                             Active
                         </option>
 
-                        <option>
+                        <option value="Inactive">
                             Inactive
                         </option>
 
                     </select>
 
+
                 </div>
 
 
+                {/* SERVICES */}
+
                 <div className="services-grid">
+
 
                     {filteredServices.map(
                         service => {
 
+
                             const firstMedia =
                                 service.imageUrls?.[0];
+
 
                             const isVideo =
                                 firstMedia?.match(
@@ -278,14 +568,17 @@ const ManageServices = () => {
 
                             return (
 
+
                                 <div
                                     key={service.id}
                                     className="service-list-card"
                                 >
 
-                                    {/* Service Media */}
+
+                                    {/* MEDIA */}
 
                                     <div className="service-media">
+
 
                                         {firstMedia ? (
 
@@ -322,64 +615,79 @@ const ManageServices = () => {
 
                                         )}
 
+
                                     </div>
 
 
-                                    {/* Service Details */}
+                                    {/* CONTENT */}
 
                                     <div className="service-content">
 
+
                                         <div className="service-top">
 
-                                            <span
-                                                className={
-                                                    service.active
-                                                        ? "active-status"
-                                                        : "draft-status"
-                                                }
-                                            >
 
-                                                {
-                                                    service.active
+                                            {/* STATUS BADGES */}
+
+                                            <div className="service-status-group">
+
+
+                                                <span
+                                                    className={
+                                                        service.active
+                                                            ? "active-status"
+                                                            : "draft-status"
+                                                    }
+                                                >
+
+                                                    {service.active
                                                         ? "Active"
-                                                        : "Inactive"
-                                                }
+                                                        : "Inactive"}
 
-                                            </span>
+                                                </span>
 
+
+                                                {renderModerationStatus(
+                                                    service.moderationStatus
+                                                )}
+
+
+                                            </div>
+
+
+                                            {/* RATING */}
 
                                             <div className="rating">
 
+
                                                 <FaStar />
 
-                                                {service.rating}
+
+                                                {service.rating ?? 0}
+
 
                                                 <small>
 
                                                     (
-                                                    {
-                                                        service.reviewCount
-                                                    }
+                                                    {service.reviewCount ?? 0}
                                                     )
 
                                                 </small>
 
+
                                             </div>
+
 
                                         </div>
 
 
                                         <h2>
-                                            {
-                                                service.serviceName
-                                            }
+                                            {service.serviceName}
                                         </h2>
 
 
                                         <p>
-                                            {
-                                                service.category
-                                            }
+                                            {service.category}
                                         </p>
 
 
@@ -389,10 +697,8 @@ const ManageServices = () => {
 
                                             {" "}
 
-                                            {
-                                                service.contactInfo
-                                                    ?.contactPerson
-                                            }
+                                            {service.location ??
+                                                "Location not available"}
 
                                         </p>
 
@@ -403,11 +709,9 @@ const ManageServices = () => {
 
                                             {" "}
 
-                                            {
-                                                service.capacity > 0
-                                                    ? `${service.capacity} Guests`
-                                                    : "Package Service"
-                                            }
+                                            {service.capacity > 0
+                                                ? `${service.capacity} Guests`
+                                                : "Package Service"}
 
                                         </p>
 
@@ -419,27 +723,34 @@ const ManageServices = () => {
                                             <strong>
 
                                                 {" "}₹
-                                                {
-                                                    service.price
-                                                        .toLocaleString()
-                                                }
+
+                                                {(service.price ?? 0)
+                                                    .toLocaleString(
+                                                        "en-IN"
+                                                    )}
 
                                             </strong>
 
                                         </p>
 
 
-                                        <div
-                                            className="service-actions"
-                                        >
+                                        {/* ACTIONS */}
+
+                                        <div className="service-actions">
+
+
                                             <button
-                                                    onClick={() =>{
-                                                        console.log("Pricing clicked", service.id);
-                                                        navigate(`/vendor/services/${service.id}/pricing`)
-                                                    }}
-                                                >
-                                                    Pricing
+                                                onClick={() =>
+                                                    navigate(
+                                                        `/vendor/services/${service.id}/pricing`
+                                                    )
+                                                }
+                                            >
+
+                                                Pricing
+
                                             </button>
+
 
                                             <Button
                                                 variant="secondary"
@@ -472,65 +783,126 @@ const ManageServices = () => {
                                             </Button>
 
 
+                                            {/* ACTIVE / INACTIVE */}
+
                                             <Button
-                                                variant="danger"
+                                                variant={
+                                                    service.active
+                                                        ? "danger"
+                                                        : "secondary"
+                                                }
                                                 onClick={() =>
-                                                    handleDelete(
-                                                        service.id
+                                                    handleStatusChange(
+                                                        service
                                                     )
                                                 }
                                             >
 
-                                                <FaTrash />
+                                                {service.active ? (
 
-                                                Delete
+                                                    <>
+
+                                                        <FaToggleOff />
+
+                                                        Make Inactive
+
+                                                    </>
+
+                                                ) : (
+
+                                                    <>
+
+                                                        <FaToggleOn />
+
+                                                        Make Active
+
+                                                    </>
+
+                                                )}
 
                                             </Button>
 
+
                                         </div>
+
 
                                     </div>
 
+
                                 </div>
+
 
                             );
 
                         }
                     )}
 
+
+                    {filteredServices.length === 0 && (
+
+                        <div className="no-services">
+
+                            <h3>
+                                No services found
+                            </h3>
+
+                            <p>
+                                Try changing your filters
+                                or create a new service.
+                            </p>
+
+                        </div>
+
+                    )}
+
+
                 </div>
+
 
             </div>
 
 
+            {/* CONFIRMATION MODAL */}
+
             <ConfirmationModal
 
-                isOpen={
-                    showDeleteModal
-                }
+                isOpen={showStatusModal}
 
-                title="Delete Service"
+                title={
+                    selectedService?.active
+                        ? "Make Service Inactive"
+                        : "Make Service Active"
+                }
 
                 message={
-                    "Are you sure you want to delete this service? " +
-                    "This action cannot be undone."
+                    selectedService?.active
+                        ? "Are you sure you want to make this service inactive? Customers will no longer be able to book this service."
+                        : "Are you sure you want to make this service active? It will be pending admin approval and will not be visible to customers until approved."
                 }
 
-                confirmText="Delete"
+                confirmText={
+                    selectedService?.active
+                        ? "Make Inactive"
+                        : "Make Active"
+                }
 
                 cancelText="Cancel"
 
                 onConfirm={
-                    confirmDelete
+                    confirmStatusChange
                 }
 
                 onCancel={() => {
 
-                    setShowDeleteModal(
+                    if (updatingStatus) {
+                        return;
+                    }
+
+                    setShowStatusModal(
                         false
                     );
 
-                    setSelectedServiceId(
+                    setSelectedService(
                         null
                     );
 
@@ -538,7 +910,9 @@ const ManageServices = () => {
 
             />
 
+
         </section>
+
 
     );
 

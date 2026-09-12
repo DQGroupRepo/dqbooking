@@ -62,6 +62,11 @@ public class PricingMapperImpl implements PricingMapper {
                         request.getPaymentConfiguration()
                 )
         );
+        pricing.setCancellationPolicy(
+                cancellationPolicyMapper.toEntity(
+                        request.getCancellationPolicy()
+                )
+        );
 
         return pricing;
     }
@@ -150,12 +155,12 @@ public class PricingMapperImpl implements PricingMapper {
         PaymentConfiguration configuration =
                 new PaymentConfiguration();
 
-        configuration.setAdvancePaymentAllowed(
-                request.getAdvancePaymentAllowed()
+        configuration.setAdvancePaymentType(
+                request.getAdvancePaymentType()
         );
 
-        configuration.setAdvancePercentage(
-                request.getAdvancePercentage()
+        configuration.setAdvancePaymentValue(
+                request.getAdvancePaymentValue()
         );
 
         configuration.setPayAfterConfirmation(
@@ -282,6 +287,11 @@ public class PricingMapperImpl implements PricingMapper {
                                 pricing.getPaymentConfiguration()
                         )
                 )
+                .cancellationPolicy(
+                        cancellationPolicyMapper.toResponse(
+                                pricing.getCancellationPolicy()
+                        )
+                )
 
                 .build();
     }
@@ -299,12 +309,12 @@ public class PricingMapperImpl implements PricingMapper {
         return PaymentConfigurationResponse
                 .builder()
 
-                .advancePaymentAllowed(
-                        configuration.getAdvancePaymentAllowed()
+                .advancePaymentType(
+                        configuration.getAdvancePaymentType()
                 )
 
-                .advancePercentage(
-                        configuration.getAdvancePercentage()
+                .advancePaymentValue(
+                        configuration.getAdvancePaymentValue()
                 )
 
                 .payAfterConfirmation(
@@ -313,6 +323,172 @@ public class PricingMapperImpl implements PricingMapper {
 
                 .discussWithVendor(
                         configuration.getDiscussWithVendor()
+                )
+
+                .build();
+
+    }
+
+    @Override
+    public VendorServicePricingResponse toResponse(
+            VendorServicePricing pricing,
+            VendorService service
+    ) {
+
+        return VendorServicePricingResponse
+                .builder()
+
+                .id(pricing.getId())
+
+                .vendorId(pricing.getVendorId())
+
+                .serviceId(pricing.getServiceId())
+
+                .version(pricing.getVersion())
+
+                .effectiveFrom(
+                        pricing.getEffectiveFrom()
+                )
+
+                .effectiveUntil(
+                        pricing.getEffectiveUntil()
+                )
+
+                .baseAmount(
+                        pricing.getBaseAmount()
+                )
+
+                .pricingHeads(
+                        pricing.getPricingHeads() == null
+                                ? Collections.emptyList()
+                                : pricing.getPricingHeads()
+                                .stream()
+                                .map(head ->
+
+                                        VendorPricingHeadResponse
+                                                .builder()
+
+                                                .code(
+                                                        head.getCode()
+                                                )
+
+                                                .name(
+                                                        head.getName()
+                                                )
+
+                                                .calculationType(
+                                                        head.getCalculationType()
+                                                )
+
+                                                .value(
+                                                        head.getValue()
+                                                )
+
+                                                .displayOrder(
+                                                        head.getDisplayOrder()
+                                                )
+
+                                                .active(
+                                                        head.getActive()
+                                                )
+
+                                                .build()
+
+                                )
+                                .toList()
+                )
+
+                .discounts(
+                        pricing.getDiscounts() == null
+                                ? Collections.emptyList()
+                                : pricing.getDiscounts()
+                                .stream()
+                                .map(discount ->
+
+                                        VendorDiscountResponse
+                                                .builder()
+
+                                                .name(
+                                                        discount.getName()
+                                                )
+
+                                                .discountType(
+                                                        discount.getDiscountType()
+                                                )
+
+                                                .value(
+                                                        discount.getValue()
+                                                )
+
+                                                .validFrom(
+                                                        discount.getValidFrom()
+                                                )
+
+                                                .validUntil(
+                                                        discount.getValidUntil()
+                                                )
+
+                                                .active(
+                                                        discount.getActive()
+                                                )
+
+                                                .build()
+
+                                )
+                                .toList()
+                )
+
+                .paymentConfiguration(
+                        toPaymentConfigurationResponse(
+                                pricing.getPaymentConfiguration()
+                        )
+                )
+
+                .cancellationPolicy(
+                        cancellationPolicyMapper.toResponse(
+                                pricing.getCancellationPolicy()
+                        )
+                )
+
+                /*
+                 * Packages come from VendorService.
+                 */
+                .packages(
+                        service.getPackages() == null
+
+                                ? Collections.emptyList()
+
+                                : service.getPackages()
+                                .stream()
+                                .map(servicePackage ->
+
+                                        ServicePackageResponse
+                                                .builder()
+
+                                                .id(
+                                                        servicePackage.getId()
+                                                )
+
+                                                .type(
+                                                        servicePackage.getType().name()
+                                                )
+
+                                                .price(
+                                                        servicePackage.getPrice()
+                                                )
+
+                                                .features(
+                                                        servicePackage.getFeatures()
+                                                )
+
+                                                .active(
+                                                        servicePackage.isActive()
+                                                )
+
+                                                .build()
+
+                                )
+                                .toList()
                 )
 
                 .build();

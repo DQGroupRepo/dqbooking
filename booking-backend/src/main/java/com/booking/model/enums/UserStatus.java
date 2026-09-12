@@ -8,6 +8,6 @@ public enum UserStatus {
 
     BLOCKED,
 
-    PENDING
+    SUSPENDED
 
 }

@@ -47,12 +47,6 @@ public class User extends BaseEntity {
 
     private String description;
 
-    private Double rating = 0.0;
-
-    private Integer totalReviews = 0;
-
-    private Boolean verified = false;
-
     private VendorVerificationStatus verificationStatus =
             VendorVerificationStatus.PENDING;
 

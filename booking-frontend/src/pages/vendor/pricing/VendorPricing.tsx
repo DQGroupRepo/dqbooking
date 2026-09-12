@@ -443,22 +443,23 @@ const VendorPricing = () => {
      * =========================================================
      */
 
-    function updateAdvanceAllowed(
-        value: boolean
+    function updateAdvancePaymentType(
+        type:
+            | "PERCENTAGE"
+            | "FIXED_AMOUNT"
     ) {
 
         setPricing(
-            previous => ({
+            current => ({
 
-                ...previous,
+                ...current,
 
                 paymentConfiguration: {
 
-                    ...previous
-                        .paymentConfiguration,
+                    ...current.paymentConfiguration,
 
-                    advancePaymentAllowed:
-                        value
+                    advancePaymentType:
+                        type
 
                 }
 
@@ -467,23 +468,30 @@ const VendorPricing = () => {
 
     }
 
-
-    function updateAdvancePercentage(
+    function updateAdvancePaymentValue(
         value: string
     ) {
 
-        setPricing(
-            previous => ({
+        const numericValue =
 
-                ...previous,
+            value === ""
+
+                ? null
+
+                : Number(value);
+
+
+        setPricing(
+            current => ({
+
+                ...current,
 
                 paymentConfiguration: {
 
-                    ...previous
-                        .paymentConfiguration,
+                    ...current.paymentConfiguration,
 
-                    advancePercentage:
-                        Number(value)
+                    advancePaymentValue:
+                        numericValue
 
                 }
 
@@ -2450,61 +2458,83 @@ const VendorPricing = () => {
                         </h3>
 
 
-                        <label className="checkbox">
+                        <div className="form-group">
 
-                            <input
+                            <label>
+                                Advance Payment Type
+                            </label>
 
-                                type="checkbox"
 
-                                checked={
-                                    Boolean(
-                                        pricing
-                                            .paymentConfiguration
-                                            ?.advancePaymentAllowed
-                                    )
+                            <select
+                                value={
+                                    pricing.paymentConfiguration
+                                        ?.advancePaymentType ??
+                                    "PERCENTAGE"
                                 }
-
                                 onChange={e =>
-                                    updateAdvanceAllowed(
-                                        e.target.checked
+                                    updateAdvancePaymentType(
+                                        e.target.value as
+                                            | "PERCENTAGE"
+                                            | "FIXED_AMOUNT"
                                     )
                                 }
+                            >
 
-                            />
+                                <option value="PERCENTAGE">
+                                    Percentage
+                                </option>
 
-                            Allow Advance Payment
+                                <option value="FIXED_AMOUNT">
+                                    Fixed Amount
+                                </option>
 
-                        </label>
+                            </select>
+
+                        </div>
 
 
                         <div className="form-group">
 
                             <label>
-                                Advance Percentage
+
+                                {
+                                    pricing.paymentConfiguration
+                                        ?.advancePaymentType ===
+                                    "FIXED_AMOUNT"
+
+                                        ? "Advance Amount (₹)"
+
+                                        : "Advance Percentage (%)"
+                                }
+
                             </label>
 
 
                             <input
-
                                 type="number"
-
                                 min="0"
 
-                                max="100"
+                                max={
+                                    pricing.paymentConfiguration
+                                        ?.advancePaymentType ===
+                                    "PERCENTAGE"
+
+                                        ? "100"
+
+                                        : undefined
+                                }
 
                                 value={
-                                    pricing
-                                        .paymentConfiguration
-                                        ?.advancePercentage ??
-                                    0
+                                    pricing.paymentConfiguration
+                                        ?.advancePaymentValue ??
+                                    ""
                                 }
 
                                 onChange={e =>
-                                    updateAdvancePercentage(
+                                    updateAdvancePaymentValue(
                                         e.target.value
                                     )
                                 }
-
                             />
 
                         </div>

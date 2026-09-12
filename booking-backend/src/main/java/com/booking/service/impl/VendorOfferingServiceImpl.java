@@ -11,6 +11,7 @@ import com.booking.mapper.VendorServiceMapper;
 import com.booking.model.User;
 import com.booking.model.VendorService;
 import com.booking.model.embedded.ServicePackage;
+import com.booking.model.enums.ServiceModerationStatus;
 import com.booking.repository.VendorServiceRepository;
 import com.booking.service.AuthenticatedUserService;
 import com.booking.service.VendorServicePricingService;
@@ -45,40 +46,14 @@ public class VendorOfferingServiceImpl implements VendorOfferingService {
         VendorService vendorService =
                 vendorServiceMapper.toEntity(request, vendor);
 
-        // =========================================
-        // PACKAGES
-        // =========================================
+        vendorService.setActive(false);
 
-        validatePackages(
-                request.getPackages()
+        vendorService.setModerationStatus(
+                ServiceModerationStatus.PENDING
         );
 
-        vendorService.setPackages(
-                mapPackages(
-                        request.getPackages()
-                )
-        );
         vendorService =
                 vendorServiceRepository.save(vendorService);
-
-        VendorServicePricingRequest pricing =
-                new VendorServicePricingRequest();
-
-        pricing.setServiceId(vendorService.getId());
-
-        pricing.setEffectiveFrom(LocalDate.now());
-
-        pricing.setBaseAmount(vendorService.getPrice());
-
-        pricing.setPricingHeads(new ArrayList<>());
-
-        pricing.setDiscounts(new ArrayList<>());
-
-        pricing.setPaymentConfiguration(
-                new PaymentConfigurationRequest()
-        );
-
-        vendorServicePricingService.createPricing(pricing);
 
         return vendorServiceMapper.toResponse(vendorService);
     }
@@ -95,23 +70,6 @@ public class VendorOfferingServiceImpl implements VendorOfferingService {
                         new VendorServiceNotFoundException("Service not found"));
 
         vendorServiceMapper.updateEntity(vendorService, request);
-
-        // =========================================
-        // PACKAGES
-        // =========================================
-
-        validatePackages(
-                request.getPackages()
-        );
-
-        vendorService.setPackages(
-                mapUpdatedPackages(
-                        request.getPackages(),
-                        vendorService.getPackages()
-                )
-        );
-        vendorService =
-                vendorServiceRepository.save(vendorService);
 
         return vendorServiceMapper.toResponse(vendorService);
     }
@@ -158,21 +116,57 @@ public class VendorOfferingServiceImpl implements VendorOfferingService {
     }
 
     @Override
-    public VendorServiceResponse changeStatus(String serviceId,
-                                              Boolean active) {
+    public VendorServiceResponse changeStatus(
+            String serviceId,
+            Boolean active
+    ) {
 
-        User vendor = authenticatedUserService.getCurrentVendor();
+        User vendor =
+                authenticatedUserService.getCurrentVendor();
 
-        VendorService vendorService = vendorServiceRepository
-                .findByIdAndVendorIdAndDeletedFalse(serviceId, vendor.getId())
-                .orElseThrow(() ->
-                        new VendorServiceNotFoundException("Service not found"));
+        VendorService vendorService =
+                vendorServiceRepository
+                        .findByIdAndVendorIdAndDeletedFalse(
+                                serviceId,
+                                vendor.getId()
+                        )
+                        .orElseThrow(() ->
+                                new VendorServiceNotFoundException(
+                                        "Service not found"
+                                )
+                        );
+
+
+        /*
+         * =========================================
+         * UPDATE VENDOR ACTIVE STATUS
+         * =========================================
+         */
 
         vendorService.setActive(active);
 
-        vendorService = vendorServiceRepository.save(vendorService);
 
-        return vendorServiceMapper.toResponse(vendorService);
+        /*
+         * =========================================
+         * STATUS CHANGE REQUIRES ADMIN REVIEW
+         * =========================================
+         */
+
+        vendorService.setModerationStatus(
+                ServiceModerationStatus.PENDING
+        );
+
+
+        vendorService =
+                vendorServiceRepository.save(
+                        vendorService
+                );
+
+
+        return vendorServiceMapper.toResponse(
+                vendorService
+        );
+
     }
 
     @Override

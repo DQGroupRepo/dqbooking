@@ -1,8 +1,6 @@
 package com.booking.model;
 
-import com.booking.model.embedded.Availability;
-import com.booking.model.embedded.BookingSettings;
-import com.booking.model.embedded.ContactInfo;
+import com.booking.model.embedded.*;
 import com.booking.model.enums.DiscountType;
 import com.booking.model.enums.ServiceCategory;
 import com.booking.model.enums.ServiceDiscoveryTag;
@@ -12,10 +10,9 @@ import org.springframework.data.mongodb.core.mapping.Document;
 import com.booking.model.enums.ServiceModerationStatus;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
-
-import com.booking.model.embedded.ServicePackage;
 
 @Getter
 @Setter
@@ -48,7 +45,8 @@ public class VendorService extends BaseEntity {
 
     private List<String> amenities;
 
-    private List<ServiceAttribute> attributes;
+    private List<ServiceDetailSection> detailSections =
+            new ArrayList<>();
 
     private String location;
 

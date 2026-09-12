@@ -1,16 +1,15 @@
 package com.booking.mapper.impl;
 
+import com.booking.dto.service.ServicePackageResponse;
 import com.booking.dto.vendorservice.VendorServiceRequest;
 import com.booking.dto.vendorservice.VendorServiceResponse;
-import com.booking.mapper.AvailabilityMapper;
-import com.booking.mapper.BookingSettingsMapper;
-import com.booking.mapper.ContactInfoMapper;
-import com.booking.mapper.ServiceAttributeMapper;
-import com.booking.mapper.VendorServiceMapper;
+import com.booking.mapper.*;
 import com.booking.model.User;
 import com.booking.model.VendorService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
+
+import java.util.List;
 
 @Component
 @RequiredArgsConstructor
@@ -22,7 +21,8 @@ public class VendorServiceMapperImpl implements VendorServiceMapper {
 
     private final BookingSettingsMapper bookingSettingsMapper;
 
-    private final ServiceAttributeMapper serviceAttributeMapper;
+    private final ServiceDetailSectionMapper
+            serviceDetailSectionMapper;
 
     @Override
     public VendorService toEntity(
@@ -74,9 +74,9 @@ public class VendorServiceMapperImpl implements VendorServiceMapper {
 
         service.setAmenities(request.getAmenities());
 
-        service.setAttributes(
-                serviceAttributeMapper.toEntityList(
-                        request.getAttributes()
+        service.setDetailSections(
+                serviceDetailSectionMapper.toEntityList(
+                        request.getDetailSections()
                 )
         );
 
@@ -108,7 +108,9 @@ public class VendorServiceMapperImpl implements VendorServiceMapper {
         response.setDurationHours(service.getDurationHours());
 
         response.setActive(service.getActive());
-        response.setPricingConfigured(false);
+        response.setModerationStatus(
+                service.getModerationStatus()
+        );
 
         response.setContactInfo(
                 contactInfoMapper.toDto(service.getContactInfo())
@@ -126,10 +128,58 @@ public class VendorServiceMapperImpl implements VendorServiceMapper {
 
         response.setAmenities(service.getAmenities());
 
-        response.setAttributes(
-                serviceAttributeMapper.toDtoList(service.getAttributes())
+        response.setDetailSections(
+                serviceDetailSectionMapper.toResponseList(
+                        service.getDetailSections()
+                )
         );
         response.setLocation(service.getLocation());
+
+        response.setPricingConfigured(
+                service.getPackages() != null
+                        &&
+                        !service.getPackages().isEmpty()
+        );
+
+        response.setPackages(
+
+                service.getPackages() == null
+
+                        ? List.of()
+
+                        : service.getPackages()
+                        .stream()
+                        .map(servicePackage -> {
+
+                            ServicePackageResponse packageResponse =
+                                    new ServicePackageResponse();
+
+                            packageResponse.setId(
+                                    servicePackage.getId()
+                            );
+
+                            packageResponse.setType(
+                                    servicePackage.getType()
+                            );
+
+                            packageResponse.setPrice(
+                                    servicePackage.getPrice()
+                            );
+
+                            packageResponse.setFeatures(
+                                    servicePackage.getFeatures()
+                            );
+
+                            packageResponse.setActive(
+                                    servicePackage.isActive()
+                            );
+
+                            return packageResponse;
+
+                        })
+                        .toList()
+
+        );
 
         response.setBundleEnabled( service.getBundleEnabled() );
         response.setBundleDiscountType( service.getBundleDiscountType() );
@@ -178,8 +228,13 @@ public class VendorServiceMapperImpl implements VendorServiceMapper {
 
         entity.setAmenities(request.getAmenities());
 
-        entity.setAttributes(
-                serviceAttributeMapper.toEntityList(request.getAttributes())
+        entity.setDetailSections(
+                serviceDetailSectionMapper.toEntityList(
+                        request.getDetailSections()
+                )
+        );
+        entity.setLocation(
+                request.getLocation()
         );
         /* * ========================================= * BUNDLE CONFIGURATION * ========================================= */
         entity.setBundleEnabled( request.getBundleEnabled() );

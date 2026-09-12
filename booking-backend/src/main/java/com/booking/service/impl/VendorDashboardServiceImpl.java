@@ -3,9 +3,11 @@ package com.booking.service.impl;
 import com.booking.dto.vendorservice.DashboardResponse;
 import com.booking.dto.vendorservice.RecentBookingDto;
 import com.booking.model.Booking;
+import com.booking.model.Review;
 import com.booking.model.User;
 import com.booking.model.enums.BookingStatus;
 import com.booking.repository.BookingRepository;
+import com.booking.repository.ReviewRepository;
 import com.booking.repository.UserRepository;
 import com.booking.repository.VendorServiceRepository;
 import com.booking.service.AuthenticatedUserService;
@@ -29,6 +31,8 @@ public class VendorDashboardServiceImpl
     private final UserRepository userRepository;
 
     private final AuthenticatedUserService authenticatedUserService;
+
+    private final ReviewRepository reviewRepository;
 
     @Override
     public DashboardResponse getDashboard() {
@@ -69,6 +73,41 @@ public class VendorDashboardServiceImpl
                         .map(Booking::getTotalAmount)
                         .reduce(BigDecimal.ZERO, BigDecimal::add);
 
+        /*
+         * =========================================
+         * REVIEWS
+         *
+         * Rating should come from the
+         * reviews collection.
+         * =========================================
+         */
+
+        List<Review> reviews =
+                reviewRepository.findByVendorId(
+                        vendor.getId()
+                );
+
+
+        double averageRating =
+                reviews.isEmpty()
+
+                        ? 0.0
+
+                        : reviews
+                        .stream()
+                        .map(
+                                Review::getRating
+                        )
+                        .filter(
+                                rating ->
+                                        rating != null
+                        )
+                        .mapToInt(
+                                Integer::intValue
+                        )
+                        .average()
+                        .orElse(0.0);
+
         List<RecentBookingDto> recentBookings =
                 bookingRepository
                         .findTop5ByVendorIdOrderByCreatedAtDesc(
@@ -78,14 +117,37 @@ public class VendorDashboardServiceImpl
                         .map(this::toRecentBooking)
                         .toList();
 
-        return DashboardResponse.builder()
-                .vendorName(vendor.getBusinessName())
-                .totalBookings(bookings.size())
-                .pendingBookings(pendingBookings)
-                .completedBookings(completedBookings)
-                .monthlyRevenue(monthlyRevenue)
-                .averageRating(vendor.getRating())
-                .recentBookings(recentBookings)
+        return DashboardResponse
+                .builder()
+
+                .vendorName(
+                        vendor.getBusinessName()
+                )
+
+                .totalBookings(
+                        bookings.size()
+                )
+
+                .pendingBookings(
+                        pendingBookings
+                )
+
+                .completedBookings(
+                        completedBookings
+                )
+
+                .monthlyRevenue(
+                        monthlyRevenue
+                )
+
+                .averageRating(
+                        averageRating
+                )
+
+                .recentBookings(
+                        recentBookings
+                )
+
                 .build();
 
     }

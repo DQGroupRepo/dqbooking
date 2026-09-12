@@ -480,6 +480,13 @@ const AppRoutes = () => {
                             }
                         />
 
+                        <Route
+                            path="/vendor/bundles/edit/:bundleId"
+                            element={
+                                <VendorCreateBundle />
+                            }
+                        />
+
 
                         <Route
                             path="/vendor/bookings"

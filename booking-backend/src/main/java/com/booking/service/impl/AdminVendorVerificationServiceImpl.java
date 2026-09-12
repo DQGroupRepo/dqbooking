@@ -108,10 +108,6 @@ public class AdminVendorVerificationServiceImpl
                         vendor.getVerificationStatus()
                 )
 
-                .verified(
-                        vendor.getVerified()
-                )
-
                 .services(
                         serviceResponses
                 )
@@ -168,8 +164,6 @@ public class AdminVendorVerificationServiceImpl
                 VendorVerificationStatus.APPROVED
         );
 
-        vendor.setVerified(true);
-
         userRepository.save(vendor);
     }
 
@@ -181,8 +175,6 @@ public class AdminVendorVerificationServiceImpl
         vendor.setVerificationStatus(
                 VendorVerificationStatus.REJECTED
         );
-
-        vendor.setVerified(false);
 
         userRepository.save(vendor);
     }
@@ -196,8 +188,6 @@ public class AdminVendorVerificationServiceImpl
                 VendorVerificationStatus.SUSPENDED
         );
 
-        vendor.setVerified(false);
-
         userRepository.save(vendor);
     }
 
@@ -209,8 +199,6 @@ public class AdminVendorVerificationServiceImpl
         vendor.setVerificationStatus(
                 VendorVerificationStatus.APPROVED
         );
-
-        vendor.setVerified(true);
 
         userRepository.save(vendor);
     }

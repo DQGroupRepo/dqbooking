@@ -18,4 +18,10 @@ public interface ReviewRepository
     List<Review> findByServiceId(String serviceId);
 
     long countByDeletedFalse();
+
+    List<Review> findByVendorId(
+            String vendorId
+    );
+
+    long countByVendorId(String vendorId);
 }

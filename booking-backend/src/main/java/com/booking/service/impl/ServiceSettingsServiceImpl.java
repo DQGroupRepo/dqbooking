@@ -104,7 +104,6 @@ public class ServiceSettingsServiceImpl
 
         }
 
-        settings.setActive(request.getActive());
         settings.setInstantBooking(request.getInstantBooking());
 
         settings = serviceSettingsRepository.save(settings);

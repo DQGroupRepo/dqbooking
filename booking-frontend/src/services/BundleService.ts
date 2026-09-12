@@ -1,17 +1,51 @@
 import api from "../api/axiosConfig";
 
-import type { Bundle } from "../types/Bundle";
+import type {
+    Bundle
+} from "../types/Bundle";
+
 
 export interface CreateBundleRequest {
+
     name: string;
+
     description?: string;
+
     serviceIds: string[];
-    discountType: "PERCENTAGE" | "FIXED";
+
+    discountType:
+        | "PERCENTAGE"
+        | "FIXED";
+
     discountValue: number;
+
 }
 
 
 const BundleService = {
+
+
+    /*
+     * =========================================
+     * GET ONE BUNDLE
+     * =========================================
+     *
+     * Used when editing a bundle.
+     */
+
+    getBundle: async (
+        bundleId: string
+    ): Promise<Bundle> => {
+
+        const response =
+            await api.get<Bundle>(
+                `/bundles/${bundleId}`
+            );
+
+        return response.data;
+
+    },
+
 
     /*
      * =========================================
@@ -27,6 +61,7 @@ const BundleService = {
             );
 
         return response.data;
+
     },
 
 
@@ -51,12 +86,13 @@ const BundleService = {
             );
 
         return response.data;
+
     },
 
 
     /*
      * =========================================
-     * CREATE
+     * CREATE BUNDLE
      * =========================================
      */
 
@@ -71,12 +107,13 @@ const BundleService = {
             );
 
         return response.data;
+
     },
 
 
     /*
      * =========================================
-     * UPDATE
+     * UPDATE BUNDLE
      * =========================================
      */
 
@@ -92,12 +129,13 @@ const BundleService = {
             );
 
         return response.data;
+
     },
 
 
     /*
      * =========================================
-     * ACTIVATE
+     * ACTIVATE BUNDLE
      * =========================================
      */
 
@@ -111,12 +149,13 @@ const BundleService = {
             );
 
         return response.data;
+
     },
 
 
     /*
      * =========================================
-     * DEACTIVATE
+     * DEACTIVATE BUNDLE
      * =========================================
      */
 
@@ -130,6 +169,7 @@ const BundleService = {
             );
 
         return response.data;
+
     }
 
 };

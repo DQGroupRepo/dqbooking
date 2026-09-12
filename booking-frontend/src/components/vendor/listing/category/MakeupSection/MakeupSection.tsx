@@ -1,3 +1,4 @@
+/*
 import SectionHeader from "../../../../common/ui/SectionHeader/SectionHeader";
 
 export default function MakeupSection(){
@@ -20,4 +21,4 @@ export default function MakeupSection(){
 
     );
 
-}
+} */

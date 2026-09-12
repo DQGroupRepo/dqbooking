@@ -1,3 +1,4 @@
+/*
 import Input from "../../../../common/ui/Input/Input";
 import Select from "../../../../common/ui/Select/Select";
 import SectionHeader from "../../../../common/ui/SectionHeader/SectionHeader";
@@ -167,4 +168,4 @@ export default function CateringSection({
 
     );
 
-}
+} */

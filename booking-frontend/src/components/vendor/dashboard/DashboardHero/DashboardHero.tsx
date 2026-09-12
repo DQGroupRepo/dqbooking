@@ -1,107 +1,199 @@
 import {
-  FaCalendarCheck,
-  FaChartLine,
-  FaPlusCircle
+    FaCalendarCheck,
+    FaPlusCircle
 } from "react-icons/fa";
+
 import { useNavigate } from "react-router-dom";
+
+import type {
+    VendorDashboardSummary
+} from "../../../../types/VendorDashboard";
 
 import styles from "./DashboardHero.module.css";
 
+
 interface DashboardHeroProps {
-  vendorName: string;
+
+    summary: VendorDashboardSummary;
+
 }
 
+
 export default function DashboardHero({
-  vendorName,
+
+    summary
+
 }: DashboardHeroProps) {
 
-  const today = new Date().toLocaleDateString("en-IN", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-  });
-  const navigate = useNavigate();
-  return (
 
-    <section className={styles.hero}>
+    const navigate =
+        useNavigate();
 
-      <div className={styles.left}>
 
-        <span className={styles.date}>
-          {today}
-        </span>
+    const today =
+        new Date().toLocaleDateString(
+            "en-IN",
+            {
 
-        <h1>
-          Welcome back,
-          <br />
-          {vendorName}
-        </h1>
+                weekday: "long",
 
-        <p>
-          Here's what's happening with your business today.
-        </p>
+                day: "numeric",
 
-        <div className={styles.actions}>
+                month: "long",
 
-          <button
-              onClick={() => navigate("/vendor/create-listing")}
-          >
+            }
+        );
 
-              <FaPlusCircle />
 
-              Create Listing
+    const monthlyRevenue =
+        summary.monthlyRevenue ?? 0;
 
-          </button>
 
-          <button
-              className={styles.secondary}
-              onClick={() => navigate("/vendor/bookings")}
-          >
+    return (
 
-              <FaCalendarCheck />
+        <section className={styles.hero}>
 
-              View Bookings
 
-          </button>
+            <div className={styles.left}>
 
-        </div>
 
-      </div>
+                <span className={styles.date}>
 
-      <div className={styles.right}>
+                    {today}
 
-        <div className={styles.statCard}>
+                </span>
 
-          <span>Today's Revenue</span>
 
-          <h2>₹28,500</h2>
+                <h1>
 
-          <small>
-            +12.8%
-          </small>
+                    Welcome back,
 
-        </div>
+                    <br />
 
-        <div className={styles.statCard}>
+                    {summary.vendorName}
 
-          <span>This Month</span>
+                </h1>
 
-          <h2>₹4.8 L</h2>
 
-          <small>
+                <p>
 
-            <FaChartLine />
+                    Here's what's happening with your business today.
 
-            Growing
+                </p>
 
-          </small>
 
-        </div>
+                <div className={styles.actions}>
 
-      </div>
 
-    </section>
+                    <button
 
-  );
+                        onClick={() =>
+                            navigate(
+                                "/vendor/create-listing"
+                            )
+                        }
+
+                    >
+
+                        <FaPlusCircle />
+
+                        Create Listing
+
+                    </button>
+
+
+                    <button
+
+                        className={styles.secondary}
+
+                        onClick={() =>
+                            navigate(
+                                "/vendor/bookings"
+                            )
+                        }
+
+                    >
+
+                        <FaCalendarCheck />
+
+                        View Bookings
+
+                    </button>
+
+
+                </div>
+
+
+            </div>
+
+
+            <div className={styles.right}>
+
+
+                <div className={styles.statCard}>
+
+
+                    <span>
+
+                        Today's Revenue
+
+                    </span>
+
+
+                    <h2>
+
+                        ₹0
+
+                    </h2>
+
+
+                    <small>
+
+                        No bookings today
+
+                    </small>
+
+
+                </div>
+
+
+                <div className={styles.statCard}>
+
+
+                    <span>
+
+                        This Month
+
+                    </span>
+
+
+                    <h2>
+
+                        ₹
+                        {
+                            monthlyRevenue.toLocaleString(
+                                "en-IN"
+                            )
+                        }
+
+                    </h2>
+
+
+                    <small>
+
+                        Monthly Revenue
+
+                    </small>
+
+
+                </div>
+
+
+            </div>
+
+
+        </section>
+
+    );
 
 }

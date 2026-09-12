@@ -1,98 +1,230 @@
-import { useEffect, useState } from "react";
-import DashboardHero from "../../components/vendor/dashboard/DashboardHero/DashboardHero";
+import {
+    useEffect,
+    useState
+} from "react";
 
-import VendorDashboardService from "../../services/VendorDashboardService";
+import DashboardHero
+    from "../../components/vendor/dashboard/DashboardHero/DashboardHero";
 
-import type { RecentBooking } from "../../types/RecentBooking";
-import type { VendorDashboardSummary } from "../../types/VendorDashboard";
+import VendorDashboardService
+    from "../../services/VendorDashboardService";
 
-import DashboardStats from "../../components/vendor/dashboard/DashboardStats/DashboardStats";
-import DashboardContent from "../../components/vendor/dashboard/DashboardContent/DashboardContent";
+import type {
+    RecentBooking
+} from "../../types/RecentBooking";
 
-import styles from "./VendorDashboard.module.css";
+import type {
+    VendorDashboardSummary
+} from "../../types/VendorDashboard";
+
+import DashboardStats
+    from "../../components/vendor/dashboard/DashboardStats/DashboardStats";
+
+import DashboardContent
+    from "../../components/vendor/dashboard/DashboardContent/DashboardContent";
+
+import styles
+    from "./VendorDashboard.module.css";
+
 
 export default function VendorDashboard() {
-  const [summary, setSummary] =
-    useState<VendorDashboardSummary | null>(null);
 
-  const [bookings, setBookings] = useState<RecentBooking[]>([]);
 
-  useEffect(() => {
-    loadDashboard();
-  }, []);
+    const [
+        summary,
+        setSummary
+    ] =
+        useState<
+            VendorDashboardSummary | null
+        >(null);
 
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
-  const loadDashboard = async () => {
+    const [
+        bookings,
+        setBookings
+    ] =
+        useState<
+            RecentBooking[]
+        >([]);
 
-      try {
 
-          setLoading(true);
+    const [
+        loading,
+        setLoading
+    ] =
+        useState(true);
 
-          const dashboard =
-              await VendorDashboardService.getDashboard();
-            console.log(
-                "VENDOR DASHBOARD RESPONSE:",
-                dashboard
-            );
-          setSummary(dashboard);
 
-          setBookings(dashboard.recentBookings);
+    const [
+        error,
+        setError
+    ] =
+        useState<
+            string | null
+        >(null);
 
-      }
 
-      catch (err) {
+    useEffect(() => {
 
-          console.error(err);
+        loadDashboard();
 
-          setError("Unable to load dashboard.");
+    }, []);
 
-      }
 
-      finally {
+    const loadDashboard =
+        async () => {
 
-          setLoading(false);
 
-      }
+            try {
 
-  };
 
-  if (loading) {
+                setLoading(
+                    true
+                );
 
-      return <p>Loading Dashboard...</p>;
 
-  }
+                setError(
+                    null
+                );
 
-  if (error) {
 
-      return <p>{error}</p>;
+                const dashboard =
+                    await VendorDashboardService
+                        .getDashboard();
 
-  }
 
-  if (!summary) {
-    return <p>Loading Dashboard...</p>;
-  }
+                console.log(
+                    "VENDOR DASHBOARD RESPONSE:",
+                    dashboard
+                );
 
-  return (
-    <div className={styles.dashboard}>
 
-      <DashboardHero
-        vendorName={summary.vendorName}
-      />
+                setSummary(
+                    dashboard
+                );
 
-      <DashboardStats
-        summary={summary}
-      />
 
-      <DashboardContent
+                setBookings(
+                    dashboard.recentBookings ?? []
+                );
 
-          bookings={bookings}
 
-          summary={summary}
+            }
 
-      />
+            catch (err) {
 
-    </div>
-  );
+
+                console.error(
+                    "Failed to load dashboard:",
+                    err
+                );
+
+
+                setError(
+                    "Unable to load dashboard."
+                );
+
+
+            }
+
+            finally {
+
+
+                setLoading(
+                    false
+                );
+
+
+            }
+
+
+        };
+
+
+    if (loading) {
+
+
+        return (
+
+            <p>
+                Loading Dashboard...
+            </p>
+
+        );
+
+
+    }
+
+
+    if (error) {
+
+
+        return (
+
+            <p>
+                {error}
+            </p>
+
+        );
+
+
+    }
+
+
+    if (!summary) {
+
+
+        return (
+
+            <p>
+                No dashboard data available.
+            </p>
+
+        );
+
+
+    }
+
+
+    return (
+
+
+        <div
+            className={
+                styles.dashboard
+            }
+        >
+
+
+            <DashboardHero
+                summary={summary}
+            />
+
+
+            <DashboardStats
+                summary={
+                    summary
+                }
+            />
+
+
+            <DashboardContent
+
+                bookings={
+                    bookings
+                }
+
+                summary={
+                    summary
+                }
+
+            />
+
+
+        </div>
+
+
+    );
+
+
 }

@@ -10,6 +10,56 @@ import type { BookingSettings }
 import type { ServicePackage }
     from "./ServicePackage";
 
+export interface DetailAttribute {
+
+    key: string;
+
+    value: string;
+
+}
+
+
+export interface DetailSection {
+
+    key: string;
+
+    title: string;
+
+    attributes:
+        DetailAttribute[];
+
+}
+
+
+export interface Availability {
+
+    availableFrom?: string;
+
+    availableTo?: string;
+
+}
+
+
+export interface ContactInfo {
+
+    contactPerson?: string;
+
+    mobile?: string;
+
+    email?: string;
+
+}
+
+
+export interface BookingSettings {
+
+    maxSimultaneousBookings?: number;
+
+    bundleOfferEnabled?: boolean;
+
+}
+
+
 export interface VendorDetail {
 
     serviceId: string;
@@ -26,24 +76,28 @@ export interface VendorDetail {
 
     city: string;
 
+    location?: string;
+
     startingPrice: number;
 
-    rating: number;
+    rating?: number;
 
-    reviewCount: number;
+    reviewCount?: number;
 
-    capacity: number;
+    capacity?: number;
 
     imageUrls?: string[];
 
-    amenities: string[];
+    amenities?: string[];
 
-    packages: ServicePackage[];
+    detailSections?: DetailSection[];
 
-    contactInfo: ContactInfo;
+    contactInfo?: ContactInfo;
 
-    bookingSettings: BookingSettings;
+    bookingSettings?: BookingSettings;
 
-    availability: Availability;
+    availability?: Availability;
+
+    packages?: ServicePackage[];
 
 }

@@ -236,7 +236,7 @@ public class VendorServicePricingServiceImpl
 
 
         return pricingMapper.toResponse(
-                currentPricing
+                currentPricing, service
         );
     }
 
@@ -298,17 +298,29 @@ public class VendorServicePricingServiceImpl
             String pricingId
     ) {
 
-        VendorServicePricing pricing = vendorServicePricingRepository
+        VendorServicePricing pricing =
 
-                .findById(pricingId)
+                vendorServicePricingRepository
 
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "Pricing not found."
-                        )
+                        .findById(pricingId)
+
+                        .orElseThrow(() ->
+                                new ResourceNotFoundException(
+                                        "Pricing not found."
+                                )
+                        );
+
+
+        VendorService service =
+                getService(
+                        pricing.getServiceId()
                 );
 
-        return pricingMapper.toResponse(pricing);
+
+        return pricingMapper.toResponse(
+                pricing,
+                service
+        );
 
     }
 

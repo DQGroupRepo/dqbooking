@@ -1,5 +1,6 @@
 package com.booking.model;
 
+import com.booking.model.enums.AdvancePaymentType;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -9,9 +10,9 @@ import java.math.BigDecimal;
 @Setter
 public class PaymentConfiguration {
 
-    private Boolean advancePaymentAllowed = true;
+    private AdvancePaymentType advancePaymentType;
 
-    private BigDecimal advancePercentage;
+    private BigDecimal advancePaymentValue;
 
     private Boolean payAfterConfirmation = true;
 

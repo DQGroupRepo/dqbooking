@@ -38,7 +38,6 @@ public class ServiceSettingsMapperImpl
                         settings.getCancellationPolicy()
                 )
         );
-        response.setActive(settings.getActive());
         response.setInstantBooking(settings.getInstantBooking());
 
         return response;
