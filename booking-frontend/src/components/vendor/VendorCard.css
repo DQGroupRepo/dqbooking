@@ -12,3 +12,57 @@
     display: block;
     object-fit: cover;
 }
+
+.vendor-title-section {
+    display: flex;
+    flex-direction: column;
+}
+
+
+.vendor-title-section h3 {
+    margin: 0;
+
+    font-size: 18px;
+
+    font-weight: 700;
+
+    line-height: 1.3;
+
+    color: #243b53;
+}
+
+
+.vendor-business-name {
+    margin: 2px 0 0;
+
+    font-size: 13px;
+
+    line-height: 1.4;
+
+    color: #8a94a6;
+}
+
+
+.vendor-business-name span {
+    margin-right: 4px;
+}
+
+
+.vendor-business-name strong {
+    font-family: Georgia, serif;
+
+    font-size: 14px;
+
+    font-weight: 600;
+
+    color: #b7793e;
+}
+
+
+.vendor-location {
+    margin: 2px 0 0;
+
+    font-size: 15px;
+
+    color: #4a5568;
+}

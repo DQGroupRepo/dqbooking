@@ -6,4 +6,6 @@ export interface ContactInfo {
 
     email: string;
 
+    address: string;
+
 }

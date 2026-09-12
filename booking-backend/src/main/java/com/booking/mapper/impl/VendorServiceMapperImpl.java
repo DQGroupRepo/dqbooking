@@ -17,8 +17,6 @@ public class VendorServiceMapperImpl implements VendorServiceMapper {
 
     private final ContactInfoMapper contactInfoMapper;
 
-    private final AvailabilityMapper availabilityMapper;
-
     private final BookingSettingsMapper bookingSettingsMapper;
 
     private final ServiceDetailSectionMapper
@@ -41,29 +39,11 @@ public class VendorServiceMapperImpl implements VendorServiceMapper {
         service.setCategory(request.getCategory());
         service.setDescription(request.getDescription());
 
-        if (request.getPricing() != null) {
-
-            service.setPrice(
-                    request.getPricing().getBaseAmount()
-            );
-
-        } else {
-
-            service.setPrice(
-                    request.getPrice()
-            );
-
-        }
-
         service.setCapacity(request.getCapacity());
         service.setDurationHours(request.getDurationHours());
 
         service.setContactInfo(
                 contactInfoMapper.toEntity(request.getContactInfo())
-        );
-
-        service.setAvailability(
-                availabilityMapper.toEntity(request.getAvailability())
         );
 
         service.setBookingSettings(
@@ -80,7 +60,8 @@ public class VendorServiceMapperImpl implements VendorServiceMapper {
                 )
         );
 
-        service.setLocation(request.getLocation());
+        service
+                .setLocation(request.getLocation());
 
         /* * ========================================= * BUNDLE CONFIGURATION * ========================================= */
         service.setBundleEnabled( request.getBundleEnabled() );
@@ -103,7 +84,6 @@ public class VendorServiceMapperImpl implements VendorServiceMapper {
         response.setServiceName(service.getServiceName());
         response.setCategory(service.getCategory().name());
         response.setDescription(service.getDescription());
-        response.setPrice(service.getPrice());
         response.setCapacity(service.getCapacity());
         response.setDurationHours(service.getDurationHours());
 
@@ -114,10 +94,6 @@ public class VendorServiceMapperImpl implements VendorServiceMapper {
 
         response.setContactInfo(
                 contactInfoMapper.toDto(service.getContactInfo())
-        );
-
-        response.setAvailability(
-                availabilityMapper.toDto(service.getAvailability())
         );
 
         response.setBookingSettings(
@@ -134,6 +110,7 @@ public class VendorServiceMapperImpl implements VendorServiceMapper {
                 )
         );
         response.setLocation(service.getLocation());
+
 
         response.setPricingConfigured(
                 service.getPackages() != null
@@ -196,28 +173,12 @@ public class VendorServiceMapperImpl implements VendorServiceMapper {
         entity.setServiceName(request.getServiceName());
         entity.setCategory(request.getCategory());
         entity.setDescription(request.getDescription());
-        if (request.getPricing() != null) {
 
-            entity.setPrice(
-                    request.getPricing().getBaseAmount()
-            );
-
-        } else {
-
-            entity.setPrice(
-                    request.getPrice()
-            );
-
-        }
         entity.setCapacity(request.getCapacity());
         entity.setDurationHours(request.getDurationHours());
 
         entity.setContactInfo(
                 contactInfoMapper.toEntity(request.getContactInfo())
-        );
-
-        entity.setAvailability(
-                availabilityMapper.toEntity(request.getAvailability())
         );
 
         entity.setBookingSettings(
@@ -236,6 +197,7 @@ public class VendorServiceMapperImpl implements VendorServiceMapper {
         entity.setLocation(
                 request.getLocation()
         );
+
         /* * ========================================= * BUNDLE CONFIGURATION * ========================================= */
         entity.setBundleEnabled( request.getBundleEnabled() );
         entity.setBundleDiscountType( request.getBundleDiscountType() );

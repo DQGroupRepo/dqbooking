@@ -3,6 +3,7 @@ package com.booking.service.impl;
 import com.booking.dto.pricing.VendorServicePricingRequest;
 import com.booking.dto.pricing.VendorServicePricingResponse;
 import com.booking.exception.ResourceNotFoundException;
+import com.booking.exception.VendorServiceNotFoundException;
 import com.booking.mapper.PricingMapper;
 import com.booking.model.VendorService;
 import com.booking.model.VendorServicePricing;
@@ -14,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -137,10 +139,42 @@ public class VendorServicePricingServiceImpl
                 vendorServicePricingRepository
                         .save(pricing);
 
+        syncStartingPrice(
+                savedPricing.getServiceId(),
+                savedPricing.getBaseAmount()
+        );
+
 
         return pricingMapper.toResponse(
                 savedPricing
         );
+    }
+
+    private void syncStartingPrice(
+            String serviceId,
+            BigDecimal baseAmount
+    ) {
+
+        VendorService vendorService =
+                vendorServiceRepository
+                        .findById(serviceId)
+                        .orElseThrow(
+                                () ->
+                                        new VendorServiceNotFoundException(
+                                                "Service not found"
+                                        )
+                        );
+
+
+        vendorService.setStartingPrice(
+                baseAmount
+        );
+
+
+        vendorServiceRepository.save(
+                vendorService
+        );
+
     }
 
 

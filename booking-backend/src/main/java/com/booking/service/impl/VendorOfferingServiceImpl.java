@@ -70,8 +70,12 @@ public class VendorOfferingServiceImpl implements VendorOfferingService {
                         new VendorServiceNotFoundException("Service not found"));
 
         vendorServiceMapper.updateEntity(vendorService, request);
+        VendorService savedService =
+                vendorServiceRepository.save(
+                        vendorService
+                );
 
-        return vendorServiceMapper.toResponse(vendorService);
+        return vendorServiceMapper.toResponse(savedService);
     }
 
     @Override

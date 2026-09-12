@@ -33,8 +33,8 @@ import UploadService
 import ContactSection
     from "../../components/vendor/listing/ContactSection/ContactSection";
 
-import AvailabilitySection
-    from "../../components/vendor/listing/AvailabilitySection/AvailabilitySection";
+import ServiceDetailsSection
+    from "../../components/vendor/listing/ServiceDetailsSection/ServiceDetailsSection";
 
 import FormActions
     from "../../components/vendor/listing/FormActions/FormActions";
@@ -529,15 +529,21 @@ const AddService = () => {
 
         }
 
-
-        if (!formData.price) {
+        if (!formData.address.trim()) {
 
             validationErrors.push(
-                "Price"
+                "Address"
             );
 
         }
 
+        if (!formData.description.trim()) {
+
+            validationErrors.push(
+                "About Your Service"
+            );
+
+        }
 
         if (
             !formData.contactPerson.trim()
@@ -1006,6 +1012,22 @@ const AddService = () => {
 
                         />
 
+                        {/* =====================================
+                            SERVICE DETAILS
+                        ===================================== */}
+
+                        <ServiceDetailsSection
+
+                            formData={
+                                formData
+                            }
+
+                            handleChange={
+                                handleChange
+                            }
+
+                        />
+
 
                         {/* =====================================
                             CATEGORY SPECIFIC + AMENITIES
@@ -1065,23 +1087,6 @@ const AddService = () => {
                         ===================================== */}
 
                         <ContactSection
-
-                            formData={
-                                formData
-                            }
-
-                            handleChange={
-                                handleChange
-                            }
-
-                        />
-
-
-                        {/* =====================================
-                            AVAILABILITY
-                        ===================================== */}
-
-                        <AvailabilitySection
 
                             formData={
                                 formData

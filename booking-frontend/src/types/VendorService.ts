@@ -44,7 +44,7 @@ export interface VendorService {
 
     description: string;
 
-    price: number;
+    startingPrice?: number;
 
     capacity: number;
 

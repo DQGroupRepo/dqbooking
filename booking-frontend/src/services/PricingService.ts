@@ -1,12 +1,19 @@
 import api from "../api/axiosConfig";
 
+
+/* =========================================================
+   PRICING HEAD
+========================================================= */
+
 export interface VendorPricingHead {
 
     code: string;
 
     name: string;
 
-    calculationType: "FIXED" | "PERCENTAGE";
+    calculationType:
+        | "FIXED"
+        | "PERCENTAGE";
 
     value: number;
 
@@ -16,11 +23,18 @@ export interface VendorPricingHead {
 
 }
 
+
+/* =========================================================
+   DISCOUNT
+========================================================= */
+
 export interface VendorDiscount {
 
     name: string;
 
-    discountType: "FIXED" | "PERCENTAGE";
+    discountType:
+        | "FIXED"
+        | "PERCENTAGE";
 
     value: number;
 
@@ -32,13 +46,31 @@ export interface VendorDiscount {
 
 }
 
+
+/* =========================================================
+   PAYMENT CONFIGURATION
+========================================================= */
+
 export interface PaymentConfiguration {
 
-    advancePaymentAllowed: boolean;
+    advancePaymentType:
+        | "PERCENTAGE"
+        | "FIXED_AMOUNT";
 
-    advancePercentage: number;
+    advancePaymentValue:
+        | number
+        | null;
+
+    payAfterConfirmation?: boolean;
+
+    discussWithVendor?: boolean;
 
 }
+
+
+/* =========================================================
+   CANCELLATION POLICY
+========================================================= */
 
 export interface CancellationPolicy {
 
@@ -47,6 +79,11 @@ export interface CancellationPolicy {
     cancellationChargePercentage: number;
 
 }
+
+
+/* =========================================================
+   VENDOR PRICING
+========================================================= */
 
 export interface VendorPricing {
 
@@ -60,33 +97,53 @@ export interface VendorPricing {
 
     baseAmount: number;
 
-    pricingHeads: VendorPricingHead[];
+    pricingHeads:
+        VendorPricingHead[];
 
-    discounts: VendorDiscount[];
+    discounts:
+        VendorDiscount[];
 
-    paymentConfiguration: PaymentConfiguration;
+    paymentConfiguration:
+        PaymentConfiguration;
 
-    cancellationPolicy: CancellationPolicy;
+    cancellationPolicy:
+        CancellationPolicy;
 
 }
 
-export async function getPricing(serviceId: string) {
 
-    const response = await api.get(
-        `/pricing/services/${serviceId}`
-    );
+/* =========================================================
+   GET PRICING
+========================================================= */
+
+export async function getPricing(
+    serviceId: string
+): Promise<VendorPricing> {
+
+    const response =
+        await api.get<VendorPricing>(
+            `/pricing/services/${serviceId}`
+        );
 
     return response.data;
+
 }
+
+
+/* =========================================================
+   SAVE PRICING
+========================================================= */
 
 export async function savePricing(
     pricing: VendorPricing
 ): Promise<VendorPricing> {
 
-    const response = await api.post(
-        "/pricing",
-        pricing
-    );
+    const response =
+        await api.post<VendorPricing>(
+            "/pricing",
+            pricing
+        );
 
     return response.data;
+
 }

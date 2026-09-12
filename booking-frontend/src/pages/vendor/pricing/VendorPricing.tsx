@@ -119,9 +119,17 @@ const emptyPricing:
 
     paymentConfiguration: {
 
-        advancePaymentAllowed: false,
+        advancePaymentType:
+            "PERCENTAGE",
 
-        advancePercentage: 0
+        advancePaymentValue:
+            null,
+
+        payAfterConfirmation:
+            true,
+
+        discussWithVendor:
+            true
 
     },
 
@@ -233,13 +241,30 @@ const VendorPricing = () => {
 
                     ...response,
 
+
                     paymentConfiguration: {
 
                         ...emptyPricing.paymentConfiguration,
 
-                        ...response.paymentConfiguration
+                        ...response.paymentConfiguration,
+
+                        advancePaymentType:
+
+                            response.paymentConfiguration
+                                ?.advancePaymentType ??
+
+                            "PERCENTAGE",
+
+
+                        advancePaymentValue:
+
+                            response.paymentConfiguration
+                                ?.advancePaymentValue ??
+
+                            null
 
                     },
+
 
                     cancellationPolicy: {
 
@@ -248,22 +273,14 @@ const VendorPricing = () => {
                         ...response.cancellationPolicy,
 
                         refundRules:
-                            response.cancellationPolicy
-                                ?.refundRules ?? []
+
+                            response
+                                .cancellationPolicy
+                                ?.refundRules ??
+
+                            []
 
                     }
-
-                });
-
-            }
-            else {
-
-                setPricing({
-
-                    ...emptyPricing,
-
-                    serviceId:
-                        serviceId!
 
                 });
 
@@ -1412,6 +1429,61 @@ const VendorPricing = () => {
             return;
 
         }
+        const paymentConfiguration =
+            pricing.paymentConfiguration;
+
+
+        if (
+            paymentConfiguration?.advancePaymentType ===
+            "PERCENTAGE"
+        ) {
+
+            const advanceValue =
+                paymentConfiguration.advancePaymentValue;
+
+
+            if (
+                advanceValue !== null &&
+                (
+                    advanceValue < 0 ||
+                    advanceValue > 100
+                )
+            ) {
+
+                toast.error(
+                    "Advance payment percentage must be between 0 and 100."
+                );
+
+                return;
+
+            }
+
+        }
+
+
+        if (
+            paymentConfiguration?.advancePaymentType ===
+            "FIXED_AMOUNT"
+        ) {
+
+            const advanceValue =
+                paymentConfiguration.advancePaymentValue;
+
+
+            if (
+                advanceValue !== null &&
+                advanceValue < 0
+            ) {
+
+                toast.error(
+                    "Advance payment amount cannot be negative."
+                );
+
+                return;
+
+            }
+
+        }
 
 
         try {
@@ -2466,11 +2538,13 @@ const VendorPricing = () => {
 
 
                             <select
+
                                 value={
                                     pricing.paymentConfiguration
                                         ?.advancePaymentType ??
                                     "PERCENTAGE"
                                 }
+
                                 onChange={e =>
                                     updateAdvancePaymentType(
                                         e.target.value as
@@ -2478,6 +2552,7 @@ const VendorPricing = () => {
                                             | "FIXED_AMOUNT"
                                     )
                                 }
+
                             >
 
                                 <option value="PERCENTAGE">
@@ -2511,7 +2586,9 @@ const VendorPricing = () => {
 
 
                             <input
+
                                 type="number"
+
                                 min="0"
 
                                 max={
@@ -2519,7 +2596,7 @@ const VendorPricing = () => {
                                         ?.advancePaymentType ===
                                     "PERCENTAGE"
 
-                                        ? "100"
+                                        ? 100
 
                                         : undefined
                                 }
@@ -2535,6 +2612,7 @@ const VendorPricing = () => {
                                         e.target.value
                                     )
                                 }
+
                             />
 
                         </div>
@@ -3096,13 +3174,32 @@ const VendorPricing = () => {
                             <strong>
 
                                 {
-                                    pricing
-                                        .paymentConfiguration
-                                        ?.advancePaymentAllowed
+                                    pricing.paymentConfiguration
+                                        ?.advancePaymentValue !== null &&
+                                    pricing.paymentConfiguration
+                                        ?.advancePaymentValue !== undefined &&
+                                    Number(
+                                        pricing.paymentConfiguration
+                                            .advancePaymentValue
+                                    ) > 0
 
-                                        ? `${pricing.paymentConfiguration.advancePercentage ?? 0}%`
+                                        ? pricing.paymentConfiguration
+                                            .advancePaymentType ===
+                                            "FIXED_AMOUNT"
 
-                                        : "Disabled"
+                                            ? `₹${Number(
+                                                pricing.paymentConfiguration
+                                                    .advancePaymentValue
+                                            ).toLocaleString(
+                                                "en-IN"
+                                            )}`
+
+                                            : `${Number(
+                                                pricing.paymentConfiguration
+                                                    .advancePaymentValue
+                                            )}%`
+
+                                        : "Not Configured"
                                 }
 
                             </strong>
