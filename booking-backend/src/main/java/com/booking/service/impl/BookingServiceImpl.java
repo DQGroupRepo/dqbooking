@@ -45,6 +45,7 @@ public class BookingServiceImpl implements BookingService
     private final UserRepository vendorRepository;
 
     private final AuthenticatedUserService authenticatedUserService;
+    private final VendorAccessService vendorAccessService;
 
     private final BookingNumberGenerator bookingNumberGenerator;
 
@@ -1021,9 +1022,9 @@ public class BookingServiceImpl implements BookingService
             );
 
 
-            booking.setCreatedAt(
+            /*booking.setCreatedTs(
                     LocalDateTime.now()
-            );
+            );*/
 
 
             /*
@@ -1157,16 +1158,12 @@ public class BookingServiceImpl implements BookingService
     public List<BookingResponse> getVendorBookings() {
 
         String vendorId =
-                authenticatedUserService
-                        .getCurrentVendor()
-                        .getId();
+                vendorAccessService.getEffectiveVendorId();
 
-        return bookingRepository
-                .findByVendorId(vendorId)
-                .stream()
-                .map(bookingMapper::toResponse)
-                .toList();
+        List<Booking> bookings =
+                bookingRepository.findByVendorId(vendorId);
 
+        return enrichBookingResponses(bookings);
     }
 
     /*
@@ -1262,24 +1259,28 @@ public class BookingServiceImpl implements BookingService
     @Override
     public List<BookingResponse> getServiceBookings(String serviceId) {
 
-        String vendorId = authenticatedUserService
-                .getCurrentVendor()
-                .getId();
+        String vendorId =
+                vendorAccessService.getEffectiveVendorId();
 
-        VendorService service = vendorServiceRepository
-                .findById(serviceId)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException("Service not found"));
+        VendorService service =
+                vendorServiceRepository
+                        .findById(serviceId)
+                        .orElseThrow(() ->
+                                new ResourceNotFoundException(
+                                        "Service not found"
+                                )
+                        );
 
-        if (!service.getVendorId().equals(vendorId)) {
-            throw new AccessDeniedException("Access denied.");
+        if (!vendorId.equals(service.getVendorId())) {
+            throw new AccessDeniedException(
+                    "Access denied."
+            );
         }
 
-        return bookingRepository
-                .findByServiceId(serviceId)
-                .stream()
-                .map(bookingMapper::toResponse)
-                .toList();
+        List<Booking> bookings =
+                bookingRepository.findByServiceId(serviceId);
+
+        return enrichBookingResponses(bookings);
     }
 
     private BookingPricingSnapshot createPricingSnapshot(
@@ -1801,7 +1802,7 @@ public class BookingServiceImpl implements BookingService
 
                 .bookingDate(
                         booking
-                                .getCreatedAt()
+                                .getCreatedTs()
                                 .toLocalDate()
                 )
 

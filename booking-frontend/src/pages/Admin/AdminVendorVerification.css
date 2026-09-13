@@ -843,3 +843,93 @@
     }
 
 }
+
+/* =========================================
+   VENDOR SUPPORT MODE
+   ========================================= */
+
+.admin-support-section {
+    margin: 20px 0;
+    padding: 18px;
+    border: 1px solid #dbe3ef;
+    border-radius: 12px;
+    background: #f8fafc;
+}
+
+
+.admin-support-info {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+}
+
+
+.admin-support-info h3 {
+    margin: 0 0 5px;
+    font-size: 16px;
+    font-weight: 700;
+}
+
+
+.admin-support-info p {
+    margin: 0;
+    max-width: 650px;
+    color: #64748b;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+
+.admin-support-button {
+    flex-shrink: 0;
+    padding: 9px 16px;
+    border: 1px solid #2563eb;
+    border-radius: 8px;
+    background: #2563eb;
+    color: #ffffff;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition:
+        background 0.2s ease,
+        border-color 0.2s ease,
+        opacity 0.2s ease;
+}
+
+
+.admin-support-button:hover {
+    background: #1d4ed8;
+    border-color: #1d4ed8;
+}
+
+
+.admin-support-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+
+.admin-support-warning {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid #e2e8f0;
+    color: #64748b;
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+
+@media (max-width: 700px) {
+
+    .admin-support-info {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+
+    .admin-support-button {
+        width: 100%;
+    }
+
+}

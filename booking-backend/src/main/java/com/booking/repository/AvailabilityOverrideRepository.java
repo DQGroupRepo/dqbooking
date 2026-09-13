@@ -10,7 +10,7 @@ import java.util.Optional;
 public interface AvailabilityOverrideRepository
         extends MongoRepository<AvailabilityOverride, String> {
 
-    List<AvailabilityOverride> findByServiceIdAndDateOrderByCreatedAtAsc(
+    List<AvailabilityOverride> findByServiceIdAndDateOrderByCreatedTsAsc(
             String serviceId,
             LocalDate date
     );

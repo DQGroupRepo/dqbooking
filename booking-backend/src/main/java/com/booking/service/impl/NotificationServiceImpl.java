@@ -31,7 +31,7 @@ public class NotificationServiceImpl
                 authenticatedUserService.getCurrentUser();
 
         return notificationRepository
-                .findByUserIdOrderByCreatedAtDesc(user.getId())
+                .findByUserIdOrderByCreatedTsDesc(user.getId())
                 .stream()
                 .map(notificationMapper::toResponse)
                 .toList();

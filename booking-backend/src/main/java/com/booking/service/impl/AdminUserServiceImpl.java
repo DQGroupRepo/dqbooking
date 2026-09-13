@@ -64,7 +64,7 @@ public class AdminUserServiceImpl
 
                 .lastLogin(user.getLastLogin())
 
-                .createdAt(user.getCreatedAt())
+                .createdAt(user.getCreatedTs())
 
                 .active(user.getActive())
 

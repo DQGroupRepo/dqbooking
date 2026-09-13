@@ -420,7 +420,7 @@ const AppRoutes = () => {
                     element={
                         <ProtectedRoute
                             allowedRoles={
-                                ["VENDOR"]
+                                ["VENDOR", "ADMIN"]
                             }
                         />
                     }

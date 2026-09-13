@@ -106,11 +106,15 @@ public class SecurityConfig {
 
                         .requestMatchers(
                                 "/api/vendor/**",
+                                "/api/bookings/vendor",
+                                "/api/bundles/vendor"
+                        )
+                        .hasAnyRole("VENDOR", "ADMIN")
+
+                        .requestMatchers(
                                 "/api/bookings/**"
                         )
                         .hasRole("VENDOR")
-
-
                         // --------------------------------
                         // Customer APIs
                         // --------------------------------

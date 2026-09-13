@@ -1,7 +1,5 @@
 package com.booking.service.impl;
 
-import com.booking.dto.pricing.VendorServicePricingRequest;
-import com.booking.dto.pricing.PaymentConfigurationRequest;
 import com.booking.dto.service.ServicePackageRequest;
 import com.booking.dto.vendorservice.VendorServiceRequest;
 import com.booking.dto.vendorservice.VendorServiceResponse;
@@ -12,39 +10,76 @@ import com.booking.model.User;
 import com.booking.model.VendorService;
 import com.booking.model.embedded.ServicePackage;
 import com.booking.model.enums.ServiceModerationStatus;
+import com.booking.repository.UserRepository;
 import com.booking.repository.VendorServiceRepository;
-import com.booking.service.AuthenticatedUserService;
-import com.booking.service.VendorServicePricingService;
-import com.booking.service.storage.StorageService;
+import com.booking.service.VendorAccessService;
 import com.booking.service.VendorOfferingService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
-public class VendorOfferingServiceImpl implements VendorOfferingService {
+public class VendorOfferingServiceImpl
+        implements VendorOfferingService {
+
 
     private final VendorServiceRepository vendorServiceRepository;
-    private final AuthenticatedUserService authenticatedUserService;
-    private final VendorServiceMapper vendorServiceMapper;
-    private final StorageService storageService;
-    private final VendorServicePricingService vendorServicePricingService;
 
+    private final UserRepository userRepository;
+
+    private final VendorAccessService vendorAccessService;
+
+    private final VendorServiceMapper vendorServiceMapper;
+
+
+    /*
+     * =========================================
+     * CREATE SERVICE
+     * =========================================
+     */
 
     @Override
     public VendorServiceResponse createService(
             VendorServiceRequest request) {
 
+
+        String vendorId =
+                vendorAccessService
+                        .getEffectiveVendorId();
+
+
+        /*
+         * Load the actual vendor user.
+         *
+         * This is important because the mapper
+         * expects the vendor User object.
+         */
+
         User vendor =
-                authenticatedUserService.getCurrentVendor();
+                userRepository
+                        .findById(vendorId)
+                        .orElseThrow(() ->
+                                new VendorServiceNotFoundException(
+                                        "Vendor not found"
+                                )
+                        );
+
 
         VendorService vendorService =
-                vendorServiceMapper.toEntity(request, vendor);
+                vendorServiceMapper.toEntity(
+                        request,
+                        vendor
+                );
+
+
+        /*
+         * Newly created services require
+         * admin moderation.
+         */
 
         vendorService.setActive(false);
 
@@ -52,72 +87,179 @@ public class VendorOfferingServiceImpl implements VendorOfferingService {
                 ServiceModerationStatus.PENDING
         );
 
-        vendorService =
-                vendorServiceRepository.save(vendorService);
 
-        return vendorServiceMapper.toResponse(vendorService);
+        vendorService =
+                vendorServiceRepository.save(
+                        vendorService
+                );
+
+
+        return vendorServiceMapper.toResponse(
+                vendorService
+        );
+
     }
 
+
+    /*
+     * =========================================
+     * UPDATE SERVICE
+     * =========================================
+     */
+
     @Override
-    public VendorServiceResponse updateService(String serviceId,
-                                               VendorServiceRequest request) {
+    public VendorServiceResponse updateService(
+            String serviceId,
+            VendorServiceRequest request) {
 
-        User vendor = authenticatedUserService.getCurrentVendor();
 
-        VendorService vendorService = vendorServiceRepository
-                .findByIdAndVendorIdAndDeletedFalse(serviceId, vendor.getId())
-                .orElseThrow(() ->
-                        new VendorServiceNotFoundException("Service not found"));
+        String vendorId =
+                vendorAccessService
+                        .getEffectiveVendorId();
 
-        vendorServiceMapper.updateEntity(vendorService, request);
+
+        VendorService vendorService =
+                vendorServiceRepository
+                        .findByIdAndVendorIdAndDeletedFalse(
+                                serviceId,
+                                vendorId
+                        )
+                        .orElseThrow(() ->
+                                new VendorServiceNotFoundException(
+                                        "Service not found"
+                                )
+                        );
+
+
+        vendorServiceMapper.updateEntity(
+                vendorService,
+                request
+        );
+
+
         VendorService savedService =
                 vendorServiceRepository.save(
                         vendorService
                 );
 
-        return vendorServiceMapper.toResponse(savedService);
+
+        return vendorServiceMapper.toResponse(
+                savedService
+        );
+
     }
 
+
+    /*
+     * =========================================
+     * DELETE SERVICE
+     * =========================================
+     */
+
     @Override
-    public void deleteService(String serviceId) {
+    public void deleteService(
+            String serviceId) {
 
-        User vendor = authenticatedUserService.getCurrentVendor();
 
-        VendorService vendorService = vendorServiceRepository
-                .findByIdAndVendorIdAndDeletedFalse(serviceId, vendor.getId())
-                .orElseThrow(() ->
-                        new VendorServiceNotFoundException("Service not found"));
+        String vendorId =
+                vendorAccessService
+                        .getEffectiveVendorId();
+
+
+        VendorService vendorService =
+                vendorServiceRepository
+                        .findByIdAndVendorIdAndDeletedFalse(
+                                serviceId,
+                                vendorId
+                        )
+                        .orElseThrow(() ->
+                                new VendorServiceNotFoundException(
+                                        "Service not found"
+                                )
+                        );
+
 
         vendorService.setDeleted(true);
+
         vendorService.setActive(false);
 
-        vendorServiceRepository.save(vendorService);
+
+        vendorServiceRepository.save(
+                vendorService
+        );
+
     }
+
+
+    /*
+     * =========================================
+     * GET SERVICE
+     * =========================================
+     */
 
     @Override
-    public VendorServiceResponse getServiceById(String serviceId) {
+    public VendorServiceResponse getServiceById(
+            String serviceId) {
 
-        User vendor = authenticatedUserService.getCurrentVendor();
 
-        VendorService vendorService = vendorServiceRepository
-                .findByIdAndVendorIdAndDeletedFalse(serviceId, vendor.getId())
-                .orElseThrow(() ->
-                        new VendorServiceNotFoundException("Service not found"));
+        String vendorId =
+                vendorAccessService
+                        .getEffectiveVendorId();
 
-        return vendorServiceMapper.toResponse(vendorService);
+
+        VendorService vendorService =
+                vendorServiceRepository
+                        .findByIdAndVendorIdAndDeletedFalse(
+                                serviceId,
+                                vendorId
+                        )
+                        .orElseThrow(() ->
+                                new VendorServiceNotFoundException(
+                                        "Service not found"
+                                )
+                        );
+
+
+        return vendorServiceMapper.toResponse(
+                vendorService
+        );
+
     }
+
+
+    /*
+     * =========================================
+     * GET VENDOR SERVICES
+     * =========================================
+     */
 
     @Override
     public List<VendorServiceResponse> getVendorServices() {
 
-        User vendor = authenticatedUserService.getCurrentVendor();
+
+        String vendorId =
+                vendorAccessService
+                        .getEffectiveVendorId();
+
 
         return vendorServiceRepository
-                .findByVendorIdAndDeletedFalse(vendor.getId())
+                .findByVendorIdAndDeletedFalse(
+                        vendorId
+                )
                 .stream()
-                .map(vendorServiceMapper::toResponse)
+                .map(
+                        vendorServiceMapper::toResponse
+                )
                 .toList();
+
     }
+
+
+    /*
+     * =========================================
+     * CHANGE SERVICE STATUS
+     * =========================================
+     */
 
     @Override
     public VendorServiceResponse changeStatus(
@@ -125,14 +267,17 @@ public class VendorOfferingServiceImpl implements VendorOfferingService {
             Boolean active
     ) {
 
-        User vendor =
-                authenticatedUserService.getCurrentVendor();
+
+        String vendorId =
+                vendorAccessService
+                        .getEffectiveVendorId();
+
 
         VendorService vendorService =
                 vendorServiceRepository
                         .findByIdAndVendorIdAndDeletedFalse(
                                 serviceId,
-                                vendor.getId()
+                                vendorId
                         )
                         .orElseThrow(() ->
                                 new VendorServiceNotFoundException(
@@ -143,11 +288,13 @@ public class VendorOfferingServiceImpl implements VendorOfferingService {
 
         /*
          * =========================================
-         * UPDATE VENDOR ACTIVE STATUS
+         * UPDATE ACTIVE STATUS
          * =========================================
          */
 
-        vendorService.setActive(active);
+        vendorService.setActive(
+                active
+        );
 
 
         /*
@@ -173,83 +320,131 @@ public class VendorOfferingServiceImpl implements VendorOfferingService {
 
     }
 
+
+    /*
+     * =========================================
+     * GET BUNDLE SERVICES
+     * =========================================
+     */
+
     @Override
     public List<VendorServiceResponse> getBundleServices(
             String serviceId) {
 
+
+        String vendorId =
+                vendorAccessService
+                        .getEffectiveVendorId();
+
+
+        /*
+         * The selected service must belong to
+         * the vendor currently being operated on.
+         */
+
         VendorService selectedService =
                 vendorServiceRepository
-                        .findByIdAndDeletedFalse(serviceId)
+                        .findByIdAndVendorIdAndDeletedFalse(
+                                serviceId,
+                                vendorId
+                        )
                         .orElseThrow(() ->
                                 new VendorServiceNotFoundException(
                                         "Service not found"
                                 )
                         );
 
+
         return vendorServiceRepository
                 .findByVendorIdAndBundleEnabledTrueAndActiveTrueAndDeletedFalse(
-                        selectedService.getVendorId()
+                        vendorId
                 )
                 .stream()
                 .filter(service ->
-                        !service.getId().equals(serviceId)
+                        !service.getId().equals(
+                                selectedService.getId()
+                        )
                 )
-                .map(vendorServiceMapper::toResponse)
+                .map(
+                        vendorServiceMapper::toResponse
+                )
                 .toList();
+
     }
+
+
+    /*
+     * =========================================
+     * PACKAGE VALIDATION
+     * =========================================
+     */
 
     private void validatePackages(
             List<ServicePackageRequest> packages
     ) {
 
-        if (packages == null || packages.isEmpty()) {
+        if (
+                packages == null ||
+                        packages.isEmpty()
+        ) {
+
             return;
+
         }
+
 
         /*
          * Maximum:
+         *
          * SILVER
          * GOLD
          * PREMIUM
          */
-        if (packages.size() > 3) {
+
+        if (
+                packages.size() > 3
+        ) {
 
             throw new IllegalArgumentException(
                     "A service can have a maximum of 3 packages."
             );
+
         }
 
 
         /*
          * Prevent duplicate package types.
-         *
-         * Example:
-         *
-         * SILVER
-         * SILVER
-         *
-         * is invalid.
          */
 
         long distinctTypes =
-                packages.stream()
+                packages
+                        .stream()
                         .map(
-                                ServicePackageRequest
-                                        ::getType
+                                ServicePackageRequest::getType
                         )
                         .distinct()
                         .count();
 
 
         if (
-                distinctTypes != packages.size()
+                distinctTypes !=
+                        packages.size()
         ) {
 
             throw new IllegalArgumentException(
                     "Duplicate package types are not allowed."
             );
+
         }
+
     }
+
+
+    /*
+     * =========================================
+     * MAP NEW PACKAGES
+     * =========================================
+     */
 
     private List<ServicePackage> mapPackages(
             List<ServicePackageRequest> requests
@@ -260,7 +455,8 @@ public class VendorOfferingServiceImpl implements VendorOfferingService {
                         requests.isEmpty()
         ) {
 
-            return new java.util.ArrayList<>();
+            return new ArrayList<>();
+
         }
 
 
@@ -273,8 +469,7 @@ public class VendorOfferingServiceImpl implements VendorOfferingService {
 
 
                     servicePackage.setId(
-                            java.util.UUID
-                                    .randomUUID()
+                            UUID.randomUUID()
                                     .toString()
                     );
 
@@ -291,8 +486,10 @@ public class VendorOfferingServiceImpl implements VendorOfferingService {
 
                     servicePackage.setFeatures(
                             request.getFeatures() == null
-                                    ? new java.util.ArrayList<>()
-                                    : new java.util.ArrayList<>(
+
+                                    ? new ArrayList<>()
+
+                                    : new ArrayList<>(
                                     request.getFeatures()
                             )
                     );
@@ -307,7 +504,15 @@ public class VendorOfferingServiceImpl implements VendorOfferingService {
 
                 })
                 .toList();
+
     }
+
+
+    /*
+     * =========================================
+     * MAP UPDATED PACKAGES
+     * =========================================
+     */
 
     private List<ServicePackage> mapUpdatedPackages(
             List<ServicePackageRequest> requests,
@@ -319,7 +524,8 @@ public class VendorOfferingServiceImpl implements VendorOfferingService {
                         requests.isEmpty()
         ) {
 
-            return new java.util.ArrayList<>();
+            return new ArrayList<>();
+
         }
 
 
@@ -328,7 +534,8 @@ public class VendorOfferingServiceImpl implements VendorOfferingService {
         ) {
 
             existingPackages =
-                    new java.util.ArrayList<>();
+                    new ArrayList<>();
+
         }
 
 
@@ -355,6 +562,7 @@ public class VendorOfferingServiceImpl implements VendorOfferingService {
 
                     ServicePackage servicePackage;
 
+
                     if (
                             existingPackage != null
                     ) {
@@ -367,9 +575,9 @@ public class VendorOfferingServiceImpl implements VendorOfferingService {
                         servicePackage =
                                 new ServicePackage();
 
+
                         servicePackage.setId(
-                                java.util.UUID
-                                        .randomUUID()
+                                UUID.randomUUID()
                                         .toString()
                         );
 
@@ -388,8 +596,10 @@ public class VendorOfferingServiceImpl implements VendorOfferingService {
 
                     servicePackage.setFeatures(
                             request.getFeatures() == null
-                                    ? new java.util.ArrayList<>()
-                                    : new java.util.ArrayList<>(
+
+                                    ? new ArrayList<>()
+
+                                    : new ArrayList<>(
                                     request.getFeatures()
                             )
                     );
@@ -404,7 +614,15 @@ public class VendorOfferingServiceImpl implements VendorOfferingService {
 
                 })
                 .toList();
+
     }
+
+
+    /*
+     * =========================================
+     * UPDATE PACKAGES
+     * =========================================
+     */
 
     @Override
     public VendorServiceResponse updatePackages(
@@ -412,9 +630,26 @@ public class VendorOfferingServiceImpl implements VendorOfferingService {
             List<ServicePackageRequest> packages
     ) {
 
+
+        String vendorId =
+                vendorAccessService
+                        .getEffectiveVendorId();
+
+
+        /*
+         * IMPORTANT:
+         *
+         * Do not allow an admin in support mode
+         * to update a service belonging to another
+         * vendor simply by knowing its serviceId.
+         */
+
         VendorService service =
                 vendorServiceRepository
-                        .findById(serviceId)
+                        .findByIdAndVendorIdAndDeletedFalse(
+                                serviceId,
+                                vendorId
+                        )
                         .orElseThrow(() ->
                                 new ResourceNotFoundException(
                                         "Service not found."
@@ -435,15 +670,12 @@ public class VendorOfferingServiceImpl implements VendorOfferingService {
         );
 
 
-        service.setUpdatedAt(
-                LocalDateTime.now()
-        );
-
-
         return vendorServiceMapper.toResponse(
                 vendorServiceRepository.save(
                         service
                 )
         );
+
     }
+
 }

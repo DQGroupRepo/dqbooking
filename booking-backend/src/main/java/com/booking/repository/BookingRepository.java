@@ -26,17 +26,17 @@ public interface BookingRepository extends MongoRepository<Booking, String> {
             LocalDate end
     );
 
-    List<Booking> findTop5ByVendorIdOrderByCreatedAtDesc(
+    List<Booking> findTop5ByVendorIdOrderByCreatedTsDesc(
             String vendorId
     );
 
     List<Booking> findByServiceId(String serviceId);
 
-    List<Booking> findByCustomerIdOrderByCreatedAtDesc(
+    List<Booking> findByCustomerIdOrderByCreatedTsDesc(
             String customerId
     );
 
-    List<Booking> findTop5ByOrderByCreatedAtDesc();
+    List<Booking> findTop5ByOrderByCreatedTsDesc();
 
     List<Booking> findByBookingGroupId(
             String bookingGroupId

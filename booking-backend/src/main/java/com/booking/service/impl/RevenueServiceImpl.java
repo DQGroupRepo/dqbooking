@@ -6,8 +6,8 @@ import com.booking.dto.revenue.RevenueSummaryResponse;
 import com.booking.model.Booking;
 import com.booking.model.User;
 import com.booking.repository.BookingRepository;
-import com.booking.service.AuthenticatedUserService;
 import com.booking.service.RevenueService;
+import com.booking.service.VendorAccessService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -25,16 +25,16 @@ public class RevenueServiceImpl implements RevenueService {
 
     private final BookingRepository bookingRepository;
 
-    private final AuthenticatedUserService authenticatedUserService;
+    private final VendorAccessService vendorAccessService;
 
     @Override
     public RevenueSummaryResponse getSummary() {
 
-        User vendor =
-                authenticatedUserService.getCurrentVendor();
+        String vendorId =
+                vendorAccessService.getEffectiveVendorId();
 
         List<Booking> bookings =
-                bookingRepository.findByVendorId(vendor.getId());
+                bookingRepository.findByVendorId(vendorId);
 
         BigDecimal totalRevenue = BigDecimal.ZERO;
         BigDecimal pendingPayments = BigDecimal.ZERO;
@@ -91,11 +91,11 @@ public class RevenueServiceImpl implements RevenueService {
     @Override
     public List<MonthlyRevenueResponse> getMonthlyRevenue() {
 
-        User vendor =
-                authenticatedUserService.getCurrentVendor();
+        String vendorId =
+                vendorAccessService.getEffectiveVendorId();
 
         List<Booking> bookings =
-                bookingRepository.findByVendorId(vendor.getId());
+                bookingRepository.findByVendorId(vendorId);
 
         return List.of(Month.values()).stream()
                 .map(month -> {
@@ -123,12 +123,12 @@ public class RevenueServiceImpl implements RevenueService {
     @Override
     public List<PaymentHistoryResponse> getPaymentHistory() {
 
-        User vendor =
-                authenticatedUserService.getCurrentVendor();
+        String vendorId =
+                vendorAccessService.getEffectiveVendorId();
 
         return bookingRepository
-                .findTop5ByVendorIdOrderByCreatedAtDesc(
-                        vendor.getId())
+                .findTop5ByVendorIdOrderByCreatedTsDesc(
+                        vendorId)
                 .stream()
                 .map(this::mapPayment)
                 .toList();

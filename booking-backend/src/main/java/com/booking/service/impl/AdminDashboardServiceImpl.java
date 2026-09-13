@@ -177,7 +177,7 @@ public class AdminDashboardServiceImpl
                 recentBookings =
 
                 bookingRepository
-                        .findTop5ByOrderByCreatedAtDesc()
+                        .findTop5ByOrderByCreatedTsDesc()
 
                         .stream()
 

@@ -11,6 +11,7 @@ import com.booking.repository.*;
 import com.booking.service.AuthenticatedUserService;
 import com.booking.service.NotificationService;
 import com.booking.service.ReviewService;
+import com.booking.service.VendorAccessService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
@@ -36,6 +37,7 @@ public class ReviewServiceImpl
     private final ReviewHelper reviewHelper;
 
     private final AuthenticatedUserService authenticatedUserService;
+    private final VendorAccessService vendorAccessService;
 
     private final NotificationService notificationService;
 
@@ -221,8 +223,9 @@ public class ReviewServiceImpl
             ReviewReplyRequest request
     ) {
 
-        User vendor =
-                authenticatedUserService.getCurrentVendor();
+        String vendorId =
+                vendorAccessService
+                        .getEffectiveVendorId();
 
         Review review =
                 reviewRepository.findById(reviewId)
@@ -231,7 +234,7 @@ public class ReviewServiceImpl
                                         "Review not found"
                                 ));
 
-        if (!review.getVendorId().equals(vendor.getId())) {
+        if (!review.getVendorId().equals(vendorId)) {
 
             throw new ReviewNotAllowedException(
                     "You cannot reply to this review."
@@ -253,13 +256,14 @@ public class ReviewServiceImpl
     @Override
     public List<ReviewResponse> getVendorReviews() {
 
-        User vendor =
-                authenticatedUserService.getCurrentVendor();
+        String vendorId =
+                vendorAccessService
+                        .getEffectiveVendorId();
 
         return reviewRepository
 
                 .findByVendorIdAndDeletedFalse(
-                        vendor.getId()
+                        vendorId
                 )
 
                 .stream()
@@ -293,25 +297,30 @@ public class ReviewServiceImpl
     @Override
     public List<ReviewResponse> getServiceReviews(String serviceId) {
 
-        String vendorId = authenticatedUserService
-                .getCurrentVendor()
-                .getId();
+        String vendorId =
+                vendorAccessService.getEffectiveVendorId();
 
-        VendorService service = vendorServiceRepository
-                .findById(serviceId)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException("Service not found"));
+        VendorService service =
+                vendorServiceRepository
+                        .findById(serviceId)
+                        .orElseThrow(() ->
+                                new ResourceNotFoundException(
+                                        "Service not found"
+                                )
+                        );
 
-        if (!service.getVendorId().equals(vendorId)) {
-            throw new AccessDeniedException("Access denied.");
+        if (!vendorId.equals(service.getVendorId())) {
+
+            throw new AccessDeniedException(
+                    "Access denied."
+            );
         }
 
         return reviewRepository
                 .findByServiceId(serviceId)
                 .stream()
-                .map(reviewMapper::toResponse)
+                .map(this::buildReviewResponse)
                 .toList();
-
     }
 
     private ReviewResponse buildReviewResponse(

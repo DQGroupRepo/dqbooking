@@ -8,13 +8,12 @@ import com.booking.model.Bundle;
 import com.booking.model.VendorService;
 import com.booking.repository.BundleRepository;
 import com.booking.repository.VendorServiceRepository;
-import com.booking.service.AuthenticatedUserService;
 import com.booking.service.BundleService;
+import com.booking.service.VendorAccessService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -26,7 +25,7 @@ public class BundleServiceImpl
 
     private final VendorServiceRepository vendorServiceRepository;
 
-    private final AuthenticatedUserService authenticatedUserService;
+    private final VendorAccessService vendorAccessService;
 
 
     @Override
@@ -35,29 +34,20 @@ public class BundleServiceImpl
     ) {
 
         String vendorId =
-                authenticatedUserService
-                        .getCurrentVendor()
-                        .getId();
+                vendorAccessService.getEffectiveVendorId();
 
         validateServicesBelongToVendor(
                 request.getServiceIds(),
                 vendorId
         );
 
-        Bundle bundle =
-                new Bundle();
+        Bundle bundle = new Bundle();
 
-        bundle.setVendorId(
-                vendorId
-        );
+        bundle.setVendorId(vendorId);
 
-        bundle.setName(
-                request.getName()
-        );
+        bundle.setName(request.getName());
 
-        bundle.setDescription(
-                request.getDescription()
-        );
+        bundle.setDescription(request.getDescription());
 
         bundle.setServiceIds(
                 request.getServiceIds()
@@ -75,17 +65,7 @@ public class BundleServiceImpl
                 request.getDiscountValue()
         );
 
-        bundle.setActive(
-                true
-        );
-
-        bundle.setCreatedAt(
-                LocalDateTime.now()
-        );
-
-        bundle.setUpdatedAt(
-                LocalDateTime.now()
-        );
+        bundle.setActive(true);
 
         return toResponse(
                 bundleRepository.save(bundle)
@@ -99,9 +79,7 @@ public class BundleServiceImpl
     ) {
 
         String vendorId =
-                authenticatedUserService
-                        .getCurrentVendor()
-                        .getId();
+                vendorAccessService.getEffectiveVendorId();
 
         Bundle bundle =
                 bundleRepository
@@ -123,9 +101,7 @@ public class BundleServiceImpl
     public List<BundleResponse> getVendorBundles() {
 
         String vendorId =
-                authenticatedUserService
-                        .getCurrentVendor()
-                        .getId();
+                vendorAccessService.getEffectiveVendorId();
 
         return bundleRepository
                 .findByVendorId(vendorId)
@@ -142,9 +118,7 @@ public class BundleServiceImpl
     ) {
 
         String vendorId =
-                authenticatedUserService
-                        .getCurrentVendor()
-                        .getId();
+                vendorAccessService.getEffectiveVendorId();
 
         Bundle bundle =
                 bundleRepository
@@ -163,9 +137,7 @@ public class BundleServiceImpl
                 vendorId
         );
 
-        bundle.setName(
-                request.getName()
-        );
+        bundle.setName(request.getName());
 
         bundle.setDescription(
                 request.getDescription()
@@ -191,10 +163,6 @@ public class BundleServiceImpl
                 request.isActive()
         );
 
-        bundle.setUpdatedAt(
-                LocalDateTime.now()
-        );
-
         return toResponse(
                 bundleRepository.save(bundle)
         );
@@ -207,9 +175,7 @@ public class BundleServiceImpl
     ) {
 
         String vendorId =
-                authenticatedUserService
-                        .getCurrentVendor()
-                        .getId();
+                vendorAccessService.getEffectiveVendorId();
 
         Bundle bundle =
                 bundleRepository
@@ -223,17 +189,7 @@ public class BundleServiceImpl
                                 )
                         );
 
-        /*
-         * Soft delete.
-         *
-         * We don't physically remove the document.
-         */
-
         bundle.setActive(false);
-
-        bundle.setUpdatedAt(
-                LocalDateTime.now()
-        );
 
         bundleRepository.save(bundle);
     }
@@ -269,9 +225,7 @@ public class BundleServiceImpl
     ) {
 
         String vendorId =
-                authenticatedUserService
-                        .getCurrentVendor()
-                        .getId();
+                vendorAccessService.getEffectiveVendorId();
 
         Bundle bundle =
                 bundleRepository
@@ -286,10 +240,6 @@ public class BundleServiceImpl
                         );
 
         bundle.setActive(active);
-
-        bundle.setUpdatedAt(
-                LocalDateTime.now()
-        );
 
         bundleRepository.save(bundle);
     }
@@ -338,49 +288,19 @@ public class BundleServiceImpl
 
         return BundleResponse
                 .builder()
-
-                .id(
-                        bundle.getId()
-                )
-
-                .vendorId(
-                        bundle.getVendorId()
-                )
-
-                .name(
-                        bundle.getName()
-                )
-
-                .description(
-                        bundle.getDescription()
-                )
-
-                .serviceIds(
-                        bundle.getServiceIds()
-                )
-
-                .discountType(
-                        bundle.getDiscountType()
-                )
-
-                .discountValue(
-                        bundle.getDiscountValue()
-                )
-
-                .active(
-                        bundle.isActive()
-                )
-
-                .createdAt(
-                        bundle.getCreatedAt()
-                )
-
-                .updatedAt(
-                        bundle.getUpdatedAt()
-                )
-
+                .id(bundle.getId())
+                .vendorId(bundle.getVendorId())
+                .name(bundle.getName())
+                .description(bundle.getDescription())
+                .serviceIds(bundle.getServiceIds())
+                .discountType(bundle.getDiscountType())
+                .discountValue(bundle.getDiscountValue())
+                .active(bundle.isActive())
+                .createdAt(bundle.getCreatedTs())
+                .updatedAt(bundle.getLastUpdateTs())
                 .build();
     }
+
 
     @Override
     public List<BundleResponse> getBundlesForService(
