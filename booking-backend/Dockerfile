@@ -1,14 +1,19 @@
-# Use a production-ready OpenJDK distribution
-FROM eclipse-temurin:21-jdk-jammy
+FROM maven:3.9.9-eclipse-temurin-21 AS build
+WORKDIR /src
 
-# Set the working directory inside the container
+COPY pom.xml ./
+COPY .mvn .mvn
+COPY mvnw .
+COPY mvnw.cmd .
+COPY src ./src
+
+RUN chmod +x mvnw
+RUN ./mvnw clean package -DskipTests
+
+FROM eclipse-temurin:21-jdk-jammy
 WORKDIR /app
 
-# Copy your compiled JAR file into the container
-COPY target/my-application.jar app.jar
+COPY --from=build /src/target/*.jar app.jar
 
-# Expose the application port
 EXPOSE 8080
-
-# Configure best-practice JVM flags for container environments
-ENTRYPOINT ["java", "-XX:+UseContainerSupport", "-XX:MaxRAMPercentage=75.0", "-jar", "app.jar"
+ENTRYPOINT ["java", "-XX:+UseContainerSupport", "-XX:MaxRAMPercentage=75.0", "-jar", "app.jar"]
