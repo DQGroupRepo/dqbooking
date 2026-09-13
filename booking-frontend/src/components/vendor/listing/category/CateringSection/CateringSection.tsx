@@ -157,7 +157,7 @@ export default function CateringSection({
 
                 options={cateringOptions}
 
-                values={formData}
+                values={formData as unknown as Record<string, boolean>}
 
                 onChange={handleChange}
 

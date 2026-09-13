@@ -9,7 +9,7 @@ import {
 } from "../context/AuthContext";
 
 import VendorSidebar from "../components/vendor/layout/Sidebar/VendorSidebar";
-import VendorTopBar from "../components/vendor/layout/TopBar/VendorTopbar";
+import VendorTopBar from "../components/vendor/layout/Topbar/VendorTopbar";
 
 import "./VendorLayout.css";
 

@@ -1,19 +1,15 @@
 export interface RecentBooking {
+  id?: string;
 
-    bookingId: string;
+  bookingId: string;
 
-    customerName: string;
+  customerName: string;
 
-    serviceName: string;
+  serviceName: string;
 
-    eventDate: string;
+  eventDate: string;
 
-    status:
-        | "PENDING"
-        | "CONFIRMED"
-        | "COMPLETED"
-        | "CANCELLED";
+  status: "PENDING" | "CONFIRMED" | "COMPLETED" | "CANCELLED";
 
-    amount: number;
-
+  amount: number;
 }

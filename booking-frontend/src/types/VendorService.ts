@@ -2,41 +2,48 @@ import type { ContactInfo } from "./ContactInfo";
 import type { Availability } from "./Availability";
 import type { BookingSettings } from "./BookingSettings";
 import type { ServiceAttribute } from "./ServiceAttribute";
+import type { ServicePackage } from "./ServicePackage";
 
 export interface VendorService {
+  id: string;
 
-    id: string;
+  serviceId?: string;
 
-    serviceName: string;
+  serviceName: string;
 
-    category: string;
+  category: string;
 
-    description: string;
+  description: string;
 
-    price: number;
+  price: number;
 
-    capacity: number;
+  capacity: number;
 
-    durationHours: number;
+  durationHours: number;
 
-    active: boolean;
+  active: boolean;
 
-    featured: boolean;
+  featured: boolean;
 
-    pricingConfigured: boolean;
+  pricingConfigured: boolean;
 
-    contactInfo: ContactInfo;
+  contactInfo: ContactInfo;
 
-    availability: Availability;
+  availability: Availability;
 
-    bookingSettings: BookingSettings;
+  bookingSettings: BookingSettings;
 
-    imageUrls?: string[];
+  imageUrls?: string[];
 
-    amenities: string[];
+  amenities: string[];
 
-    attributes: ServiceAttribute[];
+  attributes: ServiceAttribute[];
 
-    location: string;
+  location: string;
 
+  rating?: number;
+
+  reviewCount?: number;
+
+  packages?: ServicePackage[];
 }

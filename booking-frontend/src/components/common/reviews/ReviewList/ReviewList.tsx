@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 
 import VendorReviewService from "../../../../services/VendorReviewService";
-import type { VendorReview } from "../../../types/VendorReview";
+import type { Review } from "../../../../types/Review";
 
 import styles from "./ReviewList.module.css";
 
@@ -25,7 +25,7 @@ export default function ReviewList({
 
 }: Props) {
 
-    const [reviews, setReviews] = useState<VendorReview[]>([]);
+    const [reviews, setReviews] = useState<Review[]>([]);
 
     useEffect(() => {
 

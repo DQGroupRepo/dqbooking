@@ -1,37 +1,39 @@
 export interface RevenueSummary {
+  thisMonth: number;
 
-    thisMonth: number;
+  totalRevenue: number;
 
-    totalRevenue: number;
+  pendingPayments: number;
 
-    pendingPayments: number;
-
-    averageBookingValue: number;
-
+  averageBookingValue: number;
 }
 
 export interface MonthlyRevenue {
+  month: string;
 
-    month: string;
-
-    revenue: number;
-
+  revenue: number;
 }
 
 export interface PaymentHistory {
+  id?: string;
 
-    bookingNumber: string;
+  bookingNumber: string;
 
-    customerName: string;
+  customerName: string;
 
-    serviceName: string;
+  customer?: string;
 
-    totalAmount: number;
+  serviceName: string;
 
-    paidAmount: number;
+  totalAmount: number;
 
-    paymentStatus: string;
+  paidAmount: number;
 
-    eventDate: string;
+  paymentStatus: string;
 
+  eventDate: string;
+
+  date?: string;
+  amount: number;
+  status: string;
 }

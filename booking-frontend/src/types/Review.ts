@@ -1,24 +1,25 @@
 export interface Review {
+  id: string;
 
-    id: string;
+  bookingId: string;
 
-    bookingId: string;
+  rating: number;
 
-    rating: number;
+  comment: string;
 
-    comment: string;
+  vendorReply?: string;
 
-    vendorReply?: string;
+  reviewDate?: string;
 
-    reviewDate?: string;
+  date?: string;
 
-    replyDate?: string;
+  replyDate?: string;
 
-    customerName?: string;
+  customerName?: string;
 
-    customerEmail?: string;
+  customerEmail?: string;
 
-    customerProfileImage?: string;
+  customerProfileImage?: string;
 
-    serviceName?: string;
+  serviceName?: string;
 }

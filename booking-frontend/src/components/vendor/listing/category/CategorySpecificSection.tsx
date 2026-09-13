@@ -116,7 +116,7 @@ export default function CategorySpecificSection({
 
     const amenityList =
         CATEGORY_AMENITIES[
-            normalizedCategory
+        normalizedCategory
         ] ?? [];
 
 
@@ -131,7 +131,7 @@ export default function CategorySpecificSection({
 
 
     switch (
-        normalizedCategory
+    normalizedCategory
     ) {
 
         case "hall":
@@ -202,15 +202,6 @@ export default function CategorySpecificSection({
             categoryContent = (
 
                 <DecorationSection
-
-                    formData={
-                        formData
-                    }
-
-                    handleChange={
-                        handleChange
-                    }
-
                 />
 
             );
@@ -223,15 +214,6 @@ export default function CategorySpecificSection({
             categoryContent = (
 
                 <MakeupSection
-
-                    formData={
-                        formData
-                    }
-
-                    handleChange={
-                        handleChange
-                    }
-
                 />
 
             );

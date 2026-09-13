@@ -76,11 +76,11 @@ export default function PhotographySection({
 
             <SectionHeader
 
-                            title="Photography Details"
+                title="Photography Details"
 
-                            subtitle="Photography package details."
+                subtitle="Photography package details."
 
-                        />
+            />
 
 
 
@@ -90,7 +90,7 @@ export default function PhotographySection({
 
                 options={facilities}
 
-                values={formData}
+                values={formData as unknown as Record<string, boolean>}
 
                 onChange={handleChange}
 

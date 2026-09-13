@@ -7,7 +7,7 @@ import {
 
 import DashboardCard from "../DashboardCard/DashboardCard";
 
-import type { VendorDashboardSummary } from "../../../types/VendorDashboard";
+import type { VendorDashboardSummary } from "../../../../types/VendorDashboard";
 
 import styles from "./DashboardStats.module.css";
 

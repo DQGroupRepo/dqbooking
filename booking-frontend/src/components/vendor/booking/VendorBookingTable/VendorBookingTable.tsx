@@ -1,5 +1,5 @@
 import styles from "./VendorBookingTable.module.css";
-import type { RecentBooking } from "../../../types/RecentBooking";
+import type { RecentBooking } from "../../../../types/RecentBooking";
 
 interface VendorBookingTableProps {
   title: string;

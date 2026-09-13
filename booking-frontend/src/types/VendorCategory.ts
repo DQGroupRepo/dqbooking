@@ -1,15 +1,13 @@
 export interface VendorCategory {
+  id: number;
 
-    id:number;
+  name: string;
 
-    name:string;
+  slug: string;
 
-    slug:string;
+  description: string;
 
-    description:string;
+  icon: string;
 
-    icon:string;
-
-    fields:string[];
-
+  fields?: string[];
 }

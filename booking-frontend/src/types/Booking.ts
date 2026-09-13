@@ -1,59 +1,61 @@
 import type { BookingPricingResponse } from "./BookingPricing";
 
 export interface Booking {
+  id: string;
 
-    id: string;
+  bookingId?: string;
 
-    bookingGroupId?: string;
+  bookingGroupId?: string;
 
-    bookingNumber: string;
+  bookingNumber: string;
 
-    serviceId?: string;
+  serviceId?: string;
 
-    serviceName: string;
+  serviceName: string;
 
-    serviceImage?: string | null;
+  serviceImage?: string | null;
 
-    serviceCategory?: string | null;
+  serviceCategory?: string | null;
 
-    totalAmount: number;
+  totalAmount: number;
 
-    eventDate: string;
+  eventDate: string;
 
-    guestCount: number;
+  guestCount: number;
 
-    status: string;
+  status: string;
 
-    paymentStatus: string;
+  bookingStatus?: string;
 
-    specialRequest?: string;
+  paymentStatus: string;
 
-    eventType: string;
+  specialRequest?: string;
 
-    customerName: string;
+  eventType: string;
 
-    customerPhone: string;
+  customerName: string;
 
-    customerEmail: string;
+  customerPhone: string;
 
-    venue: string;
+  customerEmail: string;
 
-    paidAmount: number;
+  venue: string;
 
-    pricing: BookingPricingResponse;
+  paidAmount: number;
 
-    packageId?: string;
+  pricing: BookingPricingResponse;
 
-    packageType?: "SILVER" | "GOLD" | "PREMIUM";
+  packageId?: string;
 
-    cancellable?: boolean;
+  packageType?: "SILVER" | "GOLD" | "PREMIUM";
 
-    cancelledAt?: string | null;
+  cancellable?: boolean;
 
-    refundPercentage?: number | null;
+  cancelledAt?: string | null;
 
-    cancellationCharge?: number | null;
+  refundPercentage?: number | null;
 
-    refundableAmount?: number | null;
+  cancellationCharge?: number | null;
 
+  refundableAmount?: number | null;
 }

@@ -1,4 +1,4 @@
-import type { BookingStats } from "../../../types/BookingStats";
+import type { BookingStats } from "../../../../types/BookingStats";
 
 import styles from "./BookingGrid.module.css";
 

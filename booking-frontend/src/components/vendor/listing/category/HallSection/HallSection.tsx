@@ -150,7 +150,7 @@ export default function HallSection({
 
                     placeholder="100"
 
-                 />
+                />
 
             </div>
 
@@ -160,7 +160,7 @@ export default function HallSection({
 
                 options={facilities}
 
-                values={formData}
+                values={formData as unknown as Record<string, boolean>}
 
                 onChange={handleChange}
 
