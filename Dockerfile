@@ -1,6 +1,19 @@
-FROM openjdk:11-jre-slim
-COPY --from=backend-builder /app/backend/target/booking-backend.jar /app/backend/booking-backend.jar
-WORKDIR /app/backend
-ENV SPRING_PROFILES_ACTIVE=prod
-VOLUME /tmp
-CMD ["java", "-jar", "booking-backend.jar"]
+FROM maven:3.9.9-eclipse-temurin-21 AS build
+WORKDIR /src
+
+COPY pom.xml ./
+COPY .mvn .mvn
+COPY mvnw .
+COPY mvnw.cmd .
+COPY src ./src
+
+RUN chmod +x mvnw
+RUN ./mvnw clean package -DskipTests
+
+FROM eclipse-temurin:21-jdk-jammy
+WORKDIR /app
+
+COPY --from=build /src/target/*.jar app.jar
+
+EXPOSE 8080
+ENTRYPOINT ["java", "-XX:+UseContainerSupport", "-XX:MaxRAMPercentage=75.0", "-jar", "app.jar"]
