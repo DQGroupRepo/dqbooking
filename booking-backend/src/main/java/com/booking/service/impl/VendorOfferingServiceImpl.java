@@ -9,11 +9,14 @@ import com.booking.mapper.VendorServiceMapper;
 import com.booking.model.User;
 import com.booking.model.VendorService;
 import com.booking.model.embedded.ServicePackage;
+import com.booking.model.enums.Role;
 import com.booking.model.enums.ServiceModerationStatus;
+import com.booking.model.enums.VendorPage;
 import com.booking.repository.UserRepository;
 import com.booking.repository.VendorServiceRepository;
 import com.booking.service.VendorAccessService;
 import com.booking.service.VendorOfferingService;
+import com.booking.service.VendorPermissionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -26,12 +29,13 @@ import java.util.UUID;
 public class VendorOfferingServiceImpl
         implements VendorOfferingService {
 
-
     private final VendorServiceRepository vendorServiceRepository;
 
     private final UserRepository userRepository;
 
     private final VendorAccessService vendorAccessService;
+
+    private final VendorPermissionService vendorPermissionService;
 
     private final VendorServiceMapper vendorServiceMapper;
 
@@ -46,11 +50,13 @@ public class VendorOfferingServiceImpl
     public VendorServiceResponse createService(
             VendorServiceRequest request) {
 
+        vendorPermissionService.checkEdit(
+                VendorPage.SERVICES
+        );
 
         String vendorId =
                 vendorAccessService
                         .getEffectiveVendorId();
-
 
         /*
          * Load the actual vendor user.
@@ -62,9 +68,10 @@ public class VendorOfferingServiceImpl
         User vendor =
                 userRepository
                         .findById(vendorId)
+                        .filter(user -> user.getRole() == Role.VENDOR_ADMIN)
                         .orElseThrow(() ->
-                                new VendorServiceNotFoundException(
-                                        "Vendor not found"
+                                new IllegalStateException(
+                                        "Vendor admin not found."
                                 )
                         );
 
@@ -74,7 +81,6 @@ public class VendorOfferingServiceImpl
                         request,
                         vendor
                 );
-
 
         /*
          * Newly created services require
@@ -87,17 +93,14 @@ public class VendorOfferingServiceImpl
                 ServiceModerationStatus.PENDING
         );
 
-
         vendorService =
                 vendorServiceRepository.save(
                         vendorService
                 );
 
-
         return vendorServiceMapper.toResponse(
                 vendorService
         );
-
     }
 
 
@@ -112,11 +115,13 @@ public class VendorOfferingServiceImpl
             String serviceId,
             VendorServiceRequest request) {
 
+        vendorPermissionService.checkEdit(
+                VendorPage.SERVICES
+        );
 
         String vendorId =
                 vendorAccessService
                         .getEffectiveVendorId();
-
 
         VendorService vendorService =
                 vendorServiceRepository
@@ -130,23 +135,19 @@ public class VendorOfferingServiceImpl
                                 )
                         );
 
-
         vendorServiceMapper.updateEntity(
                 vendorService,
                 request
         );
-
 
         VendorService savedService =
                 vendorServiceRepository.save(
                         vendorService
                 );
 
-
         return vendorServiceMapper.toResponse(
                 savedService
         );
-
     }
 
 
@@ -160,11 +161,13 @@ public class VendorOfferingServiceImpl
     public void deleteService(
             String serviceId) {
 
+        vendorPermissionService.checkEdit(
+                VendorPage.SERVICES
+        );
 
         String vendorId =
                 vendorAccessService
                         .getEffectiveVendorId();
-
 
         VendorService vendorService =
                 vendorServiceRepository
@@ -178,16 +181,13 @@ public class VendorOfferingServiceImpl
                                 )
                         );
 
-
         vendorService.setDeleted(true);
 
         vendorService.setActive(false);
 
-
         vendorServiceRepository.save(
                 vendorService
         );
-
     }
 
 
@@ -201,11 +201,13 @@ public class VendorOfferingServiceImpl
     public VendorServiceResponse getServiceById(
             String serviceId) {
 
+        vendorPermissionService.checkView(
+                VendorPage.SERVICES
+        );
 
         String vendorId =
                 vendorAccessService
                         .getEffectiveVendorId();
-
 
         VendorService vendorService =
                 vendorServiceRepository
@@ -219,11 +221,9 @@ public class VendorOfferingServiceImpl
                                 )
                         );
 
-
         return vendorServiceMapper.toResponse(
                 vendorService
         );
-
     }
 
 
@@ -236,11 +236,13 @@ public class VendorOfferingServiceImpl
     @Override
     public List<VendorServiceResponse> getVendorServices() {
 
+        vendorPermissionService.checkView(
+                VendorPage.SERVICES
+        );
 
         String vendorId =
                 vendorAccessService
                         .getEffectiveVendorId();
-
 
         return vendorServiceRepository
                 .findByVendorIdAndDeletedFalse(
@@ -251,7 +253,6 @@ public class VendorOfferingServiceImpl
                         vendorServiceMapper::toResponse
                 )
                 .toList();
-
     }
 
 
@@ -267,11 +268,13 @@ public class VendorOfferingServiceImpl
             Boolean active
     ) {
 
+        vendorPermissionService.checkEdit(
+                VendorPage.SERVICES
+        );
 
         String vendorId =
                 vendorAccessService
                         .getEffectiveVendorId();
-
 
         VendorService vendorService =
                 vendorServiceRepository
@@ -285,7 +288,6 @@ public class VendorOfferingServiceImpl
                                 )
                         );
 
-
         /*
          * =========================================
          * UPDATE ACTIVE STATUS
@@ -295,7 +297,6 @@ public class VendorOfferingServiceImpl
         vendorService.setActive(
                 active
         );
-
 
         /*
          * =========================================
@@ -307,17 +308,14 @@ public class VendorOfferingServiceImpl
                 ServiceModerationStatus.PENDING
         );
 
-
         vendorService =
                 vendorServiceRepository.save(
                         vendorService
                 );
 
-
         return vendorServiceMapper.toResponse(
                 vendorService
         );
-
     }
 
 
@@ -331,11 +329,13 @@ public class VendorOfferingServiceImpl
     public List<VendorServiceResponse> getBundleServices(
             String serviceId) {
 
+        vendorPermissionService.checkView(
+                VendorPage.SERVICES
+        );
 
         String vendorId =
                 vendorAccessService
                         .getEffectiveVendorId();
-
 
         /*
          * The selected service must belong to
@@ -354,7 +354,6 @@ public class VendorOfferingServiceImpl
                                 )
                         );
 
-
         return vendorServiceRepository
                 .findByVendorIdAndBundleEnabledTrueAndActiveTrueAndDeletedFalse(
                         vendorId
@@ -369,7 +368,6 @@ public class VendorOfferingServiceImpl
                         vendorServiceMapper::toResponse
                 )
                 .toList();
-
     }
 
 
@@ -387,11 +385,8 @@ public class VendorOfferingServiceImpl
                 packages == null ||
                         packages.isEmpty()
         ) {
-
             return;
-
         }
-
 
         /*
          * Maximum:
@@ -404,13 +399,10 @@ public class VendorOfferingServiceImpl
         if (
                 packages.size() > 3
         ) {
-
             throw new IllegalArgumentException(
                     "A service can have a maximum of 3 packages."
             );
-
         }
-
 
         /*
          * Prevent duplicate package types.
@@ -425,18 +417,14 @@ public class VendorOfferingServiceImpl
                         .distinct()
                         .count();
 
-
         if (
                 distinctTypes !=
                         packages.size()
         ) {
-
             throw new IllegalArgumentException(
                     "Duplicate package types are not allowed."
             );
-
         }
-
     }
 
 
@@ -454,11 +442,8 @@ public class VendorOfferingServiceImpl
                 requests == null ||
                         requests.isEmpty()
         ) {
-
             return new ArrayList<>();
-
         }
-
 
         return requests
                 .stream()
@@ -467,22 +452,18 @@ public class VendorOfferingServiceImpl
                     ServicePackage servicePackage =
                             new ServicePackage();
 
-
                     servicePackage.setId(
                             UUID.randomUUID()
                                     .toString()
                     );
 
-
                     servicePackage.setType(
                             request.getType()
                     );
 
-
                     servicePackage.setPrice(
                             request.getPrice()
                     );
-
 
                     servicePackage.setFeatures(
                             request.getFeatures() == null
@@ -494,17 +475,14 @@ public class VendorOfferingServiceImpl
                             )
                     );
 
-
                     servicePackage.setActive(
                             true
                     );
-
 
                     return servicePackage;
 
                 })
                 .toList();
-
     }
 
 
@@ -523,25 +501,18 @@ public class VendorOfferingServiceImpl
                 requests == null ||
                         requests.isEmpty()
         ) {
-
             return new ArrayList<>();
-
         }
-
 
         if (
                 existingPackages == null
         ) {
-
             existingPackages =
                     new ArrayList<>();
-
         }
-
 
         List<ServicePackage> oldPackages =
                 existingPackages;
-
 
         return requests
                 .stream()
@@ -559,9 +530,7 @@ public class VendorOfferingServiceImpl
                                     .findFirst()
                                     .orElse(null);
 
-
                     ServicePackage servicePackage;
-
 
                     if (
                             existingPackage != null
@@ -575,24 +544,19 @@ public class VendorOfferingServiceImpl
                         servicePackage =
                                 new ServicePackage();
 
-
                         servicePackage.setId(
                                 UUID.randomUUID()
                                         .toString()
                         );
-
                     }
-
 
                     servicePackage.setType(
                             request.getType()
                     );
 
-
                     servicePackage.setPrice(
                             request.getPrice()
                     );
-
 
                     servicePackage.setFeatures(
                             request.getFeatures() == null
@@ -604,17 +568,14 @@ public class VendorOfferingServiceImpl
                             )
                     );
 
-
                     servicePackage.setActive(
                             true
                     );
-
 
                     return servicePackage;
 
                 })
                 .toList();
-
     }
 
 
@@ -630,11 +591,13 @@ public class VendorOfferingServiceImpl
             List<ServicePackageRequest> packages
     ) {
 
+        vendorPermissionService.checkEdit(
+                VendorPage.SERVICES
+        );
 
         String vendorId =
                 vendorAccessService
                         .getEffectiveVendorId();
-
 
         /*
          * IMPORTANT:
@@ -656,11 +619,9 @@ public class VendorOfferingServiceImpl
                                 )
                         );
 
-
         validatePackages(
                 packages
         );
-
 
         service.setPackages(
                 mapUpdatedPackages(
@@ -669,13 +630,10 @@ public class VendorOfferingServiceImpl
                 )
         );
 
-
         return vendorServiceMapper.toResponse(
                 vendorServiceRepository.save(
                         service
                 )
         );
-
     }
-
 }

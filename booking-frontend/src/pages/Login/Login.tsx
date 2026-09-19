@@ -109,7 +109,10 @@ const Login = () => {
        */
 
 
-      if (loginData.role === "VENDOR") {
+      if (
+        loginData.role === "VENDOR_ADMIN" ||
+        loginData.role === "VENDOR_USER"
+      ) {
 
         navigate(
           "/vendor/dashboard",

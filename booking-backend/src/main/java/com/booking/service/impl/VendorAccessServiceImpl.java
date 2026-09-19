@@ -1,13 +1,12 @@
 package com.booking.service.impl;
 
 import com.booking.model.User;
+import com.booking.model.enums.Role;
 import com.booking.model.VendorSupportSession;
 import com.booking.repository.VendorSupportSessionRepository;
 import com.booking.service.VendorAccessService;
 import com.booking.util.SecurityUtil;
-
 import lombok.RequiredArgsConstructor;
-
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
@@ -16,10 +15,8 @@ import org.springframework.stereotype.Service;
 public class VendorAccessServiceImpl
         implements VendorAccessService {
 
-
     private final VendorSupportSessionRepository
             supportSessionRepository;
-
 
     @Override
     public String getEffectiveVendorId() {
@@ -30,34 +27,49 @@ public class VendorAccessServiceImpl
 
         /*
          * =========================================
-         * NORMAL VENDOR
+         * VENDOR ADMIN
          * =========================================
+         *
+         * VendorAdmin's own User ID is the
+         * canonical vendor ID.
          */
 
-        if (
-                user.getRole() != null &&
-                        "VENDOR".equalsIgnoreCase(
-                                user.getRole().name()
-                        )
-        ) {
+        if (user.getRole() == Role.VENDOR_ADMIN) {
 
             return user.getId();
-
         }
 
 
         /*
          * =========================================
-         * ADMIN SUPPORT MODE
+         * VENDOR USER
+         * =========================================
+         *
+         * VendorUser stores the owning
+         * VendorAdmin's User ID in vendorId.
+         */
+
+        if (user.getRole() == Role.VENDOR_USER) {
+
+            if (user.getVendorId() == null ||
+                    user.getVendorId().isBlank()) {
+
+                throw new AccessDeniedException(
+                        "Vendor account is not assigned."
+                );
+            }
+
+            return user.getVendorId();
+        }
+
+
+        /*
+         * =========================================
+         * PLATFORM ADMIN SUPPORT MODE
          * =========================================
          */
 
-        if (
-                user.getRole() != null &&
-                        "ADMIN".equalsIgnoreCase(
-                                user.getRole().name()
-                        )
-        ) {
+        if (user.getRole() == Role.ADMIN) {
 
             VendorSupportSession session =
                     supportSessionRepository
@@ -70,22 +82,20 @@ public class VendorAccessServiceImpl
                                     )
                             );
 
+            if (session.getVendorId() == null ||
+                    session.getVendorId().isBlank()) {
+
+                throw new AccessDeniedException(
+                        "Vendor account is not assigned."
+                );
+            }
 
             return session.getVendorId();
-
         }
 
-
-        /*
-         * =========================================
-         * OTHER ROLES
-         * =========================================
-         */
 
         throw new AccessDeniedException(
                 "Vendor access is not permitted."
         );
-
     }
-
 }

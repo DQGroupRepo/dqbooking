@@ -53,6 +53,7 @@ import AdminUsers from "../pages/admin/AdminUsers";
 import AdminBookings from "../pages/admin/AdminBookings";
 import AdminReviews from "../pages/admin/AdminReviews";
 import AdminVendorVerification from "../pages/admin/AdminVendorVerification";
+import VendorTeam from "../pages/vendor/VendorTeam";
 
 import Cart from "../pages/cart/Cart";
 
@@ -420,7 +421,11 @@ const AppRoutes = () => {
                     element={
                         <ProtectedRoute
                             allowedRoles={
-                                ["VENDOR", "ADMIN"]
+                                [
+                                    "VENDOR_ADMIN",
+                                    "VENDOR_USER",
+                                    "ADMIN"
+                                ]
                             }
                         />
                     }
@@ -484,6 +489,13 @@ const AppRoutes = () => {
                             path="/vendor/bundles/edit/:bundleId"
                             element={
                                 <VendorCreateBundle />
+                            }
+                        />
+
+                        <Route
+                            path="/vendor/team"
+                            element={
+                                <VendorTeam />
                             }
                         />
 

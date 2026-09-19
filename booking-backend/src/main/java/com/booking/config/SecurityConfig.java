@@ -16,7 +16,6 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -88,11 +87,11 @@ public class SecurityConfig {
                         )
                         .permitAll()
 
+
                         // --------------------------------
                         // Public GET APIs
                         // --------------------------------
 
-                        // Anyone can browse vendors/services
                         .requestMatchers(
                                 HttpMethod.GET,
                                 "/api/vendor/listings/**"
@@ -109,19 +108,79 @@ public class SecurityConfig {
                                 "/api/bookings/vendor",
                                 "/api/bundles/vendor"
                         )
-                        .hasAnyRole("VENDOR", "ADMIN")
+                        .hasAnyRole(
+                                "VENDOR_ADMIN",
+                                "VENDOR_USER",
+                                "ADMIN"
+                        )
+
+
+                        // --------------------------------
+                        // Customer Booking APIs
+                        // --------------------------------
 
                         .requestMatchers(
-                                "/api/bookings/**"
+                                HttpMethod.POST,
+                                "/api/bookings"
                         )
-                        .hasRole("VENDOR")
+                        .hasRole("CUSTOMER")
+
+
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/api/bookings/customer"
+                        )
+                        .hasRole("CUSTOMER")
+
+
+                        .requestMatchers(
+                                HttpMethod.PATCH,
+                                "/api/bookings/*/cancel"
+                        )
+                        .hasRole("CUSTOMER")
+
+
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/api/bookings/*/cancellation-preview"
+                        )
+                        .hasRole("CUSTOMER")
+
+
+                        // --------------------------------
+                        // Booking Details / Groups
+                        // --------------------------------
+
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/api/bookings/*/details"
+                        )
+                        .hasAnyRole(
+                                "CUSTOMER",
+                                "VENDOR_ADMIN",
+                                "VENDOR_USER",
+                                "ADMIN"
+                        )
+
+
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/api/bookings/*"
+                        )
+                        .hasAnyRole(
+                                "CUSTOMER",
+                                "VENDOR_ADMIN",
+                                "VENDOR_USER",
+                                "ADMIN"
+                        )
+
+
                         // --------------------------------
                         // Customer APIs
                         // --------------------------------
 
                         .requestMatchers(
                                 "/api/customer/**",
-                                "/api/bookings",
                                 "/api/reviews"
                         )
                         .hasRole("CUSTOMER")
@@ -138,14 +197,17 @@ public class SecurityConfig {
 
 
                         // --------------------------------
-                        // Bookings
+                        // Vendor Bookings
                         // --------------------------------
 
-                        // For now, vendor booking management
                         .requestMatchers(
                                 "/api/vendor/bookings/**"
                         )
-                        .hasRole("VENDOR")
+                        .hasAnyRole(
+                                "VENDOR_ADMIN",
+                                "VENDOR_USER",
+                                "ADMIN"
+                        )
 
 
                         // --------------------------------
@@ -159,9 +221,20 @@ public class SecurityConfig {
 
 
                 // ==========================
-                // JWT Filter
+                // Exception Handling
                 // ==========================
+
                 .exceptionHandling(exception -> exception
+
+
+                        // --------------------------------
+                        // 401 - Authentication Required
+                        // --------------------------------
+                        //
+                        // Used when the request is not
+                        // authenticated or authentication
+                        // cannot be established.
+                        //
 
                         .authenticationEntryPoint(
                                 (request, response, authException) -> {
@@ -181,7 +254,41 @@ public class SecurityConfig {
                                 }
                         )
 
+
+                        // --------------------------------
+                        // 403 - Access Denied
+                        // --------------------------------
+                        //
+                        // Used when the user is authenticated
+                        // but does not have the required role
+                        // or permission at the Spring Security
+                        // authorization layer.
+                        //
+
+                        .accessDeniedHandler(
+                                (request, response, accessDeniedException) -> {
+
+                                    response.setStatus(
+                                            HttpServletResponse.SC_FORBIDDEN
+                                    );
+
+                                    response.setContentType(
+                                            "application/json"
+                                    );
+
+                                    response.getWriter().write(
+                                            "{\"message\":\"You do not have permission to perform this action.\"}"
+                                    );
+
+                                }
+                        )
+
                 )
+
+
+                // ==========================
+                // JWT Filter
+                // ==========================
 
                 .addFilterBefore(
                         jwtAuthenticationFilter,

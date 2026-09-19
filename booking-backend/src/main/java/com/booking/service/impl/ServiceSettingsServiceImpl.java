@@ -7,10 +7,12 @@ import com.booking.mapper.CancellationPolicyMapper;
 import com.booking.mapper.ServiceSettingsMapper;
 import com.booking.model.ServiceSettings;
 import com.booking.model.VendorService;
+import com.booking.model.enums.VendorPage;
 import com.booking.repository.ServiceSettingsRepository;
 import com.booking.repository.VendorServiceRepository;
 import com.booking.service.ServiceSettingsService;
 import com.booking.service.VendorAccessService;
+import com.booking.service.VendorPermissionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
@@ -28,6 +30,8 @@ public class ServiceSettingsServiceImpl
 
     private final VendorAccessService vendorAccessService;
 
+    private final VendorPermissionService vendorPermissionService;
+
     private final CancellationPolicyMapper cancellationPolicyMapper;
 
 
@@ -35,6 +39,10 @@ public class ServiceSettingsServiceImpl
     public ServiceSettingsResponse getSettings(
             String serviceId
     ) {
+
+        vendorPermissionService.checkView(
+                VendorPage.SETTINGS
+        );
 
         VendorService vendorService =
                 vendorServiceRepository
@@ -84,6 +92,10 @@ public class ServiceSettingsServiceImpl
             String serviceId,
             ServiceSettingsRequest request
     ) {
+
+        vendorPermissionService.checkEdit(
+                VendorPage.SETTINGS
+        );
 
         VendorService vendorService =
                 vendorServiceRepository

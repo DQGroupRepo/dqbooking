@@ -13,12 +13,34 @@ import {
   useAuth
 } from "../context/AuthContext";
 
-import AdminVendorVerificationService from "../services/AdminVendorVerificationService";
+import AdminVendorVerificationService
+  from "../services/AdminVendorVerificationService";
 
-import VendorSidebar from "../components/vendor/layout/Sidebar/VendorSidebar";
-import VendorTopBar from "../components/vendor/layout/TopBar/VendorTopbar";
+import VendorPermissionService from "../services/VendorPermissionService";
+
+import type {
+  VendorPermissionsResponse
+} from "../services/VendorPermissionService";
+
+import VendorSidebar
+  from "../components/vendor/layout/Sidebar/VendorSidebar";
+
+import VendorTopBar
+  from "../components/vendor/layout/TopBar/VendorTopbar";
 
 import "./VendorLayout.css";
+
+
+const ALL_VENDOR_PAGES = [
+  "DASHBOARD",
+  "SERVICES",
+  "BOOKINGS",
+  "REVIEWS",
+  "REVENUE",
+  "BUNDLES",
+  "PROFILE",
+  "SETTINGS"
+];
 
 
 const VendorLayout = () => {
@@ -35,30 +57,34 @@ const VendorLayout = () => {
   const [
     supportChecking,
     setSupportChecking
-  ] = useState(
-    true
-  );
+  ] = useState(true);
 
 
   const [
     supportActive,
     setSupportActive
-  ] = useState(
-    false
-  );
+  ] = useState(false);
+
+
+  const [
+    permissionsChecking,
+    setPermissionsChecking
+  ] = useState(true);
+
+
+  const [
+    permissions,
+    setPermissions
+  ] = useState<VendorPermissionsResponse>({
+    viewPages: [],
+    editPages: []
+  });
 
 
   /*
    * =========================================
    * CHECK ADMIN SUPPORT SESSION
    * =========================================
-   *
-   * Normal VENDOR users do not need a
-   * support-session check.
-   *
-   * ADMIN users must have an active
-   * VendorSupportSession before entering
-   * the vendor workspace.
    */
 
   useEffect(() => {
@@ -66,11 +92,15 @@ const VendorLayout = () => {
     async function checkSupportSession() {
 
       /*
-       * Normal vendor
+       * VendorAdmin / VendorUser
+       *
+       * These users do not need a support
+       * session.
        */
 
       if (
-        user?.role === "VENDOR"
+        user?.role === "VENDOR_ADMIN" ||
+        user?.role === "VENDOR_USER"
       ) {
 
         setSupportActive(false);
@@ -112,17 +142,12 @@ const VendorLayout = () => {
             error
           );
 
-
-          setSupportActive(
-            false
-          );
+          setSupportActive(false);
 
         }
         finally {
 
-          setSupportChecking(
-            false
-          );
+          setSupportChecking(false);
 
         }
 
@@ -146,6 +171,140 @@ const VendorLayout = () => {
 
   }, [
     user?.role
+  ]);
+
+
+  /*
+   * =========================================
+   * LOAD VENDOR PERMISSIONS
+   * =========================================
+   */
+
+  useEffect(() => {
+
+    async function loadPermissions() {
+
+      /*
+       * =====================================
+       * VENDOR ADMIN
+       * =====================================
+       *
+       * VendorAdmin has complete access.
+       */
+
+      if (
+        user?.role === "VENDOR_ADMIN"
+      ) {
+
+        setPermissions({
+          viewPages: [...ALL_VENDOR_PAGES],
+          editPages: [...ALL_VENDOR_PAGES]
+        });
+
+        setPermissionsChecking(false);
+
+        return;
+
+      }
+
+
+      /*
+       * =====================================
+       * ADMIN SUPPORT MODE
+       * =====================================
+       *
+       * Admin has complete vendor access
+       * while Support Mode is active.
+       */
+
+      if (
+        user?.role === "ADMIN" &&
+        supportActive
+      ) {
+
+        setPermissions({
+          viewPages: [...ALL_VENDOR_PAGES],
+          editPages: [...ALL_VENDOR_PAGES]
+        });
+
+        setPermissionsChecking(false);
+
+        return;
+
+      }
+
+
+      /*
+       * =====================================
+       * VENDOR USER
+       * =====================================
+       */
+
+      if (
+        user?.role === "VENDOR_USER"
+      ) {
+
+        try {
+
+          const result =
+            await VendorPermissionService
+              .getCurrentPermissions();
+
+
+          setPermissions({
+            viewPages:
+              result.viewPages ?? [],
+
+            editPages:
+              result.editPages ?? []
+          });
+
+        }
+        catch (error) {
+
+          console.error(
+            "Failed to load vendor permissions:",
+            error
+          );
+
+          setPermissions({
+            viewPages: [],
+            editPages: []
+          });
+
+        }
+        finally {
+
+          setPermissionsChecking(false);
+
+        }
+
+        return;
+
+      }
+
+
+      /*
+       * =====================================
+       * NO VENDOR PERMISSIONS
+       * =====================================
+       */
+
+      setPermissions({
+        viewPages: [],
+        editPages: []
+      });
+
+      setPermissionsChecking(false);
+
+    }
+
+
+    loadPermissions();
+
+  }, [
+    user?.role,
+    supportActive
   ]);
 
 
@@ -176,7 +335,7 @@ const VendorLayout = () => {
 
   /*
    * =========================================
-   * CHECKING SUPPORT SESSION
+   * CHECKING ADMIN SUPPORT SESSION
    * =========================================
    */
 
@@ -200,19 +359,45 @@ const VendorLayout = () => {
 
   /*
    * =========================================
-   * NORMAL VENDOR
+   * CHECKING VENDOR PERMISSIONS
    * =========================================
    */
 
   if (
-    user?.role === "VENDOR"
+    permissionsChecking
+  ) {
+
+    return (
+
+      <div className="vendor-layout-loading">
+
+        Loading vendor permissions...
+
+      </div>
+
+    );
+
+  }
+
+
+  /*
+   * =========================================
+   * NORMAL VENDOR WORKSPACE
+   * =========================================
+   */
+
+  if (
+    user?.role === "VENDOR_ADMIN" ||
+    user?.role === "VENDOR_USER"
   ) {
 
     return (
 
       <div className="vendor-layout">
 
-        <VendorSidebar />
+        <VendorSidebar
+          viewPages={permissions.viewPages}
+        />
 
         <div className="vendor-main">
 
@@ -248,7 +433,9 @@ const VendorLayout = () => {
 
       <div className="vendor-layout">
 
-        <VendorSidebar />
+        <VendorSidebar
+          viewPages={permissions.viewPages}
+        />
 
         <div className="vendor-main">
 

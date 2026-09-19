@@ -2,6 +2,7 @@ package com.booking.service.impl;
 
 import com.booking.model.User;
 import com.booking.model.VendorSupportSession;
+import com.booking.model.enums.Role;
 import com.booking.repository.UserRepository;
 import com.booking.repository.VendorSupportSessionRepository;
 import com.booking.service.VendorSupportService;
@@ -51,10 +52,7 @@ public class VendorSupportServiceImpl
          */
 
         if (
-                admin.getRole() == null ||
-                        !"ADMIN".equalsIgnoreCase(
-                                admin.getRole().toString()
-                        )
+                admin.getRole() != Role.ADMIN
         ) {
 
             throw new AccessDeniedException(
@@ -64,36 +62,47 @@ public class VendorSupportServiceImpl
 
 
         /*
-         * Verify that the selected user exists
-         * and is actually a vendor.
+         * =========================================
+         * VENDOR ID = VENDOR ADMIN USER ID
+         * =========================================
+         *
+         * The canonical vendorId is now the
+         * VendorAdmin's User._id.
+         *
+         * Therefore the selected vendorId
+         * directly identifies the VendorAdmin.
          */
 
-        User vendor =
+        User vendorAdmin =
                 userRepository
                         .findById(vendorId)
                         .orElseThrow(() ->
                                 new IllegalArgumentException(
-                                        "Vendor not found."
+                                        "VendorAdmin not found."
                                 )
                         );
 
 
+        /*
+         * Only a VendorAdmin represents a
+         * vendor account.
+         */
+
         if (
-                vendor.getRole() == null ||
-                        !"VENDOR".equalsIgnoreCase(
-                                vendor.getRole().toString()
-                        )
+                vendorAdmin.getRole()
+                        != Role.VENDOR_ADMIN
         ) {
 
             throw new IllegalArgumentException(
-                    "Selected user is not a vendor."
+                    "Selected user is not a VendorAdmin."
             );
         }
 
 
         /*
-         * End any existing support session
-         * belonging to this admin.
+         * =========================================
+         * END EXISTING SUPPORT SESSION
+         * =========================================
          */
 
         supportSessionRepository
@@ -115,23 +124,32 @@ public class VendorSupportServiceImpl
 
 
         /*
-         * Create new support session.
+         * =========================================
+         * CREATE SUPPORT SESSION
+         * =========================================
+         *
+         * vendorId stores the VendorAdmin's
+         * User._id.
          */
 
         VendorSupportSession session =
                 new VendorSupportSession();
 
+
         session.setAdminId(
                 admin.getId()
         );
 
+
         session.setVendorId(
-                vendorId
+                vendorAdmin.getId()
         );
+
 
         session.setStartedAt(
                 LocalDateTime.now()
         );
+
 
         session.setActive(
                 true

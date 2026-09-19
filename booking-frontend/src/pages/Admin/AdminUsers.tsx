@@ -208,8 +208,12 @@ const AdminUsers = () => {
                         Customers
                     </option>
 
-                    <option value="VENDOR">
-                        Vendors
+                    <option value="VENDOR_ADMIN">
+                        Vendor Admins
+                    </option>
+
+                    <option value="VENDOR_USER">
+                        Vendor Users
                     </option>
 
                     <option value="ADMIN">

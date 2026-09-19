@@ -8,6 +8,8 @@ import {
     useParams
 } from "react-router-dom";
 
+import axios from "axios";
+
 import "./VendorAddService.css";
 
 import type {
@@ -101,9 +103,6 @@ const AddService = () => {
     /*
      * =========================
      * Unified Media State
-     *
-     * Existing + New
-     * In exact display order.
      * =========================
      */
 
@@ -176,16 +175,6 @@ const AddService = () => {
                         );
 
 
-                /*
-                 * Convert backend response
-                 * into editable form state.
-                 *
-                 * Amenities remain part of
-                 * formData. They are simply
-                 * rendered by CategorySpecificSection
-                 * now.
-                 */
-
                 setFormData(
                     VendorServiceMapper
                         .responseToForm(
@@ -193,13 +182,6 @@ const AddService = () => {
                         )
                 );
 
-
-                /*
-                 * Convert DB URLs into
-                 * unified media objects.
-                 *
-                 * Backend order is preserved.
-                 */
 
                 const existingMedia:
                     MediaItem[] =
@@ -234,6 +216,20 @@ const AddService = () => {
                     "Failed to load service:",
                     error
                 );
+
+
+                if (
+                    axios.isAxiosError(error) &&
+                    error.response?.status === 403
+                ) {
+
+                    toast.error(
+                        "You do not have permission to load this service."
+                    );
+
+                    return;
+
+                }
 
 
                 toast.error(
@@ -281,6 +277,13 @@ const AddService = () => {
 
     };
 
+
+    /*
+     * =========================
+     * Detail Changes
+     * =========================
+     */
+
     const handleDetailChange = (
 
         sectionKey: string,
@@ -293,7 +296,6 @@ const AddService = () => {
 
         setFormData(
             previous => {
-
 
                 const sectionDefinitions =
                     getCategorySections(
@@ -454,15 +456,6 @@ const AddService = () => {
     /*
      * =========================
      * Amenities
-     *
-     * IMPORTANT:
-     *
-     * Amenities are still stored
-     * inside formData.
-     *
-     * CategorySpecificSection now
-     * controls which amenity list is
-     * displayed based on category.
      * =========================
      */
 
@@ -529,7 +522,10 @@ const AddService = () => {
 
         }
 
-        if (!formData.address.trim()) {
+
+        if (
+            !formData.address.trim()
+        ) {
 
             validationErrors.push(
                 "Address"
@@ -537,13 +533,17 @@ const AddService = () => {
 
         }
 
-        if (!formData.description.trim()) {
+
+        if (
+            !formData.description.trim()
+        ) {
 
             validationErrors.push(
                 "About Your Service"
             );
 
         }
+
 
         if (
             !formData.contactPerson.trim()
@@ -594,11 +594,6 @@ const AddService = () => {
     /*
      * =========================
      * Remove Existing Media
-     * =========================
-     *
-     * Only React state changes here.
-     *
-     * DB changes after Update/Publish.
      * =========================
      */
 
@@ -660,26 +655,15 @@ const AddService = () => {
         );
 
 
-        /*
-         * Keep this variable at the
-         * function level.
-         *
-         * There should NOT be another
-         * let serviceId declaration inside
-         * the try block.
-         */
-
         let serviceId = "";
 
 
         try {
 
             /*
-             * =================================
-             * Step 1
-             *
-             * Find all new files.
-             * =================================
+             * =============================
+             * Upload new media
+             * =============================
              */
 
             const newMediaItems =
@@ -689,14 +673,6 @@ const AddService = () => {
                         "new"
                 );
 
-
-            /*
-             * =================================
-             * Step 2
-             *
-             * Upload new files.
-             * =================================
-             */
 
             const uploadedUrls:
                 string[] =
@@ -722,11 +698,9 @@ const AddService = () => {
 
 
             /*
-             * =================================
-             * Step 3
-             *
-             * Preserve exact media order.
-             * =================================
+             * =============================
+             * Preserve media order
+             * =============================
              */
 
             let uploadedIndex =
@@ -764,15 +738,9 @@ const AddService = () => {
 
 
             /*
-             * =================================
-             * Step 4
-             *
-             * Convert form into request.
-             *
-             * formData.amenities is still
-             * included by the mapper exactly
-             * as before.
-             * =================================
+             * =============================
+             * Build request
+             * =============================
              */
 
             const request =
@@ -782,22 +750,14 @@ const AddService = () => {
                     );
 
 
-            /*
-             * =================================
-             * Step 5
-             *
-             * Final ordered media list.
-             * =================================
-             */
-
             request.imageUrls =
                 finalImageUrls;
 
 
             /*
-             * =================================
-             * UPDATE / CREATE
-             * =================================
+             * =============================
+             * UPDATE
+             * =============================
              */
 
             if (isEditMode) {
@@ -819,6 +779,14 @@ const AddService = () => {
                 );
 
             }
+
+
+            /*
+             * =============================
+             * CREATE
+             * =============================
+             */
+
             else {
 
                 const createdService =
@@ -839,10 +807,6 @@ const AddService = () => {
             }
 
 
-            /*
-             * Pricing remains a separate step.
-             */
-
             navigate(
                 `/vendor/services/${serviceId}/pricing`
             );
@@ -854,6 +818,32 @@ const AddService = () => {
                 "Failed to save service:",
                 error
             );
+
+
+            /*
+             * =================================
+             * CENTRALIZED 403 USER MESSAGE
+             * =================================
+             */
+
+            if (
+                axios.isAxiosError(error) &&
+                error.response?.status === 403
+            ) {
+
+                toast.error(
+
+                    isEditMode
+
+                        ? "You do not have permission to edit this service."
+
+                        : "You do not have permission to create a service."
+
+                );
+
+                return;
+
+            }
 
 
             toast.error(
@@ -875,10 +865,6 @@ const AddService = () => {
     /*
      * =========================
      * Progress
-     * =========================
-     *
-     * Existing progress logic
-     * continues to use formData.amenities.
      * =========================
      */
 
@@ -928,6 +914,11 @@ const AddService = () => {
         );
 
 
+        toast.success(
+            "Draft saved successfully."
+        );
+
+
         setTimeout(
             () =>
                 setSaved(
@@ -939,187 +930,683 @@ const AddService = () => {
     }
 
 
+    /*
+     * =========================
+     * Scroll helper
+     * =========================
+     */
+
+    const scrollToSection = (
+        sectionId: string
+    ) => {
+
+        document
+            .getElementById(
+                sectionId
+            )
+            ?.scrollIntoView({
+                behavior: "smooth",
+                block: "start"
+            });
+
+    };
+
+
     return (
 
         <section className="vendor-form-section">
 
             <div className="vendor-form-container">
 
-                <div className="vendor-form-card">
+                {/* =========================================
+                    PAGE HEADER
+                ========================================= */}
 
+                <div className="vendor-form-page-header">
 
                     <BackButton
-
                         label="Back to Categories"
-
                         to="/vendor/create-listing"
-
                     />
 
 
-                    <h1>
+                    <div className="vendor-form-heading">
+
+                        <div>
+
+                            <h1>
+
+                                {
+                                    isEditMode
+                                        ? "Edit Service"
+                                        : "Add New Service"
+                                }
+
+                            </h1>
+
+
+                            <p>
+
+                                {
+                                    isEditMode
+                                        ? "Update your listing details and keep your service information current."
+                                        : "Create a professional listing that customers can discover and book."
+                                }
+
+                            </p>
+
+                        </div>
+
 
                         {
-                            isEditMode
-                                ? "Edit Service"
-                                : "Add New Service"
+                            formData.category && (
+
+                                <div className="category-badge">
+
+                                    {formData.category}
+
+                                </div>
+
+                            )
                         }
 
-                    </h1>
+                    </div>
+
+                </div>
 
 
-                    <p>
+                {/* =========================================
+                    PROGRESS
+                ========================================= */}
 
-                        {
-                            isEditMode
+                <div className="vendor-form-progress-card">
 
-                                ? "Update your listing details."
+                    <div>
 
-                                : "Create a new listing that customers can discover and book."
+                        <div className="progress-title">
 
-                        }
+                            <strong>
+                                Listing progress
+                            </strong>
 
-                    </p>
+                            <span>
+                                {progress}% Complete
+                            </span>
 
-
-                    <FormProgress
-                        progress={
-                            progress
-                        }
-                    />
-
-
-                    <form
-                        onSubmit={
-                            handleSubmit
-                        }
-                    >
+                        </div>
 
 
-                        {/* =====================================
-                            BASIC INFORMATION
-                        ===================================== */}
+                        <div className="progress-track">
 
-                        <BasicInfoSection
+                            <div
+                                className="progress-value"
+                                style={{
+                                    width: `${progress}%`
+                                }}
+                            />
 
-                            formData={
-                                formData
+                        </div>
+
+
+                        <p>
+
+                            Complete the required information
+                            before publishing your listing.
+
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                {/* =========================================
+                    MAIN WORKSPACE
+                ========================================= */}
+
+                <div className="vendor-form-workspace">
+
+
+                    {/* =====================================
+                        MAIN FORM
+                    ===================================== */}
+
+                    <main className="vendor-form-main">
+
+                        <form
+                            onSubmit={
+                                handleSubmit
+                            }
+                        >
+
+
+                            {/* =================================
+                                BASIC INFORMATION
+                            ================================= */}
+
+                            <section
+                                id="basic-information"
+                                className="vendor-form-section-card"
+                            >
+
+                                <div className="form-section-heading">
+
+                                    <div className="section-number">
+                                        1
+                                    </div>
+
+                                    <div>
+
+                                        <h2>
+                                            Basic Information
+                                        </h2>
+
+                                        <p>
+                                            Start with the essential
+                                            information customers need.
+                                        </p>
+
+                                    </div>
+
+                                </div>
+
+
+                                <BasicInfoSection
+
+                                    formData={
+                                        formData
+                                    }
+
+                                    handleChange={
+                                        handleChange
+                                    }
+
+                                />
+
+                            </section>
+
+
+                            {/* =================================
+                                SERVICE DETAILS
+                            ================================= */}
+
+                            <section
+                                id="service-details"
+                                className="vendor-form-section-card"
+                            >
+
+                                <div className="form-section-heading">
+
+                                    <div className="section-number">
+                                        2
+                                    </div>
+
+                                    <div>
+
+                                        <h2>
+                                            Service Details
+                                        </h2>
+
+                                        <p>
+                                            Tell customers more about
+                                            your service and location.
+                                        </p>
+
+                                    </div>
+
+                                </div>
+
+
+                                <ServiceDetailsSection
+
+                                    formData={
+                                        formData
+                                    }
+
+                                    handleChange={
+                                        handleChange
+                                    }
+
+                                />
+
+                            </section>
+
+
+                            {/* =================================
+                                CATEGORY DETAILS
+                            ================================= */}
+
+                            <section
+                                id="category-details"
+                                className="vendor-form-section-card"
+                            >
+
+                                <div className="form-section-heading">
+
+                                    <div className="section-number">
+                                        3
+                                    </div>
+
+                                    <div>
+
+                                        <h2>
+                                            Category Specific Details
+                                        </h2>
+
+                                        <p>
+                                            Add details specific to your
+                                            selected service category.
+                                        </p>
+
+                                    </div>
+
+                                </div>
+
+
+                                <CategorySpecificSection
+
+                                    category={
+                                        formData.category
+                                    }
+
+                                    formData={
+                                        formData
+                                    }
+
+                                    onDetailChange={
+                                        handleDetailChange
+                                    }
+
+                                    amenities={
+                                        formData.amenities
+                                    }
+
+                                    handleAmenityChange={
+                                        handleAmenityChange
+                                    }
+
+                                />
+
+                            </section>
+
+
+                            {/* =================================
+                                IMAGES
+                            ================================= */}
+
+                            <section
+                                id="service-media"
+                                className="vendor-form-section-card"
+                            >
+
+                                <div className="form-section-heading">
+
+                                    <div className="section-number">
+                                        4
+                                    </div>
+
+                                    <div>
+
+                                        <h2>
+                                            Service Images & Videos
+                                        </h2>
+
+                                        <p>
+                                            Add photos and videos that
+                                            showcase your service.
+                                        </p>
+
+                                    </div>
+
+                                </div>
+
+
+                                <ImageUploader
+
+                                    media={
+                                        media
+                                    }
+
+                                    onChange={
+                                        setMedia
+                                    }
+
+                                    onRemoveExisting={
+                                        handleRemoveExistingMedia
+                                    }
+
+                                />
+
+                            </section>
+
+
+                            {/* =================================
+                                CONTACT
+                            ================================= */}
+
+                            <section
+                                id="contact-information"
+                                className="vendor-form-section-card"
+                            >
+
+                                <div className="form-section-heading">
+
+                                    <div className="section-number">
+                                        5
+                                    </div>
+
+                                    <div>
+
+                                        <h2>
+                                            Contact Information
+                                        </h2>
+
+                                        <p>
+                                            Customers will use these
+                                            details to reach you.
+                                        </p>
+
+                                    </div>
+
+                                </div>
+
+
+                                <ContactSection
+
+                                    formData={
+                                        formData
+                                    }
+
+                                    handleChange={
+                                        handleChange
+                                    }
+
+                                />
+
+                            </section>
+
+
+                            {/* =================================
+                                VALIDATION SUMMARY
+                            ================================= */}
+
+                            {
+                                errors.length > 0 && (
+
+                                    <div className="vendor-form-validation">
+
+                                        <strong>
+                                            Please complete the following:
+                                        </strong>
+
+
+                                        <ul>
+
+                                            {
+                                                errors.map(
+                                                    error => (
+
+                                                        <li
+                                                            key={error}
+                                                        >
+                                                            {error}
+                                                        </li>
+
+                                                    )
+                                                )
+                                            }
+
+                                        </ul>
+
+                                    </div>
+
+                                )
                             }
 
-                            handleChange={
-                                handleChange
-                            }
 
-                        />
+                            {/* =================================
+                                ACTIONS
+                            ================================= */}
 
-                        {/* =====================================
-                            SERVICE DETAILS
-                        ===================================== */}
+                            <div
+                                id="review-publish"
+                                className="vendor-form-actions-card"
+                            >
 
-                        <ServiceDetailsSection
+                                <div>
 
-                            formData={
-                                formData
-                            }
+                                    <strong>
+                                        Ready to publish?
+                                    </strong>
 
-                            handleChange={
-                                handleChange
-                            }
+                                    <p>
 
-                        />
+                                        You can save this listing as
+                                        a draft and continue later.
 
+                                    </p>
 
-                        {/* =====================================
-                            CATEGORY SPECIFIC + AMENITIES
-
-                            Amenities now live inside this
-                            section.
-                        ===================================== */}
-
-                        <CategorySpecificSection
-
-                            category={
-                                formData.category
-                            }
-
-                            formData={
-                                formData
-                            }
-
-                            onDetailChange={
-                                handleDetailChange
-                            }
-
-                            amenities={
-                                formData.amenities
-                            }
-
-                            handleAmenityChange={
-                                handleAmenityChange
-                            }
-
-                        />
+                                </div>
 
 
-                        {/* =====================================
-                            IMAGES
-                        ===================================== */}
+                                <FormActions
 
-                        <ImageUploader
+                                    onSaveDraft={
+                                        saveDraft
+                                    }
 
-                            media={
-                                media
-                            }
+                                    publishing={
+                                        publishing
+                                    }
 
-                            onChange={
-                                setMedia
-                            }
+                                    isEditMode={
+                                        isEditMode
+                                    }
 
-                            onRemoveExisting={
-                                handleRemoveExistingMedia
-                            }
+                                />
 
-                        />
+                            </div>
 
 
-                        {/* =====================================
-                            CONTACT
-                        ===================================== */}
+                        </form>
 
-                        <ContactSection
-
-                            formData={
-                                formData
-                            }
-
-                            handleChange={
-                                handleChange
-                            }
-
-                        />
+                    </main>
 
 
-                        {/* =====================================
-                            ACTIONS
-                        ===================================== */}
+                    {/* =====================================
+                        RIGHT SIDEBAR
+                    ===================================== */}
 
-                        <FormActions
+                    <aside className="vendor-form-sidebar">
 
-                            onSaveDraft={
-                                saveDraft
-                            }
 
-                            publishing={
-                                publishing
-                            }
+                        <div className="vendor-sidebar-card">
 
-                            isEditMode={
-                                isEditMode
-                            }
+                            <div className="vendor-sidebar-card-header">
 
-                        />
+                                <h3>
+                                    Listing Progress
+                                </h3>
 
-                    </form>
+                                <span>
+                                    {progress}%
+                                </span>
+
+                            </div>
+
+
+                            <div className="sidebar-progress-track">
+
+                                <div
+                                    className="sidebar-progress-value"
+                                    style={{
+                                        width: `${progress}%`
+                                    }}
+                                />
+
+                            </div>
+
+
+                            <p>
+                                Complete all required sections
+                                before publishing.
+                            </p>
+
+                        </div>
+
+
+                        {/* =================================
+                            QUICK NAVIGATION
+                        ================================= */}
+
+                        <div className="vendor-sidebar-card">
+
+                            <h3>
+                                Quick Navigation
+                            </h3>
+
+
+                            <nav className="vendor-form-navigation">
+
+                                <button
+                                    type="button"
+                                    onClick={() =>
+                                        scrollToSection(
+                                            "basic-information"
+                                        )
+                                    }
+                                >
+
+                                    <span>
+                                        01
+                                    </span>
+
+                                    Basic Information
+
+                                </button>
+
+
+                                <button
+                                    type="button"
+                                    onClick={() =>
+                                        scrollToSection(
+                                            "service-details"
+                                        )
+                                    }
+                                >
+
+                                    <span>
+                                        02
+                                    </span>
+
+                                    Service Details
+
+                                </button>
+
+
+                                <button
+                                    type="button"
+                                    onClick={() =>
+                                        scrollToSection(
+                                            "category-details"
+                                        )
+                                    }
+                                >
+
+                                    <span>
+                                        03
+                                    </span>
+
+                                    Category Details
+
+                                </button>
+
+
+                                <button
+                                    type="button"
+                                    onClick={() =>
+                                        scrollToSection(
+                                            "service-media"
+                                        )
+                                    }
+                                >
+
+                                    <span>
+                                        04
+                                    </span>
+
+                                    Images & Videos
+
+                                </button>
+
+
+                                <button
+                                    type="button"
+                                    onClick={() =>
+                                        scrollToSection(
+                                            "contact-information"
+                                        )
+                                    }
+                                >
+
+                                    <span>
+                                        05
+                                    </span>
+
+                                    Contact Information
+
+                                </button>
+
+
+                                <button
+                                    type="button"
+                                    onClick={() =>
+                                        scrollToSection(
+                                            "review-publish"
+                                        )
+                                    }
+                                >
+
+                                    <span>
+                                        06
+                                    </span>
+
+                                    Review & Publish
+
+                                </button>
+
+                            </nav>
+
+                        </div>
+
+
+                        {/* =================================
+                            HELPFUL TIP
+                        ================================= */}
+
+                        <div className="vendor-sidebar-help">
+
+                            <div className="help-icon">
+                                ✓
+                            </div>
+
+                            <div>
+
+                                <strong>
+                                    Need help?
+                                </strong>
+
+                                <p>
+                                    Add clear descriptions and
+                                    high-quality images to help
+                                    customers understand your service.
+                                </p>
+
+                            </div>
+
+                        </div>
+
+                    </aside>
 
                 </div>
 

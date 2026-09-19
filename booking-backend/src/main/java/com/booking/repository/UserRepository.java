@@ -39,4 +39,15 @@ public interface UserRepository extends MongoRepository<User, String> {
             Role role,
             VendorVerificationStatus verificationStatus
     );
+
+    long countByVendorIdAndRole(
+            String vendorId,
+            Role role
+    );
+
+    List<User> findByVendorIdAndRole(
+            String vendorId,
+            Role role
+    );
+
 }

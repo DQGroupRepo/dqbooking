@@ -4,7 +4,11 @@ export interface AdminUser {
     firstName: string;
     lastName: string;
     phone: string;
-    role: "CUSTOMER" | "VENDOR" | "ADMIN";
+    role:
+        | "CUSTOMER"
+        | "VENDOR_ADMIN"
+        | "VENDOR_USER"
+        | "ADMIN";
     status: "ACTIVE" | "INACTIVE";
     lastLogin?: string;
     createdAt?: string;

@@ -9,6 +9,8 @@ import com.booking.service.VendorAccessService;
 import com.booking.service.VendorProfileService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import com.booking.model.enums.VendorPage;
+import com.booking.service.VendorPermissionService;
 
 @Service
 @RequiredArgsConstructor
@@ -16,6 +18,7 @@ public class VendorProfileServiceImpl
         implements VendorProfileService {
 
     private final VendorAccessService vendorAccessService;
+    private final VendorPermissionService vendorPermissionService;
 
     private final UserRepository userRepository;
 
@@ -24,6 +27,10 @@ public class VendorProfileServiceImpl
 
     @Override
     public VendorProfileResponse getProfile() {
+
+        vendorPermissionService.checkView(
+                VendorPage.PROFILE
+        );
 
         String vendorId =
                 vendorAccessService
@@ -45,6 +52,10 @@ public class VendorProfileServiceImpl
     @Override
     public VendorProfileResponse updateProfile(
             UpdateVendorProfileRequest request) {
+
+        vendorPermissionService.checkEdit(
+                VendorPage.PROFILE
+        );
 
         String vendorId =
                 vendorAccessService

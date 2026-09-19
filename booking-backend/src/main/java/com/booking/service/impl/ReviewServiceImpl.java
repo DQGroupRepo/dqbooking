@@ -15,6 +15,8 @@ import com.booking.service.VendorAccessService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
+import com.booking.model.enums.VendorPage;
+import com.booking.service.VendorPermissionService;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -38,6 +40,7 @@ public class ReviewServiceImpl
 
     private final AuthenticatedUserService authenticatedUserService;
     private final VendorAccessService vendorAccessService;
+    private final VendorPermissionService vendorPermissionService;
 
     private final NotificationService notificationService;
 
@@ -223,6 +226,10 @@ public class ReviewServiceImpl
             ReviewReplyRequest request
     ) {
 
+        vendorPermissionService.checkEdit(
+                VendorPage.REVIEWS
+        );
+
         String vendorId =
                 vendorAccessService
                         .getEffectiveVendorId();
@@ -256,6 +263,9 @@ public class ReviewServiceImpl
     @Override
     public List<ReviewResponse> getVendorReviews() {
 
+        vendorPermissionService.checkView(
+                VendorPage.REVIEWS
+        );
         String vendorId =
                 vendorAccessService
                         .getEffectiveVendorId();
@@ -296,6 +306,10 @@ public class ReviewServiceImpl
 
     @Override
     public List<ReviewResponse> getServiceReviews(String serviceId) {
+
+        vendorPermissionService.checkView(
+                VendorPage.REVIEWS
+        );
 
         String vendorId =
                 vendorAccessService.getEffectiveVendorId();

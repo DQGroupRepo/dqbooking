@@ -16,6 +16,7 @@ import com.booking.model.enums.BookingStatus;
 import com.booking.model.enums.DiscountType;
 import com.booking.model.enums.NotificationType;
 import com.booking.model.enums.PaymentStatus;
+import com.booking.model.enums.VendorPage;
 import com.booking.repository.*;
 import com.booking.service.*;
 import com.booking.util.BookingNumberGenerator;
@@ -46,6 +47,7 @@ public class BookingServiceImpl implements BookingService
 
     private final AuthenticatedUserService authenticatedUserService;
     private final VendorAccessService vendorAccessService;
+    private final VendorPermissionService vendorPermissionService;
 
     private final BookingNumberGenerator bookingNumberGenerator;
 
@@ -1157,6 +1159,10 @@ public class BookingServiceImpl implements BookingService
     @Override
     public List<BookingResponse> getVendorBookings() {
 
+        vendorPermissionService.checkView(
+                VendorPage.BOOKINGS
+        );
+
         String vendorId =
                 vendorAccessService.getEffectiveVendorId();
 
@@ -1257,7 +1263,13 @@ public class BookingServiceImpl implements BookingService
     }
 
     @Override
-    public List<BookingResponse> getServiceBookings(String serviceId) {
+    public List<BookingResponse> getServiceBookings(
+            String serviceId
+    ) {
+
+        vendorPermissionService.checkView(
+                VendorPage.BOOKINGS
+        );
 
         String vendorId =
                 vendorAccessService.getEffectiveVendorId();
@@ -1271,16 +1283,23 @@ public class BookingServiceImpl implements BookingService
                                 )
                         );
 
-        if (!vendorId.equals(service.getVendorId())) {
+        if (!vendorId.equals(
+                service.getVendorId()
+        )) {
+
             throw new AccessDeniedException(
                     "Access denied."
             );
         }
 
         List<Booking> bookings =
-                bookingRepository.findByServiceId(serviceId);
+                bookingRepository.findByServiceId(
+                        serviceId
+                );
 
-        return enrichBookingResponses(bookings);
+        return enrichBookingResponses(
+                bookings
+        );
     }
 
     private BookingPricingSnapshot createPricingSnapshot(
@@ -1616,18 +1635,8 @@ public class BookingServiceImpl implements BookingService
          * =========================================
          */
 
-        String email =
-                SecurityUtil.getCurrentUserEmail();
-
-
         User currentUser =
-                userRepository
-                        .findByEmail(email)
-                        .orElseThrow(() ->
-                                new ResourceNotFoundException(
-                                        "Authenticated user not found."
-                                )
-                        );
+                SecurityUtil.getCurrentUser();
 
 
         /*
@@ -1655,63 +1664,132 @@ public class BookingServiceImpl implements BookingService
          * --------
          * Customer can view only their own booking.
          *
-         * VENDOR
-         * ------
-         * Vendor can view only bookings made for
-         * their own services.
+         * VENDOR_ADMIN
+         * ------------
+         * VendorAdmin can view bookings belonging
+         * to their vendor account.
+         *
+         * VENDOR_USER
+         * -----------
+         * VendorUser can view bookings belonging
+         * to their vendor account.
+         *
+         * ADMIN
+         * -----
+         * Admin can view a vendor booking only
+         * when Support Mode is active.
          */
 
-        switch (
-                currentUser
-                        .getRole()
-        ) {
+        switch (currentUser.getRole()) {
+
+            /*
+             * =====================================
+             * CUSTOMER
+             * =====================================
+             */
 
             case CUSTOMER -> {
 
-                if (
-                        !booking
-                                .getCustomerId()
-                                .equals(
-                                        currentUser
-                                                .getId()
-                                )
-                ) {
+                if (!booking
+                        .getCustomerId()
+                        .equals(currentUser.getId())) {
 
                     throw new AccessDeniedException(
                             "You cannot view this booking."
                     );
-
                 }
-
             }
 
 
-            case VENDOR -> {
+            /*
+             * =====================================
+             * VENDOR ADMIN
+             * =====================================
+             */
 
-                if (
-                        !booking
-                                .getVendorId()
-                                .equals(
-                                        currentUser
-                                                .getId()
-                                )
-                ) {
+            case VENDOR_ADMIN -> {
+
+                vendorPermissionService.checkView(
+                        VendorPage.BOOKINGS
+                );
+
+                String vendorId =
+                        vendorAccessService
+                                .getEffectiveVendorId();
+
+                if (!booking
+                        .getVendorId()
+                        .equals(vendorId)) {
 
                     throw new AccessDeniedException(
                             "You cannot view this booking."
                     );
-
                 }
-
             }
 
 
-            default ->
+            /*
+             * =====================================
+             * VENDOR USER
+             * =====================================
+             */
+
+            case VENDOR_USER -> {
+
+                vendorPermissionService.checkView(
+                        VendorPage.BOOKINGS
+                );
+
+                String vendorId =
+                        vendorAccessService
+                                .getEffectiveVendorId();
+
+                if (!booking
+                        .getVendorId()
+                        .equals(vendorId)) {
 
                     throw new AccessDeniedException(
-                            "You are not authorized to view this booking."
+                            "You cannot view this booking."
                     );
+                }
+            }
 
+
+            /*
+             * =====================================
+             * ADMIN
+             * =====================================
+             *
+             * VendorAccessService will require an
+             * active Vendor Support Session.
+             */
+
+            case ADMIN -> {
+
+                String vendorId =
+                        vendorAccessService
+                                .getEffectiveVendorId();
+
+                if (!booking
+                        .getVendorId()
+                        .equals(vendorId)) {
+
+                    throw new AccessDeniedException(
+                            "You cannot view this booking."
+                    );
+                }
+            }
+
+
+            /*
+             * =====================================
+             * EVERYTHING ELSE
+             * =====================================
+             */
+
+            default -> throw new AccessDeniedException(
+                    "You are not authorized to view this booking."
+            );
         }
 
 
@@ -1724,8 +1802,7 @@ public class BookingServiceImpl implements BookingService
         User vendor =
                 userRepository
                         .findById(
-                                booking
-                                        .getVendorId()
+                                booking.getVendorId()
                         )
                         .orElseThrow(() ->
                                 new ResourceNotFoundException(
@@ -1746,7 +1823,7 @@ public class BookingServiceImpl implements BookingService
 
         /*
          * =========================================
-         * BUILD RESPONSE
+         * RESPONSE
          * =========================================
          */
 
@@ -1761,11 +1838,6 @@ public class BookingServiceImpl implements BookingService
                         booking.getBookingNumber()
                 )
 
-
-                /*
-                 * SERVICE
-                 */
-
                 .serviceId(
                         booking.getServiceId()
                 )
@@ -1773,11 +1845,6 @@ public class BookingServiceImpl implements BookingService
                 .serviceName(
                         booking.getServiceName()
                 )
-
-
-                /*
-                 * VENDOR
-                 */
 
                 .vendorId(
                         vendor.getId()
@@ -1795,14 +1862,8 @@ public class BookingServiceImpl implements BookingService
                         vendor.getEmail()
                 )
 
-
-                /*
-                 * BOOKING
-                 */
-
                 .bookingDate(
-                        booking
-                                .getCreatedTs()
+                        booking.getCreatedTs()
                                 .toLocalDate()
                 )
 
@@ -1822,11 +1883,6 @@ public class BookingServiceImpl implements BookingService
                         booking.getSpecialRequest()
                 )
 
-
-                /*
-                 * STATUS
-                 */
-
                 .bookingStatus(
                         booking.getStatus()
                 )
@@ -1834,11 +1890,6 @@ public class BookingServiceImpl implements BookingService
                 .paymentStatus(
                         booking.getPaymentStatus()
                 )
-
-
-                /*
-                 * PRICING
-                 */
 
                 .baseAmount(
                         snapshot.getBaseAmount()
@@ -1864,19 +1915,9 @@ public class BookingServiceImpl implements BookingService
                         snapshot.getBalanceAmount()
                 )
 
-
-                /*
-                 * PAYMENT
-                 */
-
                 .paidAmount(
                         booking.getPaidAmount()
                 )
-
-
-                /*
-                 * PRICING DETAILS
-                 */
 
                 .pricingHeads(
                         snapshot.getPricingHeads()
@@ -1885,11 +1926,6 @@ public class BookingServiceImpl implements BookingService
                 .discounts(
                         snapshot.getDiscounts()
                 )
-
-
-                /*
-                 * CANCELLATION
-                 */
 
                 .cancelledAt(
                         booking.getCancelledAt()
@@ -1907,9 +1943,7 @@ public class BookingServiceImpl implements BookingService
                         booking.getRefundableAmount()
                 )
 
-
                 .build();
-
     }
 
     @Override
@@ -2149,6 +2183,89 @@ public class BookingServiceImpl implements BookingService
 
     }
 
+    private void validateBookingGroupAccess(
+            List<Booking> bookings
+    ) {
+
+        User currentUser =
+                SecurityUtil.getCurrentUser();
+
+        switch (currentUser.getRole()) {
+
+            case CUSTOMER -> {
+
+                boolean ownsAll =
+                        bookings.stream()
+                                .allMatch(
+                                        booking ->
+                                                currentUser.getId()
+                                                        .equals(
+                                                                booking.getCustomerId()
+                                                        )
+                                );
+
+                if (!ownsAll) {
+                    throw new AccessDeniedException(
+                            "You cannot view this booking group."
+                    );
+                }
+            }
+
+            case VENDOR_ADMIN, VENDOR_USER -> {
+
+                vendorPermissionService.checkView(
+                        VendorPage.BOOKINGS
+                );
+
+                String vendorId =
+                        vendorAccessService
+                                .getEffectiveVendorId();
+
+                boolean ownsAll =
+                        bookings.stream()
+                                .allMatch(
+                                        booking ->
+                                                vendorId.equals(
+                                                        booking.getVendorId()
+                                                )
+                                );
+
+                if (!ownsAll) {
+                    throw new AccessDeniedException(
+                            "You cannot view this booking group."
+                    );
+                }
+            }
+
+            case ADMIN -> {
+
+                String vendorId =
+                        vendorAccessService
+                                .getEffectiveVendorId();
+
+                boolean ownsAll =
+                        bookings.stream()
+                                .allMatch(
+                                        booking ->
+                                                vendorId.equals(
+                                                        booking.getVendorId()
+                                                )
+                                );
+
+                if (!ownsAll) {
+                    throw new AccessDeniedException(
+                            "You cannot view this booking group."
+                    );
+                }
+            }
+
+            default -> throw new AccessDeniedException(
+                    "You are not authorized to view this booking group."
+            );
+        }
+    }
+
+
     @Override
     public BookingGroupResponse getBookingGroup(
             String bookingGroupId
@@ -2169,6 +2286,8 @@ public class BookingServiceImpl implements BookingService
             );
 
         }
+
+        validateBookingGroupAccess(bookings);
 
         /*
          * Enrich service information for the group so

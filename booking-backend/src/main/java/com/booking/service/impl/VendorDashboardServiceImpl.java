@@ -6,13 +6,15 @@ import com.booking.model.Booking;
 import com.booking.model.Review;
 import com.booking.model.User;
 import com.booking.model.enums.BookingStatus;
+import com.booking.model.enums.Role;
+import com.booking.model.enums.VendorPage;
 import com.booking.repository.BookingRepository;
 import com.booking.repository.ReviewRepository;
 import com.booking.repository.UserRepository;
-import com.booking.repository.VendorServiceRepository;
 import com.booking.service.VendorAccessService;
 import com.booking.service.VendorDashboardService;
 
+import com.booking.service.VendorPermissionService;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.stereotype.Service;
@@ -26,10 +28,7 @@ import java.util.List;
 public class VendorDashboardServiceImpl
         implements VendorDashboardService {
 
-
     private final BookingRepository bookingRepository;
-
-    private final VendorServiceRepository vendorServiceRepository;
 
     private final UserRepository userRepository;
 
@@ -37,21 +36,29 @@ public class VendorDashboardServiceImpl
 
     private final ReviewRepository reviewRepository;
 
+    private final VendorPermissionService vendorPermissionService;
+
 
     @Override
     public DashboardResponse getDashboard() {
 
-
+        vendorPermissionService.checkView(
+                VendorPage.DASHBOARD
+        );
         /*
          * =========================================
          * EFFECTIVE VENDOR
          * =========================================
          *
-         * Normal VENDOR:
-         *     current user's ID
+         * VENDOR_ADMIN:
+         *     VendorAdmin User._id
+         *
+         * VENDOR_USER:
+         *     User.vendorId
          *
          * ADMIN SUPPORT MODE:
-         *     supported vendor's ID
+         *     VendorAdmin User._id stored in
+         *     VendorSupportSession.vendorId
          */
 
         String vendorId =
@@ -60,15 +67,24 @@ public class VendorDashboardServiceImpl
 
 
         /*
-         * Load the actual vendor user.
+         * =========================================
+         * LOAD VENDOR ADMIN
+         * =========================================
+         *
+         * vendorId is now the VendorAdmin User._id.
          */
 
         User vendor =
                 userRepository
                         .findById(vendorId)
+                        .filter(
+                                user ->
+                                        user.getRole() ==
+                                                Role.VENDOR_ADMIN
+                        )
                         .orElseThrow(() ->
                                 new IllegalStateException(
-                                        "Vendor not found."
+                                        "Vendor admin not found."
                                 )
                         );
 

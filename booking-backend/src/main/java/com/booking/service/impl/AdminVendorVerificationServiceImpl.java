@@ -6,6 +6,7 @@ import com.booking.exception.VendorNotFoundException;
 import com.booking.exception.VendorServiceNotFoundException;
 import com.booking.model.User;
 import com.booking.model.VendorService;
+import com.booking.model.enums.Role;
 import com.booking.model.enums.ServiceDiscoveryTag;
 import com.booking.model.enums.ServiceModerationStatus;
 import com.booking.model.enums.VendorVerificationStatus;
@@ -15,6 +16,7 @@ import com.booking.service.AdminVendorVerificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -33,7 +35,7 @@ public class AdminVendorVerificationServiceImpl
 
         List<User> vendors =
                 userRepository.findByRole(
-                        com.booking.model.enums.Role.VENDOR
+                        Role.VENDOR_ADMIN
                 );
 
         return vendors.stream()
@@ -47,12 +49,7 @@ public class AdminVendorVerificationServiceImpl
     ) {
 
         User vendor =
-                userRepository
-                        .findById(vendorId)
-                        .orElseThrow(() ->
-                                new VendorNotFoundException(
-                                        vendorId
-                                ));
+                getVendorEntity(vendorId);
 
         return buildResponse(vendor);
     }
@@ -148,6 +145,7 @@ public class AdminVendorVerificationServiceImpl
                 .deleted(
                         service.getDeleted()
                 )
+
                 .discoveryTags(
                         service.getDiscoveryTags()
                 )
@@ -156,9 +154,12 @@ public class AdminVendorVerificationServiceImpl
     }
 
     @Override
-    public void approveVendor(String vendorId) {
+    public void approveVendor(
+            String vendorId
+    ) {
 
-        User vendor = getVendorEntity(vendorId);
+        User vendor =
+                getVendorEntity(vendorId);
 
         vendor.setVerificationStatus(
                 VendorVerificationStatus.APPROVED
@@ -168,9 +169,12 @@ public class AdminVendorVerificationServiceImpl
     }
 
     @Override
-    public void rejectVendor(String vendorId) {
+    public void rejectVendor(
+            String vendorId
+    ) {
 
-        User vendor = getVendorEntity(vendorId);
+        User vendor =
+                getVendorEntity(vendorId);
 
         vendor.setVerificationStatus(
                 VendorVerificationStatus.REJECTED
@@ -180,9 +184,12 @@ public class AdminVendorVerificationServiceImpl
     }
 
     @Override
-    public void suspendVendor(String vendorId) {
+    public void suspendVendor(
+            String vendorId
+    ) {
 
-        User vendor = getVendorEntity(vendorId);
+        User vendor =
+                getVendorEntity(vendorId);
 
         vendor.setVerificationStatus(
                 VendorVerificationStatus.SUSPENDED
@@ -192,9 +199,12 @@ public class AdminVendorVerificationServiceImpl
     }
 
     @Override
-    public void reactivateVendor(String vendorId) {
+    public void reactivateVendor(
+            String vendorId
+    ) {
 
-        User vendor = getVendorEntity(vendorId);
+        User vendor =
+                getVendorEntity(vendorId);
 
         vendor.setVerificationStatus(
                 VendorVerificationStatus.APPROVED
@@ -203,7 +213,9 @@ public class AdminVendorVerificationServiceImpl
         userRepository.save(vendor);
     }
 
-    private User getVendorEntity(String vendorId) {
+    private User getVendorEntity(
+            String vendorId
+    ) {
 
         User vendor =
                 userRepository
@@ -211,12 +223,14 @@ public class AdminVendorVerificationServiceImpl
                         .orElseThrow(() ->
                                 new VendorNotFoundException(
                                         vendorId
-                                ));
+                                )
+                        );
 
-        if (vendor.getRole()
-                != com.booking.model.enums.Role.VENDOR) {
+        if (vendor.getRole() != Role.VENDOR_ADMIN) {
 
-            throw new VendorNotFoundException(vendorId);
+            throw new VendorNotFoundException(
+                    vendorId
+            );
         }
 
         return vendor;
@@ -238,32 +252,23 @@ public class AdminVendorVerificationServiceImpl
                                 )
                         );
 
-
-        if (
-                Boolean.TRUE.equals(
-                        service.getDeleted()
-                )
-        ) {
+        if (Boolean.TRUE.equals(
+                service.getDeleted()
+        )) {
 
             throw new IllegalStateException(
                     "Deleted service cannot be updated."
             );
-
         }
-
 
         service.setDiscoveryTags(
                 tags == null
-                        ? new java.util.HashSet<>()
-                        : new java.util.HashSet<>(
-                        tags
-                )
+                        ? new HashSet<>()
+                        : new HashSet<>(tags)
         );
 
         vendorServiceRepository.save(
                 service
         );
     }
-
-
 }

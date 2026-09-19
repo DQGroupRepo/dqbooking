@@ -10,6 +10,8 @@ import com.booking.service.RevenueService;
 import com.booking.service.VendorAccessService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import com.booking.model.enums.VendorPage;
+import com.booking.service.VendorPermissionService;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -27,9 +29,14 @@ public class RevenueServiceImpl implements RevenueService {
 
     private final VendorAccessService vendorAccessService;
 
+    private final VendorPermissionService vendorPermissionService;
+
     @Override
     public RevenueSummaryResponse getSummary() {
 
+        vendorPermissionService.checkView(
+                VendorPage.REVENUE
+        );
         String vendorId =
                 vendorAccessService.getEffectiveVendorId();
 
@@ -91,6 +98,9 @@ public class RevenueServiceImpl implements RevenueService {
     @Override
     public List<MonthlyRevenueResponse> getMonthlyRevenue() {
 
+        vendorPermissionService.checkView(
+                VendorPage.REVENUE
+        );
         String vendorId =
                 vendorAccessService.getEffectiveVendorId();
 
@@ -123,6 +133,9 @@ public class RevenueServiceImpl implements RevenueService {
     @Override
     public List<PaymentHistoryResponse> getPaymentHistory() {
 
+        vendorPermissionService.checkView(
+                VendorPage.REVENUE
+        );
         String vendorId =
                 vendorAccessService.getEffectiveVendorId();
 
