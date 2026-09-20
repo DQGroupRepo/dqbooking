@@ -798,12 +798,6 @@ const BookingCard = ({
                     }
                 </p>
 
-
-                <p>
-                    Starting Price
-                </p>
-
-
                 <label>
                     Event Date
                 </label>

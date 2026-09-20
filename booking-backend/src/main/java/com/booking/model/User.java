@@ -35,8 +35,8 @@ public class User extends BaseEntity {
      * VENDOR PROFILE
      * =========================================
      *
-     * These fields are populated only when
-     * this User has role VENDOR.
+     * These fields are populated for vendor users,
+     * including VENDOR_ADMIN and VENDOR_USER where applicable.
      */
 
     private String businessName;
@@ -49,6 +49,19 @@ public class User extends BaseEntity {
 
     private VendorVerificationStatus verificationStatus =
             VendorVerificationStatus.PENDING;
+
+    /**
+     * Vendor identity relationship.
+     *
+     * CUSTOMER      -> null
+     * ADMIN         -> null
+     * VENDOR_ADMIN  -> null
+     * VENDOR_USER   -> VendorAdmin User._id
+     *
+     * The VendorAdmin User._id itself is the
+     * canonical vendorId used throughout the system.
+     */
+    private String vendorId;
 
     public String getFullName() {
 

@@ -9,10 +9,20 @@ import {
   FaStar,
   FaCog,
   FaChartLine,
-  FaLayerGroup
+  FaLayerGroup,
+  FaUsers
 } from "react-icons/fa";
 
+import { useAuth } from "../../../../context/AuthContext";
+
 import "./VendorSidebar.css";
+
+
+interface VendorSidebarProps {
+
+  viewPages: string[];
+
+}
 
 
 const vendorMenu = [
@@ -20,118 +30,186 @@ const vendorMenu = [
   {
     label: "Home",
     path: "/",
-    icon: <FaHome />
+    icon: <FaHome />,
+    page: null
   },
 
   {
     label: "Dashboard",
     path: "/vendor/dashboard",
-    icon: <FaChartPie />
+    icon: <FaChartPie />,
+    page: "DASHBOARD"
   },
 
   {
     label: "Create Listing",
     path: "/vendor/create-listing",
-    icon: <FaPlusCircle />
+    icon: <FaPlusCircle />,
+    page: "SERVICES"
   },
 
   {
     label: "Services",
     path: "/vendor/manage-services",
-    icon: <FaConciergeBell />
+    icon: <FaConciergeBell />,
+    page: "SERVICES"
   },
+
   {
-      label: "Bundles",
-      path: "/vendor/bundles",
-      icon: <FaLayerGroup />
+    label: "Bundles",
+    path: "/vendor/bundles",
+    icon: <FaLayerGroup />,
+    page: "BUNDLES"
   },
 
   {
     label: "Bookings",
     path: "/vendor/bookings",
-    icon: <FaCalendarAlt />
+    icon: <FaCalendarAlt />,
+    page: "BOOKINGS"
   },
 
   {
     label: "Reviews",
     path: "/vendor/reviews",
-    icon: <FaStar />
+    icon: <FaStar />,
+    page: "REVIEWS"
   },
 
   {
     label: "Revenue",
     path: "/vendor/revenue",
-    icon: <FaChartLine />
+    icon: <FaChartLine />,
+    page: "REVENUE"
   },
 
   {
     label: "Settings",
     path: "/vendor/settings",
-    icon: <FaCog />
+    icon: <FaCog />,
+    page: "SETTINGS"
   }
 
 ];
 
 
-export default function VendorSidebar() {
+export default function VendorSidebar({
+  viewPages
+}: VendorSidebarProps) {
 
-    return (
 
-        <aside className="vendor-sidebar">
+  const {
+    user
+  } = useAuth();
 
-            <div className="vendor-logo">
 
-                <span className="logo-icon">
-                    🎉
+  return (
+
+    <aside className="vendor-sidebar">
+
+
+      {/* =====================================================
+          LOGO
+      ===================================================== */}
+
+      <div className="vendor-logo">
+
+        <span className="logo-icon">
+          🎉
+        </span>
+
+        <div>
+
+          <h2>
+            EventNest
+          </h2>
+
+          <p>
+            Vendor Portal
+          </p>
+
+        </div>
+
+      </div>
+
+
+      {/* =====================================================
+          NAVIGATION
+      ===================================================== */}
+
+      <nav>
+
+
+        {
+          vendorMenu
+
+            .filter(item =>
+
+              item.page === null ||
+              viewPages.includes(item.page)
+
+            )
+
+            .map(item => (
+
+              <NavLink
+
+                key={item.path}
+
+                to={item.path}
+
+                className="sidebar-link"
+
+              >
+
+                <span className="sidebar-icon">
+
+                  {item.icon}
+
                 </span>
 
-                <div>
+                {item.label}
 
-                    <h2>
-                        EventNest
-                    </h2>
+              </NavLink>
 
-                    <p>
-                        Vendor Portal
-                    </p>
-
-                </div>
-
-            </div>
+            ))
+        }
 
 
-            <nav>
+        {/* ===================================================
+            VENDOR ADMIN ONLY
+        =================================================== */}
 
-                {
-                    vendorMenu.map(item => (
+        {
+          user?.role === "VENDOR_ADMIN" && (
 
-                        <NavLink
+            <NavLink
 
-                            key={item.path}
+              to="/vendor/team"
 
-                            to={item.path}
+              className="sidebar-link"
 
-                            className="sidebar-link"
+            >
 
-                        >
+              <span className="sidebar-icon">
 
-                            <span className="sidebar-icon">
+                <FaUsers />
 
-                                {item.icon}
+              </span>
 
-                            </span>
+              Team
 
-                            {item.label}
+            </NavLink>
 
-                        </NavLink>
+          )
+        }
 
-                    ))
-                }
 
-            </nav>
+      </nav>
 
-        </aside>
 
-    );
+    </aside>
+
+  );
 
 }

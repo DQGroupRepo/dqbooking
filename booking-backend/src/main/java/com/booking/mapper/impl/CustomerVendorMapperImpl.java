@@ -71,7 +71,7 @@ public class CustomerVendorMapperImpl
                 )
 
                 .startingPrice(
-                        service.getPrice()
+                        service.getStartingPrice()
                 )
 
                 .rating(
@@ -164,7 +164,7 @@ public class CustomerVendorMapperImpl
                 )
 
                 .startingPrice(
-                        service.getPrice()
+                        service.getStartingPrice()
                 )
 
                 .rating(
@@ -204,10 +204,6 @@ public class CustomerVendorMapperImpl
 
                 .bookingSettings(
                         service.getBookingSettings()
-                )
-
-                .availability(
-                        service.getAvailability()
                 )
 
                 .location(

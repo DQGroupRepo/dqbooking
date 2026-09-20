@@ -22,7 +22,7 @@ export default class VendorServiceFormFactory {
 
             location: "",
 
-            price: "",
+            address: "",
 
             capacity: "",
 

@@ -13,6 +13,7 @@ import {
     FaCheckCircle,
     FaTimesCircle
 } from "react-icons/fa";
+import axios from "axios";
 
 import VendorServiceService
     from "../../services/VendorServiceService";
@@ -104,6 +105,18 @@ const ManageServices = () => {
         } catch (error) {
 
             console.error(error);
+
+            if (
+                axios.isAxiosError(error) &&
+                error.response?.status === 403
+            ) {
+
+                toast.error("You do not have permission to load this service."
+                );
+
+                return;
+
+            }
 
             toast.error(
                 "Unable to load services."
@@ -261,6 +274,18 @@ const ManageServices = () => {
             } catch (error) {
 
                 console.error(error);
+
+                if (
+                    axios.isAxiosError(error) &&
+                    error.response?.status === 403
+                ) {
+
+                    toast.error("You do not have permission to update service status."
+                    );
+
+                    return;
+
+                }
 
 
                 toast.error(

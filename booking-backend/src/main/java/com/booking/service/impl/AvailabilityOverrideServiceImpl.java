@@ -133,7 +133,7 @@ public class AvailabilityOverrideServiceImpl
 
         return mapper.toResponseList(
 
-                repository.findByServiceIdAndDateOrderByCreatedAtAsc(
+                repository.findByServiceIdAndDateOrderByCreatedTsAsc(
                         serviceId,
                         date
                 )

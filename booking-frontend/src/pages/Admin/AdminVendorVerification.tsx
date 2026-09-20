@@ -4,6 +4,8 @@ import {
     useState
 } from "react";
 
+import { useNavigate } from "react-router-dom";
+
 import AdminVendorVerificationService, {
     type DiscoveryTag
 } from "../../services/AdminVendorVerificationService";
@@ -62,7 +64,7 @@ const discoveryOptions: {
 
 const AdminVendorVerification = () => {
 
-
+    const navigate = useNavigate();
     const [
         vendors,
         setVendors
@@ -207,6 +209,62 @@ const AdminVendorVerification = () => {
         );
 
     }
+
+        /*
+         * =========================================
+         * OPEN VENDOR SUPPORT MODE
+         * =========================================
+         */
+
+        async function handleOpenSupportMode() {
+
+            if (!selectedVendor) {
+                return;
+            }
+
+
+            try {
+
+                setActionLoading(true);
+
+                setError("");
+
+
+                await AdminVendorVerificationService
+                    .startVendorSupport(
+                        selectedVendor.vendorId
+                    );
+
+
+                /*
+                 * Navigate to the vendor area.
+                 *
+                 * The backend support session determines
+                 * which vendor the ADMIN is operating for.
+                 */
+                navigate("/vendor/dashboard");
+
+            }
+            catch (error) {
+
+                console.error(
+                    "Failed to start vendor support mode:",
+                    error
+                );
+
+
+                setError(
+                    "Unable to open vendor support mode."
+                );
+
+            }
+            finally {
+
+                setActionLoading(false);
+
+            }
+
+        }
 
 
     /*
@@ -1317,7 +1375,6 @@ const AdminVendorVerification = () => {
                             }
                         >
 
-
                             {/* MODAL HEADER */}
 
                             <div className="admin-modal-header">
@@ -1325,22 +1382,17 @@ const AdminVendorVerification = () => {
                                 <div>
 
                                     <h2>
-
                                         {
                                             selectedVendor
                                                 .businessName
                                         }
-
                                     </h2>
 
-
                                     <p>
-
                                         {
                                             selectedVendor
                                                 .ownerName
                                         }
-
                                     </p>
 
                                 </div>
@@ -1361,6 +1413,7 @@ const AdminVendorVerification = () => {
                                 </button>
 
                             </div>
+
 
 
                             {/* VENDOR DETAILS */}
@@ -1444,6 +1497,56 @@ const AdminVendorVerification = () => {
                                         }
 
                                     </strong>
+
+                                </div>
+
+                            </div>
+
+                            {/* SUPPORT MODE */}
+
+                            <div className="admin-support-section">
+
+                                <div className="admin-support-info">
+
+                                    <div>
+
+                                        <h3>
+                                            Vendor Support
+                                        </h3>
+
+                                        <p>
+                                            Enter this vendor's workspace to help
+                                            troubleshoot or update their services,
+                                            pricing, images and other vendor data.
+                                        </p>
+
+                                    </div>
+
+
+                                    <button
+                                        type="button"
+                                        className="admin-support-button"
+                                        onClick={
+                                            handleOpenSupportMode
+                                        }
+                                        disabled={actionLoading}
+                                    >
+
+                                        {actionLoading
+                                            ? "Opening..."
+                                            : "Open Support Mode"
+                                        }
+
+                                    </button>
+
+                                </div>
+
+
+                                <div className="admin-support-warning">
+
+                                    You will be acting on behalf of this vendor.
+                                    Your administrator account and audit activity
+                                    will remain identifiable.
 
                                 </div>
 

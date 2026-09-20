@@ -13,4 +13,6 @@ public class ContactInfo {
 
     private String email;
 
+    private String address;
+
 }

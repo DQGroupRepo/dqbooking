@@ -24,8 +24,6 @@ public class VendorServiceResponse {
 
     private String description;
 
-    private BigDecimal price;
-
     private Integer capacity;
 
     private Integer durationHours;
@@ -47,8 +45,6 @@ public class VendorServiceResponse {
 
     private ContactInfoDto contactInfo;
 
-    private AvailabilityDto availability;
-
     private BookingSettingsDto bookingSettings;
 
     private List<String> imageUrls;
@@ -60,6 +56,8 @@ public class VendorServiceResponse {
             new ArrayList<>();
 
     private String location;
+
+    private String address;
 
     private Boolean bundleEnabled;
     private DiscountType bundleDiscountType;

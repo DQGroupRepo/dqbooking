@@ -15,7 +15,7 @@ export interface VendorServiceForm {
 
     location: string;
 
-    price: string;
+    address: string;
 
     capacity: string;
 
@@ -64,22 +64,6 @@ export interface VendorServiceForm {
 
     /* =====================================
        CATEGORY-SPECIFIC DETAILS
-
-       Generic structure.
-
-       Examples:
-
-       Hall:
-       - Hall Information
-       - Venue Facilities
-
-       Photography:
-       - Photography Information
-       - Photography Services
-
-       Decoration:
-       - Decoration Information
-       - Decoration Services
     ===================================== */
 
     detailSections: ServiceDetailSection[];

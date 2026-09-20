@@ -6,13 +6,17 @@ import com.booking.model.Booking;
 import com.booking.model.Review;
 import com.booking.model.User;
 import com.booking.model.enums.BookingStatus;
+import com.booking.model.enums.Role;
+import com.booking.model.enums.VendorPage;
 import com.booking.repository.BookingRepository;
 import com.booking.repository.ReviewRepository;
 import com.booking.repository.UserRepository;
-import com.booking.repository.VendorServiceRepository;
-import com.booking.service.AuthenticatedUserService;
+import com.booking.service.VendorAccessService;
 import com.booking.service.VendorDashboardService;
+
+import com.booking.service.VendorPermissionService;
 import lombok.RequiredArgsConstructor;
+
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -26,65 +30,135 @@ public class VendorDashboardServiceImpl
 
     private final BookingRepository bookingRepository;
 
-    private final VendorServiceRepository vendorServiceRepository;
-
     private final UserRepository userRepository;
 
-    private final AuthenticatedUserService authenticatedUserService;
+    private final VendorAccessService vendorAccessService;
 
     private final ReviewRepository reviewRepository;
+
+    private final VendorPermissionService vendorPermissionService;
+
 
     @Override
     public DashboardResponse getDashboard() {
 
+        vendorPermissionService.checkView(
+                VendorPage.DASHBOARD
+        );
+        /*
+         * =========================================
+         * EFFECTIVE VENDOR
+         * =========================================
+         *
+         * VENDOR_ADMIN:
+         *     VendorAdmin User._id
+         *
+         * VENDOR_USER:
+         *     User.vendorId
+         *
+         * ADMIN SUPPORT MODE:
+         *     VendorAdmin User._id stored in
+         *     VendorSupportSession.vendorId
+         */
+
+        String vendorId =
+                vendorAccessService
+                        .getEffectiveVendorId();
+
+
+        /*
+         * =========================================
+         * LOAD VENDOR ADMIN
+         * =========================================
+         *
+         * vendorId is now the VendorAdmin User._id.
+         */
+
         User vendor =
-                authenticatedUserService.getCurrentVendor();
+                userRepository
+                        .findById(vendorId)
+                        .filter(
+                                user ->
+                                        user.getRole() ==
+                                                Role.VENDOR_ADMIN
+                        )
+                        .orElseThrow(() ->
+                                new IllegalStateException(
+                                        "Vendor admin not found."
+                                )
+                        );
+
+
+        /*
+         * =========================================
+         * BOOKINGS
+         * =========================================
+         */
 
         List<Booking> bookings =
                 bookingRepository.findByVendorId(
-                        vendor.getId()
+                        vendorId
                 );
+
 
         int pendingBookings =
                 bookingRepository
                         .findByVendorIdAndStatus(
-                                vendor.getId(),
+                                vendorId,
                                 BookingStatus.PENDING
                         )
                         .size();
 
+
         int completedBookings =
                 bookingRepository
                         .findByVendorIdAndStatus(
-                                vendor.getId(),
+                                vendorId,
                                 BookingStatus.COMPLETED
                         )
                         .size();
 
+
+        /*
+         * =========================================
+         * MONTHLY REVENUE
+         * =========================================
+         */
+
         BigDecimal monthlyRevenue =
                 bookingRepository
                         .findByVendorIdAndEventDateBetween(
-                                vendor.getId(),
+                                vendorId,
                                 LocalDate.now().withDayOfMonth(1),
                                 LocalDate.now()
                         )
                         .stream()
-                        .filter(b -> b.getStatus() == BookingStatus.COMPLETED)
-                        .map(Booking::getTotalAmount)
-                        .reduce(BigDecimal.ZERO, BigDecimal::add);
+                        .filter(
+                                b ->
+                                        b.getStatus() ==
+                                                BookingStatus.COMPLETED
+                        )
+                        .map(
+                                Booking::getTotalAmount
+                        )
+                        .reduce(
+                                BigDecimal.ZERO,
+                                BigDecimal::add
+                        );
+
 
         /*
          * =========================================
          * REVIEWS
-         *
-         * Rating should come from the
-         * reviews collection.
          * =========================================
+         *
+         * Rating comes from the reviews
+         * collection.
          */
 
         List<Review> reviews =
                 reviewRepository.findByVendorId(
-                        vendor.getId()
+                        vendorId
                 );
 
 
@@ -108,14 +182,30 @@ public class VendorDashboardServiceImpl
                         .average()
                         .orElse(0.0);
 
+
+        /*
+         * =========================================
+         * RECENT BOOKINGS
+         * =========================================
+         */
+
         List<RecentBookingDto> recentBookings =
                 bookingRepository
-                        .findTop5ByVendorIdOrderByCreatedAtDesc(
-                                vendor.getId()
+                        .findTop5ByVendorIdOrderByCreatedTsDesc(
+                                vendorId
                         )
                         .stream()
-                        .map(this::toRecentBooking)
+                        .map(
+                                this::toRecentBooking
+                        )
                         .toList();
+
+
+        /*
+         * =========================================
+         * RESPONSE
+         * =========================================
+         */
 
         return DashboardResponse
                 .builder()
@@ -152,24 +242,51 @@ public class VendorDashboardServiceImpl
 
     }
 
+
     private RecentBookingDto toRecentBooking(
             Booking booking
     ) {
 
         String customerEmail =
-                userRepository.findById(
+                userRepository
+                        .findById(
                                 booking.getCustomerId()
                         )
-                        .map(User::getEmail)
-                        .orElse("Unknown");
+                        .map(
+                                User::getEmail
+                        )
+                        .orElse(
+                                "Unknown"
+                        );
 
-        return RecentBookingDto.builder()
-                .bookingId(booking.getBookingNumber())
-                .customerName(customerEmail)
-                .serviceName(booking.getServiceName())
-                .eventDate(booking.getEventDate())
-                .status(booking.getStatus().name())
-                .amount(booking.getTotalAmount())
+
+        return RecentBookingDto
+                .builder()
+
+                .bookingId(
+                        booking.getBookingNumber()
+                )
+
+                .customerName(
+                        customerEmail
+                )
+
+                .serviceName(
+                        booking.getServiceName()
+                )
+
+                .eventDate(
+                        booking.getEventDate()
+                )
+
+                .status(
+                        booking.getStatus().name()
+                )
+
+                .amount(
+                        booking.getTotalAmount()
+                )
+
                 .build();
 
     }

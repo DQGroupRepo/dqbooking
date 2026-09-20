@@ -20,6 +20,8 @@ public class ContactInfoMapperImpl implements ContactInfoMapper {
         entity.setContactPerson(dto.getContactPerson());
         entity.setMobile(dto.getMobile());
         entity.setEmail(dto.getEmail());
+        entity.setAddress(dto.getAddress()
+        );
 
         return entity;
     }
@@ -36,6 +38,7 @@ public class ContactInfoMapperImpl implements ContactInfoMapper {
         dto.setContactPerson(entity.getContactPerson());
         dto.setMobile(entity.getMobile());
         dto.setEmail(entity.getEmail());
+        dto.setAddress(entity.getAddress());
 
         return dto;
     }

@@ -27,18 +27,12 @@ public class VendorServiceRequest {
 
     private String description;
 
-    @NotNull
-    private BigDecimal price;
-
     private Integer capacity;
 
     private Integer durationHours;
 
     @Valid
     private ContactInfoDto contactInfo;
-
-    @Valid
-    private AvailabilityDto availability;
 
     @Valid
     private BookingSettingsDto bookingSettings;
@@ -52,6 +46,8 @@ public class VendorServiceRequest {
             new ArrayList<>();
 
     private String location;
+
+    private String address;
 
     /*
      * Pricing Configuration

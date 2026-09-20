@@ -1,6 +1,5 @@
 package com.booking.service.impl;
 
-import com.booking.exception.ResourceNotFoundException;
 import com.booking.model.User;
 import com.booking.model.enums.Role;
 import com.booking.repository.UserRepository;
@@ -14,18 +13,23 @@ import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
-public class AuthenticatedUserServiceImpl implements AuthenticatedUserService {
+public class AuthenticatedUserServiceImpl
+        implements AuthenticatedUserService {
 
     @Override
     public User getCurrentUser() {
 
         Authentication authentication =
-                SecurityContextHolder.getContext().getAuthentication();
+                SecurityContextHolder
+                        .getContext()
+                        .getAuthentication();
 
         if (authentication == null ||
                 !(authentication.getPrincipal() instanceof User user)) {
 
-            throw new UsernameNotFoundException("Authenticated user not found.");
+            throw new UsernameNotFoundException(
+                    "Authenticated user not found."
+            );
         }
 
         return user;
@@ -37,7 +41,9 @@ public class AuthenticatedUserServiceImpl implements AuthenticatedUserService {
         User user = getCurrentUser();
 
         if (user.getRole() != Role.CUSTOMER) {
-            throw new AccessDeniedException("Customer access required.");
+            throw new AccessDeniedException(
+                    "Customer access required."
+            );
         }
 
         return user;
@@ -48,7 +54,8 @@ public class AuthenticatedUserServiceImpl implements AuthenticatedUserService {
 
         User user = getCurrentUser();
 
-        if (user.getRole() != Role.VENDOR) {
+        if (user.getRole() != Role.VENDOR_ADMIN &&
+                user.getRole() != Role.VENDOR_USER) {
 
             throw new AccessDeniedException(
                     "Vendor access required."
@@ -57,5 +64,4 @@ public class AuthenticatedUserServiceImpl implements AuthenticatedUserService {
 
         return user;
     }
-
 }

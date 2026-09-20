@@ -18,4 +18,6 @@ public class ContactInfoDto {
     @Email
     private String email;
 
+    private String address;
+
 }

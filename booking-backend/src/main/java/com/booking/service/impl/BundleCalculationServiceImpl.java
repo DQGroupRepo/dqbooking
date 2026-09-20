@@ -253,7 +253,7 @@ public class BundleCalculationServiceImpl
 
                             return safe(
                                     line.service()
-                                            .getPrice()
+                                            .getStartingPrice()
                             );
 
                         })
@@ -350,7 +350,7 @@ public class BundleCalculationServiceImpl
                             selectedPackage.getPrice()
                     )
                             : safe(
-                            service.getPrice()
+                            service.getStartingPrice()
                     );
 
 

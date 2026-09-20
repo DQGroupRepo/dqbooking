@@ -6,15 +6,16 @@ import com.booking.dto.bundle.UpdateBundleRequest;
 import com.booking.exception.ResourceNotFoundException;
 import com.booking.model.Bundle;
 import com.booking.model.VendorService;
+import com.booking.model.enums.VendorPage;
 import com.booking.repository.BundleRepository;
 import com.booking.repository.VendorServiceRepository;
-import com.booking.service.AuthenticatedUserService;
 import com.booking.service.BundleService;
+import com.booking.service.VendorAccessService;
+import com.booking.service.VendorPermissionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -26,30 +27,37 @@ public class BundleServiceImpl
 
     private final VendorServiceRepository vendorServiceRepository;
 
-    private final AuthenticatedUserService authenticatedUserService;
+    private final VendorAccessService vendorAccessService;
 
+    private final VendorPermissionService vendorPermissionService;
+
+
+    /*
+     * =========================================
+     * CREATE BUNDLE
+     * =========================================
+     */
 
     @Override
     public BundleResponse createBundle(
             CreateBundleRequest request
     ) {
 
+        vendorPermissionService.checkEdit(
+                VendorPage.BUNDLES
+        );
+
         String vendorId =
-                authenticatedUserService
-                        .getCurrentVendor()
-                        .getId();
+                vendorAccessService.getEffectiveVendorId();
 
         validateServicesBelongToVendor(
                 request.getServiceIds(),
                 vendorId
         );
 
-        Bundle bundle =
-                new Bundle();
+        Bundle bundle = new Bundle();
 
-        bundle.setVendorId(
-                vendorId
-        );
+        bundle.setVendorId(vendorId);
 
         bundle.setName(
                 request.getName()
@@ -75,17 +83,7 @@ public class BundleServiceImpl
                 request.getDiscountValue()
         );
 
-        bundle.setActive(
-                true
-        );
-
-        bundle.setCreatedAt(
-                LocalDateTime.now()
-        );
-
-        bundle.setUpdatedAt(
-                LocalDateTime.now()
-        );
+        bundle.setActive(true);
 
         return toResponse(
                 bundleRepository.save(bundle)
@@ -93,15 +91,23 @@ public class BundleServiceImpl
     }
 
 
+    /*
+     * =========================================
+     * GET BUNDLE
+     * =========================================
+     */
+
     @Override
     public BundleResponse getBundle(
             String bundleId
     ) {
 
+        vendorPermissionService.checkView(
+                VendorPage.BUNDLES
+        );
+
         String vendorId =
-                authenticatedUserService
-                        .getCurrentVendor()
-                        .getId();
+                vendorAccessService.getEffectiveVendorId();
 
         Bundle bundle =
                 bundleRepository
@@ -119,13 +125,21 @@ public class BundleServiceImpl
     }
 
 
+    /*
+     * =========================================
+     * GET VENDOR BUNDLES
+     * =========================================
+     */
+
     @Override
     public List<BundleResponse> getVendorBundles() {
 
+        vendorPermissionService.checkView(
+                VendorPage.BUNDLES
+        );
+
         String vendorId =
-                authenticatedUserService
-                        .getCurrentVendor()
-                        .getId();
+                vendorAccessService.getEffectiveVendorId();
 
         return bundleRepository
                 .findByVendorId(vendorId)
@@ -135,16 +149,24 @@ public class BundleServiceImpl
     }
 
 
+    /*
+     * =========================================
+     * UPDATE BUNDLE
+     * =========================================
+     */
+
     @Override
     public BundleResponse updateBundle(
             String bundleId,
             UpdateBundleRequest request
     ) {
 
+        vendorPermissionService.checkEdit(
+                VendorPage.BUNDLES
+        );
+
         String vendorId =
-                authenticatedUserService
-                        .getCurrentVendor()
-                        .getId();
+                vendorAccessService.getEffectiveVendorId();
 
         Bundle bundle =
                 bundleRepository
@@ -191,25 +213,29 @@ public class BundleServiceImpl
                 request.isActive()
         );
 
-        bundle.setUpdatedAt(
-                LocalDateTime.now()
-        );
-
         return toResponse(
                 bundleRepository.save(bundle)
         );
     }
 
 
+    /*
+     * =========================================
+     * DELETE BUNDLE
+     * =========================================
+     */
+
     @Override
     public void deleteBundle(
             String bundleId
     ) {
 
+        vendorPermissionService.checkEdit(
+                VendorPage.BUNDLES
+        );
+
         String vendorId =
-                authenticatedUserService
-                        .getCurrentVendor()
-                        .getId();
+                vendorAccessService.getEffectiveVendorId();
 
         Bundle bundle =
                 bundleRepository
@@ -223,21 +249,17 @@ public class BundleServiceImpl
                                 )
                         );
 
-        /*
-         * Soft delete.
-         *
-         * We don't physically remove the document.
-         */
-
         bundle.setActive(false);
-
-        bundle.setUpdatedAt(
-                LocalDateTime.now()
-        );
 
         bundleRepository.save(bundle);
     }
 
+
+    /*
+     * =========================================
+     * ACTIVATE BUNDLE
+     * =========================================
+     */
 
     @Override
     public void activateBundle(
@@ -251,6 +273,12 @@ public class BundleServiceImpl
     }
 
 
+    /*
+     * =========================================
+     * DEACTIVATE BUNDLE
+     * =========================================
+     */
+
     @Override
     public void deactivateBundle(
             String bundleId
@@ -263,15 +291,23 @@ public class BundleServiceImpl
     }
 
 
+    /*
+     * =========================================
+     * UPDATE BUNDLE STATUS
+     * =========================================
+     */
+
     private void updateBundleStatus(
             String bundleId,
             boolean active
     ) {
 
+        vendorPermissionService.checkEdit(
+                VendorPage.BUNDLES
+        );
+
         String vendorId =
-                authenticatedUserService
-                        .getCurrentVendor()
-                        .getId();
+                vendorAccessService.getEffectiveVendorId();
 
         Bundle bundle =
                 bundleRepository
@@ -287,13 +323,15 @@ public class BundleServiceImpl
 
         bundle.setActive(active);
 
-        bundle.setUpdatedAt(
-                LocalDateTime.now()
-        );
-
         bundleRepository.save(bundle);
     }
 
+
+    /*
+     * =========================================
+     * VALIDATE SERVICES
+     * =========================================
+     */
 
     private void validateServicesBelongToVendor(
             List<String> serviceIds,
@@ -331,6 +369,12 @@ public class BundleServiceImpl
         }
     }
 
+
+    /*
+     * =========================================
+     * RESPONSE MAPPER
+     * =========================================
+     */
 
     private BundleResponse toResponse(
             Bundle bundle
@@ -372,15 +416,30 @@ public class BundleServiceImpl
                 )
 
                 .createdAt(
-                        bundle.getCreatedAt()
+                        bundle.getCreatedTs()
                 )
 
                 .updatedAt(
-                        bundle.getUpdatedAt()
+                        bundle.getLastUpdateTs()
                 )
 
                 .build();
     }
+
+
+    /*
+     * =========================================
+     * CUSTOMER:
+     * GET BUNDLES FOR SERVICE
+     * =========================================
+     *
+     * This endpoint is not vendor-management
+     * functionality.
+     *
+     * Customers need to be able to discover
+     * bundles for a service, so DO NOT apply
+     * VendorPage.BUNDLES permission here.
+     */
 
     @Override
     public List<BundleResponse> getBundlesForService(

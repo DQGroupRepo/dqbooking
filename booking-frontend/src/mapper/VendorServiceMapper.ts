@@ -26,10 +26,6 @@ export default class VendorServiceMapper {
 
         return {
 
-            /* =============================
-               BASIC INFORMATION
-            ============================= */
-
             category:
                 service.category,
 
@@ -38,9 +34,6 @@ export default class VendorServiceMapper {
 
             location:
                 service.location,
-
-            price:
-                service.price?.toString() ?? "",
 
             capacity:
                 service.capacity?.toString() ?? "",
@@ -52,9 +45,7 @@ export default class VendorServiceMapper {
                 service.description ?? "",
 
 
-            /* =============================
-               CONTACT
-            ============================= */
+            /* CONTACT */
 
             contactPerson:
                 service.contactInfo
@@ -68,10 +59,10 @@ export default class VendorServiceMapper {
                 service.contactInfo
                     ?.email ?? "",
 
-
-            /* =============================
-               AVAILABILITY
-            ============================= */
+            address:
+                service.contactInfo
+                        ?.address ?? "",
+            /* AVAILABILITY */
 
             availableFrom:
                 service.availability
@@ -82,9 +73,7 @@ export default class VendorServiceMapper {
                     ?.availableTo ?? "",
 
 
-            /* =============================
-               BOOKING SETTINGS
-            ============================= */
+            /* BOOKING SETTINGS */
 
             maxSimultaneousBookings:
 
@@ -98,25 +87,19 @@ export default class VendorServiceMapper {
                     ?.bundleOfferEnabled ?? false,
 
 
-            /* =============================
-               MEDIA
-            ============================= */
+            /* MEDIA */
 
             imageUrls:
                 service.imageUrls ?? [],
 
 
-            /* =============================
-               AMENITIES
-            ============================= */
+            /* AMENITIES */
 
             amenities:
                 service.amenities ?? [],
 
 
-            /* =============================
-               GENERIC DETAIL SECTIONS
-            ============================= */
+            /* DETAILS */
 
             detailSections:
                 service.detailSections ?? []
@@ -151,11 +134,6 @@ export default class VendorServiceMapper {
             description:
                 form.description,
 
-            price:
-                Number(
-                    form.price
-                ),
-
             capacity:
                 Number(
                     form.capacity
@@ -167,9 +145,7 @@ export default class VendorServiceMapper {
                 ),
 
 
-            /* =============================
-               CONTACT
-            ============================= */
+            /* CONTACT */
 
             contactInfo: {
 
@@ -180,14 +156,15 @@ export default class VendorServiceMapper {
                     form.mobile,
 
                 email:
-                    form.email
+                    form.email,
+                address:
+                    form.address,
+
 
             },
 
 
-            /* =============================
-               AVAILABILITY
-            ============================= */
+            /* AVAILABILITY */
 
             availability: {
 
@@ -200,9 +177,7 @@ export default class VendorServiceMapper {
             },
 
 
-            /* =============================
-               BOOKING SETTINGS
-            ============================= */
+            /* BOOKING SETTINGS */
 
             bookingSettings: {
 
@@ -218,25 +193,19 @@ export default class VendorServiceMapper {
             },
 
 
-            /* =============================
-               MEDIA
-            ============================= */
+            /* MEDIA */
 
             imageUrls:
                 form.imageUrls,
 
 
-            /* =============================
-               AMENITIES
-            ============================= */
+            /* AMENITIES */
 
             amenities:
                 form.amenities,
 
 
-            /* =============================
-               GENERIC DETAIL SECTIONS
-            ============================= */
+            /* DETAIL SECTIONS */
 
             detailSections:
                 form.detailSections

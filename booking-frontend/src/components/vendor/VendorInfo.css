@@ -1,0 +1,28 @@
+.service-title h1 {
+  margin: 0;
+  font-size: 32px;
+  font-weight: 700;
+  color: #243b53;
+}
+
+.business-name {
+  margin-top: 4px;
+
+  font-size: 15px;
+
+  font-weight: 400;
+
+  color: #718096;
+}
+
+.business-name span {
+  margin-left: 5px;
+
+  font-size: 16px;
+
+  font-weight: 600;
+
+  color: #b7793e;
+
+  font-family: Georgia, serif;
+}

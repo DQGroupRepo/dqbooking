@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { FaPlus } from "react-icons/fa";
 import toast from "react-hot-toast";
+import axios from "axios";
 
 import BookingSlotService from "../../services/BookingSlotService";
 import type { BookingSlot } from "../../types/BookingSlot";
@@ -75,6 +76,17 @@ export default function ManageBookingSlots() {
         catch (error) {
 
             console.error(error);
+            if (
+                axios.isAxiosError(error) &&
+                error.response?.status === 403
+            ) {
+
+                toast.error("You do not have permission to load/update booking slots."
+                );
+
+                return;
+
+            }
 
             toast.error("Unable to load booking slots.");
 
@@ -130,6 +142,18 @@ export default function ManageBookingSlots() {
         }
 
         catch {
+
+             if (
+                axios.isAxiosError(error) &&
+                error.response?.status === 403
+            ) {
+
+                toast.error("You do not have permission to update booking slots."
+                );
+
+                return;
+
+            }
 
             toast.error("Unable to update slot.");
 
@@ -187,6 +211,17 @@ export default function ManageBookingSlots() {
 
         catch {
 
+            if (
+                axios.isAxiosError(error) &&
+                error.response?.status === 403
+            ) {
+
+                toast.error("You do not have permission to delete booking slots."
+                );
+
+                return;
+
+            }
             toast.error("Unable to delete slot.");
 
         }

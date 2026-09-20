@@ -252,14 +252,15 @@ const Header = () => {
         ) {
 
             if (
-                user?.role === "VENDOR"
+              user?.role === "VENDOR_ADMIN" ||
+              user?.role === "VENDOR_USER"
             ) {
 
-                navigate(
-                    `/vendor/bookings/${notification.referenceId}`
-                );
+              navigate(
+                `/vendor/bookings/${notification.referenceId}`
+              );
 
-                return;
+              return;
 
             }
 
@@ -795,34 +796,40 @@ const Header = () => {
                                 <span className="utility-divider" />
 
 
-                                {user.role === "VENDOR" && (
+                                {(
+                                  user.role === "VENDOR_ADMIN" ||
+                                  user.role === "VENDOR_USER"
+                                ) && (
 
-                                    <Link
-                                        to="/vendor/create-listing"
-                                        className="utility-link"
-                                    >
+                                  <Link
+                                    to="/vendor/create-listing"
+                                    className="utility-link"
+                                  >
 
-                                        <FaStore />
+                                    <FaStore />
 
-                                        List Your Service
+                                    List Your Service
 
-                                    </Link>
+                                  </Link>
 
                                 )}
 
 
-                                {user.role !== "VENDOR" && (
+                                {(
+                                  user.role !== "VENDOR_ADMIN" &&
+                                  user.role !== "VENDOR_USER"
+                                ) && (
 
-                                    <Link
-                                        to="/register"
-                                        className="utility-link"
-                                    >
+                                  <Link
+                                    to="/register"
+                                    className="utility-link"
+                                  >
 
-                                        <FaStore />
+                                    <FaStore />
 
-                                        List Your Service
+                                    List Your Service
 
-                                    </Link>
+                                  </Link>
 
                                 )}
 
@@ -1447,16 +1454,19 @@ const Header = () => {
                         {/* DASHBOARD */}
 
                         {isAuthenticated &&
-                            user?.role === "VENDOR" && (
+                          (
+                            user?.role === "VENDOR_ADMIN" ||
+                            user?.role === "VENDOR_USER"
+                          ) && (
 
-                                <Link
-                                    to="/vendor/dashboard"
-                                    className="header-dashboard"
-                                >
-                                    Dashboard
-                                </Link>
+                            <Link
+                              to="/vendor/dashboard"
+                              className="header-dashboard"
+                            >
+                              Dashboard
+                            </Link>
 
-                            )
+                          )
                         }
 
 

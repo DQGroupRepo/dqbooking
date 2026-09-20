@@ -109,8 +109,8 @@ public class AdminBookingServiceImpl
                 )
 
                 .createdAt(
-                        booking.getCreatedAt() != null
-                                ? booking.getCreatedAt().toString()
+                        booking.getCreatedTs() != null
+                                ? booking.getCreatedTs().toString()
                                 : null
                 )
 

@@ -52,7 +52,7 @@ public class NotificationMapperImpl
                 )
 
                 .createdAt(
-                        notification.getCreatedAt()
+                        notification.getCreatedTs()
                 )
 
                 .build();

@@ -87,6 +87,51 @@ class AdminVendorVerificationService {
 
     }
 
+        /*
+         * =========================================
+         * VENDOR SUPPORT MODE
+         * =========================================
+         */
+
+        async startVendorSupport(
+            vendorId: string
+        ): Promise<void> {
+
+            await api.post(
+                `/admin/vendor-support/${vendorId}/start`
+            );
+
+        }
+
+
+        async getCurrentVendorSupport(): Promise<{
+            adminId: string;
+            vendorId: string;
+            startedAt: string;
+        } | null> {
+
+            const response =
+                await api.get<{
+                    adminId: string;
+                    vendorId: string;
+                    startedAt: string;
+                } | null>(
+                    "/admin/vendor-support/current"
+                );
+
+            return response.data;
+
+        }
+
+
+        async endVendorSupport(): Promise<void> {
+
+            await api.post(
+                "/admin/vendor-support/end"
+            );
+
+        }
+
 
     /*
      * =========================================
