@@ -3,6 +3,7 @@ package com.booking.config;
 import com.booking.security.JwtAuthenticationFilter;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -28,263 +29,218 @@ import java.util.List;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    private final JwtAuthenticationFilter jwtAuthenticationFilter;
+        private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
+        @Value("${app.cors.allowed-origins:http://localhost:5173,http://localhost:5174}")
+        private String corsAllowedOrigins;
 
-    @Bean
-    SecurityFilterChain securityFilterChain(
-            HttpSecurity http
-    ) throws Exception {
+        @Bean
+        SecurityFilterChain securityFilterChain(
+                        HttpSecurity http) throws Exception {
 
-        http
+                http
 
-                // ==========================
-                // CORS
-                // ==========================
+                                // ==========================
+                                // CORS
+                                // ==========================
 
-                .cors(Customizer.withDefaults())
+                                .cors(Customizer.withDefaults())
 
+                                // ==========================
+                                // CSRF
+                                // ==========================
 
-                // ==========================
-                // CSRF
-                // ==========================
+                                .csrf(csrf -> csrf.disable())
 
-                .csrf(csrf ->
-                        csrf.disable()
-                )
+                                // ==========================
+                                // Stateless JWT Session
+                                // ==========================
 
+                                .sessionManagement(session -> session.sessionCreationPolicy(
+                                                SessionCreationPolicy.STATELESS))
 
-                // ==========================
-                // Stateless JWT Session
-                // ==========================
+                                // ==========================
+                                // Authorization
+                                // ==========================
 
-                .sessionManagement(session ->
-                        session.sessionCreationPolicy(
-                                SessionCreationPolicy.STATELESS
-                        )
-                )
+                                .authorizeHttpRequests(auth -> auth
 
+                                                // --------------------------------
+                                                // Public APIs
+                                                // --------------------------------
 
-                // ==========================
-                // Authorization
-                // ==========================
+                                                .requestMatchers(
+                                                                "/api/health",
+                                                                "/api/auth/login",
+                                                                "/api/auth/register",
+                                                                "/api/auth/vendor/register",
+                                                                "/api/customer/services",
+                                                                "/api/customer/services/**",
+                                                                "/uploads/**",
+                                                                "/api/pricing/**")
+                                                .permitAll()
 
-                .authorizeHttpRequests(auth -> auth
+                                                // --------------------------------
+                                                // Public GET APIs
+                                                // --------------------------------
 
+                                                // Anyone can browse vendors/services
+                                                .requestMatchers(
+                                                                HttpMethod.GET,
+                                                                "/api/vendor/listings/**")
+                                                .permitAll()
 
-                        // --------------------------------
-                        // Public APIs
-                        // --------------------------------
+                                                // --------------------------------
+                                                // Vendor APIs
+                                                // --------------------------------
 
-                        .requestMatchers(
-                                "/api/health",
-                                "/api/auth/login",
-                                "/api/auth/register",
-                                "/api/auth/vendor/register",
-                                "/api/customer/services",
-                                "/api/customer/services/**",
-                                "/uploads/**",
-                                "/api/pricing/**"
-                        )
-                        .permitAll()
+                                                .requestMatchers(
+                                                                "/api/vendor/**")
+                                                .hasRole("VENDOR")
 
-                        // --------------------------------
-                        // Public GET APIs
-                        // --------------------------------
+                                                // --------------------------------
+                                                // Customer APIs
+                                                // --------------------------------
 
-                        // Anyone can browse vendors/services
-                        .requestMatchers(
-                                HttpMethod.GET,
-                                "/api/vendor/listings/**"
-                        )
-                        .permitAll()
+                                                .requestMatchers(
+                                                                "/api/customer/**",
+                                                                "/api/bookings",
+                                                                "/api/reviews")
+                                                .hasRole("CUSTOMER")
 
+                                                // --------------------------------
+                                                // Admin APIs
+                                                // --------------------------------
 
-                        // --------------------------------
-                        // Vendor APIs
-                        // --------------------------------
+                                                .requestMatchers(
+                                                                "/api/admin/**")
+                                                .hasRole("ADMIN")
 
-                        .requestMatchers(
-                                "/api/vendor/**"
-                        )
-                        .hasRole("VENDOR")
+                                                // --------------------------------
+                                                // Bookings
+                                                // --------------------------------
 
+                                                // For now, vendor booking management
+                                                .requestMatchers(
+                                                                "/api/vendor/bookings/**")
+                                                .hasRole("VENDOR")
 
-                        // --------------------------------
-                        // Customer APIs
-                        // --------------------------------
+                                                // --------------------------------
+                                                // Everything else
+                                                // --------------------------------
 
-                        .requestMatchers(
-                                "/api/customer/**",
-                                "/api/bookings",
-                                "/api/reviews"
-                        )
-                        .hasRole("CUSTOMER")
+                                                .anyRequest()
+                                                .authenticated()
 
+                                )
 
-                        // --------------------------------
-                        // Admin APIs
-                        // --------------------------------
+                                // ==========================
+                                // JWT Filter
+                                // ==========================
+                                .exceptionHandling(exception -> exception
 
-                        .requestMatchers(
-                                "/api/admin/**"
-                        )
-                        .hasRole("ADMIN")
+                                                .authenticationEntryPoint(
+                                                                (request, response, authException) -> {
 
+                                                                        response.setStatus(
+                                                                                        HttpServletResponse.SC_UNAUTHORIZED);
 
-                        // --------------------------------
-                        // Bookings
-                        // --------------------------------
+                                                                        response.setContentType(
+                                                                                        "application/json");
 
-                        // For now, vendor booking management
-                        .requestMatchers(
-                                "/api/vendor/bookings/**"
-                        )
-                        .hasRole("VENDOR")
+                                                                        response.getWriter().write(
+                                                                                        "{\"message\":\"Authentication required\"}");
 
+                                                                })
 
-                        // --------------------------------
-                        // Everything else
-                        // --------------------------------
+                                )
 
-                        .anyRequest()
-                        .authenticated()
+                                .addFilterBefore(
+                                                jwtAuthenticationFilter,
+                                                UsernamePasswordAuthenticationFilter.class);
 
-                )
+                return http.build();
 
+        }
 
-                // ==========================
-                // JWT Filter
-                // ==========================
-                .exceptionHandling(exception -> exception
+        // ==========================
+        // Password Encoder
+        // ==========================
 
-                        .authenticationEntryPoint(
-                                (request, response, authException) -> {
+        @Bean
+        PasswordEncoder passwordEncoder() {
 
-                                    response.setStatus(
-                                            HttpServletResponse.SC_UNAUTHORIZED
-                                    );
+                return new BCryptPasswordEncoder();
 
-                                    response.setContentType(
-                                            "application/json"
-                                    );
+        }
 
-                                    response.getWriter().write(
-                                            "{\"message\":\"Authentication required\"}"
-                                    );
+        // ==========================
+        // Authentication Manager
+        // ==========================
 
-                                }
-                        )
+        @Bean
+        AuthenticationManager authenticationManager(
+                        AuthenticationConfiguration configuration) throws Exception {
 
-                )
+                return configuration.getAuthenticationManager();
 
-                .addFilterBefore(
-                        jwtAuthenticationFilter,
-                        UsernamePasswordAuthenticationFilter.class
+        }
+
+        // ==========================
+        // CORS Configuration
+        // ==========================
+
+        @Bean
+        CorsConfigurationSource corsConfigurationSource() {
+
+                List<String> allowedOrigins = java.util.Arrays.stream(corsAllowedOrigins.split(","))
+                                .map(String::trim)
+                                .filter(origin -> !origin.isBlank())
+                                .toList();
+
+                CorsConfiguration configuration = new CorsConfiguration();
+                configuration.setAllowedOrigins(allowedOrigins);
+
+                configuration.setAllowedMethods(
+
+                                List.of(
+
+                                                "GET",
+
+                                                "POST",
+
+                                                "PUT",
+
+                                                "DELETE",
+
+                                                "OPTIONS",
+
+                                                "PATCH"
+
+                                )
+
                 );
 
+                configuration.setAllowedHeaders(
 
-        return http.build();
+                                List.of("*")
 
-    }
+                );
 
+                configuration.setAllowCredentials(true);
 
-    // ==========================
-    // Password Encoder
-    // ==========================
+                UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
 
-    @Bean
-    PasswordEncoder passwordEncoder() {
+                source.registerCorsConfiguration(
 
-        return new BCryptPasswordEncoder();
+                                "/**",
 
-    }
+                                configuration
 
+                );
 
-    // ==========================
-    // Authentication Manager
-    // ==========================
+                return source;
 
-    @Bean
-    AuthenticationManager authenticationManager(
-            AuthenticationConfiguration configuration
-    ) throws Exception {
-
-        return configuration.getAuthenticationManager();
-
-    }
-
-
-    // ==========================
-    // CORS Configuration
-    // ==========================
-
-    @Bean
-    CorsConfigurationSource corsConfigurationSource() {
-
-        CorsConfiguration configuration =
-                new CorsConfiguration();
-
-
-        configuration.setAllowedOrigins(
-
-                List.of(
-
-                        "http://localhost:5173",
-
-                        "http://localhost:5174"
-
-                )
-
-        );
-
-
-        configuration.setAllowedMethods(
-
-                List.of(
-
-                        "GET",
-
-                        "POST",
-
-                        "PUT",
-
-                        "DELETE",
-
-                        "OPTIONS",
-
-                        "PATCH"
-
-                )
-
-        );
-
-
-        configuration.setAllowedHeaders(
-
-                List.of("*")
-
-        );
-
-
-        configuration.setAllowCredentials(true);
-
-
-        UrlBasedCorsConfigurationSource source =
-                new UrlBasedCorsConfigurationSource();
-
-
-        source.registerCorsConfiguration(
-
-                "/**",
-
-                configuration
-
-        );
-
-
-        return source;
-
-    }
+        }
 
 }
