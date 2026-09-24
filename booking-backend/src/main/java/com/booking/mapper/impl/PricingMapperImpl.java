@@ -469,8 +469,8 @@ public class PricingMapperImpl implements PricingMapper {
                                                         servicePackage.getId()
                                                 )
 
-                                                .type(
-                                                        servicePackage.getType().name()
+                                                .name(
+                                                        servicePackage.getName()
                                                 )
 
                                                 .price(

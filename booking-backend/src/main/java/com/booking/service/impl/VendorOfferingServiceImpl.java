@@ -5,6 +5,7 @@ import com.booking.dto.vendorservice.VendorServiceRequest;
 import com.booking.dto.vendorservice.VendorServiceResponse;
 import com.booking.exception.ResourceNotFoundException;
 import com.booking.exception.VendorServiceNotFoundException;
+import com.booking.model.enums.ServiceCategory;
 import com.booking.mapper.VendorServiceMapper;
 import com.booking.model.User;
 import com.booking.model.VendorService;
@@ -20,6 +21,7 @@ import com.booking.service.VendorPermissionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -52,6 +54,10 @@ public class VendorOfferingServiceImpl
 
         vendorPermissionService.checkEdit(
                 VendorPage.SERVICES
+        );
+
+        validateCateringDetails(
+                request
         );
 
         String vendorId =
@@ -117,6 +123,10 @@ public class VendorOfferingServiceImpl
 
         vendorPermissionService.checkEdit(
                 VendorPage.SERVICES
+        );
+
+        validateCateringDetails(
+                request
         );
 
         String vendorId =
@@ -377,53 +387,24 @@ public class VendorOfferingServiceImpl
      * =========================================
      */
 
-    private void validatePackages(
-            List<ServicePackageRequest> packages
-    ) {
+    private void validatePackages(List<ServicePackageRequest> packages) {
 
-        if (
-                packages == null ||
-                        packages.isEmpty()
-        ) {
+        if (packages == null || packages.isEmpty()) {
             return;
         }
 
-        /*
-         * Maximum:
-         *
-         * SILVER
-         * GOLD
-         * PREMIUM
-         */
+        for (ServicePackageRequest request : packages) {
 
-        if (
-                packages.size() > 3
-        ) {
-            throw new IllegalArgumentException(
-                    "A service can have a maximum of 3 packages."
-            );
-        }
+            if (request.getName() == null || request.getName().trim().isEmpty()) {
+                throw new IllegalArgumentException("Package name is required.");
+            }
 
-        /*
-         * Prevent duplicate package types.
-         */
-
-        long distinctTypes =
-                packages
-                        .stream()
-                        .map(
-                                ServicePackageRequest::getType
-                        )
-                        .distinct()
-                        .count();
-
-        if (
-                distinctTypes !=
-                        packages.size()
-        ) {
-            throw new IllegalArgumentException(
-                    "Duplicate package types are not allowed."
-            );
+            if (request.getPrice() == null
+                    || request.getPrice().compareTo(BigDecimal.ZERO) <= 0) {
+                throw new IllegalArgumentException(
+                        "Package price must be greater than zero."
+                );
+            }
         }
     }
 
@@ -438,27 +419,24 @@ public class VendorOfferingServiceImpl
             List<ServicePackageRequest> requests
     ) {
 
-        if (
-                requests == null ||
-                        requests.isEmpty()
-        ) {
+        if (requests == null || requests.isEmpty()) {
             return new ArrayList<>();
         }
 
-        return requests
-                .stream()
+        return requests.stream()
                 .map(request -> {
 
-                    ServicePackage servicePackage =
-                            new ServicePackage();
+                    ServicePackage servicePackage = new ServicePackage();
 
                     servicePackage.setId(
-                            UUID.randomUUID()
-                                    .toString()
+                            request.getId() != null
+                                    && !request.getId().isBlank()
+                                    ? request.getId()
+                                    : UUID.randomUUID().toString()
                     );
 
-                    servicePackage.setType(
-                            request.getType()
+                    servicePackage.setName(
+                            request.getName().trim()
                     );
 
                     servicePackage.setPrice(
@@ -467,20 +445,15 @@ public class VendorOfferingServiceImpl
 
                     servicePackage.setFeatures(
                             request.getFeatures() == null
-
                                     ? new ArrayList<>()
-
-                                    : new ArrayList<>(
-                                    request.getFeatures()
-                            )
+                                    : new ArrayList<>(request.getFeatures())
                     );
 
                     servicePackage.setActive(
-                            true
+                            request.isActive()
                     );
 
                     return servicePackage;
-
                 })
                 .toList();
     }
@@ -497,61 +470,44 @@ public class VendorOfferingServiceImpl
             List<ServicePackage> existingPackages
     ) {
 
-        if (
-                requests == null ||
-                        requests.isEmpty()
-        ) {
+        if (requests == null || requests.isEmpty()) {
             return new ArrayList<>();
         }
 
-        if (
-                existingPackages == null
-        ) {
-            existingPackages =
-                    new ArrayList<>();
+        if (existingPackages == null) {
+            existingPackages = new ArrayList<>();
         }
 
-        List<ServicePackage> oldPackages =
-                existingPackages;
+        List<ServicePackage> oldPackages = existingPackages;
 
-        return requests
-                .stream()
+        return requests.stream()
                 .map(request -> {
 
-                    ServicePackage existingPackage =
-                            oldPackages
-                                    .stream()
-                                    .filter(
-                                            existing ->
-                                                    existing.getType()
-                                                            ==
-                                                            request.getType()
-                                    )
-                                    .findFirst()
-                                    .orElse(null);
+                    ServicePackage existingPackage = oldPackages.stream()
+                            .filter(existing ->
+                                    existing.getId() != null
+                                            && existing.getId().equals(request.getId())
+                            )
+                            .findFirst()
+                            .orElse(null);
 
                     ServicePackage servicePackage;
 
-                    if (
-                            existingPackage != null
-                    ) {
-
-                        servicePackage =
-                                existingPackage;
-
+                    if (existingPackage != null) {
+                        servicePackage = existingPackage;
                     } else {
-
-                        servicePackage =
-                                new ServicePackage();
+                        servicePackage = new ServicePackage();
 
                         servicePackage.setId(
-                                UUID.randomUUID()
-                                        .toString()
+                                request.getId() != null
+                                        && !request.getId().isBlank()
+                                        ? request.getId()
+                                        : UUID.randomUUID().toString()
                         );
                     }
 
-                    servicePackage.setType(
-                            request.getType()
+                    servicePackage.setName(
+                            request.getName().trim()
                     );
 
                     servicePackage.setPrice(
@@ -560,20 +516,15 @@ public class VendorOfferingServiceImpl
 
                     servicePackage.setFeatures(
                             request.getFeatures() == null
-
                                     ? new ArrayList<>()
-
-                                    : new ArrayList<>(
-                                    request.getFeatures()
-                            )
+                                    : new ArrayList<>(request.getFeatures())
                     );
 
                     servicePackage.setActive(
-                            true
+                            request.isActive()
                     );
 
                     return servicePackage;
-
                 })
                 .toList();
     }
@@ -635,5 +586,40 @@ public class VendorOfferingServiceImpl
                         service
                 )
         );
+    }
+
+    /*
+     * =========================================
+     * CATERING VALIDATION
+     * =========================================
+     */
+
+    private void validateCateringDetails(
+            VendorServiceRequest request
+    ) {
+
+        if (request == null) {
+            return;
+        }
+
+        if (
+                request.getCategory() == ServiceCategory.CATERING
+                        &&
+                        request.getCateringDetails() == null
+        ) {
+            throw new IllegalArgumentException(
+                    "Catering details are required for catering services."
+            );
+        }
+
+        if (
+                request.getCategory() != ServiceCategory.CATERING
+                        &&
+                        request.getCateringDetails() != null
+        ) {
+            throw new IllegalArgumentException(
+                    "Catering details are only allowed for catering services."
+            );
+        }
     }
 }

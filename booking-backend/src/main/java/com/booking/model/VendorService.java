@@ -5,6 +5,7 @@ import com.booking.model.enums.DiscountType;
 import com.booking.model.enums.ServiceCategory;
 import com.booking.model.enums.ServiceDiscoveryTag;
 import com.booking.model.enums.ServiceModerationStatus;
+import com.booking.model.embedded.CateringDetails;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -110,5 +111,6 @@ public class VendorService extends BaseEntity {
      */
 
     private Set<ServiceDiscoveryTag> discoveryTags;
+    private CateringDetails cateringDetails;
 
 }

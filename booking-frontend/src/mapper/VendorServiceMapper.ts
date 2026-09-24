@@ -61,7 +61,9 @@ export default class VendorServiceMapper {
 
             address:
                 service.contactInfo
-                        ?.address ?? "",
+                    ?.address ?? "",
+
+
             /* AVAILABILITY */
 
             availableFrom:
@@ -102,7 +104,58 @@ export default class VendorServiceMapper {
             /* DETAILS */
 
             detailSections:
-                service.detailSections ?? []
+                service.detailSections ?? [],
+
+
+            /* CATERING DETAILS */
+
+            cateringDetails:
+
+                service.category
+                    ?.toLowerCase()
+                    .trim() === "catering"
+
+                    ? {
+
+                        vegetarian:
+                            service.cateringDetails
+                                ?.vegetarian ?? false,
+
+                        nonVegetarian:
+                            service.cateringDetails
+                                ?.nonVegetarian ?? false,
+
+                        cuisines:
+                            service.cateringDetails
+                                ?.cuisines ?? [],
+
+                        /*
+                         * Catering menu is stored separately
+                         * through VendorCateringMenuService.
+                         *
+                         * It is intentionally initialized empty
+                         * here and loaded separately when required.
+                         */
+                        menuItems:
+                            [],
+
+                        providesCateringStaff:
+                            service.cateringDetails
+                                ?.providesCateringStaff ?? false,
+
+                        staffCostPerPerson:
+                            service.cateringDetails
+                                ?.staffCostPerPerson
+                                ?.toString() ?? "",
+
+                        maximumServiceDistanceKm:
+                            service.cateringDetails
+                                ?.maximumServiceDistanceKm
+                                ?.toString() ?? ""
+
+                    }
+
+                    : undefined
 
         };
 
@@ -157,9 +210,9 @@ export default class VendorServiceMapper {
 
                 email:
                     form.email,
-                address:
-                    form.address,
 
+                address:
+                    form.address
 
             },
 
@@ -208,7 +261,60 @@ export default class VendorServiceMapper {
             /* DETAIL SECTIONS */
 
             detailSections:
-                form.detailSections
+                form.detailSections,
+
+
+            /* CATERING DETAILS */
+
+            cateringDetails:
+
+                form.cateringDetails
+
+                    ? {
+
+                        vegetarian:
+                            form.cateringDetails
+                                .vegetarian,
+
+                        nonVegetarian:
+                            form.cateringDetails
+                                .nonVegetarian,
+
+                        cuisines:
+                            form.cateringDetails
+                                .cuisines,
+
+                        providesCateringStaff:
+                            form.cateringDetails
+                                .providesCateringStaff,
+
+                        staffCostPerPerson:
+
+                            form.cateringDetails
+                                .staffCostPerPerson === ""
+
+                                ? null
+
+                                : Number(
+                                    form.cateringDetails
+                                        .staffCostPerPerson
+                                ),
+
+                        maximumServiceDistanceKm:
+
+                            form.cateringDetails
+                                .maximumServiceDistanceKm === ""
+
+                                ? null
+
+                                : Number(
+                                    form.cateringDetails
+                                        .maximumServiceDistanceKm
+                                )
+
+                    }
+
+                    : undefined
 
         };
 

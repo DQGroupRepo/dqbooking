@@ -6,7 +6,6 @@ import lombok.Setter;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
-import com.booking.model.enums.ServicePackageType;
 
 @Getter
 @Setter
@@ -54,7 +53,7 @@ public class BookingPricingSnapshot {
 
     private String packageId;
 
-    private ServicePackageType packageType;
+    private String packageType;
 
     private BigDecimal packagePrice;
 

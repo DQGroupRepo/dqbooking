@@ -21,6 +21,7 @@ public class VendorServiceMapperImpl implements VendorServiceMapper {
 
     private final ServiceDetailSectionMapper
             serviceDetailSectionMapper;
+    private final CateringDetailsMapper cateringDetailsMapper;
 
     @Override
     public VendorService toEntity(
@@ -57,6 +58,11 @@ public class VendorServiceMapperImpl implements VendorServiceMapper {
         service.setDetailSections(
                 serviceDetailSectionMapper.toEntityList(
                         request.getDetailSections()
+                )
+        );
+        service.setCateringDetails(
+                cateringDetailsMapper.toEntity(
+                        request.getCateringDetails()
                 )
         );
 
@@ -109,8 +115,13 @@ public class VendorServiceMapperImpl implements VendorServiceMapper {
                         service.getDetailSections()
                 )
         );
-        response.setLocation(service.getLocation());
+        response.setCateringDetails(
+                cateringDetailsMapper.toResponse(
+                        service.getCateringDetails()
+                )
+        );
 
+        response.setLocation(service.getLocation());
 
         response.setPricingConfigured(
                 service.getPackages() != null
@@ -135,8 +146,8 @@ public class VendorServiceMapperImpl implements VendorServiceMapper {
                                     servicePackage.getId()
                             );
 
-                            packageResponse.setType(
-                                    servicePackage.getType()
+                            packageResponse.setName(
+                                    servicePackage.getName()
                             );
 
                             packageResponse.setPrice(
@@ -192,6 +203,11 @@ public class VendorServiceMapperImpl implements VendorServiceMapper {
         entity.setDetailSections(
                 serviceDetailSectionMapper.toEntityList(
                         request.getDetailSections()
+                )
+        );
+        entity.setCateringDetails(
+                cateringDetailsMapper.toEntity(
+                        request.getCateringDetails()
                 )
         );
         entity.setLocation(

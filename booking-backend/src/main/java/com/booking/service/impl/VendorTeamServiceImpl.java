@@ -53,7 +53,7 @@ public class VendorTeamServiceImpl
             VendorTeamMemberRequest request
     ) {
 
-        requireVendorAdmin();
+        requireVendorTeamManager();
 
 
         if (request == null) {
@@ -270,7 +270,7 @@ public class VendorTeamServiceImpl
     public List<VendorTeamMemberResponse>
     getTeamMembers() {
 
-        requireVendorAdmin();
+        requireVendorTeamManager();
 
 
         String vendorId =
@@ -302,7 +302,7 @@ public class VendorTeamServiceImpl
             String userId
     ) {
 
-        requireVendorAdmin();
+        requireVendorTeamManager();
 
 
         String vendorId =
@@ -335,7 +335,7 @@ public class VendorTeamServiceImpl
             VendorTeamMemberRequest request
     ) {
 
-        requireVendorAdmin();
+        requireVendorTeamManager();
 
 
         if (request == null) {
@@ -459,7 +459,7 @@ public class VendorTeamServiceImpl
             boolean active
     ) {
 
-        requireVendorAdmin();
+        requireVendorTeamManager();
 
 
         String vendorId =
@@ -502,7 +502,7 @@ public class VendorTeamServiceImpl
             String userId
     ) {
 
-        requireVendorAdmin();
+        requireVendorTeamManager();
 
 
         String vendorId =
@@ -541,7 +541,7 @@ public class VendorTeamServiceImpl
             VendorUserPermissionRequest request
     ) {
 
-        requireVendorAdmin();
+        requireVendorTeamManager();
 
 
         if (request == null) {
@@ -625,23 +625,74 @@ public class VendorTeamServiceImpl
 
     /*
      * =========================================
-     * VENDOR ADMIN CHECK
+     * VENDOR TEAM MANAGEMENT ACCESS
      * =========================================
+     *
+     * VendorAdmin:
+     *     Always allowed to manage team.
+     *
+     * ADMIN:
+     *     Allowed only while Support Mode is active.
+     *
+     * VendorUser:
+     *     Never allowed to manage team.
      */
-
-    private void requireVendorAdmin() {
+    private void requireVendorTeamManager() {
 
         User currentUser =
                 SecurityUtil.getCurrentUser();
 
 
-        if (currentUser.getRole()
-                != Role.VENDOR_ADMIN) {
+        /*
+         * =========================================
+         * VENDOR ADMIN
+         * =========================================
+         */
 
-            throw new AccessDeniedException(
-                    "Only VendorAdmin can manage team members."
-            );
+        if (
+                currentUser.getRole()
+                        == Role.VENDOR_ADMIN
+        ) {
+
+            return;
+
         }
+
+
+        /*
+         * =========================================
+         * ADMIN SUPPORT MODE
+         * =========================================
+         *
+         * getEffectiveVendorId() will verify that
+         * the ADMIN has an active VendorSupportSession.
+         *
+         * We deliberately call it here rather than
+         * only checking the role.
+         */
+
+        if (
+                currentUser.getRole()
+                        == Role.ADMIN
+        ) {
+
+            vendorAccessService
+                    .getEffectiveVendorId();
+
+            return;
+
+        }
+
+
+        /*
+         * =========================================
+         * EVERYTHING ELSE
+         * =========================================
+         */
+
+        throw new AccessDeniedException(
+                "Only VendorAdmin or Admin in Support Mode can manage team members."
+        );
     }
 
 
