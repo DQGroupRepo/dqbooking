@@ -396,7 +396,8 @@ const VendorLayout = () => {
       <div className="vendor-layout">
 
         <VendorSidebar
-          viewPages={permissions.viewPages}
+            viewPages={permissions.viewPages}
+            supportActive={false}
         />
 
         <div className="vendor-main">
@@ -434,7 +435,8 @@ const VendorLayout = () => {
       <div className="vendor-layout">
 
         <VendorSidebar
-          viewPages={permissions.viewPages}
+            viewPages={permissions.viewPages}
+            supportActive={supportActive}
         />
 
         <div className="vendor-main">

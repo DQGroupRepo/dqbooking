@@ -1,36 +1,14 @@
+import { useState } from "react";
 import "./VendorPackages.css";
-
 import type { ServicePackage } from "../../types/ServicePackage";
 
 interface Props {
     packages?: ServicePackage[];
-
     selectedPackageId?: string;
-
-    onSelectPackage: (
-        pkg: ServicePackage
-    ) => void;
+    onSelectPackage: (pkg: ServicePackage) => void;
 }
 
-const getPackageDisplayName = (
-    type: ServicePackage["type"]
-): string => {
-
-    switch (type) {
-
-        case "SILVER":
-            return "Silver Package";
-
-        case "GOLD":
-            return "Gold Package";
-
-        case "PREMIUM":
-            return "Premium Package";
-
-        default:
-            return type;
-    }
-};
+const VISIBLE_PACKAGES = 3;
 
 const VendorPackages = ({
     packages = [],
@@ -38,173 +16,212 @@ const VendorPackages = ({
     onSelectPackage
 }: Props) => {
 
-    const activePackages =
-        packages.filter(
-            pkg => pkg.active !== false
-        );
+    const activePackages = packages.filter(
+        pkg => pkg.active !== false
+    );
 
-    /*
-     * Do not render the Packages section when
-     * the service has no packages.
-     */
+    const [currentIndex, setCurrentIndex] = useState(0);
+
+
     if (activePackages.length === 0) {
         return null;
     }
 
-    const orderedPackages =
-        [...activePackages].sort(
-            (a, b) => {
 
-                const order: Record<
-                    ServicePackage["type"],
-                    number
-                > = {
-                    SILVER: 1,
-                    GOLD: 2,
-                    PREMIUM: 3
-                };
-
-                return (
-                    order[a.type] -
-                    order[b.type]
-                );
-            }
-        );
+    const totalPackages = activePackages.length;
 
     /*
-     * If there is only one package, don't make
-     * the customer choose it.
+     * When there are 3 or fewer packages,
+     * everything is visible and arrows are unnecessary.
      */
-    const singlePackage =
-        orderedPackages.length === 1;
+
+    const showNavigation =
+        totalPackages > VISIBLE_PACKAGES;
+
+
+    /*
+     * Maximum starting position.
+     *
+     * Example:
+     * 4 packages / 3 visible
+     *
+     * indexes:
+     * 0 → 1,2,3
+     * 1 → 2,3,4
+     */
+
+    const maxIndex = Math.max(
+        0,
+        totalPackages - VISIBLE_PACKAGES
+    );
+
+
+    const safeCurrentIndex = Math.min(
+        currentIndex,
+        maxIndex
+    );
+
+
+    const visiblePackages = showNavigation
+        ? activePackages.slice(
+            safeCurrentIndex,
+            safeCurrentIndex + VISIBLE_PACKAGES
+        )
+        : activePackages;
+
+
+    const goPrevious = () => {
+
+        setCurrentIndex(
+            previous =>
+                Math.max(
+                    0,
+                    previous - 1
+                )
+        );
+
+    };
+
+
+    const goNext = () => {
+
+        setCurrentIndex(
+            previous =>
+                Math.min(
+                    maxIndex,
+                    previous + 1
+                )
+        );
+
+    };
+
 
     return (
 
         <section className="vendor-packages">
 
-            <h2>
-                Packages
-            </h2>
+            <div className="packages-heading">
 
+                <h2>
+                    Packages
+                </h2>
 
-            {
-                singlePackage ? (
+                {
+                    showNavigation && (
 
-                    <div className="package-grid">
+                        <div className="packages-navigation">
 
-                        <div className="package-card selected">
-
-                            <h3>
-                                {
-                                    getPackageDisplayName(
-                                        orderedPackages[0].type
-                                    )
+                            <button
+                                type="button"
+                                className="package-nav-button"
+                                onClick={goPrevious}
+                                disabled={
+                                    safeCurrentIndex === 0
                                 }
-                            </h3>
-
-                            <h4>
-                                ₹
-                                {Number(
-                                    orderedPackages[0].price
-                                ).toLocaleString("en-IN")}
-                            </h4>
+                                aria-label="Previous packages"
+                            >
+                                ‹
+                            </button>
 
 
-                            {
-                                orderedPackages[0].features?.length > 0 && (
+                            <span className="package-page-count">
 
-                                    <ul className="package-features">
+                                {safeCurrentIndex + 1}
 
-                                        {
-                                            orderedPackages[0]
-                                                .features
-                                                .map(
-                                                    (
-                                                        feature,
-                                                        index
-                                                    ) => (
+                                {" / "}
 
-                                                        <li
-                                                            key={index}
-                                                        >
-                                                            {feature}
-                                                        </li>
+                                {maxIndex + 1}
 
-                                                    )
-                                                )
-                                        }
-
-                                    </ul>
-
-                                )
-                            }
-
-
-                            <span className="package-selected-label">
-                                Included
                             </span>
+
+
+                            <button
+                                type="button"
+                                className="package-nav-button"
+                                onClick={goNext}
+                                disabled={
+                                    safeCurrentIndex >= maxIndex
+                                }
+                                aria-label="Next packages"
+                            >
+                                ›
+                            </button>
 
                         </div>
 
-                    </div>
+                    )
+                }
 
-                ) : (
-
-                    <>
-
-                        <p className="package-selection-help">
-                            Choose a package that best suits your requirements.
-                        </p>
+            </div>
 
 
-                        <div className="package-grid">
-
-                            {
-                                orderedPackages.map(
-                                    pkg => {
-
-                                        const packageKey =
-                                            pkg.id ??
-                                            pkg.type;
-
-                                        const isSelected =
-                                            selectedPackageId ===
-                                            packageKey;
-
-                                        return (
-
-                                            <div
-                                                key={
-                                                    packageKey
-                                                }
-                                                className={
-                                                    isSelected
-                                                        ? "package-card selected"
-                                                        : "package-card"
-                                                }
-                                            >
-
-                                                <h3>
-                                                    {
-                                                        getPackageDisplayName(
-                                                            pkg.type
-                                                        )
-                                                    }
-                                                </h3>
+            <p className="package-selection-help">
+                Choose a package that best suits your requirements.
+            </p>
 
 
-                                                <h4>
-                                                    ₹
-                                                    {Number(
+            <div className="package-carousel">
+
+                <div
+                    className={
+                        showNavigation
+                            ? "package-grid carousel-grid"
+                            : "package-grid"
+                    }
+                >
+
+                    {
+                        visiblePackages.map(
+                            (
+                                pkg,
+                                index
+                            ) => {
+
+                                const packageKey =
+                                    pkg.id ??
+                                    `${pkg.name}-${safeCurrentIndex}-${index}`;
+
+
+                                const isSelected =
+                                    selectedPackageId ===
+                                    packageKey;
+
+
+                                return (
+
+                                    <div
+                                        key={packageKey}
+                                        className={
+                                            isSelected
+                                                ? "package-card selected"
+                                                : "package-card"
+                                        }
+                                    >
+
+                                        <div className="package-card-content">
+
+                                            <h3>
+                                                {pkg.name}
+                                            </h3>
+
+
+                                            <h4>
+                                                ₹
+                                                {
+                                                    Number(
                                                         pkg.price
                                                     ).toLocaleString(
                                                         "en-IN"
-                                                    )}
-                                                </h4>
+                                                    )
+                                                }
+                                            </h4>
 
+
+                                            <div className="package-feature-area">
 
                                                 {
-                                                    pkg.features?.length > 0 && (
+                                                    pkg.features &&
+                                                    pkg.features.length > 0 ? (
 
                                                         <ul className="package-features">
 
@@ -212,12 +229,12 @@ const VendorPackages = ({
                                                                 pkg.features.map(
                                                                     (
                                                                         feature,
-                                                                        index
+                                                                        featureIndex
                                                                     ) => (
 
                                                                         <li
                                                                             key={
-                                                                                index
+                                                                                featureIndex
                                                                             }
                                                                         >
                                                                             {feature}
@@ -229,36 +246,68 @@ const VendorPackages = ({
 
                                                         </ul>
 
+                                                    ) : (
+
+                                                        <div className="package-no-features">
+                                                            No additional features
+                                                        </div>
+
                                                     )
                                                 }
 
-
-                                                <button
-                                                    type="button"
-                                                    onClick={() =>
-                                                        onSelectPackage(
-                                                            pkg
-                                                        )
-                                                    }
-                                                >
-                                                    {
-                                                        isSelected
-                                                            ? "Selected"
-                                                            : "Select"
-                                                    }
-                                                </button>
-
                                             </div>
 
-                                        );
+                                        </div>
 
-                                    }
-                                )
+
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                onSelectPackage(
+                                                    pkg
+                                                )
+                                            }
+                                        >
+                                            {
+                                                isSelected
+                                                    ? "Selected"
+                                                    : "Select"
+                                            }
+                                        </button>
+
+                                    </div>
+
+                                );
+
                             }
+                        )
+                    }
 
-                        </div>
+                </div>
 
-                    </>
+            </div>
+
+
+            {
+                showNavigation && (
+
+                    <div className="package-carousel-footer">
+
+                        <span>
+                            Showing{" "}
+                            {safeCurrentIndex + 1}
+                            {" - "}
+                            {Math.min(
+                                safeCurrentIndex +
+                                VISIBLE_PACKAGES,
+                                totalPackages
+                            )}
+                            {" of "}
+                            {totalPackages}
+                            {" packages"}
+                        </span>
+
+                    </div>
 
                 )
             }

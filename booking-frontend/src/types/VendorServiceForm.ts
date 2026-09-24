@@ -2,6 +2,9 @@ import type {
     ServiceDetailSection
 } from "./ServiceDetailSection";
 
+import type {
+    CateringDetailsForm
+} from "./CateringDetailsForm";
 
 export interface VendorServiceForm {
 
@@ -67,5 +70,7 @@ export interface VendorServiceForm {
     ===================================== */
 
     detailSections: ServiceDetailSection[];
+
+    cateringDetails?: CateringDetailsForm;
 
 }

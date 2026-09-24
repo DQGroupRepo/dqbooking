@@ -2,6 +2,9 @@ import type {
     VendorServiceForm
 } from "../types/VendorServiceForm";
 
+import type {
+    CateringDetailsForm
+} from "../types/CateringDetailsForm";
 
 export default class VendorServiceFormFactory {
 
@@ -73,7 +76,30 @@ export default class VendorServiceFormFactory {
                CATEGORY-SPECIFIC DETAILS
             ===================================== */
 
-            detailSections: []
+            detailSections: [],
+
+            cateringDetails:
+                category.toLowerCase().trim() === "catering"
+
+                    ? {
+
+                        vegetarian: false,
+
+                        nonVegetarian: false,
+
+                        cuisines: [],
+
+                        menuItems: [],
+
+                        providesCateringStaff: false,
+
+                        staffCostPerPerson: "",
+
+                        maximumServiceDistanceKm: ""
+
+                    }
+
+                    : undefined,
 
         };
 

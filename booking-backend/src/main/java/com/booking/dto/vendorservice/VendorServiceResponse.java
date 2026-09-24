@@ -4,6 +4,7 @@ import com.booking.dto.service.ServiceDetailSectionResponse;
 import com.booking.dto.service.ServicePackageResponse;
 import com.booking.model.enums.DiscountType;
 import com.booking.model.enums.ServiceModerationStatus;
+import com.booking.dto.service.CateringDetailsResponse;
 import jakarta.validation.Valid;
 import lombok.Getter;
 import lombok.Setter;
@@ -71,4 +72,5 @@ public class VendorServiceResponse {
      */
 
     private List<ServicePackageResponse> packages;
+    private CateringDetailsResponse cateringDetails;
 }

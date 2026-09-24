@@ -9,8 +9,7 @@ import {
 } from "react-router-dom";
 
 import type {
-    ServicePackage,
-    ServicePackageType
+    ServicePackage
 } from "../../../types/ServicePackage";
 
 import VendorPricingService
@@ -30,61 +29,6 @@ import type {
 } from "../../../types/VendorPricing";
 
 import "./VendorPricing.css";
-
-
-/*
- * =========================================================
- * PACKAGE CONFIGURATION
- * =========================================================
- */
-
-const PACKAGE_TYPES:
-    ServicePackageType[] = [
-
-    "SILVER",
-    "GOLD",
-    "PREMIUM"
-
-];
-
-
-const PACKAGE_LABELS:
-    Record<ServicePackageType, string> = {
-
-    SILVER: "Silver",
-
-    GOLD: "Gold",
-
-    PREMIUM: "Premium"
-
-};
-
-
-const PACKAGE_SUBTITLES:
-    Record<ServicePackageType, string> = {
-
-    SILVER:
-        "Basic Package",
-
-    GOLD:
-        "Most Popular",
-
-    PREMIUM:
-        "Complete Experience"
-
-};
-
-
-const PACKAGE_ORDER:
-    Record<ServicePackageType, number> = {
-
-    SILVER: 1,
-
-    GOLD: 2,
-
-    PREMIUM: 3
-
-};
 
 
 /*
@@ -347,51 +291,7 @@ const VendorPricing = () => {
      * Never mutate the packages state with .sort().
      */
 
-    const sortedPackages =
-        [...packages].sort(
-            (
-                a,
-                b
-            ) =>
-                PACKAGE_ORDER[a.type] -
-                PACKAGE_ORDER[b.type]
-        );
-
-
-    /*
-     * =========================================================
-     * FIND PACKAGE
-     * =========================================================
-     */
-
-    function getPackage(
-        type: ServicePackageType
-    ) {
-
-        return packages.find(
-            pkg =>
-                pkg.type === type
-        );
-
-    }
-
-
-    /*
-     * =========================================================
-     * GET ACTUAL PACKAGE INDEX
-     * =========================================================
-     */
-
-    function getPackageIndex(
-        type: ServicePackageType
-    ) {
-
-        return packages.findIndex(
-            pkg =>
-                pkg.type === type
-        );
-
-    }
+    const sortedPackages = [...packages];
 
 
     /*
@@ -761,25 +661,28 @@ const VendorPricing = () => {
      * =========================================================
      */
 
-    function addPackage(
-        type: ServicePackageType
-    ) {
+    function createPackageId(): string {
 
         if (
-            getPackage(type)
+            typeof crypto !== "undefined" &&
+            typeof crypto.randomUUID === "function"
         ) {
-
-            return;
-
+            return crypto.randomUUID();
         }
 
+        return `package-${Date.now()}-${Math.random()
+            .toString(36)
+            .substring(2, 9)}`;
+    }
 
-        const newPackage:
-            ServicePackage = {
 
-            id: undefined,
+    function addPackage() {
 
-            type,
+        const newPackage: ServicePackage = {
+
+            id: createPackageId(),
+
+            name: "",
 
             price: 0,
 
@@ -792,11 +695,8 @@ const VendorPricing = () => {
 
         setPackages(
             previous => [
-
                 ...previous,
-
                 newPackage
-
             ]
         );
 
@@ -810,39 +710,18 @@ const VendorPricing = () => {
      */
 
     function togglePackage(
-        type: ServicePackageType
+        packageId: string
     ) {
-
-        const existingPackage =
-            getPackage(type);
-
-
-        if (!existingPackage) {
-
-            addPackage(
-                type
-            );
-
-            return;
-
-        }
-
 
         setPackages(
             previous =>
                 previous.map(
                     pkg =>
-                        pkg.type === type
-
+                        pkg.id === packageId
                             ? {
-
                                 ...pkg,
-
-                                active:
-                                    !pkg.active
-
+                                active: !pkg.active
                             }
-
                             : pkg
                 )
         );
@@ -857,31 +736,20 @@ const VendorPricing = () => {
      */
 
     function updatePackage(
-
-        type: ServicePackageType,
-
-        field:
-            keyof ServicePackage,
-
-        value: any
-
+        packageId: string,
+        field: keyof ServicePackage,
+        value: string | number | boolean
     ) {
 
         setPackages(
             previous =>
                 previous.map(
                     pkg =>
-                        pkg.type === type
-
+                        pkg.id === packageId
                             ? {
-
                                 ...pkg,
-
-                                [field]:
-                                    value
-
+                                [field]: value
                             }
-
                             : pkg
                 )
         );
@@ -896,14 +764,14 @@ const VendorPricing = () => {
      */
 
     function removePackage(
-        type: ServicePackageType
+        packageId: string
     ) {
 
         setPackages(
             previous =>
                 previous.filter(
                     pkg =>
-                        pkg.type !== type
+                        pkg.id !== packageId
                 )
         );
 
@@ -917,29 +785,21 @@ const VendorPricing = () => {
      */
 
     function addFeature(
-        type: ServicePackageType
+        packageId: string
     ) {
 
         setPackages(
             previous =>
                 previous.map(
                     pkg =>
-                        pkg.type === type
-
+                        pkg.id === packageId
                             ? {
-
                                 ...pkg,
-
                                 features: [
-
                                     ...pkg.features,
-
                                     ""
-
                                 ]
-
                             }
-
                             : pkg
                 )
         );
@@ -954,13 +814,9 @@ const VendorPricing = () => {
      */
 
     function updateFeature(
-
-        type: ServicePackageType,
-
+        packageId: string,
         featureIndex: number,
-
         value: string
-
     ) {
 
         setPackages(
@@ -969,33 +825,25 @@ const VendorPricing = () => {
                     pkg => {
 
                         if (
-                            pkg.type !== type
+                            pkg.id !== packageId
                         ) {
-
                             return pkg;
-
                         }
 
 
-                        const features =
-                            [
-                                ...pkg
-                                    .features
-                            ];
+                        const features = [
+                            ...pkg.features
+                        ];
 
 
                         features[
                             featureIndex
-                        ] =
-                            value;
+                        ] = value;
 
 
                         return {
-
                             ...pkg,
-
                             features
-
                         };
 
                     }
@@ -1012,11 +860,8 @@ const VendorPricing = () => {
      */
 
     function removeFeature(
-
-        type: ServicePackageType,
-
+        packageId: string,
         featureIndex: number
-
     ) {
 
         setPackages(
@@ -1025,30 +870,23 @@ const VendorPricing = () => {
                     pkg => {
 
                         if (
-                            pkg.type !== type
+                            pkg.id !== packageId
                         ) {
-
                             return pkg;
-
                         }
 
 
                         return {
-
                             ...pkg,
 
                             features:
-                                pkg
-                                    .features
-                                    .filter(
-                                        (
-                                            _,
-                                            index
-                                        ) =>
-                                            index !==
-                                            featureIndex
-                                    )
-
+                                pkg.features.filter(
+                                    (
+                                        _,
+                                        index
+                                    ) =>
+                                        index !== featureIndex
+                                )
                         };
 
                     }
@@ -1403,16 +1241,28 @@ const VendorPricing = () => {
         ) {
 
             if (
+                !pkg.name ||
+                !pkg.name.trim()
+            ) {
+
+                toast.error(
+                    "Enter a package name for every active package."
+                );
+
+                return;
+            }
+
+
+            if (
                 !pkg.price ||
                 pkg.price <= 0
             ) {
 
                 toast.error(
-                    `Enter a valid price for the ${PACKAGE_LABELS[pkg.type]} package.`
+                    `Enter a valid price for the "${pkg.name}" package.`
                 );
 
                 return;
-
             }
 
         }
@@ -1671,11 +1521,7 @@ const VendorPricing = () => {
                         SERVICE PACKAGES
                     ================================================= */}
 
-                    <section
-                        className={
-                            "pricing-card package-card-section"
-                        }
-                    >
+                    <section className="pricing-card package-card-section">
 
                         <div className="package-section-header">
 
@@ -1686,398 +1532,404 @@ const VendorPricing = () => {
                                 </h3>
 
                                 <p>
-                                    Choose the package tiers you want to offer to customers.
+                                    Create your own packages with custom names,
+                                    prices and features.
                                 </p>
 
                             </div>
 
 
-                            <div className="package-count">
+                            <div className="package-header-actions">
 
-                                {
-                                    activePackageCount
-                                }
+                                <div className="package-count">
 
-                                {" "}
+                                    {
+                                        activePackageCount
+                                    }
 
-                                {
-                                    activePackageCount ===
-                                    1
-                                        ? "active"
-                                        : "active packages"
-                                }
+                                    {" "}
+
+                                    {
+                                        activePackageCount === 1
+                                            ? "active"
+                                            : "active packages"
+                                    }
+
+                                </div>
+
+
+                                <button
+                                    type="button"
+                                    className="add-package-btn"
+                                    onClick={addPackage}
+                                >
+                                    + Create Package
+                                </button>
 
                             </div>
 
                         </div>
 
 
-                        <div className="package-editor-grid">
+                        {
+                            sortedPackages.length === 0 ? (
 
-                            {
-                                PACKAGE_TYPES.map(
-                                    type => {
+                                <div className="packages-empty-state">
 
-                                        const pkg =
-                                            getPackage(
-                                                type
-                                            );
+                                    <div className="packages-empty-icon">
+                                        +
+                                    </div>
 
+                                    <h4>
+                                        No Packages Created
+                                    </h4>
 
-                                        const isActive =
-                                            Boolean(
-                                                pkg?.active
-                                            );
+                                    <p>
+                                        Create a package to offer customers
+                                        different pricing options.
+                                    </p>
 
+                                    <button
+                                        type="button"
+                                        className="add-package-btn"
+                                        onClick={addPackage}
+                                    >
+                                        + Create Your First Package
+                                    </button>
 
-                                        return (
+                                </div>
 
-                                            <div
+                            ) : (
 
-                                                key={
-                                                    type
-                                                }
+                                <div className="package-editor-grid">
 
-                                                className={
-                                                    `service-package-card ${
-                                                        isActive
-                                                            ? "active"
-                                                            : "inactive"
-                                                    } ${
-                                                        type ===
-                                                        "GOLD"
-                                                            ? "popular"
-                                                            : ""
-                                                    }`
-                                                }
+                                    {
+                                        sortedPackages.map(
+                                            (
+                                                pkg,
+                                                index
+                                            ) => {
 
-                                            >
-
-
-                                                {/* =================================
-                                                    PACKAGE HEADER
-                                                ================================= */}
-
-                                                <div className="package-card-header">
-
-                                                    <div className="package-card-title-area">
-
-                                                        <label className="package-toggle">
-
-                                                            <input
-
-                                                                type="checkbox"
-
-                                                                checked={
-                                                                    isActive
-                                                                }
-
-                                                                onChange={() =>
-                                                                    togglePackage(
-                                                                        type
-                                                                    )
-                                                                }
-
-                                                            />
-
-                                                            <span className="package-checkmark" />
-
-                                                        </label>
+                                                const packageId =
+                                                    pkg.id ??
+                                                    `package-${index}`;
 
 
-                                                        <div>
+                                                return (
 
-                                                            <h4>
+                                                    <div
+                                                        key={packageId}
+                                                        className={
+                                                            `service-package-card ${
+                                                                pkg.active
+                                                                    ? "active"
+                                                                    : "inactive"
+                                                            }`
+                                                        }
+                                                    >
 
-                                                                {
-                                                                    PACKAGE_LABELS[
-                                                                        type
-                                                                    ]
-                                                                }
+                                                        {/* =========================
+                                                            PACKAGE HEADER
+                                                        ========================= */}
 
-                                                            </h4>
+                                                        <div className="package-card-header">
 
-                                                            <span>
+                                                            <div className="package-card-title-area">
 
-                                                                {
-                                                                    PACKAGE_SUBTITLES[
-                                                                        type
-                                                                    ]
-                                                                }
+                                                                <label className="package-toggle">
 
-                                                            </span>
+                                                                    <input
+                                                                        type="checkbox"
+                                                                        checked={
+                                                                            pkg.active
+                                                                        }
+                                                                        onChange={() =>
+                                                                            togglePackage(
+                                                                                packageId
+                                                                            )
+                                                                        }
+                                                                    />
 
-                                                        </div>
+                                                                    <span className="package-checkmark" />
 
-                                                    </div>
-
-
-                                                    {
-                                                        type ===
-                                                        "GOLD" && (
-
-                                                            <span className="popular-badge">
-
-                                                                POPULAR
-
-                                                            </span>
-
-                                                        )
-                                                    }
-
-                                                </div>
-
-
-                                                {/* =================================
-                                                    ACTIVE PACKAGE
-                                                ================================= */}
-
-                                                {
-                                                    isActive &&
-                                                    pkg ? (
-
-                                                        <>
-
-                                                            {/* =========================
-                                                                PRICE
-                                                            ========================= */}
-
-                                                            <div className="package-price-field">
-
-                                                                <label>
-                                                                    Package Price
                                                                 </label>
 
 
-                                                                <div className="package-price-input">
+                                                                <div>
 
-                                                                    <span>
-                                                                        ₹
+                                                                    <span className="package-number">
+                                                                        Package {index + 1}
                                                                     </span>
 
-
-                                                                    <input
-
-                                                                        type="number"
-
-                                                                        min="0"
-
-                                                                        value={
-                                                                            pkg.price
+                                                                    <h4>
+                                                                        {
+                                                                            pkg.name.trim()
+                                                                                ? pkg.name
+                                                                                : "Untitled Package"
                                                                         }
+                                                                    </h4>
 
-                                                                        onChange={e =>
-                                                                            updatePackage(
-                                                                                type,
-                                                                                "price",
-                                                                                Number(
-                                                                                    e.target.value
-                                                                                )
-                                                                            )
+                                                                    <span>
+                                                                        {
+                                                                            pkg.active
+                                                                                ? "Active Package"
+                                                                                : "Inactive Package"
                                                                         }
-
-                                                                    />
+                                                                    </span>
 
                                                                 </div>
 
                                                             </div>
 
+                                                        </div>
 
-                                                            {/* =========================
-                                                                FEATURES
-                                                            ========================= */}
 
-                                                            <div className="package-features-section">
+                                                        {/* =========================
+                                                            ACTIVE PACKAGE
+                                                        ========================= */}
 
-                                                                <div className="package-features-header">
+                                                        {
+                                                            pkg.active ? (
 
-                                                                    <h5>
-                                                                        Features
-                                                                    </h5>
+                                                                <>
+
+                                                                    {/* =========================
+                                                                        PACKAGE NAME
+                                                                    ========================= */}
+
+                                                                    <div className="package-price-field">
+
+                                                                        <label>
+                                                                            Package Name
+                                                                        </label>
+
+                                                                        <input
+                                                                            type="text"
+                                                                            value={
+                                                                                pkg.name
+                                                                            }
+                                                                            placeholder="e.g. Premium Wedding Package"
+                                                                            onChange={e =>
+                                                                                updatePackage(
+                                                                                    packageId,
+                                                                                    "name",
+                                                                                    e.target.value
+                                                                                )
+                                                                            }
+                                                                        />
+
+                                                                    </div>
+
+
+                                                                    {/* =========================
+                                                                        PRICE
+                                                                    ========================= */}
+
+                                                                    <div className="package-price-field">
+
+                                                                        <label>
+                                                                            Package Price
+                                                                        </label>
+
+                                                                        <div className="package-price-input">
+
+                                                                            <span>
+                                                                                ₹
+                                                                            </span>
+
+                                                                            <input
+                                                                                type="number"
+                                                                                min="0"
+                                                                                step="0.01"
+                                                                                value={
+                                                                                    pkg.price
+                                                                                }
+                                                                                onChange={e =>
+                                                                                    updatePackage(
+                                                                                        packageId,
+                                                                                        "price",
+                                                                                        Number(
+                                                                                            e.target.value
+                                                                                        )
+                                                                                    )
+                                                                                }
+                                                                            />
+
+                                                                        </div>
+
+                                                                    </div>
+
+
+                                                                    {/* =========================
+                                                                        FEATURES
+                                                                    ========================= */}
+
+                                                                    <div className="package-features-section">
+
+                                                                        <div className="package-features-header">
+
+                                                                            <h5>
+                                                                                Features
+                                                                            </h5>
+
+
+                                                                            <button
+                                                                                type="button"
+                                                                                className="add-feature-btn"
+                                                                                onClick={() =>
+                                                                                    addFeature(
+                                                                                        packageId
+                                                                                    )
+                                                                                }
+                                                                            >
+                                                                                + Add Feature
+                                                                            </button>
+
+                                                                        </div>
+
+
+                                                                        <div className="package-feature-list">
+
+                                                                            {
+                                                                                pkg.features.map(
+                                                                                    (
+                                                                                        feature,
+                                                                                        featureIndex
+                                                                                    ) => (
+
+                                                                                        <div
+                                                                                            key={
+                                                                                                featureIndex
+                                                                                            }
+                                                                                            className="package-feature-item"
+                                                                                        >
+
+                                                                                            <input
+                                                                                                type="text"
+                                                                                                value={
+                                                                                                    feature
+                                                                                                }
+                                                                                                placeholder="Enter feature"
+                                                                                                onChange={e =>
+                                                                                                    updateFeature(
+                                                                                                        packageId,
+                                                                                                        featureIndex,
+                                                                                                        e.target.value
+                                                                                                    )
+                                                                                                }
+                                                                                            />
+
+
+                                                                                            <button
+                                                                                                type="button"
+                                                                                                className="remove-feature-btn"
+                                                                                                onClick={() =>
+                                                                                                    removeFeature(
+                                                                                                        packageId,
+                                                                                                        featureIndex
+                                                                                                    )
+                                                                                                }
+                                                                                                aria-label="Remove feature"
+                                                                                            >
+                                                                                                ×
+                                                                                            </button>
+
+                                                                                        </div>
+
+                                                                                    )
+                                                                                )
+                                                                            }
+
+
+                                                                            {
+                                                                                pkg.features.length ===
+                                                                                0 && (
+
+                                                                                    <div className="no-features">
+
+                                                                                        No features added yet.
+
+                                                                                    </div>
+
+                                                                                )
+                                                                            }
+
+                                                                        </div>
+
+                                                                    </div>
+
+
+                                                                    {/* =========================
+                                                                        REMOVE PACKAGE
+                                                                    ========================= */}
+
+                                                                    <div className="package-card-footer">
+
+                                                                        <button
+                                                                            type="button"
+                                                                            className="remove-package-btn"
+                                                                            onClick={() =>
+                                                                                removePackage(
+                                                                                    packageId
+                                                                                )
+                                                                            }
+                                                                        >
+                                                                            🗑 Remove Package
+                                                                        </button>
+
+                                                                    </div>
+
+                                                                </>
+
+                                                            ) : (
+
+                                                                /* =========================
+                                                                   INACTIVE PACKAGE
+                                                                ========================= */
+
+                                                                <div className="inactive-package-content">
+
+                                                                    <div className="inactive-package-icon">
+                                                                        +
+                                                                    </div>
+
+
+                                                                    <p>
+                                                                        Enable this package
+                                                                        to configure its
+                                                                        price and features.
+                                                                    </p>
 
 
                                                                     <button
-
                                                                         type="button"
-
-                                                                        className="add-feature-btn"
-
+                                                                        className="enable-package-btn"
                                                                         onClick={() =>
-                                                                            addFeature(
-                                                                                type
+                                                                            togglePackage(
+                                                                                packageId
                                                                             )
                                                                         }
-
                                                                     >
-                                                                        + Add Feature
+                                                                        Enable Package
                                                                     </button>
 
                                                                 </div>
 
+                                                            )
+                                                        }
 
-                                                                <div className="package-feature-list">
+                                                    </div>
 
-                                                                    {
-                                                                        pkg.features.map(
-                                                                            (
-                                                                                feature,
-                                                                                featureIndex
-                                                                            ) => (
+                                                );
 
-                                                                                <div
-
-                                                                                    key={
-                                                                                        featureIndex
-                                                                                    }
-
-                                                                                    className="package-feature-item"
-
-                                                                                >
-
-                                                                                    <input
-
-                                                                                        type="text"
-
-                                                                                        value={
-                                                                                            feature
-                                                                                        }
-
-                                                                                        placeholder="Enter feature"
-
-                                                                                        onChange={e =>
-                                                                                            updateFeature(
-                                                                                                type,
-                                                                                                featureIndex,
-                                                                                                e.target.value
-                                                                                            )
-                                                                                        }
-
-                                                                                    />
-
-
-                                                                                    <button
-
-                                                                                        type="button"
-
-                                                                                        className="remove-feature-btn"
-
-                                                                                        onClick={() =>
-                                                                                            removeFeature(
-                                                                                                type,
-                                                                                                featureIndex
-                                                                                            )
-                                                                                        }
-
-                                                                                        aria-label="Remove feature"
-
-                                                                                    >
-                                                                                        ×
-                                                                                    </button>
-
-                                                                                </div>
-
-                                                                            )
-                                                                        )
-                                                                    }
-
-
-                                                                    {
-                                                                        pkg.features.length ===
-                                                                        0 && (
-
-                                                                            <div className="no-features">
-
-                                                                                No features added yet.
-
-                                                                            </div>
-
-                                                                        )
-                                                                    }
-
-                                                                </div>
-
-                                                            </div>
-
-
-                                                            {/* =========================
-                                                                REMOVE PACKAGE
-                                                            ========================= */}
-
-                                                            <div className="package-card-footer">
-
-                                                                <button
-
-                                                                    type="button"
-
-                                                                    className="remove-package-btn"
-
-                                                                    onClick={() =>
-                                                                        removePackage(
-                                                                            type
-                                                                        )
-                                                                    }
-
-                                                                >
-
-                                                                    🗑 Remove Package
-
-                                                                </button>
-
-                                                            </div>
-
-                                                        </>
-
-                                                    ) : (
-
-                                                        /* =========================
-                                                           INACTIVE PACKAGE
-                                                        ========================= */
-
-                                                        <div className="inactive-package-content">
-
-                                                            <div className="inactive-package-icon">
-                                                                +
-                                                            </div>
-
-
-                                                            <p>
-                                                                Enable this package to configure its price and features.
-                                                            </p>
-
-
-                                                            <button
-
-                                                                type="button"
-
-                                                                className="enable-package-btn"
-
-                                                                onClick={() =>
-                                                                    togglePackage(
-                                                                        type
-                                                                    )
-                                                                }
-
-                                                            >
-
-                                                                Enable Package
-
-                                                            </button>
-
-                                                        </div>
-
-                                                    )
-
-                                                }
-
-                                            </div>
-
-                                        );
-
+                                            }
+                                        )
                                     }
-                                )
-                            }
 
-                        </div>
+                                </div>
+
+                            )
+                        }
 
 
                         <div className="package-info-banner">
@@ -2090,12 +1942,13 @@ const VendorPricing = () => {
                             <div>
 
                                 <strong>
-                                    Package selection
+                                    Package Configuration
                                 </strong>
 
                                 <p>
-                                    Customers will see only the active packages.
-                                    Package names are fixed as Silver, Gold and Premium.
+                                    Create as many packages as your service
+                                    requires. Customers will see only the
+                                    packages you mark as active.
                                 </p>
 
                             </div>
@@ -3097,40 +2950,24 @@ const VendorPricing = () => {
                                         pkg => (
 
                                             <div
-
                                                 key={
                                                     pkg.id ??
-                                                    pkg.type
+                                                    pkg.name
                                                 }
-
                                                 className="package-summary-row"
-
                                             >
 
                                                 <div>
 
-                                                    <span
-
-                                                        className={
-                                                            `package-summary-dot ${
-                                                                pkg.type.toLowerCase()
-                                                            }`
-                                                        }
-
-                                                    />
+                                                    <span className="package-summary-dot" />
 
 
                                                     <span>
-
                                                         {
-                                                            PACKAGE_LABELS[
-                                                                pkg.type
-                                                            ]
+                                                            pkg.name.trim()
+                                                                ? pkg.name
+                                                                : "Untitled Package"
                                                         }
-
-                                                        {" "}
-                                                        Package
-
                                                     </span>
 
                                                 </div>
@@ -3291,9 +3128,10 @@ const VendorPricing = () => {
 
                             <p>
 
-                                Gold is highlighted as the popular package.
-                                Customers will see only the package tiers you activate.
-                                Cancellation rules are defined entirely by you.
+                                Create package names, prices and features that
+                                match your service offerings. Customers will see
+                                only the packages you activate. Cancellation rules
+                                are defined entirely by you.
 
                             </p>
 

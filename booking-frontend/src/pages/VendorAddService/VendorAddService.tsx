@@ -59,6 +59,13 @@ import FormProgress
 import calculateListingProgress
     from "../../util/calculateListingProgress";
 
+import type {
+    CateringMenuItem
+} from "../../types/CateringMenuItem";
+
+import VendorCateringMenuService
+    from "../../services/VendorCateringMenuService";
+
 import toast
     from "react-hot-toast";
 
@@ -138,6 +145,282 @@ const AddService = () => {
 
     /*
      * =========================
+     * Catering Helpers
+     * =========================
+     */
+
+    const isCateringCategory = (
+        serviceCategory?: string
+    ) => {
+
+        return (
+            serviceCategory
+                ?.toLowerCase()
+                .trim() ===
+            "catering"
+        );
+
+    };
+
+
+    /*
+     * Convert backend catering menu
+     * response into frontend menu items.
+     *
+     * Backend response:
+     *
+     * standard dish:
+     *   dishId
+     *   name
+     *
+     * custom dish:
+     *   custom === true
+     *   name
+     *
+     * The frontend also needs:
+     *   customName
+     *   selected
+     *   pricePerPerson as string
+     */
+
+    const mapCateringMenuResponseToForm = (
+        items: CateringMenuItem[]
+    ): CateringMenuItem[] => {
+
+        return items.map(
+            item => ({
+
+                id:
+                    item.id,
+
+                dishId:
+                    item.dishId,
+
+                customName:
+                    item.custom
+                        ? (
+                            item.customName ??
+                            item.name
+                        )
+                        : undefined,
+
+                name:
+                    item.name,
+
+                cuisine:
+                    item.cuisine,
+
+                category:
+                    item.category,
+
+                foodType:
+                    item.foodType,
+
+                pricePerPerson:
+                    String(
+                        item.pricePerPerson
+                    ),
+
+                active:
+                    item.active,
+
+                custom:
+                    item.custom,
+
+                selected:
+                    true
+
+            })
+        );
+
+    };
+
+
+    /*
+     * =========================
+     * Build Catering Menu Request
+     * =========================
+     *
+     * The backend menu API owns
+     * vendor-specific menu items.
+     *
+     * Temporary frontend custom IDs
+     * such as:
+     *
+     * custom-123456-ab12cd
+     *
+     * must NOT be sent as persisted IDs.
+     *
+     * Existing backend UUIDs are
+     * preserved.
+     */
+
+    const buildCateringMenuRequest = () => {
+
+        if (
+            !formData.cateringDetails
+        ) {
+
+            return {
+                items: []
+            };
+
+        }
+
+
+        const items =
+            formData
+                .cateringDetails
+                .menuItems
+                .map(
+                    item => {
+
+                        const trimmedPrice =
+                            item.pricePerPerson
+                                .trim();
+
+
+                        const price =
+                            Number(
+                                trimmedPrice
+                            );
+
+
+                        if (
+                            trimmedPrice === "" ||
+                            !Number.isFinite(price) ||
+                            price < 0
+                        ) {
+
+                            throw new Error(
+                                `Invalid price for "${item.name}". Please enter a valid price per person.`
+                            );
+
+                        }
+
+
+                        /*
+                         * Only IDs returned by the
+                         * backend are persisted.
+                         *
+                         * New custom dishes use
+                         * temporary custom-* IDs.
+                         */
+
+                        const persistedId =
+                            item.id &&
+                            !item.id.startsWith(
+                                "custom-"
+                            )
+                                ? item.id
+                                : undefined;
+
+
+                        /*
+                         * Custom dish
+                         */
+
+                        if (
+                            item.custom
+                        ) {
+
+                            const customName =
+                                (
+                                    item.customName ??
+                                    item.name
+                                ).trim();
+
+
+                            if (
+                                !customName
+                            ) {
+
+                                throw new Error(
+                                    "Custom dish name cannot be empty."
+                                );
+
+                            }
+
+
+                            return {
+
+                                ...(persistedId
+                                    ? {
+                                        id:
+                                            persistedId
+                                    }
+                                    : {}),
+
+                                customName,
+
+                                cuisine:
+                                    item.cuisine,
+
+                                category:
+                                    item.category,
+
+                                foodType:
+                                    item.foodType,
+
+                                pricePerPerson:
+                                    price,
+
+                                active:
+                                    item.active
+
+                            };
+
+                        }
+
+
+                        /*
+                         * Standard master-catalog dish
+                         */
+
+                        if (
+                            !item.dishId
+                        ) {
+
+                            throw new Error(
+                                `Dish "${item.name}" is missing its catalog reference.`
+                            );
+
+                        }
+
+
+                        return {
+
+                            ...(persistedId
+                                ? {
+                                    id:
+                                        persistedId
+                                }
+                                : {}),
+
+                            dishId:
+                                item.dishId,
+
+                            pricePerPerson:
+                                price,
+
+                            active:
+                                item.active
+
+                        };
+
+                    }
+                );
+
+
+        return {
+            items
+        };
+
+    };
+
+
+    /*
+     * =========================
      * Load Existing Service
      * =========================
      */
@@ -168,6 +451,12 @@ const AddService = () => {
 
             try {
 
+                /*
+                 * =============================
+                 * Load Vendor Service
+                 * =============================
+                 */
+
                 const service =
                     await VendorServiceService
                         .getServiceById(
@@ -175,13 +464,110 @@ const AddService = () => {
                         );
 
 
-                setFormData(
+                const mappedForm =
                     VendorServiceMapper
                         .responseToForm(
                             service
-                        )
+                        );
+
+
+                /*
+                 * =============================
+                 * Load Catering Menu
+                 * =============================
+                 *
+                 * Catering menu is stored
+                 * separately from VendorService.
+                 */
+
+                if (
+                    isCateringCategory(
+                        service.category
+                    )
+                ) {
+
+                    try {
+
+                        const cateringMenu =
+                            await VendorCateringMenuService
+                                .getMenu(
+                                    id
+                                );
+
+
+                        const menuItems =
+                            mapCateringMenuResponseToForm(
+                                cateringMenu.items
+                            );
+
+
+                        if (
+                            mappedForm.cateringDetails
+                        ) {
+
+                            mappedForm.cateringDetails = {
+
+                                ...mappedForm.cateringDetails,
+
+                                menuItems
+
+                            };
+
+                        }
+
+                    }
+                    catch (menuError) {
+
+                        console.error(
+                            "Failed to load catering menu:",
+                            menuError
+                        );
+
+
+                        /*
+                         * The service itself loaded
+                         * successfully, so keep the
+                         * listing editable.
+                         *
+                         * An empty menu is safer than
+                         * blocking the entire edit page.
+                         */
+
+                        if (
+                            axios.isAxiosError(
+                                menuError
+                            ) &&
+                            menuError.response?.status === 403
+                        ) {
+
+                            toast.error(
+                                "You do not have permission to load the catering menu."
+                            );
+
+                        }
+                        else {
+
+                            toast.error(
+                                "Unable to load the existing catering menu."
+                            );
+
+                        }
+
+                    }
+
+                }
+
+
+                setFormData(
+                    mappedForm
                 );
 
+
+                /*
+                 * =============================
+                 * Existing Media
+                 * =============================
+                 */
 
                 const existingMedia:
                     MediaItem[] =
@@ -455,6 +841,90 @@ const AddService = () => {
 
     /*
      * =========================
+     * Catering Details
+     * =========================
+     */
+
+    const handleCateringDetailsChange = (
+
+        field: string,
+
+        value: boolean | string[]
+
+    ) => {
+
+        setFormData(
+            previous => {
+
+                if (
+                    !previous.cateringDetails
+                ) {
+
+                    return previous;
+
+                }
+
+
+                return {
+
+                    ...previous,
+
+                    cateringDetails: {
+
+                        ...previous.cateringDetails,
+
+                        [field]:
+                            value
+
+                    }
+
+                };
+
+            }
+        );
+
+    };
+
+
+    const handleCateringMenuItemsChange = (
+        items: CateringMenuItem[]
+    ) => {
+
+        setFormData(
+            previous => {
+
+                if (
+                    !previous.cateringDetails
+                ) {
+
+                    return previous;
+
+                }
+
+
+                return {
+
+                    ...previous,
+
+                    cateringDetails: {
+
+                        ...previous.cateringDetails,
+
+                        menuItems:
+                            items
+
+                    }
+
+                };
+
+            }
+        );
+
+    };
+
+
+    /*
+     * =========================
      * Amenities
      * =========================
      */
@@ -628,6 +1098,51 @@ const AddService = () => {
 
     /*
      * =========================
+     * Save Catering Menu
+     * =========================
+     */
+
+    const saveCateringMenu = async (
+        serviceId: string
+    ) => {
+
+        if (
+            !isCateringCategory(
+                formData.category
+            )
+        ) {
+
+            return;
+
+        }
+
+
+        if (
+            !formData.cateringDetails
+        ) {
+
+            throw new Error(
+                "Catering details are missing."
+            );
+
+        }
+
+
+        const request =
+            buildCateringMenuRequest();
+
+
+        await VendorCateringMenuService
+            .updateMenu(
+                serviceId,
+                request
+            );
+
+    };
+
+
+    /*
+     * =========================
      * Submit
      * =========================
      */
@@ -774,6 +1289,25 @@ const AddService = () => {
                     updatedService.id;
 
 
+                /*
+                 * Catering menu is persisted
+                 * separately after the service
+                 * has been successfully updated.
+                 */
+
+                if (
+                    isCateringCategory(
+                        updatedService.category
+                    )
+                ) {
+
+                    await saveCateringMenu(
+                        serviceId
+                    );
+
+                }
+
+
                 toast.success(
                     "Service updated successfully."
                 );
@@ -800,12 +1334,39 @@ const AddService = () => {
                     createdService.id;
 
 
+                /*
+                 * The service ID now exists,
+                 * so the vendor catering menu
+                 * can be created/updated.
+                 */
+
+                if (
+                    isCateringCategory(
+                        createdService.category
+                    )
+                ) {
+
+                    await saveCateringMenu(
+                        serviceId
+                    );
+
+                }
+
+
                 toast.success(
                     "Listing published successfully 🎉"
                 );
 
             }
 
+
+            /*
+             * =============================
+             * Navigate only after BOTH
+             * service + catering menu
+             * have been persisted.
+             * =============================
+             */
 
             navigate(
                 `/vendor/services/${serviceId}/pricing`
@@ -818,6 +1379,26 @@ const AddService = () => {
                 "Failed to save service:",
                 error
             );
+
+
+            /*
+             * =================================
+             * Catering menu validation error
+             * =================================
+             */
+
+            if (
+                error instanceof Error &&
+                !axios.isAxiosError(error)
+            ) {
+
+                toast.error(
+                    error.message
+                );
+
+                return;
+
+            }
 
 
             /*
@@ -1204,27 +1785,28 @@ const AddService = () => {
 
 
                                 <CategorySpecificSection
-
                                     category={
                                         formData.category
                                     }
-
                                     formData={
                                         formData
                                     }
-
                                     onDetailChange={
                                         handleDetailChange
                                     }
-
                                     amenities={
                                         formData.amenities
                                     }
-
                                     handleAmenityChange={
                                         handleAmenityChange
                                     }
-
+                                    onCateringDetailsChange={
+                                        handleCateringDetailsChange
+                                    }
+                                    onCateringMenuItemsChange={
+                                        handleCateringMenuItemsChange
+                                    }
+                                    serviceId={id}
                                 />
 
                             </section>

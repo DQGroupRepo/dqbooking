@@ -1,19 +1,17 @@
-import AmenitiesSection
-    from "../AmenitiesSection/AmenitiesSection";
+import AmenitiesSection from "../AmenitiesSection/AmenitiesSection";
 
-import CategoryDetailSections
-    from "./CategoryDetailSections";
+import CategoryDetailSections from "./CategoryDetailSections";
 
-import type {
-    VendorServiceForm
-} from "../../../../types/VendorServiceForm";
+import type { VendorServiceForm } from "../../../../types/VendorServiceForm";
 
+import CateringSection from "./CateringSection/CateringSection";
+import type { CateringMenuItem } from "../../../types/CateringMenuItem";
 
 interface Props {
-
     category: string;
 
     formData: VendorServiceForm;
+    serviceId?: string;
 
     onDetailChange: (
         sectionKey: string,
@@ -21,14 +19,21 @@ interface Props {
         value: string | boolean
     ) => void;
 
+    onCateringDetailsChange: (
+        field: string,
+        value: boolean | string[]
+    ) => void;
+
+    onCateringMenuItemsChange: (
+        items: CateringMenuItem[]
+    ) => void;
+
     amenities: string[];
 
     handleAmenityChange: (
         item: string
     ) => void;
-
 }
-
 
 /* =========================================
    CATEGORY AMENITIES
@@ -40,133 +45,99 @@ interface Props {
    ServiceDetailSectionUtil.
 ========================================= */
 
-const CATEGORY_AMENITIES:
-    Record<
-        string,
-        string[]
-    > = {
+const CATEGORY_AMENITIES: Record<string, string[]> = {
 
     hall: [
-
         "Secure Digital Lockers",
-
         "Acoustics suitable for live music or wedding bands",
-
         "Lighting to accommodate professional photography",
-
         "Premium chairs",
-
         "Spacious Event Stage"
-
     ],
 
     catering: [],
 
     photography: [
-
         "Spacious Event Stage",
-
         "Curated Wardrobe & Props",
-
         "Dual-Slot Backup Systems",
-
         "Cloud & Offsite Storage",
-
         "Professional Equipment Redundancy",
-
         "Next-Day Sneak Peeks",
-
         "AI-Powered Face Recognition Galleries"
-
     ],
 
     decoration: [],
 
     makeup: []
-
 };
 
-
-export default function CategorySpecificSection({
-
+const CategorySpecificSection = ({
     category,
-
     formData,
-
+    serviceId,
     onDetailChange,
-
     amenities,
-
-    handleAmenityChange
-
-}: Props) {
-
+    handleAmenityChange,
+    onCateringDetailsChange,
+    onCateringMenuItemsChange
+}: Props) => {
 
     const normalizedCategory =
-        category
-            ?.toLowerCase()
-            .trim() ?? "";
-
+        category?.toLowerCase().trim() ?? "";
 
     const amenityList =
-        CATEGORY_AMENITIES[
-            normalizedCategory
-        ] ?? [];
-
+        CATEGORY_AMENITIES[normalizedCategory] ?? [];
 
     return (
-
         <>
 
             {/* =====================================
                CATEGORY-SPECIFIC DETAILS
             ===================================== */}
 
-            <CategoryDetailSections
+            {normalizedCategory === "catering" ? (
 
-                category={
-                    category
-                }
+                <CateringSection
+                    formData={formData}
+                    onCateringDetailsChange={
+                        onCateringDetailsChange
+                    }
+                    onCateringMenuItemsChange={
+                        onCateringMenuItemsChange
+                    }
+                    serviceId={serviceId}
+                />
 
-                formData={
-                    formData
-                }
+            ) : (
 
-                onDetailChange={
-                    onDetailChange
-                }
+                <CategoryDetailSections
+                    category={category}
+                    formData={formData}
+                    onDetailChange={onDetailChange}
+                />
 
-            />
+            )}
 
 
             {/* =====================================
                CATEGORY AMENITIES
             ===================================== */}
 
-            {
-                amenityList.length > 0 && (
+            {amenityList.length > 0 && (
 
-                    <AmenitiesSection
+                <AmenitiesSection
+                    amenities={amenities}
+                    amenityList={amenityList}
+                    handleAmenityChange={
+                        handleAmenityChange
+                    }
+                />
 
-                        amenities={
-                            amenities
-                        }
-
-                        amenityList={
-                            amenityList
-                        }
-
-                        handleAmenityChange={
-                            handleAmenityChange
-                        }
-
-                    />
-
-                )
-            }
+            )}
 
         </>
-
     );
+};
 
-}
+export default CategorySpecificSection;

@@ -57,15 +57,67 @@
 
 }
 
+@media (max-width: 768px) {
+
+    .vendor-amenities {
+
+        margin-top: 26px;
+    }
 
 
-@media(max-width:768px){
+    .vendor-amenities h2 {
+
+        font-size: 22px;
+
+        margin-bottom: 14px;
+    }
+
 
     .amenities-grid {
 
         grid-template-columns:
-        repeat(1,1fr);
+            repeat(2, minmax(0, 1fr));
 
+        gap: 8px;
+    }
+
+
+    .amenity-card {
+
+        padding: 12px 10px;
+
+        gap: 7px;
+
+        border-radius: 7px;
+
+        font-size: 12px;
+
+        line-height: 1.35;
+    }
+
+
+    .amenity-icon {
+
+        flex-shrink: 0;
     }
 
 }
+
+
+@media (max-width: 400px) {
+
+    .amenities-grid {
+
+        gap: 7px;
+    }
+
+
+    .amenity-card {
+
+        padding: 10px 8px;
+
+        font-size: 11px;
+    }
+
+}
+

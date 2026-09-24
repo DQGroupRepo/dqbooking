@@ -14,6 +14,10 @@ import type {
     ServiceDetailSection
 } from "./ServiceDetailSection";
 
+import type {
+    CateringDetailsForm
+} from "./CateringDetailsForm";
+
 export type ModerationStatus =
     | "PENDING"
     | "APPROVED"
@@ -77,6 +81,8 @@ export interface VendorService {
     ===================================== */
 
     detailSections: ServiceDetailSection[];
+
+    cateringDetails?: CateringDetailsForm;
 
 
     /* =====================================

@@ -354,10 +354,7 @@ const VendorDetail = () => {
                             packages={vendor.packages ?? []}
                             selectedPackageId={
                                 selectedPackage
-                                    ? (
-                                        selectedPackage.id ??
-                                        selectedPackage.type
-                                    )
+                                    ? selectedPackage.id
                                     : undefined
                             }
                             onSelectPackage={

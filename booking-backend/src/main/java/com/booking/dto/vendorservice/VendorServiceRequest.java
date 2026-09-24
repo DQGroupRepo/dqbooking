@@ -3,6 +3,7 @@ package com.booking.dto.vendorservice;
 import com.booking.dto.pricing.VendorServicePricingRequest;
 import com.booking.dto.service.ServiceDetailSectionRequest;
 import com.booking.dto.service.ServicePackageRequest;
+import com.booking.dto.service.CateringDetailsRequest;
 import com.booking.model.enums.DiscountType;
 import com.booking.model.enums.ServiceCategory;
 import jakarta.validation.Valid;
@@ -66,5 +67,7 @@ public class VendorServiceRequest {
     private BigDecimal bundleDiscountValue;
 
     private List<ServicePackageRequest> packages;
+    @Valid
+    private CateringDetailsRequest cateringDetails;
 
 }

@@ -873,7 +873,7 @@ public class BookingServiceImpl implements BookingService
 
             booking.setPackageType(
                     selectedPackage != null
-                            ? selectedPackage.getType().name()
+                            ? selectedPackage.getName()
                             : null
             );
 
@@ -912,7 +912,7 @@ public class BookingServiceImpl implements BookingService
                 );
 
                 pricingSnapshot.setPackageType(
-                        selectedPackage.getType()
+                        selectedPackage.getName()
                 );
 
                 pricingSnapshot.setPackagePrice(
