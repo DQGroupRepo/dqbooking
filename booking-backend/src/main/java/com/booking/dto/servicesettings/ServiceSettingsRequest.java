@@ -22,8 +22,6 @@ public class ServiceSettingsRequest {
 
     private CancellationPolicyRequest cancellationPolicy;
 
-    private Boolean active;
-
     private Boolean instantBooking;
 
 }

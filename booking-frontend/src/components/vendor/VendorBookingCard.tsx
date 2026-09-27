@@ -376,7 +376,7 @@ const BookingCard = ({
                     selectedPackage?.id,
 
                 packageType:
-                    selectedPackage?.type,
+                    selectedPackage?.name,
 
                 packagePrice:
                     selectedPackage
@@ -793,16 +793,10 @@ const BookingCard = ({
                 <p>
                     {
                         selectedPackage
-                            ? `${selectedPackage.type} Package`
+                            ? selectedPackage.name
                             : "Starting Price"
                     }
                 </p>
-
-
-                <p>
-                    Starting Price
-                </p>
-
 
                 <label>
                     Event Date

@@ -1,9 +1,15 @@
-import type { ServiceAttribute } from "./ServiceAttribute";
+import type {
+    ServiceDetailSection
+} from "./ServiceDetailSection";
+
+import type {
+    CateringDetailsForm
+} from "./CateringDetailsForm";
 
 export interface VendorServiceForm {
 
     /* =====================================
-       Common Information
+       COMMON INFORMATION
     ===================================== */
 
     category: string;
@@ -12,7 +18,7 @@ export interface VendorServiceForm {
 
     location: string;
 
-    price: string;
+    address: string;
 
     capacity: string;
 
@@ -20,8 +26,9 @@ export interface VendorServiceForm {
 
     durationHours: string;
 
+
     /* =====================================
-       Contact Information
+       CONTACT INFORMATION
     ===================================== */
 
     contactPerson: string;
@@ -30,120 +37,40 @@ export interface VendorServiceForm {
 
     email: string;
 
+
     /* =====================================
-       Availability
+       AVAILABILITY
     ===================================== */
 
     availableFrom: string;
 
     availableTo: string;
 
+
     /* =====================================
-       Booking Settings
+       BOOKING SETTINGS
     ===================================== */
 
     maxSimultaneousBookings: string;
 
     bundleOfferEnabled: boolean;
 
+
     /* =====================================
-       Backend Collections
+       COMMON COLLECTIONS
     ===================================== */
 
     amenities: string[];
 
     imageUrls: string[];
 
-    attributes: ServiceAttribute[];
 
     /* =====================================
-       Hall
+       CATEGORY-SPECIFIC DETAILS
     ===================================== */
 
-    hallCapacity?: string;
+    detailSections: ServiceDetailSection[];
 
-    diningCapacity?: string;
-
-    parkingCapacity?: string;
-
-    rooms?: string;
-
-    parking?: boolean;
-
-    acHall?: boolean;
-
-    generator?: boolean;
-
-    diningHall?: boolean;
-
-    outdoorVenue?: boolean;
-
-    bridalRoom?: boolean;
-
-    /* =====================================
-       Catering
-    ===================================== */
-
-    cuisine?: string;
-
-    foodType?: string;
-
-    minimumGuests?: string;
-
-    maximumGuests?: string;
-
-    buffetService?: boolean;
-
-    plateService?: boolean;
-
-    liveCounters?: boolean;
-
-    outsideCatering?: boolean;
-
-    /* =====================================
-       Photography
-    ===================================== */
-
-    teamSize?: string;
-
-    deliveryTime?: string;
-
-    droneAvailable?: boolean;
-
-    cinematicVideo?: boolean;
-
-    albumIncluded?: boolean;
-
-    rawFilesIncluded?: boolean;
-
-    /* =====================================
-       Decoration
-    ===================================== */
-
-    floralDecoration?: boolean;
-
-    balloonDecoration?: boolean;
-
-    stageDecoration?: boolean;
-
-    lighting?: boolean;
-
-    mandapDecoration?: boolean;
-
-    themeDecoration?: boolean;
-
-    /* =====================================
-       Makeup
-    ===================================== */
-
-    brandsUsed?: string;
-
-    homeService?: boolean;
-
-    trialAvailable?: boolean;
-
-    bridalMakeup?: boolean;
-
-    groomMakeup?: boolean;
+    cateringDetails?: CateringDetailsForm;
 
 }

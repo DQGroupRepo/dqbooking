@@ -1,105 +1,324 @@
-import styles from "./VendorBookingTable.module.css";
-import type { RecentBooking } from "../../../../types/RecentBooking";
+import {
+    useNavigate
+} from "react-router-dom";
+
+import styles
+    from "./VendorBookingTable.module.css";
+
+import type {
+    RecentBooking
+} from "../../../types/RecentBooking";
+
 
 interface VendorBookingTableProps {
-  title: string;
-  bookings: RecentBooking[];
+
+    title:
+        string;
+
+    bookings:
+        RecentBooking[];
+
 }
 
+
 export default function VendorBookingTable({
-  title,
-  bookings,
+
+    title,
+
+    bookings,
+
 }: VendorBookingTableProps) {
 
-  const getInitials = (name: string) =>
-    name
-      .split(" ")
-      .map((word) => word[0])
-      .join("")
-      .substring(0, 2)
-      .toUpperCase();
 
-  return (
-    <div className={styles.container}>
+    const navigate =
+        useNavigate();
 
-      <div className={styles.header}>
 
-        <h2>{title}</h2>
+    const getInitials = (
+        name: string
+    ) => {
 
-        <button className={styles.viewAll}>
-          View All
-        </button>
 
-      </div>
+        if (!name) {
+            return "--";
+        }
 
-      <table className={styles.table}>
 
-        <thead>
+        return name
 
-          <tr>
+            .split(" ")
 
-            <th>Customer</th>
+            .filter(
+                Boolean
+            )
 
-            <th>Event</th>
+            .map(
+                word =>
+                    word[0]
+            )
 
-            <th>Date</th>
+            .join("")
 
-            <th>Status</th>
+            .substring(
+                0,
+                2
+            )
 
-            <th>Amount</th>
+            .toUpperCase();
 
-          </tr>
+    };
 
-        </thead>
 
-        <tbody>
+    return (
 
-          {bookings.map((booking) => (
 
-            <tr key={booking.id}>
+        <div
+            className={
+                styles.container
+            }
+        >
 
-              <td>
 
-                <div className={styles.customer}>
+            <div
+                className={
+                    styles.header
+                }
+            >
 
-                  <div className={styles.avatar}>
-                    {getInitials(booking.customerName)}
-                  </div>
 
-                  <span>{booking.customerName}</span>
+                <h2>
 
-                </div>
+                    {title}
 
-              </td>
+                </h2>
 
-              <td>{booking.serviceName}</td>
 
-              <td>{booking.eventDate}</td>
+                <button
 
-              <td>
+                    className={
+                        styles.viewAll
+                    }
 
-                <span
-                  className={`${styles.status} ${styles[
-                    booking.status.toLowerCase()
-                  ]}`}
+                    onClick={() =>
+                        navigate(
+                            "/vendor/bookings"
+                        )
+                    }
+
                 >
-                  {booking.status}
-                </span>
 
-              </td>
+                    View All
 
-              <td className={styles.amount}>
-                ₹{booking.amount.toLocaleString("en-IN")}
-              </td>
+                </button>
 
-            </tr>
 
-          ))}
+            </div>
 
-        </tbody>
 
-      </table>
+            {
 
-    </div>
-  );
+                bookings.length === 0
+
+                    ? (
+
+                        <div
+                            className={
+                                styles.emptyState
+                            }
+                        >
+
+                            <p>
+                                No booking requests yet.
+                            </p>
+
+                        </div>
+
+                    )
+
+                    : (
+
+                        <table
+                            className={
+                                styles.table
+                            }
+                        >
+
+
+                            <thead>
+
+
+                                <tr>
+
+
+                                    <th>
+                                        Customer
+                                    </th>
+
+
+                                    <th>
+                                        Event
+                                    </th>
+
+
+                                    <th>
+                                        Date
+                                    </th>
+
+
+                                    <th>
+                                        Status
+                                    </th>
+
+
+                                    <th>
+                                        Amount
+                                    </th>
+
+
+                                </tr>
+
+
+                            </thead>
+
+
+                            <tbody>
+
+
+                                {
+
+                                    bookings.map(
+                                        booking => (
+
+                                            <tr
+                                                key={
+                                                    booking.bookingId
+                                                }
+                                            >
+
+
+                                                <td>
+
+
+                                                    <div
+                                                        className={
+                                                            styles.customer
+                                                        }
+                                                    >
+
+
+                                                        <div
+                                                            className={
+                                                                styles.avatar
+                                                            }
+                                                        >
+
+                                                            {
+                                                                getInitials(
+                                                                    booking.customerName
+                                                                )
+                                                            }
+
+                                                        </div>
+
+
+                                                        <span>
+
+                                                            {
+                                                                booking.customerName
+                                                            }
+
+                                                        </span>
+
+
+                                                    </div>
+
+
+                                                </td>
+
+
+                                                <td>
+
+                                                    {
+                                                        booking.serviceName
+                                                    }
+
+                                                </td>
+
+
+                                                <td>
+
+                                                    {
+                                                        booking.eventDate
+                                                    }
+
+                                                </td>
+
+
+                                                <td>
+
+
+                                                    <span
+
+                                                        className={
+                                                            `${styles.status} ${
+                                                                styles[
+                                                                    booking.status.toLowerCase()
+                                                                ]
+                                                            }`
+                                                        }
+
+                                                    >
+
+                                                        {
+                                                            booking.status
+                                                        }
+
+                                                    </span>
+
+
+                                                </td>
+
+
+                                                <td
+                                                    className={
+                                                        styles.amount
+                                                    }
+                                                >
+
+                                                    ₹
+                                                    {
+                                                        Number(
+                                                            booking.amount ?? 0
+                                                        ).toLocaleString(
+                                                            "en-IN"
+                                                        )
+                                                    }
+
+                                                </td>
+
+
+                                            </tr>
+
+                                        )
+                                    )
+
+                                }
+
+
+                            </tbody>
+
+
+                        </table>
+
+                    )
+
+            }
+
+
+        </div>
+
+
+    );
+
+
 }

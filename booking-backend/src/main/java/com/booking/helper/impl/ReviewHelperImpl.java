@@ -3,11 +3,9 @@ package com.booking.helper.impl;
 import com.booking.dto.review.UpdateReviewRequest;
 import com.booking.helper.ReviewHelper;
 import com.booking.model.Review;
-import com.booking.model.User;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 @Component
 public class ReviewHelperImpl
@@ -34,38 +32,6 @@ public class ReviewHelperImpl
 
         review.setReplyDate(
                 LocalDateTime.now()
-        );
-
-    }
-
-    @Override
-    public void updateVendorRating(
-            User vendor,
-            List<Review> reviews
-    ) {
-
-        if (reviews.isEmpty()) {
-
-            vendor.setRating(0.0);
-
-            vendor.setTotalReviews(0);
-
-            return;
-
-        }
-
-        double average = reviews.stream()
-
-                .mapToInt(Review::getRating)
-
-                .average()
-
-                .orElse(0);
-
-        vendor.setRating(average);
-
-        vendor.setTotalReviews(
-                reviews.size()
         );
 
     }

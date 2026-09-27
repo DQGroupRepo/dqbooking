@@ -1,13 +1,21 @@
-import DashboardPanel from "../DashboardPanel/DashboardPanel";
-import type { VendorDashboardSummary } from "../../../../types/VendorDashboard";
+import DashboardPanel
+    from "../DashboardPanel/DashboardPanel";
 
-import styles from "./TodaySummary.module.css";
+import type {
+    VendorDashboardSummary
+} from "../../../../types/VendorDashboard";
+
+import styles
+    from "./TodaySummary.module.css";
+
 
 interface Props {
 
-    summary: VendorDashboardSummary;
+    summary:
+        VendorDashboardSummary;
 
 }
+
 
 export default function TodaySummary({
 
@@ -15,76 +23,206 @@ export default function TodaySummary({
 
 }: Props) {
 
+
+    /*
+     * =========================================
+     * SAFE NUMBER
+     * =========================================
+     */
+
+    const safeNumber = (
+        value: unknown
+    ): number => {
+
+
+        const parsedValue =
+            Number(value);
+
+
+        return Number.isFinite(
+            parsedValue
+        )
+            ? parsedValue
+            : 0;
+
+    };
+
+
     return (
 
-        <DashboardPanel title="Business Summary">
 
-            <div className={styles.summary}>
+        <DashboardPanel
+            title="Business Summary"
+        >
 
-                <div className={styles.item}>
 
-                    <span className={styles.icon}>📋</span>
+            <div
+                className={
+                    styles.summary
+                }
+            >
 
-                    <div>
 
-                        <h4>{summary.totalBookings}</h4>
+                <div
+                    className={
+                        styles.item
+                    }
+                >
 
-                        <p>Total Bookings</p>
 
-                    </div>
+                    <span
+                        className={
+                            styles.icon
+                        }
+                    >
+                        📋
+                    </span>
 
-                </div>
-
-                <div className={styles.item}>
-
-                    <span className={styles.icon}>⏳</span>
-
-                    <div>
-
-                        <h4>{summary.pendingBookings}</h4>
-
-                        <p>Pending Bookings</p>
-
-                    </div>
-
-                </div>
-
-                <div className={styles.item}>
-
-                    <span className={styles.icon}>⭐</span>
 
                     <div>
 
-                        <h4>{summary.averageRating.toFixed(1)}</h4>
 
-                        <p>Average Rating</p>
+                        <h4>
+
+                            {
+                                safeNumber(
+                                    summary.totalBookings
+                                )
+                            }
+
+                        </h4>
+
+
+                        <p>
+                            Total Bookings
+                        </p>
+
 
                     </div>
 
+
                 </div>
+
+
+                <div
+                    className={
+                        styles.item
+                    }
+                >
+
+
+                    <span
+                        className={
+                            styles.icon
+                        }
+                    >
+                        ⏳
+                    </span>
+
+
+                    <div>
+
+
+                        <h4>
+
+                            {
+                                safeNumber(
+                                    summary.pendingBookings
+                                )
+                            }
+
+                        </h4>
+
+
+                        <p>
+                            Pending Bookings
+                        </p>
+
+
+                    </div>
+
+
+                </div>
+
 
                 <div className={styles.item}>
 
-                    <span className={styles.icon}>💰</span>
+                    <span className={styles.icon}>
+                        ⭐
+                    </span>
 
                     <div>
 
                         <h4>
 
-                            ₹{(summary.monthlyRevenue ?? 0).toLocaleString()}
+                            {
+                                (
+                                    summary.averageRating ?? 0
+                                ).toFixed(1)
+                            }
 
                         </h4>
 
-                        <p>Monthly Revenue</p>
+                        <p>
+                            Average Rating
+                        </p>
 
                     </div>
 
                 </div>
 
+
+                <div
+                    className={
+                        styles.item
+                    }
+                >
+
+
+                    <span
+                        className={
+                            styles.icon
+                        }
+                    >
+                        💰
+                    </span>
+
+
+                    <div>
+
+
+                        <h4>
+
+                            ₹
+                            {
+                                safeNumber(
+                                    summary.monthlyRevenue
+                                ).toLocaleString(
+                                    "en-IN"
+                                )
+                            }
+
+                        </h4>
+
+
+                        <p>
+                            Monthly Revenue
+                        </p>
+
+
+                    </div>
+
+
+                </div>
+
+
             </div>
+
 
         </DashboardPanel>
 
+
     );
+
 
 }

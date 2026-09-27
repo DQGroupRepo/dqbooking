@@ -1,8 +1,23 @@
-import type { ContactInfo } from "./ContactInfo";
-import type { Availability } from "./Availability";
-import type { BookingSettings } from "./BookingSettings";
-import type { ServiceAttribute } from "./ServiceAttribute";
-import type { ServicePackageRequest } from "./ServicePackageRequest";
+import type {
+    ContactInfo
+} from "./ContactInfo";
+
+import type {
+    Availability
+} from "./Availability";
+
+import type {
+    BookingSettings
+} from "./BookingSettings";
+
+import type {
+    ServicePackageRequest
+} from "./ServicePackageRequest";
+
+import type {
+    ServiceDetailSection
+} from "./ServiceDetailSection";
+
 
 export interface VendorServiceRequest {
 
@@ -20,6 +35,11 @@ export interface VendorServiceRequest {
 
     durationHours: number;
 
+
+    /* =====================================
+       COMMON DETAILS
+    ===================================== */
+
     contactInfo: ContactInfo;
 
     availability: Availability;
@@ -30,7 +50,17 @@ export interface VendorServiceRequest {
 
     amenities: string[];
 
-    attributes: ServiceAttribute[];
+
+    /* =====================================
+       GENERIC CATEGORY DETAILS
+    ===================================== */
+
+    detailSections: ServiceDetailSection[];
+
+
+    /* =====================================
+       PACKAGES
+    ===================================== */
 
     packages?: ServicePackageRequest[];
 

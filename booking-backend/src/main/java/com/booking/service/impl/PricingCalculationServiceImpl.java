@@ -8,12 +8,14 @@ import com.booking.model.VendorPricingHead;
 import com.booking.model.VendorService;
 import com.booking.model.VendorServicePricing;
 import com.booking.model.embedded.ServicePackage;
+import com.booking.model.enums.AdvancePaymentType;
 import com.booking.model.enums.DiscountType;
 import com.booking.model.enums.PricingCalculationType;
 import com.booking.repository.VendorServicePricingRepository;
 import com.booking.repository.VendorServiceRepository;
 import com.booking.service.PricingCalculationService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -25,6 +27,7 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class PricingCalculationServiceImpl
         implements PricingCalculationService {
 
@@ -34,7 +37,6 @@ public class PricingCalculationServiceImpl
     private final VendorServiceRepository
             vendorServiceRepository;
 
-
     @Override
     public PricingCalculationResult calculatePrice(
             String serviceId,
@@ -42,11 +44,10 @@ public class PricingCalculationServiceImpl
             ServicePackage selectedPackage
     ) {
 
-        /*
-         * =========================================
-         * LOAD SERVICE
-         * =========================================
-         */
+        log.info("Calculating service price serviceId={} eventDate={} packageId={}",
+                serviceId,
+                eventDate,
+                selectedPackage != null ? selectedPackage.getId() : null);
 
         VendorService service =
                 vendorServiceRepository
@@ -57,87 +58,39 @@ public class PricingCalculationServiceImpl
                                 )
                         );
 
-
-        /*
-         * =========================================
-         * LOAD APPLICABLE PRICING
-         * =========================================
-         */
-
         VendorServicePricing pricing =
                 vendorServicePricingRepository
-                        .findByServiceIdOrderByVersionDesc(
-                                serviceId
-                        )
+                        .findByServiceIdOrderByVersionDesc(serviceId)
                         .stream()
-
                         .filter(candidate ->
-                                isPricingApplicable(
-                                        candidate,
-                                        eventDate
-                                )
+                                isPricingApplicable(candidate, eventDate)
                         )
-
                         .findFirst()
-
                         .orElseThrow(() ->
                                 new IllegalStateException(
                                         "No applicable pricing found for service."
                                 )
                         );
 
-
-        /*
-         * =========================================
-         * BASE AMOUNT
-         * =========================================
-         */
-
         BigDecimal baseAmount;
 
         if (selectedPackage != null) {
-
-            baseAmount =
-                    safe(
-                            selectedPackage.getPrice()
-                    );
-
+            baseAmount = safe(selectedPackage.getPrice());
         } else {
-
-            baseAmount =
-                    safe(
-                            pricing.getBaseAmount()
-                    );
-
+            baseAmount = safe(pricing.getBaseAmount());
         }
 
-
-        /*
-         * =========================================
-         * PRICING HEADS
-         * =========================================
-         */
-
         List<PricingHeadSnapshot> headSnapshots =
-
                 pricing.getPricingHeads() == null
-
                         ? List.of()
-
                         : pricing.getPricingHeads()
                         .stream()
-
                         .filter(this::isActive)
-
                         .sorted(
                                 Comparator.comparing(
-                                        head ->
-                                                safeOrder(
-                                                        head.getDisplayOrder()
-                                                )
+                                        head -> safeOrder(head.getDisplayOrder())
                                 )
                         )
-
                         .map(head -> {
 
                             BigDecimal calculatedAmount =
@@ -148,113 +101,40 @@ public class PricingCalculationServiceImpl
 
                             return PricingHeadSnapshot
                                     .builder()
-
-                                    .code(
-                                            head.getCode()
-                                    )
-
-                                    .name(
-                                            head.getName()
-                                    )
-
-                                    .calculationType(
-                                            head.getCalculationType()
-                                    )
-
-                                    .value(
-                                            head.getValue()
-                                    )
-
-                                    .calculatedAmount(
-                                            calculatedAmount
-                                    )
-
-                                    .displayOrder(
-                                            head.getDisplayOrder()
-                                    )
-
+                                    .code(head.getCode())
+                                    .name(head.getName())
+                                    .calculationType(head.getCalculationType())
+                                    .value(head.getValue())
+                                    .calculatedAmount(calculatedAmount)
+                                    .displayOrder(head.getDisplayOrder())
                                     .build();
-
                         })
-
                         .toList();
 
+        BigDecimal subtotal = baseAmount;
 
-        /*
-         * =========================================
-         * SUBTOTAL
-         * =========================================
-         */
-
-        BigDecimal subtotal =
-                baseAmount;
-
-
-        for (PricingHeadSnapshot head :
-                headSnapshots) {
-
+        for (PricingHeadSnapshot head : headSnapshots) {
             subtotal =
                     subtotal.add(
-                            safe(
-                                    head.getCalculatedAmount()
-                            )
+                            safe(head.getCalculatedAmount())
                     );
-
         }
 
-
-        /*
-         * =========================================
-         * DISCOUNTS
-         * =========================================
-         *
-         * There are now TWO possible sources:
-         *
-         * 1. Normal pricing discounts
-         *    configured inside VendorServicePricing
-         *
-         * 2. Bundle discount
-         *    configured directly on VendorService
-         *
-         * Bundle discount belongs to THIS service only.
-         *
-         * Therefore:
-         *
-         * Catering    -> its own bundle discount
-         * Decoration  -> its own bundle discount
-         * Transport   -> its own bundle discount
-         *
-         * When multiple services are selected later,
-         * each service will be calculated independently.
-         */
-
-        final BigDecimal discountBase =
-                subtotal;
-
+        final BigDecimal discountBase = subtotal;
 
         List<DiscountSnapshot> discountSnapshots =
                 new ArrayList<>();
-
-
-        /*
-         * =========================================
-         * NORMAL PRICING DISCOUNTS
-         * =========================================
-         */
 
         if (pricing.getDiscounts() != null) {
 
             pricing.getDiscounts()
                     .stream()
-
-                    .filter(
-                            discount ->
-                                    isDiscountApplicable(
-                                            discount,
-                                            eventDate
-                                    )
+                    .filter(discount ->
+                            isDiscountApplicable(
+                                    discount,
+                                    eventDate
+                            )
                     )
-
                     .map(discount -> {
 
                         BigDecimal calculatedAmount =
@@ -265,47 +145,16 @@ public class PricingCalculationServiceImpl
 
                         return DiscountSnapshot
                                 .builder()
-
-                                .name(
-                                        discount.getName()
-                                )
-
-                                .discountType(
-                                        discount.getDiscountType()
-                                )
-
-                                .value(
-                                        discount.getValue()
-                                )
-
-                                .calculatedAmount(
-                                        calculatedAmount
-                                )
-
+                                .name(discount.getName())
+                                .discountType(discount.getDiscountType())
+                                .value(discount.getValue())
+                                .calculatedAmount(calculatedAmount)
                                 .build();
-
                     })
-
-                    .forEach(
-                            discountSnapshots::add
-                    );
-
+                    .forEach(discountSnapshots::add);
         }
 
-
-        /*
-         * =========================================
-         * BUNDLE DISCOUNT
-         * =========================================
-         *
-         * Only apply when bundleEnabled = true.
-         */
-
-        if (
-                Boolean.TRUE.equals(
-                        service.getBundleEnabled()
-                )
-        ) {
+        if (Boolean.TRUE.equals(service.getBundleEnabled())) {
 
             BigDecimal bundleDiscount =
                     calculateBundleDiscount(
@@ -313,119 +162,42 @@ public class PricingCalculationServiceImpl
                             service
                     );
 
-
-            if (
-                    bundleDiscount.compareTo(
-                            BigDecimal.ZERO
-                    ) > 0
-            ) {
+            if (bundleDiscount.compareTo(BigDecimal.ZERO) > 0) {
 
                 DiscountSnapshot bundleSnapshot =
-                        DiscountSnapshot
-                                .builder()
-
-                                .name(
-                                        "Bundle Discount"
-                                )
-
+                        DiscountSnapshot.builder()
+                                .name("Bundle Discount")
                                 .discountType(
-                                        service
-                                                .getBundleDiscountType()
+                                        service.getBundleDiscountType()
                                 )
-
                                 .value(
-                                        service
-                                                .getBundleDiscountValue()
+                                        service.getBundleDiscountValue()
                                 )
-
-                                .calculatedAmount(
-                                        bundleDiscount
-                                )
-
+                                .calculatedAmount(bundleDiscount)
                                 .build();
 
-
-                discountSnapshots.add(
-                        bundleSnapshot
-                );
-
+                discountSnapshots.add(bundleSnapshot);
             }
-
         }
 
+        BigDecimal discountAmount = BigDecimal.ZERO;
 
-        /*
-         * =========================================
-         * TOTAL DISCOUNT
-         * =========================================
-         */
-
-        BigDecimal discountAmount =
-                BigDecimal.ZERO;
-
-
-        for (DiscountSnapshot discount :
-                discountSnapshots) {
-
+        for (DiscountSnapshot discount : discountSnapshots) {
             discountAmount =
                     discountAmount.add(
-                            safe(
-                                    discount.getCalculatedAmount()
-                            )
+                            safe(discount.getCalculatedAmount())
                     );
-
         }
 
-
-        /*
-         * =========================================
-         * DISCOUNT LIMIT
-         * =========================================
-         *
-         * Never allow total discounts to exceed
-         * the subtotal.
-         */
-
-        if (
-                discountAmount.compareTo(
-                        discountBase
-                ) > 0
-        ) {
-
-            discountAmount =
-                    discountBase;
-
+        if (discountAmount.compareTo(discountBase) > 0) {
+            discountAmount = discountBase;
         }
-
-
-        /*
-         * =========================================
-         * FINAL TOTAL
-         * =========================================
-         */
 
         BigDecimal totalAmount =
-
                 subtotal
-                        .subtract(
-                                discountAmount
-                        )
-
-                        .max(
-                                BigDecimal.ZERO
-                        )
-
-                        .setScale(
-                                2,
-                                RoundingMode.HALF_UP
-                        );
-
-
-        /*
-         * =========================================
-         * ADVANCE PAYMENT
-         * =========================================
-         */
+                        .subtract(discountAmount)
+                        .max(BigDecimal.ZERO)
+                        .setScale(2, RoundingMode.HALF_UP);
 
         BigDecimal advanceAmount =
                 calculateAdvance(
@@ -433,425 +205,242 @@ public class PricingCalculationServiceImpl
                         pricing
                 );
 
-
-        /*
-         * =========================================
-         * BALANCE
-         * =========================================
-         */
-
         BigDecimal balanceAmount =
-
                 totalAmount
-                        .subtract(
-                                advanceAmount
-                        )
+                        .subtract(advanceAmount)
+                        .max(BigDecimal.ZERO)
+                        .setScale(2, RoundingMode.HALF_UP);
 
-                        .max(
-                                BigDecimal.ZERO
-                        )
-
-                        .setScale(
-                                2,
-                                RoundingMode.HALF_UP
-                        );
-
+        log.info("Price calculated serviceId={} pricingId={} pricingVersion={} subtotal={} discountAmount={} totalAmount={} advanceAmount={} balanceAmount={}",
+                serviceId,
+                pricing.getId(),
+                pricing.getVersion(),
+                subtotal,
+                discountAmount,
+                totalAmount,
+                advanceAmount,
+                balanceAmount);
 
         return PricingCalculationResult
                 .builder()
-
-                .pricingId(
-                        pricing.getId()
-                )
-
-                .pricingVersion(
-                        pricing.getVersion()
-                )
-
-                .baseAmount(
-                        baseAmount
-                )
-
-                .pricingHeads(
-                        headSnapshots
-                )
-
-                .subtotal(
-                        subtotal
-                )
-
-                .discounts(
-                        discountSnapshots
-                )
-
-                .discountAmount(
-                        discountAmount
-                )
-
-                .totalAmount(
-                        totalAmount
-                )
-
-                .advanceAmount(
-                        advanceAmount
-                )
-
-                .balanceAmount(
-                        balanceAmount
-                )
-
+                .pricingId(pricing.getId())
+                .pricingVersion(pricing.getVersion())
+                .baseAmount(baseAmount)
+                .pricingHeads(headSnapshots)
+                .subtotal(subtotal)
+                .discounts(discountSnapshots)
+                .discountAmount(discountAmount)
+                .totalAmount(totalAmount)
+                .advanceAmount(advanceAmount)
+                .balanceAmount(balanceAmount)
                 .build();
-
     }
-
-
-    /*
-     * =========================================
-     * PRICING HEAD CALCULATION
-     * =========================================
-     */
 
     private BigDecimal calculateHeadAmount(
             BigDecimal currentSubtotal,
             VendorPricingHead head
     ) {
 
-        BigDecimal value =
-                safe(
-                        head.getValue()
-                );
+        BigDecimal value = safe(head.getValue());
 
-
-        if (
-                head.getCalculationType()
-                        ==
-                        PricingCalculationType.FIXED
-        ) {
+        if (head.getCalculationType()
+                == PricingCalculationType.FIXED) {
 
             return value;
-
         }
 
-
-        if (
-                head.getCalculationType()
-                        ==
-                        PricingCalculationType.PERCENTAGE
-        ) {
+        if (head.getCalculationType()
+                == PricingCalculationType.PERCENTAGE) {
 
             return currentSubtotal
-
                     .multiply(value)
-
                     .divide(
                             BigDecimal.valueOf(100),
                             2,
                             RoundingMode.HALF_UP
                     );
-
         }
 
-
         return BigDecimal.ZERO;
-
     }
-
-
-    /*
-     * =========================================
-     * NORMAL DISCOUNT CALCULATION
-     * =========================================
-     */
 
     private BigDecimal calculateDiscount(
             BigDecimal subtotal,
             VendorDiscount discount
     ) {
 
-        BigDecimal value =
-                safe(
-                        discount.getValue()
-                );
+        BigDecimal value = safe(discount.getValue());
 
-
-        if (
-                discount.getDiscountType()
-                        ==
-                        DiscountType.FIXED
-        ) {
+        if (discount.getDiscountType()
+                == DiscountType.FIXED) {
 
             return value;
-
         }
 
-
-        if (
-                discount.getDiscountType()
-                        ==
-                        DiscountType.PERCENTAGE
-        ) {
+        if (discount.getDiscountType()
+                == DiscountType.PERCENTAGE) {
 
             return subtotal
-
                     .multiply(value)
-
                     .divide(
                             BigDecimal.valueOf(100),
                             2,
                             RoundingMode.HALF_UP
                     );
-
         }
 
-
         return BigDecimal.ZERO;
-
     }
-
-
-    /*
-     * =========================================
-     * BUNDLE DISCOUNT CALCULATION
-     * =========================================
-     */
 
     private BigDecimal calculateBundleDiscount(
             BigDecimal subtotal,
             VendorService service
     ) {
 
-        if (
-                service.getBundleDiscountType()
-                        == null
-        ) {
-
+        if (service.getBundleDiscountType() == null) {
             return BigDecimal.ZERO;
-
         }
-
 
         BigDecimal value =
-                safe(
-                        service.getBundleDiscountValue()
-                );
+                safe(service.getBundleDiscountValue());
 
-
-        if (
-                service.getBundleDiscountType()
-                        ==
-                        DiscountType.FIXED
-        ) {
+        if (service.getBundleDiscountType()
+                == DiscountType.FIXED) {
 
             return value;
-
         }
 
-
-        if (
-                service.getBundleDiscountType()
-                        ==
-                        DiscountType.PERCENTAGE
-        ) {
+        if (service.getBundleDiscountType()
+                == DiscountType.PERCENTAGE) {
 
             return subtotal
-
                     .multiply(value)
-
                     .divide(
                             BigDecimal.valueOf(100),
                             2,
                             RoundingMode.HALF_UP
                     );
-
         }
 
-
         return BigDecimal.ZERO;
-
     }
-
-
-    /*
-     * =========================================
-     * ADVANCE CALCULATION
-     * =========================================
-     */
 
     private BigDecimal calculateAdvance(
             BigDecimal totalAmount,
             VendorServicePricing pricing
     ) {
 
-        if (
-                pricing.getPaymentConfiguration()
-                        == null
-        ) {
-
+        if (pricing.getPaymentConfiguration() == null) {
             return BigDecimal.ZERO;
-
         }
 
+        AdvancePaymentType paymentType =
+                pricing
+                        .getPaymentConfiguration()
+                        .getAdvancePaymentType();
 
-        if (
-                !Boolean.TRUE.equals(
-                        pricing
-                                .getPaymentConfiguration()
-                                .getAdvancePaymentAllowed()
-                )
-        ) {
-
-            return BigDecimal.ZERO;
-
-        }
-
-
-        BigDecimal percentage =
-
+        BigDecimal paymentValue =
                 safe(
                         pricing
                                 .getPaymentConfiguration()
-                                .getAdvancePercentage()
+                                .getAdvancePaymentValue()
                 );
 
+        if (paymentType == null) {
+            return BigDecimal.ZERO;
+        }
 
-        return totalAmount
+        if (paymentType
+                == AdvancePaymentType.PERCENTAGE) {
 
-                .multiply(
-                        percentage
-                )
+            BigDecimal advanceAmount =
+                    totalAmount
+                            .multiply(paymentValue)
+                            .divide(
+                                    BigDecimal.valueOf(100),
+                                    2,
+                                    RoundingMode.HALF_UP
+                            );
 
-                .divide(
-                        BigDecimal.valueOf(100),
-                        2,
-                        RoundingMode.HALF_UP
-                );
+            return advanceAmount.min(totalAmount);
+        }
 
+        if (paymentType
+                == AdvancePaymentType.FIXED_AMOUNT) {
+
+            return paymentValue.min(totalAmount);
+        }
+
+        return BigDecimal.ZERO;
     }
-
-
-    /*
-     * =========================================
-     * NORMAL DISCOUNT VALIDATION
-     * =========================================
-     */
 
     private boolean isDiscountApplicable(
             VendorDiscount discount,
             LocalDate eventDate
     ) {
 
-        if (
-                !Boolean.TRUE.equals(
-                        discount.getActive()
-                )
-        ) {
-
+        if (!Boolean.TRUE.equals(discount.getActive())) {
             return false;
-
         }
 
-
-        if (
-                discount.getValidFrom() != null
-                        &&
-                        eventDate.isBefore(
-                                discount.getValidFrom()
-                        )
-        ) {
-
+        if (discount.getValidFrom() != null
+                && eventDate.isBefore(discount.getValidFrom())) {
             return false;
-
         }
 
-
-        if (
-                discount.getValidUntil() != null
-                        &&
-                        eventDate.isAfter(
-                                discount.getValidUntil()
-                        )
-        ) {
-
+        if (discount.getValidUntil() != null
+                && eventDate.isAfter(discount.getValidUntil())) {
             return false;
-
         }
-
 
         return true;
-
     }
-
 
     private boolean isActive(
             VendorPricingHead head
     ) {
 
-        return Boolean.TRUE.equals(
-                head.getActive()
-        );
-
+        return Boolean.TRUE.equals(head.getActive());
     }
-
 
     private BigDecimal safe(
             BigDecimal value
     ) {
 
         return value == null
-
                 ? BigDecimal.ZERO
-
                 : value;
-
     }
-
 
     private int safeOrder(
             Integer order
     ) {
 
         return order == null
-
                 ? Integer.MAX_VALUE
-
                 : order;
-
     }
-
 
     private boolean isPricingApplicable(
             VendorServicePricing pricing,
             LocalDate eventDate
     ) {
 
-        if (
-                pricing.getEffectiveFrom() != null
-                        &&
-                        eventDate.isBefore(
-                                pricing.getEffectiveFrom()
-                        )
-        ) {
-
+        if (pricing.getEffectiveFrom() != null
+                && eventDate.isBefore(
+                pricing.getEffectiveFrom()
+        )) {
             return false;
-
         }
 
-
-        if (
-                pricing.getEffectiveUntil() != null
-                        &&
-                        eventDate.isAfter(
-                                pricing.getEffectiveUntil()
-                        )
-        ) {
-
+        if (pricing.getEffectiveUntil() != null
+                && eventDate.isAfter(
+                pricing.getEffectiveUntil()
+        )) {
             return false;
-
         }
-
 
         return true;
-
     }
 
 }

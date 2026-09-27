@@ -39,4 +39,12 @@ public class VendorServicePricingRequest {
     @Valid
     private PaymentConfigurationRequest paymentConfiguration;
 
+    /*
+     * =========================================
+     * CANCELLATION POLICY
+     * =========================================
+     */
+    @Valid
+    private CancellationPolicyRequest cancellationPolicy;
+
 }

@@ -118,17 +118,18 @@ const ProtectedRoute = ({
          */
 
         if (
-            user.role === "VENDOR"
+          user.role === "VENDOR_ADMIN" ||
+          user.role === "VENDOR_USER"
         ) {
 
-            return (
+          return (
 
-                <Navigate
-                    to="/vendor/dashboard"
-                    replace
-                />
+            <Navigate
+              to="/vendor/dashboard"
+              replace
+            />
 
-            );
+          );
 
         }
 

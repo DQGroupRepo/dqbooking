@@ -1,104 +1,188 @@
+import {
+    useState
+} from "react";
+
 import "./FilterPanel.css";
 
 
 const FilterPanel = () => {
 
-
-return (
-
-<aside className="filter-panel">
-
-
-<h2>
-Filters
-</h2>
+    const [
+        mobileOpen,
+        setMobileOpen
+    ] = useState(false);
 
 
+    return (
 
-<div className="filter-group">
+        <aside
+            className={
+                `filter-panel ${
+                    mobileOpen
+                        ? "mobile-filter-open"
+                        : ""
+                }`
+            }
+        >
 
-<h4>
-Budget
-</h4>
+            {/* =================================
+                MOBILE FILTER BUTTON
+            ================================= */}
 
+            <button
+                type="button"
+                className="mobile-filter-toggle"
+                onClick={() =>
+                    setMobileOpen(
+                        previous => !previous
+                    )
+                }
+                aria-expanded={
+                    mobileOpen
+                }
+            >
 
-<label>
-<input type="checkbox"/>
-Below ₹25,000
-</label>
+                <span>
+                    Filters
+                </span>
 
+                <span
+                    className="mobile-filter-arrow"
+                >
+                    {
+                        mobileOpen
+                            ? "▲"
+                            : "▼"
+                    }
+                </span>
 
-<label>
-<input type="checkbox"/>
-₹25k - ₹50k
-</label>
-
-
-<label>
-<input type="checkbox"/>
-₹50k+
-</label>
-
-
-</div>
-
-
-
-<div className="filter-group">
-
-<h4>
-Rating
-</h4>
-
-
-<label>
-<input type="checkbox"/>
-4★ & Above
-</label>
-
-
-<label>
-<input type="checkbox"/>
-3★ & Above
-</label>
+            </button>
 
 
-</div>
+            {/* =================================
+                FILTER CONTENT
+            ================================= */}
+
+            <div
+                className="filter-content"
+            >
+
+                <h2>
+                    Filters
+                </h2>
 
 
+                <div className="filter-group">
 
-<div className="filter-group">
-
-<h4>
-Capacity
-</h4>
-
-
-<label>
-<input type="checkbox"/>
-100 Guests
-</label>
+                    <h4>
+                        Budget
+                    </h4>
 
 
-<label>
-<input type="checkbox"/>
-300 Guests
-</label>
+                    <label>
+                        <input
+                            type="checkbox"
+                        />
+                        <span>
+                            Below ₹25,000
+                        </span>
+                    </label>
 
 
-<label>
-<input type="checkbox"/>
-500+ Guests
-</label>
+                    <label>
+                        <input
+                            type="checkbox"
+                        />
+                        <span>
+                            ₹25k - ₹50k
+                        </span>
+                    </label>
 
 
-</div>
+                    <label>
+                        <input
+                            type="checkbox"
+                        />
+                        <span>
+                            ₹50k+
+                        </span>
+                    </label>
+
+                </div>
 
 
+                <div className="filter-group">
 
-</aside>
+                    <h4>
+                        Rating
+                    </h4>
 
-);
+
+                    <label>
+                        <input
+                            type="checkbox"
+                        />
+                        <span>
+                            4★ & Above
+                        </span>
+                    </label>
+
+
+                    <label>
+                        <input
+                            type="checkbox"
+                        />
+                        <span>
+                            3★ & Above
+                        </span>
+                    </label>
+
+                </div>
+
+
+                <div className="filter-group">
+
+                    <h4>
+                        Capacity
+                    </h4>
+
+
+                    <label>
+                        <input
+                            type="checkbox"
+                        />
+                        <span>
+                            100 Guests
+                        </span>
+                    </label>
+
+
+                    <label>
+                        <input
+                            type="checkbox"
+                        />
+                        <span>
+                            300 Guests
+                        </span>
+                    </label>
+
+
+                    <label>
+                        <input
+                            type="checkbox"
+                        />
+                        <span>
+                            500+ Guests
+                        </span>
+                    </label>
+
+                </div>
+
+            </div>
+
+        </aside>
+
+    );
 
 };
 

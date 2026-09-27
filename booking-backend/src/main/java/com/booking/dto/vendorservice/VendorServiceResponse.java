@@ -1,11 +1,16 @@
 package com.booking.dto.vendorservice;
 
+import com.booking.dto.service.ServiceDetailSectionResponse;
+import com.booking.dto.service.ServicePackageResponse;
 import com.booking.model.enums.DiscountType;
-import com.booking.model.enums.ServiceCategory;
+import com.booking.model.enums.ServiceModerationStatus;
+import com.booking.dto.service.CateringDetailsResponse;
+import jakarta.validation.Valid;
 import lombok.Getter;
 import lombok.Setter;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 
 @Getter
@@ -20,13 +25,19 @@ public class VendorServiceResponse {
 
     private String description;
 
-    private BigDecimal price;
-
     private Integer capacity;
 
     private Integer durationHours;
 
+    /*
+     * =========================================
+     * SERVICE STATUS
+     * =========================================
+     */
+
     private Boolean active;
+
+    private ServiceModerationStatus moderationStatus;
 
     private Boolean featured;
 
@@ -35,20 +46,31 @@ public class VendorServiceResponse {
 
     private ContactInfoDto contactInfo;
 
-    private AvailabilityDto availability;
-
     private BookingSettingsDto bookingSettings;
 
     private List<String> imageUrls;
 
     private List<String> amenities;
 
-    private List<ServiceAttributeDto> attributes;
+    @Valid
+    private List<ServiceDetailSectionResponse> detailSections =
+            new ArrayList<>();
 
     private String location;
+
+    private String address;
 
     private Boolean bundleEnabled;
     private DiscountType bundleDiscountType;
 
     private BigDecimal bundleDiscountValue;
+
+    /*
+     * ============================
+     * PACKAGES
+     * ============================
+     */
+
+    private List<ServicePackageResponse> packages;
+    private CateringDetailsResponse cateringDetails;
 }

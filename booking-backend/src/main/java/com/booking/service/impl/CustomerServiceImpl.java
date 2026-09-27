@@ -12,15 +12,20 @@ import com.booking.repository.UserRepository;
 import com.booking.repository.VendorServiceRepository;
 import com.booking.service.CustomerService;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
-import com.booking.model.enums.VendorVerificationStatus;
 
 import java.util.List;
 import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
-public class CustomerServiceImpl implements CustomerService {
+public class CustomerServiceImpl
+        implements CustomerService {
+
+    private static final Logger log =
+            LoggerFactory.getLogger(CustomerServiceImpl.class);
 
     private final VendorServiceRepository vendorServiceRepository;
 
@@ -33,38 +38,61 @@ public class CustomerServiceImpl implements CustomerService {
             String serviceId
     ) {
 
+        log.debug(
+                "Customer requested service details serviceId={}",
+                serviceId
+        );
+
         VendorService service =
                 vendorServiceRepository
                         .findById(serviceId)
-                        .orElseThrow(() ->
-                                new ServiceNotFoundException(serviceId));
+                        .orElseThrow(() -> {
+
+                            log.warn(
+                                    "Customer service lookup failed. Service not found serviceId={}",
+                                    serviceId
+                            );
+
+                            return new ServiceNotFoundException(
+                                    serviceId
+                            );
+                        });
 
         User vendor =
                 vendorRepository
                         .findById(service.getVendorId())
-                        .orElseThrow(() ->
-                                new VendorNotFoundException(
-                                        service.getVendorId()
-                                ));
+                        .orElseThrow(() -> {
 
-        /*
-         * =========================================
-         * VENDOR VERIFICATION
-         * =========================================
-         *
-         * Only approved vendors can have their
-         * services viewed by customers.
-         *
-         * PENDING and REJECTED vendors are hidden.
-         */
+                            log.warn(
+                                    "Customer service lookup failed. Vendor not found vendorId={} serviceId={}",
+                                    service.getVendorId(),
+                                    serviceId
+                            );
+
+                            return new VendorNotFoundException(
+                                    service.getVendorId()
+                            );
+                        });
 
         if (vendor.getVerificationStatus()
                 != VendorVerificationStatus.APPROVED) {
 
+            log.debug(
+                    "Service hidden because vendor is not approved serviceId={} vendorId={}",
+                    serviceId,
+                    service.getVendorId()
+            );
+
             throw new ServiceNotFoundException(serviceId);
         }
+
         if (service.getModerationStatus()
                 != ServiceModerationStatus.APPROVED) {
+
+            log.debug(
+                    "Service hidden because moderation is not approved serviceId={}",
+                    serviceId
+            );
 
             throw new ServiceNotFoundException(serviceId);
         }
@@ -72,8 +100,19 @@ public class CustomerServiceImpl implements CustomerService {
         if (!Boolean.TRUE.equals(service.getActive())
                 || Boolean.TRUE.equals(service.getDeleted())) {
 
+            log.debug(
+                    "Service hidden because it is inactive or deleted serviceId={}",
+                    serviceId
+            );
+
             throw new ServiceNotFoundException(serviceId);
         }
+
+        log.info(
+                "Customer service details returned serviceId={} vendorId={}",
+                serviceId,
+                service.getVendorId()
+        );
 
         return customerVendorMapper.toDetail(
                 vendor,
@@ -85,6 +124,11 @@ public class CustomerServiceImpl implements CustomerService {
     public List<VendorListingResponse> getVendorListings(
             String category
     ) {
+
+        log.debug(
+                "Customer vendor listing requested category={}",
+                category
+        );
 
         List<VendorService> services;
 
@@ -104,196 +148,206 @@ public class CustomerServiceImpl implements CustomerService {
                                     )
                             );
         }
-        return services.stream()
-                .map(service -> {
 
-                    User vendor =
-                            vendorRepository
-                                    .findById(service.getVendorId())
-                                    .orElse(null);
+        List<VendorListingResponse> responses =
+                services.stream()
+                        .map(service -> {
 
-                    if (vendor == null) {
-                        return null;
-                    }
+                            User vendor =
+                                    vendorRepository
+                                            .findById(
+                                                    service.getVendorId()
+                                            )
+                                            .orElse(null);
 
-                    if (vendor.getVerificationStatus()
-                            != VendorVerificationStatus.APPROVED) {
+                            if (vendor == null) {
+                                return null;
+                            }
 
-                        return null;
-                    }
+                            if (vendor.getVerificationStatus()
+                                    != VendorVerificationStatus.APPROVED) {
 
-                    if (service.getModerationStatus()
-                            != ServiceModerationStatus.APPROVED) {
+                                return null;
+                            }
 
-                        return null;
-                    }
+                            if (service.getModerationStatus()
+                                    != ServiceModerationStatus.APPROVED) {
 
-                    return customerVendorMapper.toListing(
-                            vendor,
-                            service
-                    );
+                                return null;
+                            }
 
-                })
-                .filter(java.util.Objects::nonNull)
-                .toList();
+                            return customerVendorMapper.toListing(
+                                    vendor,
+                                    service
+                            );
+                        })
+                        .filter(Objects::nonNull)
+                        .toList();
 
+        log.info(
+                "Customer vendor listings returned category={} count={}",
+                category,
+                responses.size()
+        );
+
+        return responses;
     }
 
     @Override
     public List<VendorListingResponse> getFeaturedServices() {
 
-        List<VendorService> services =
+        log.debug(
+                "Customer featured services requested"
+        );
+
+        List<VendorListingResponse> responses =
                 vendorServiceRepository
                         .findByDiscoveryTagAndActiveTrueAndDeletedFalse(
                                 ServiceDiscoveryTag.FEATURED
-                        );
+                        )
+                        .stream()
+                        .map(service -> {
 
+                            User vendor =
+                                    vendorRepository
+                                            .findById(
+                                                    service.getVendorId()
+                                            )
+                                            .orElse(null);
 
-        return services.stream()
-                .map(service -> {
+                            if (vendor == null) {
+                                return null;
+                            }
 
-                    User vendor =
-                            vendorRepository
-                                    .findById(
-                                            service.getVendorId()
-                                    )
-                                    .orElse(null);
+                            if (vendor.getVerificationStatus()
+                                    != VendorVerificationStatus.APPROVED) {
 
+                                return null;
+                            }
 
-                    if (vendor == null) {
+                            if (service.getModerationStatus()
+                                    != ServiceModerationStatus.APPROVED) {
 
-                        return null;
+                                return null;
+                            }
 
-                    }
+                            return customerVendorMapper.toListing(
+                                    vendor,
+                                    service
+                            );
+                        })
+                        .filter(Objects::nonNull)
+                        .toList();
 
+        log.info(
+                "Customer featured services returned count={}",
+                responses.size()
+        );
 
-                    /*
-                     * Only approved vendors should be
-                     * visible to customers.
-                     */
-
-                    if (
-                            vendor.getVerificationStatus()
-                                    != VendorVerificationStatus.APPROVED
-                    ) {
-
-                        return null;
-
-                    }
-
-
-                    /*
-                     * Only approved services should be
-                     * visible to customers.
-                     */
-
-                    if (
-                            service.getModerationStatus()
-                                    != ServiceModerationStatus.APPROVED
-                    ) {
-
-                        return null;
-
-                    }
-
-
-                    /*
-                     * Repository already checks:
-                     *
-                     * featured = true
-                     * active = true
-                     * deleted = false
-                     *
-                     * so no need to repeat those checks.
-                     */
-
-                    return customerVendorMapper.toListing(
-                            vendor,
-                            service
-                    );
-
-                })
-                .filter(
-                        java.util.Objects::nonNull
-                )
-                .toList();
-
+        return responses;
     }
 
     @Override
     public List<VendorListingResponse> getPopularHalls() {
 
-        return vendorServiceRepository
-                .findByDiscoveryTagAndActiveTrueAndDeletedFalse(
-                        ServiceDiscoveryTag.POPULAR_HALL
-                )
-                .stream()
-                .map(
-                        this::toVendorListingResponse
-                )
-                .filter(
-                        Objects::nonNull
-                )
-                .toList();
+        log.debug(
+                "Customer popular halls requested"
+        );
 
+        List<VendorListingResponse> responses =
+                vendorServiceRepository
+                        .findByDiscoveryTagAndActiveTrueAndDeletedFalse(
+                                ServiceDiscoveryTag.POPULAR_HALL
+                        )
+                        .stream()
+                        .map(this::toVendorListingResponse)
+                        .filter(Objects::nonNull)
+                        .toList();
+
+        log.info(
+                "Customer popular halls returned count={}",
+                responses.size()
+        );
+
+        return responses;
     }
 
     @Override
     public List<VendorListingResponse> getTopBridalMakeup() {
 
-        return vendorServiceRepository
-                .findByDiscoveryTagAndActiveTrueAndDeletedFalse(
-                        ServiceDiscoveryTag.TOP_BRIDAL_MAKEUP
-                )
-                .stream()
-                .map(
-                        this::toVendorListingResponse
-                )
-                .filter(
-                        Objects::nonNull
-                )
-                .toList();
+        log.debug(
+                "Customer top bridal makeup requested"
+        );
 
+        List<VendorListingResponse> responses =
+                vendorServiceRepository
+                        .findByDiscoveryTagAndActiveTrueAndDeletedFalse(
+                                ServiceDiscoveryTag.TOP_BRIDAL_MAKEUP
+                        )
+                        .stream()
+                        .map(this::toVendorListingResponse)
+                        .filter(Objects::nonNull)
+                        .toList();
+
+        log.info(
+                "Customer top bridal makeup returned count={}",
+                responses.size()
+        );
+
+        return responses;
     }
 
     @Override
     public List<VendorListingResponse>
     getProfessionalPhotography() {
 
-        return vendorServiceRepository
-                .findByDiscoveryTagAndActiveTrueAndDeletedFalse(
-                        ServiceDiscoveryTag.PROFESSIONAL_PHOTOGRAPHY
-                )
-                .stream()
-                .map(
-                        this::toVendorListingResponse
-                )
-                .filter(
-                        Objects::nonNull
-                )
-                .toList();
+        log.debug(
+                "Customer professional photography requested"
+        );
 
+        List<VendorListingResponse> responses =
+                vendorServiceRepository
+                        .findByDiscoveryTagAndActiveTrueAndDeletedFalse(
+                                ServiceDiscoveryTag.PROFESSIONAL_PHOTOGRAPHY
+                        )
+                        .stream()
+                        .map(this::toVendorListingResponse)
+                        .filter(Objects::nonNull)
+                        .toList();
+
+        log.info(
+                "Customer professional photography returned count={}",
+                responses.size()
+        );
+
+        return responses;
     }
 
     @Override
     public List<VendorListingResponse>
     getWeddingVideography() {
 
-        return vendorServiceRepository
-                .findByDiscoveryTagAndActiveTrueAndDeletedFalse(
-                        ServiceDiscoveryTag.WEDDING_VIDEOGRAPHY
-                )
-                .stream()
-                .map(
-                        this::toVendorListingResponse
-                )
-                .filter(
-                        Objects::nonNull
-                )
-                .toList();
+        log.debug(
+                "Customer wedding videography requested"
+        );
 
+        List<VendorListingResponse> responses =
+                vendorServiceRepository
+                        .findByDiscoveryTagAndActiveTrueAndDeletedFalse(
+                                ServiceDiscoveryTag.WEDDING_VIDEOGRAPHY
+                        )
+                        .stream()
+                        .map(this::toVendorListingResponse)
+                        .filter(Objects::nonNull)
+                        .toList();
+
+        log.info(
+                "Customer wedding videography returned count={}",
+                responses.size()
+        );
+
+        return responses;
     }
-
 
     private VendorListingResponse toVendorListingResponse(
             VendorService service
@@ -306,22 +360,16 @@ public class CustomerServiceImpl implements CustomerService {
                         )
                         .orElse(null);
 
-
-        /*
-         * Vendor no longer exists
-         */
-
         if (vendor == null) {
 
+            log.debug(
+                    "Skipping service because vendor no longer exists serviceId={} vendorId={}",
+                    service.getId(),
+                    service.getVendorId()
+            );
+
             return null;
-
         }
-
-
-        /*
-         * Only approved vendors should appear
-         * on the customer home page.
-         */
 
         if (
                 vendor.getVerificationStatus()
@@ -329,13 +377,7 @@ public class CustomerServiceImpl implements CustomerService {
         ) {
 
             return null;
-
         }
-
-
-        /*
-         * Only approved services should appear.
-         */
 
         if (
                 service.getModerationStatus()
@@ -343,17 +385,7 @@ public class CustomerServiceImpl implements CustomerService {
         ) {
 
             return null;
-
         }
-
-
-        /*
-         * Extra safety check.
-         *
-         * Repository already checks active=true
-         * and deleted=false, but keeping this
-         * makes the method reusable.
-         */
 
         if (
                 !Boolean.TRUE.equals(
@@ -366,14 +398,11 @@ public class CustomerServiceImpl implements CustomerService {
         ) {
 
             return null;
-
         }
-
 
         return customerVendorMapper.toListing(
                 vendor,
                 service
         );
-
     }
 }

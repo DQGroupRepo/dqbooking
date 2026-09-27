@@ -16,7 +16,20 @@ import {
 import MainLayout from "../layouts/MainLayout";
 import VendorLayout from "../layouts/VendorLayout";
 import AdminLayout from "../layouts/AdminLayout";
-import ProtectedRoute from "../components/auth/ProtectedRoute";
+
+import AdminDashboard from "../pages/Admin/AdminDashboard";
+import AdminUsers from "../pages/admin/AdminUsers";
+import AdminBookings from "../pages/admin/AdminBookings";
+import AdminReviews from "../pages/admin/AdminReviews";
+import AdminVendorVerification from "../pages/admin/AdminVendorVerification";
+import VendorTeam from "../pages/vendor/VendorTeam";
+
+import Cart from "../pages/cart/Cart";
+
+import VendorBundles from "../pages/VendorBundles/VendorBundles";
+
+import VendorBundleManagement from "../pages/vendor/VendorBundleManagement";
+import VendorCreateBundle from "../pages/vendor/VendorCreateBundle";
 
 const Home = lazy(() => import("../pages/Home/Home"));
 const CategoryListing = lazy(() => import("../pages/CategoryListing/CategoryListing"));
@@ -303,9 +316,14 @@ const AppRoutes = () => {
 
 
                         <Route
-                            path="/vendor/:serviceId"
-                            element={
-                                <VendorDetail />
+                    element={
+                        <ProtectedRoute
+                            allowedRoles={
+                                [
+                                    "VENDOR_ADMIN",
+                                    "VENDOR_USER",
+                                    "ADMIN"
+                                ]
                             }
                         />
 
@@ -362,6 +380,20 @@ const AppRoutes = () => {
                             path="/vendor/register"
                             element={
                                 <VendorRegister />
+                            }
+                        />
+
+                        <Route
+                            path="/vendor/bundles/edit/:bundleId"
+                            element={
+                                <VendorCreateBundle />
+                            }
+                        />
+
+                        <Route
+                            path="/vendor/team"
+                            element={
+                                <VendorTeam />
                             }
                         />
 

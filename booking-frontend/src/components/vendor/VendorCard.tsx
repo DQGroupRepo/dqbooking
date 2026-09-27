@@ -64,17 +64,33 @@ const VendorCard = ({
 
             <div className="listing-info">
 
-                <h3>
-                    {vendor.businessName}
-                </h3>
+               <div className="vendor-title-section">
 
-                <p>
-                    {vendor.serviceName}
-                </p>
+                   <h3>
+                       {vendor.serviceName}
+                   </h3>
 
-                <p>
-                    📍 {vendor.city}
-                </p>
+                   {vendor.businessName && (
+
+                       <p className="vendor-business-name">
+
+                           <span>
+                               by
+                           </span>
+
+                           <strong>
+                               {vendor.businessName}
+                           </strong>
+
+                       </p>
+
+                   )}
+
+                   <p className="vendor-location">
+                       📍 {vendor.city}
+                   </p>
+
+               </div>
 
 
                 {vendor.capacity && (

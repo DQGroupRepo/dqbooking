@@ -8,10 +8,10 @@ import {
 
 import api from "../api/axios";
 
-
 export type UserRole =
     | "CUSTOMER"
-    | "VENDOR"
+    | "VENDOR_ADMIN"
+    | "VENDOR_USER"
     | "ADMIN";
 
 

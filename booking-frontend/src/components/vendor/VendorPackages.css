@@ -1,110 +1,539 @@
+/* =========================================================
+   VENDOR PACKAGES
+   ========================================================= */
+
 .vendor-packages {
-
-    margin-top:50px;
-
+    width: 100%;
+    margin-top: 50px;
+    box-sizing: border-box;
 }
 
+
+/* =========================================================
+   HEADING
+   ========================================================= */
+
+.packages-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    margin-bottom: 8px;
+}
 
 .vendor-packages h2 {
+    margin: 0;
 
-    margin-bottom:25px;
+    color: #0f172a;
 
+    font-size: 24px;
+    line-height: 1.3;
+}
+
+.package-selection-help {
+    margin: 0 0 20px;
+
+    color: #64748b;
+
+    font-size: 13px;
 }
 
 
+/* =========================================================
+   NAVIGATION
+   ========================================================= */
+
+.packages-navigation {
+    display: flex;
+    align-items: center;
+
+    gap: 10px;
+}
+
+.package-nav-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 34px;
+    height: 34px;
+
+    padding: 0;
+
+    border: 1px solid #dbe3ef;
+    border-radius: 50%;
+
+    background: #ffffff;
+
+    color: #0f172a;
+
+    font-size: 24px;
+    line-height: 1;
+
+    cursor: pointer;
+
+    transition:
+        background 0.2s ease,
+        border-color 0.2s ease,
+        color 0.2s ease;
+}
+
+.package-nav-button:hover:not(:disabled) {
+    border-color: #2563eb;
+
+    background: #eff6ff;
+
+    color: #2563eb;
+}
+
+.package-nav-button:disabled {
+    opacity: 0.35;
+
+    cursor: not-allowed;
+}
+
+.package-page-count {
+    min-width: 42px;
+
+    text-align: center;
+
+    color: #475569;
+
+    font-size: 13px;
+    font-weight: 600;
+}
+
+
+/* =========================================================
+   CAROUSEL
+   ========================================================= */
+
+.package-carousel {
+    width: 100%;
+
+    overflow: hidden;
+}
+
+
+/*
+ * IMPORTANT:
+ *
+ * Do NOT use overflow-x:auto here.
+ * Do NOT use flex-wrap.
+ *
+ * Only the currently visible packages are rendered.
+ */
 
 .package-grid {
-
-    display:grid;
+    display: grid;
 
     grid-template-columns:
-    repeat(3,1fr);
+        repeat(3, minmax(0, 1fr));
 
-    gap:20px;
+    gap: 16px;
 
+    width: 100%;
+
+    box-sizing: border-box;
 }
 
 
+/* =========================================================
+   PACKAGE CARD
+   ========================================================= */
 
 .package-card {
+    display: flex;
 
-    border:1px solid #eee;
+    flex-direction: column;
 
-    padding:25px;
+    width: 100%;
+    min-width: 0;
 
-    background:white;
+    height: 300px;
+    min-height: 300px;
+    max-height: 300px;
 
-    transition:.3s;
+    padding: 22px;
 
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+
+    background: #ffffff;
+
+    box-sizing: border-box;
+
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease,
+        transform 0.2s ease;
 }
-
-
 
 .package-card:hover {
+    border-color: #cbd5e1;
 
     box-shadow:
-    0 5px 20px rgba(0,0,0,.1);
+        0 5px 20px rgba(15, 23, 42, 0.08);
 
+    transform: translateY(-1px);
+}
+
+.package-card.selected {
+    border-color: #2563eb;
+
+    box-shadow:
+        0 5px 20px rgba(37, 99, 235, 0.12);
 }
 
 
+/* =========================================================
+   CARD CONTENT
+   ========================================================= */
+
+.package-card-content {
+    display: flex;
+
+    flex-direction: column;
+
+    flex: 1;
+
+    min-height: 0;
+}
 
 .package-card h3 {
+    margin: 0 0 10px;
 
-    font-size:22px;
+    color: #0f172a;
 
-    margin-bottom:15px;
+    font-size: 18px;
+    font-weight: 700;
 
+    line-height: 1.3;
+
+    min-height: 24px;
 }
-
-
 
 .package-card h4 {
+    margin: 0 0 14px;
 
-    color:#dfa974;
+    color: #dfa974;
 
-    font-size:28px;
+    font-size: 26px;
+    font-weight: 700;
 
-    margin-bottom:15px;
-
+    line-height: 1.2;
 }
 
 
+/* =========================================================
+   FIXED FEATURE AREA
+   ========================================================= */
 
-.package-card p {
+.package-feature-area {
+    height: 95px;
+    min-height: 95px;
+    max-height: 95px;
 
-    color:#666;
+    overflow-y: auto;
 
-    min-height:45px;
+    padding-right: 4px;
 
+    box-sizing: border-box;
 }
 
 
+/* =========================================================
+   FEATURES
+   ========================================================= */
+
+.package-features {
+    margin: 0;
+
+    padding-left: 20px;
+
+    color: #475569;
+
+    font-size: 13px;
+
+    line-height: 1.6;
+}
+
+.package-features li {
+    margin-bottom: 4px;
+}
+
+.package-no-features {
+    display: flex;
+
+    align-items: flex-start;
+
+    min-height: 20px;
+
+    color: #94a3b8;
+
+    font-size: 12px;
+}
+
+
+/* =========================================================
+   SELECT BUTTON
+   ========================================================= */
 
 .package-card button {
+    width: 100%;
 
-    margin-top:20px;
+    height: 40px;
 
-    padding:10px 25px;
+    margin-top: auto;
 
-    background:#dfa974;
+    padding: 0 20px;
 
-    border:none;
+    border: none;
+    border-radius: 7px;
 
-    color:white;
+    background: #14558c;
 
-    cursor:pointer;
+    color: #ffffff;
+
+    font-size: 12px;
+    font-weight: 600;
+
+    cursor: pointer;
+
+    transition:
+        background 0.2s ease,
+        transform 0.2s ease;
+}
+
+.package-card button:hover {
+    background: #0f4775;
+
+    transform: translateY(-1px);
+}
+
+
+/* =========================================================
+   CAROUSEL FOOTER
+   ========================================================= */
+
+.package-carousel-footer {
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    margin-top: 14px;
+
+    color: #64748b;
+
+    font-size: 12px;
+}
+
+
+/* =========================================================
+   SINGLE PACKAGE
+   ========================================================= */
+
+.package-grid.single-package {
+    grid-template-columns:
+        minmax(0, 1fr);
+}
+
+.package-grid.single-package .package-card {
+    max-width: 320px;
+}
+
+
+/* =========================================================
+   SCROLLBAR INSIDE FEATURES ONLY
+   ========================================================= */
+
+.package-feature-area::-webkit-scrollbar {
+    width: 4px;
+}
+
+.package-feature-area::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.package-feature-area::-webkit-scrollbar-thumb {
+    border-radius: 4px;
+
+    background: #cbd5e1;
+}
+
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+
+@media (max-width: 600px) {
+
+    .vendor-packages {
+
+        margin-top: 28px;
+    }
+
+
+    .packages-heading {
+
+        align-items: center;
+
+        gap: 8px;
+    }
+
+
+    .vendor-packages h2 {
+
+        font-size: 22px;
+    }
+
+
+    .package-selection-help {
+
+        margin-bottom: 12px;
+
+        font-size: 12px;
+
+        line-height: 1.4;
+    }
+
+
+    .packages-navigation {
+
+        gap: 6px;
+    }
+
+
+    .package-nav-button {
+
+        width: 30px;
+
+        height: 30px;
+
+        font-size: 21px;
+    }
+
+
+    .package-page-count {
+
+        min-width: 36px;
+
+        font-size: 11px;
+    }
+
+
+    .package-grid {
+
+        grid-template-columns: 1fr;
+    }
+
+
+    .package-card {
+
+        height: 240px;
+
+        min-height: 240px;
+
+        max-height: 240px;
+
+        padding: 18px;
+
+        border-radius: 11px;
+    }
+
+
+    .package-card h3 {
+
+        font-size: 17px;
+
+        margin-bottom: 7px;
+    }
+
+
+    .package-card h4 {
+
+        font-size: 25px;
+
+        margin-bottom: 10px;
+    }
+
+
+    .package-feature-area {
+
+        height: 72px;
+
+        min-height: 72px;
+
+        max-height: 72px;
+    }
+
+
+    .package-features {
+
+        font-size: 12px;
+
+        line-height: 1.5;
+    }
+
+
+    .package-no-features {
+
+        font-size: 12px;
+    }
+
+
+    .package-card button {
+
+        height: 36px;
+
+        font-size: 11px;
+    }
+
+
+    .package-carousel-footer {
+
+        margin-top: 9px;
+
+        font-size: 11px;
+    }
 
 }
 
 
+@media (max-width: 400px) {
 
-@media(max-width:992px){
+    .package-card {
 
-    .package-grid{
+        height: 225px;
 
-        grid-template-columns:1fr;
+        min-height: 225px;
 
+        max-height: 225px;
+
+        padding: 16px;
+    }
+
+
+    .package-card h3 {
+
+        font-size: 16px;
+    }
+
+
+    .package-card h4 {
+
+        font-size: 23px;
+    }
+
+
+    .package-feature-area {
+
+        height: 65px;
+
+        min-height: 65px;
+
+        max-height: 65px;
     }
 
 }

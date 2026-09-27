@@ -23,9 +23,6 @@ public class VendorProfileMapperImpl
                 .city(vendor.getCity())
                 .address(vendor.getAddress())
                 .description(vendor.getDescription())
-                .rating(vendor.getRating())
-                .totalReviews(vendor.getTotalReviews())
-                .verified(vendor.getVerified())
                 .build();
 
     }

@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import BookingStatsCard from "../../components/vendor/booking/BookingStatsCard/BookingStatsCard";
 import BookingFilter from "../../components/vendor/booking/BookingFilter/BookingFilter";
 import BookingTableStats from "../../components/vendor/booking/BookingTableStats/BookingTableStats";
+import BookingCalendar from "../../components/vendor/booking/BookingCalendar/BookingCalendar";
 
 import BookingStatsService from "../../services/BookingStatsService";
 
@@ -82,6 +83,10 @@ export default function VendorBookingSummary() {
                 />
 
             </div>
+
+            <BookingCalendar
+                bookings={bookings}
+            />
 
             <BookingFilter
 

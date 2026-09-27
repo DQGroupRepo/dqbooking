@@ -44,8 +44,8 @@ public class BookingSlotMapperImpl implements BookingSlotMapper {
 
         response.setActive(bookingSlot.getActive());
 
-        response.setCreatedAt(bookingSlot.getCreatedAt());
-        response.setUpdatedAt(bookingSlot.getUpdatedAt());
+        response.setCreatedAt(bookingSlot.getCreatedTs());
+        response.setUpdatedAt(bookingSlot.getLastUpdateTs());
 
         return response;
     }

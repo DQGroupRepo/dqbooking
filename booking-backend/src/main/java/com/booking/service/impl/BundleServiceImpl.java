@@ -6,15 +6,18 @@ import com.booking.dto.bundle.UpdateBundleRequest;
 import com.booking.exception.ResourceNotFoundException;
 import com.booking.model.Bundle;
 import com.booking.model.VendorService;
+import com.booking.model.enums.VendorPage;
 import com.booking.repository.BundleRepository;
 import com.booking.repository.VendorServiceRepository;
-import com.booking.service.AuthenticatedUserService;
 import com.booking.service.BundleService;
+import com.booking.service.VendorAccessService;
+import com.booking.service.VendorPermissionService;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -22,34 +25,45 @@ import java.util.List;
 public class BundleServiceImpl
         implements BundleService {
 
+    private static final Logger log =
+            LoggerFactory.getLogger(BundleServiceImpl.class);
+
     private final BundleRepository bundleRepository;
 
     private final VendorServiceRepository vendorServiceRepository;
 
-    private final AuthenticatedUserService authenticatedUserService;
+    private final VendorAccessService vendorAccessService;
 
+    private final VendorPermissionService vendorPermissionService;
 
     @Override
     public BundleResponse createBundle(
             CreateBundleRequest request
     ) {
 
+        vendorPermissionService.checkEdit(
+                VendorPage.BUNDLES
+        );
+
         String vendorId =
-                authenticatedUserService
-                        .getCurrentVendor()
-                        .getId();
+                vendorAccessService.getEffectiveVendorId();
+
+        log.info(
+                "Creating bundle vendorId={} serviceCount={}",
+                vendorId,
+                request.getServiceIds() == null
+                        ? 0
+                        : request.getServiceIds().size()
+        );
 
         validateServicesBelongToVendor(
                 request.getServiceIds(),
                 vendorId
         );
 
-        Bundle bundle =
-                new Bundle();
+        Bundle bundle = new Bundle();
 
-        bundle.setVendorId(
-                vendorId
-        );
+        bundle.setVendorId(vendorId);
 
         bundle.setName(
                 request.getName()
@@ -75,33 +89,37 @@ public class BundleServiceImpl
                 request.getDiscountValue()
         );
 
-        bundle.setActive(
-                true
+        bundle.setActive(true);
+
+        bundle =
+                bundleRepository.save(bundle);
+
+        log.info(
+                "Bundle created bundleId={} vendorId={}",
+                bundle.getId(),
+                vendorId
         );
 
-        bundle.setCreatedAt(
-                LocalDateTime.now()
-        );
-
-        bundle.setUpdatedAt(
-                LocalDateTime.now()
-        );
-
-        return toResponse(
-                bundleRepository.save(bundle)
-        );
+        return toResponse(bundle);
     }
-
 
     @Override
     public BundleResponse getBundle(
             String bundleId
     ) {
 
+        vendorPermissionService.checkView(
+                VendorPage.BUNDLES
+        );
+
         String vendorId =
-                authenticatedUserService
-                        .getCurrentVendor()
-                        .getId();
+                vendorAccessService.getEffectiveVendorId();
+
+        log.debug(
+                "Fetching bundle bundleId={} vendorId={}",
+                bundleId,
+                vendorId
+        );
 
         Bundle bundle =
                 bundleRepository
@@ -109,31 +127,52 @@ public class BundleServiceImpl
                                 bundleId,
                                 vendorId
                         )
-                        .orElseThrow(() ->
-                                new ResourceNotFoundException(
-                                        "Bundle not found."
-                                )
-                        );
+                        .orElseThrow(() -> {
+
+                            log.warn(
+                                    "Bundle not found bundleId={} vendorId={}",
+                                    bundleId,
+                                    vendorId
+                            );
+
+                            return new ResourceNotFoundException(
+                                    "Bundle not found."
+                            );
+                        });
 
         return toResponse(bundle);
     }
 
-
     @Override
     public List<BundleResponse> getVendorBundles() {
 
+        vendorPermissionService.checkView(
+                VendorPage.BUNDLES
+        );
+
         String vendorId =
-                authenticatedUserService
-                        .getCurrentVendor()
-                        .getId();
+                vendorAccessService.getEffectiveVendorId();
 
-        return bundleRepository
-                .findByVendorId(vendorId)
-                .stream()
-                .map(this::toResponse)
-                .toList();
+        log.debug(
+                "Fetching vendor bundles vendorId={}",
+                vendorId
+        );
+
+        List<BundleResponse> responses =
+                bundleRepository
+                        .findByVendorId(vendorId)
+                        .stream()
+                        .map(this::toResponse)
+                        .toList();
+
+        log.info(
+                "Vendor bundles fetched vendorId={} count={}",
+                vendorId,
+                responses.size()
+        );
+
+        return responses;
     }
-
 
     @Override
     public BundleResponse updateBundle(
@@ -141,10 +180,18 @@ public class BundleServiceImpl
             UpdateBundleRequest request
     ) {
 
+        vendorPermissionService.checkEdit(
+                VendorPage.BUNDLES
+        );
+
         String vendorId =
-                authenticatedUserService
-                        .getCurrentVendor()
-                        .getId();
+                vendorAccessService.getEffectiveVendorId();
+
+        log.info(
+                "Updating bundle bundleId={} vendorId={}",
+                bundleId,
+                vendorId
+        );
 
         Bundle bundle =
                 bundleRepository
@@ -152,11 +199,18 @@ public class BundleServiceImpl
                                 bundleId,
                                 vendorId
                         )
-                        .orElseThrow(() ->
-                                new ResourceNotFoundException(
-                                        "Bundle not found."
-                                )
-                        );
+                        .orElseThrow(() -> {
+
+                            log.warn(
+                                    "Bundle not found for update bundleId={} vendorId={}",
+                                    bundleId,
+                                    vendorId
+                            );
+
+                            return new ResourceNotFoundException(
+                                    "Bundle not found."
+                            );
+                        });
 
         validateServicesBelongToVendor(
                 request.getServiceIds(),
@@ -191,25 +245,36 @@ public class BundleServiceImpl
                 request.isActive()
         );
 
-        bundle.setUpdatedAt(
-                LocalDateTime.now()
+        bundle =
+                bundleRepository.save(bundle);
+
+        log.info(
+                "Bundle updated bundleId={} vendorId={} active={}",
+                bundle.getId(),
+                vendorId,
+                bundle.isActive()
         );
 
-        return toResponse(
-                bundleRepository.save(bundle)
-        );
+        return toResponse(bundle);
     }
-
 
     @Override
     public void deleteBundle(
             String bundleId
     ) {
 
+        vendorPermissionService.checkEdit(
+                VendorPage.BUNDLES
+        );
+
         String vendorId =
-                authenticatedUserService
-                        .getCurrentVendor()
-                        .getId();
+                vendorAccessService.getEffectiveVendorId();
+
+        log.info(
+                "Deactivating bundle bundleId={} vendorId={}",
+                bundleId,
+                vendorId
+        );
 
         Bundle bundle =
                 bundleRepository
@@ -217,32 +282,39 @@ public class BundleServiceImpl
                                 bundleId,
                                 vendorId
                         )
-                        .orElseThrow(() ->
-                                new ResourceNotFoundException(
-                                        "Bundle not found."
-                                )
-                        );
+                        .orElseThrow(() -> {
 
-        /*
-         * Soft delete.
-         *
-         * We don't physically remove the document.
-         */
+                            log.warn(
+                                    "Bundle not found for deletion bundleId={} vendorId={}",
+                                    bundleId,
+                                    vendorId
+                            );
+
+                            return new ResourceNotFoundException(
+                                    "Bundle not found."
+                            );
+                        });
 
         bundle.setActive(false);
 
-        bundle.setUpdatedAt(
-                LocalDateTime.now()
-        );
-
         bundleRepository.save(bundle);
-    }
 
+        log.info(
+                "Bundle deactivated bundleId={} vendorId={}",
+                bundleId,
+                vendorId
+        );
+    }
 
     @Override
     public void activateBundle(
             String bundleId
     ) {
+
+        log.info(
+                "Activating bundle bundleId={}",
+                bundleId
+        );
 
         updateBundleStatus(
                 bundleId,
@@ -250,11 +322,15 @@ public class BundleServiceImpl
         );
     }
 
-
     @Override
     public void deactivateBundle(
             String bundleId
     ) {
+
+        log.info(
+                "Deactivating bundle bundleId={}",
+                bundleId
+        );
 
         updateBundleStatus(
                 bundleId,
@@ -262,16 +338,17 @@ public class BundleServiceImpl
         );
     }
 
-
     private void updateBundleStatus(
             String bundleId,
             boolean active
     ) {
 
+        vendorPermissionService.checkEdit(
+                VendorPage.BUNDLES
+        );
+
         String vendorId =
-                authenticatedUserService
-                        .getCurrentVendor()
-                        .getId();
+                vendorAccessService.getEffectiveVendorId();
 
         Bundle bundle =
                 bundleRepository
@@ -279,21 +356,30 @@ public class BundleServiceImpl
                                 bundleId,
                                 vendorId
                         )
-                        .orElseThrow(() ->
-                                new ResourceNotFoundException(
-                                        "Bundle not found."
-                                )
-                        );
+                        .orElseThrow(() -> {
+
+                            log.warn(
+                                    "Bundle not found for status change bundleId={} vendorId={}",
+                                    bundleId,
+                                    vendorId
+                            );
+
+                            return new ResourceNotFoundException(
+                                    "Bundle not found."
+                            );
+                        });
 
         bundle.setActive(active);
 
-        bundle.setUpdatedAt(
-                LocalDateTime.now()
-        );
-
         bundleRepository.save(bundle);
-    }
 
+        log.info(
+                "Bundle status changed bundleId={} vendorId={} active={}",
+                bundleId,
+                vendorId,
+                active
+        );
+    }
 
     private void validateServicesBelongToVendor(
             List<String> serviceIds,
@@ -314,15 +400,29 @@ public class BundleServiceImpl
                             .findByIdAndActiveTrueAndDeletedFalse(
                                     serviceId
                             )
-                            .orElseThrow(() ->
-                                    new ResourceNotFoundException(
-                                            "Service not found: "
-                                                    + serviceId
-                                    )
-                            );
+                            .orElseThrow(() -> {
+
+                                log.warn(
+                                        "Bundle service not found serviceId={} vendorId={}",
+                                        serviceId,
+                                        vendorId
+                                );
+
+                                return new ResourceNotFoundException(
+                                        "Service not found: "
+                                                + serviceId
+                                );
+                            });
 
             if (!service.getVendorId()
                     .equals(vendorId)) {
+
+                log.warn(
+                        "Attempt to add another vendor service to bundle serviceId={} requestedVendorId={} actualVendorId={}",
+                        serviceId,
+                        vendorId,
+                        service.getVendorId()
+                );
 
                 throw new AccessDeniedException(
                         "You cannot add another vendor's service to a bundle."
@@ -331,54 +431,22 @@ public class BundleServiceImpl
         }
     }
 
-
     private BundleResponse toResponse(
             Bundle bundle
     ) {
 
         return BundleResponse
                 .builder()
-
-                .id(
-                        bundle.getId()
-                )
-
-                .vendorId(
-                        bundle.getVendorId()
-                )
-
-                .name(
-                        bundle.getName()
-                )
-
-                .description(
-                        bundle.getDescription()
-                )
-
-                .serviceIds(
-                        bundle.getServiceIds()
-                )
-
-                .discountType(
-                        bundle.getDiscountType()
-                )
-
-                .discountValue(
-                        bundle.getDiscountValue()
-                )
-
-                .active(
-                        bundle.isActive()
-                )
-
-                .createdAt(
-                        bundle.getCreatedAt()
-                )
-
-                .updatedAt(
-                        bundle.getUpdatedAt()
-                )
-
+                .id(bundle.getId())
+                .vendorId(bundle.getVendorId())
+                .name(bundle.getName())
+                .description(bundle.getDescription())
+                .serviceIds(bundle.getServiceIds())
+                .discountType(bundle.getDiscountType())
+                .discountValue(bundle.getDiscountValue())
+                .active(bundle.isActive())
+                .createdAt(bundle.getCreatedTs())
+                .updatedAt(bundle.getLastUpdateTs())
                 .build();
     }
 
@@ -387,12 +455,26 @@ public class BundleServiceImpl
             String serviceId
     ) {
 
-        return bundleRepository
-                .findByServiceIdsContainingAndActiveTrue(
-                        serviceId
-                )
-                .stream()
-                .map(this::toResponse)
-                .toList();
+        log.debug(
+                "Fetching customer bundles for service serviceId={}",
+                serviceId
+        );
+
+        List<BundleResponse> responses =
+                bundleRepository
+                        .findByServiceIdsContainingAndActiveTrue(
+                                serviceId
+                        )
+                        .stream()
+                        .map(this::toResponse)
+                        .toList();
+
+        log.info(
+                "Customer bundles fetched serviceId={} count={}",
+                serviceId,
+                responses.size()
+        );
+
+        return responses;
     }
 }

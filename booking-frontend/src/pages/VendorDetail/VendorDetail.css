@@ -85,3 +85,88 @@
     }
 
 }
+
+/* =========================================================
+   MOBILE SERVICE DETAILS
+   ========================================================= */
+
+@media (max-width: 768px) {
+
+    .section {
+        padding: 20px 0 40px;
+    }
+
+
+    .vendor-layout {
+        display: flex;
+
+        flex-direction: column;
+
+        gap: 24px;
+
+        width: 100%;
+
+        padding-left: 14px;
+        padding-right: 14px;
+
+        box-sizing: border-box;
+    }
+
+
+    .vendor-detail-main {
+        width: 100%;
+        min-width: 0;
+    }
+
+
+    /*
+     * Booking card comes after the main content
+     * in the desktop DOM.
+     *
+     * Keep it in normal document flow on mobile
+     * for now rather than forcing a fixed overlay.
+     */
+
+    .vendor-booking-card {
+        position: static;
+
+        width: 100%;
+
+        box-sizing: border-box;
+
+        margin-top: 10px;
+    }
+
+
+    .bundle-back-container {
+        padding:
+            10px 14px 0;
+    }
+
+
+    .bundle-back-button {
+        font-size: 13px;
+    }
+
+}
+
+
+/* =========================================================
+   SMALL PHONES
+   ========================================================= */
+
+@media (max-width: 480px) {
+
+    .section {
+        padding: 14px 0 30px;
+    }
+
+
+    .vendor-layout {
+        padding-left: 10px;
+        padding-right: 10px;
+
+        gap: 18px;
+    }
+
+}

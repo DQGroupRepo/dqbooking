@@ -12,3 +12,277 @@
     display: block;
     object-fit: cover;
 }
+
+.vendor-title-section {
+    display: flex;
+    flex-direction: column;
+}
+
+
+.vendor-title-section h3 {
+    margin: 0;
+
+    font-size: 18px;
+
+    font-weight: 700;
+
+    line-height: 1.3;
+
+    color: #243b53;
+}
+
+
+.vendor-business-name {
+    margin: 2px 0 0;
+
+    font-size: 13px;
+
+    line-height: 1.4;
+
+    color: #8a94a6;
+}
+
+
+.vendor-business-name span {
+    margin-right: 4px;
+}
+
+
+.vendor-business-name strong {
+    font-family: Georgia, serif;
+
+    font-size: 14px;
+
+    font-weight: 600;
+
+    color: #b7793e;
+}
+
+
+.vendor-location {
+    margin: 2px 0 0;
+
+    font-size: 15px;
+
+    color: #4a5568;
+}
+
+/* =========================================================
+   MOBILE VENDOR CARD
+   ========================================================= */
+
+@media (max-width: 768px) {
+
+    .listing-card {
+
+        width: 100%;
+
+        box-sizing: border-box;
+
+        border-radius: 10px;
+
+        overflow: hidden;
+
+    }
+
+
+    .listing-media {
+
+        width: 100%;
+
+        height: 180px;
+
+        border-radius: 10px 10px 0 0;
+
+    }
+
+
+    .listing-media-content {
+
+        width: 100%;
+
+        height: 100%;
+
+        object-fit: cover;
+
+    }
+
+
+    .listing-info {
+
+        padding: 14px;
+
+        box-sizing: border-box;
+
+    }
+
+
+    .vendor-title-section h3 {
+
+        font-size: 16px;
+
+        line-height: 1.25;
+
+    }
+
+
+    .vendor-business-name {
+
+        font-size: 12px;
+
+        line-height: 1.3;
+
+    }
+
+
+    .vendor-business-name strong {
+
+        font-size: 13px;
+
+    }
+
+
+    .vendor-location {
+
+        margin-top: 4px;
+
+        font-size: 12px;
+
+    }
+
+
+    .listing-info > p {
+
+        margin: 6px 0;
+
+        font-size: 12px;
+
+    }
+
+
+    .listing-footer {
+
+        display: flex;
+
+        align-items: center;
+
+        justify-content: space-between;
+
+        gap: 10px;
+
+        margin-top: 10px;
+
+    }
+
+
+    .rating {
+
+        font-size: 12px;
+
+    }
+
+
+    .listing-footer h4 {
+
+        margin: 4px 0 0;
+
+        font-size: 14px;
+
+    }
+
+
+    .listing-footer button {
+
+        min-width: 105px;
+
+        min-height: 34px;
+
+        padding: 7px 10px;
+
+        font-size: 11px;
+
+    }
+
+}
+
+
+/* =========================================================
+   SMALL MOBILE
+   ========================================================= */
+
+@media (max-width: 480px) {
+
+    .listing-media {
+
+        height: 155px;
+
+    }
+
+
+    .listing-info {
+
+        padding: 12px;
+
+    }
+
+
+    .vendor-title-section h3 {
+
+        font-size: 15px;
+
+    }
+
+
+    .vendor-business-name {
+
+        font-size: 11px;
+
+    }
+
+
+    .vendor-business-name strong {
+
+        font-size: 12px;
+
+    }
+
+
+    .vendor-location {
+
+        font-size: 11px;
+
+    }
+
+
+    .listing-info > p {
+
+        font-size: 11px;
+
+    }
+
+
+    .listing-footer {
+
+        gap: 6px;
+
+    }
+
+
+    .listing-footer h4 {
+
+        font-size: 13px;
+
+    }
+
+
+    .listing-footer button {
+
+        min-width: 95px;
+
+        min-height: 32px;
+
+        font-size: 10px;
+
+    }
+
+}

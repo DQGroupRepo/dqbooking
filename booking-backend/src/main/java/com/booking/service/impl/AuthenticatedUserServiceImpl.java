@@ -1,11 +1,11 @@
 package com.booking.service.impl;
 
-import com.booking.exception.ResourceNotFoundException;
 import com.booking.model.User;
 import com.booking.model.enums.Role;
-import com.booking.repository.UserRepository;
 import com.booking.service.AuthenticatedUserService;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -14,18 +14,32 @@ import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
-public class AuthenticatedUserServiceImpl implements AuthenticatedUserService {
+public class AuthenticatedUserServiceImpl
+        implements AuthenticatedUserService {
+
+    private static final Logger log =
+            LoggerFactory.getLogger(
+                    AuthenticatedUserServiceImpl.class
+            );
 
     @Override
     public User getCurrentUser() {
 
         Authentication authentication =
-                SecurityContextHolder.getContext().getAuthentication();
+                SecurityContextHolder
+                        .getContext()
+                        .getAuthentication();
 
         if (authentication == null ||
                 !(authentication.getPrincipal() instanceof User user)) {
 
-            throw new UsernameNotFoundException("Authenticated user not found.");
+            log.warn(
+                    "Authenticated user could not be resolved from security context"
+            );
+
+            throw new UsernameNotFoundException(
+                    "Authenticated user not found."
+            );
         }
 
         return user;
@@ -37,7 +51,16 @@ public class AuthenticatedUserServiceImpl implements AuthenticatedUserService {
         User user = getCurrentUser();
 
         if (user.getRole() != Role.CUSTOMER) {
-            throw new AccessDeniedException("Customer access required.");
+
+            log.warn(
+                    "Customer access denied userId={} role={}",
+                    user.getId(),
+                    user.getRole()
+            );
+
+            throw new AccessDeniedException(
+                    "Customer access required."
+            );
         }
 
         return user;
@@ -48,7 +71,14 @@ public class AuthenticatedUserServiceImpl implements AuthenticatedUserService {
 
         User user = getCurrentUser();
 
-        if (user.getRole() != Role.VENDOR) {
+        if (user.getRole() != Role.VENDOR_ADMIN &&
+                user.getRole() != Role.VENDOR_USER) {
+
+            log.warn(
+                    "Vendor access denied userId={} role={}",
+                    user.getId(),
+                    user.getRole()
+            );
 
             throw new AccessDeniedException(
                     "Vendor access required."
@@ -57,5 +87,4 @@ public class AuthenticatedUserServiceImpl implements AuthenticatedUserService {
 
         return user;
     }
-
 }

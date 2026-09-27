@@ -9,12 +9,14 @@ import com.booking.repository.NotificationRepository;
 import com.booking.service.AuthenticatedUserService;
 import com.booking.service.NotificationService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class NotificationServiceImpl
         implements NotificationService {
 
@@ -30,12 +32,17 @@ public class NotificationServiceImpl
         User user =
                 authenticatedUserService.getCurrentUser();
 
-        return notificationRepository
-                .findByUserIdOrderByCreatedAtDesc(user.getId())
-                .stream()
-                .map(notificationMapper::toResponse)
-                .toList();
+        List<NotificationResponse> notifications =
+                notificationRepository
+                        .findByUserIdOrderByCreatedTsDesc(user.getId())
+                        .stream()
+                        .map(notificationMapper::toResponse)
+                        .toList();
 
+        log.info("Retrieved notifications userId={} notificationCount={}",
+                user.getId(), notifications.size());
+
+        return notifications;
     }
 
     @Override
@@ -45,11 +52,16 @@ public class NotificationServiceImpl
                 authenticatedUserService
                         .getCurrentUser();
 
-        return notificationRepository
-                .countByUserIdAndReadFalse(
-                        user.getId()
-                );
+        long unreadCount =
+                notificationRepository
+                        .countByUserIdAndReadFalse(
+                                user.getId()
+                        );
 
+        log.debug("Retrieved unread notification count userId={} unreadCount={}",
+                user.getId(), unreadCount);
+
+        return unreadCount;
     }
 
     @Override
@@ -61,6 +73,8 @@ public class NotificationServiceImpl
                 authenticatedUserService
                         .getCurrentUser();
 
+        log.info("Marking notification as read userId={} notificationId={}",
+                user.getId(), notificationId);
 
         Notification notification =
                 notificationRepository
@@ -73,13 +87,6 @@ public class NotificationServiceImpl
                                 )
                         );
 
-
-        /*
-         * Important:
-         * A user must only be able to mark
-         * their own notification as read.
-         */
-
         if (
                 !notification
                         .getUserId()
@@ -88,22 +95,20 @@ public class NotificationServiceImpl
                         )
         ) {
 
+            log.warn("Notification update denied userId={} notificationId={}",
+                    user.getId(), notificationId);
+
             throw new IllegalArgumentException(
                     "You cannot update this notification."
             );
-
         }
 
+        notification.setRead(true);
 
-        notification.setRead(
-                true
-        );
+        notificationRepository.save(notification);
 
-
-        notificationRepository.save(
-                notification
-        );
-
+        log.info("Notification marked as read userId={} notificationId={}",
+                user.getId(), notificationId);
     }
 
     @Override
@@ -113,24 +118,23 @@ public class NotificationServiceImpl
                 authenticatedUserService
                         .getCurrentUser();
 
-
         List<Notification> notifications =
                 notificationRepository
                         .findByUserIdAndReadFalse(
                                 user.getId()
                         );
 
-
         notifications.forEach(
                 notification ->
                         notification.setRead(true)
         );
 
-
         notificationRepository.saveAll(
                 notifications
         );
 
+        log.info("Marked all notifications as read userId={} updatedCount={}",
+                user.getId(), notifications.size());
     }
 
     @Override
@@ -144,17 +148,15 @@ public class NotificationServiceImpl
         Notification notification = new Notification();
 
         notification.setUserId(userId);
-
         notification.setType(type);
-
         notification.setTitle(title);
-
         notification.setMessage(message);
-
         notification.setReferenceId(referenceId);
 
         notificationRepository.save(notification);
 
+        log.info("Notification created userId={} type={} referenceId={}",
+                userId, type, referenceId);
     }
 
 }

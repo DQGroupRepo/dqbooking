@@ -11,6 +11,8 @@ import VendorAmenities from "../../components/vendor/VendorAmenities";
 import VendorPackages from "../../components/vendor/VendorPackages";
 import VendorReviews from "../../components/vendor/VendorReviews";
 import BookingCard from "../../components/vendor/VendorBookingCard";
+import VendorServiceDetails
+    from "../../components/vendor/VendorServiceDetails";
 
 import VendorDetailService from "../../services/VendorDetailService";
 import BundleService from "../../services/BundleService";
@@ -338,6 +340,10 @@ const VendorDetail = () => {
                             vendor={vendor}
                         />
 
+                        <VendorServiceDetails
+                                vendor={vendor}
+                            />
+
 
                         <VendorAmenities
                             vendor={vendor}
@@ -348,10 +354,7 @@ const VendorDetail = () => {
                             packages={vendor.packages ?? []}
                             selectedPackageId={
                                 selectedPackage
-                                    ? (
-                                        selectedPackage.id ??
-                                        selectedPackage.type
-                                    )
+                                    ? selectedPackage.id
                                     : undefined
                             }
                             onSelectPackage={

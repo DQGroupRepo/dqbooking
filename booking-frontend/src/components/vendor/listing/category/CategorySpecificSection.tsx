@@ -1,38 +1,31 @@
-import HallSection
-    from "./HallSection/HallSection";
+import AmenitiesSection from "../AmenitiesSection/AmenitiesSection";
 
-import CateringSection
-    from "./CateringSection/CateringSection";
+import CategoryDetailSections from "./CategoryDetailSections";
 
-import PhotographySection
-    from "./PhotographySection/PhotographySection";
+import type { VendorServiceForm } from "../../../../types/VendorServiceForm";
 
-import DecorationSection
-    from "./DecorationSection/DecorationSection";
-
-import MakeupSection
-    from "./MakeupSection/MakeupSection";
-
-import AmenitiesSection
-    from "../AmenitiesSection/AmenitiesSection";
-
-import type {
-    VendorServiceForm
-} from "../../../../types/VendorServiceForm";
-
+import CateringSection from "./CateringSection/CateringSection";
+import type { CateringMenuItem } from "../../../types/CateringMenuItem";
 
 interface Props {
-
     category: string;
 
     formData: VendorServiceForm;
+    serviceId?: string;
 
-    handleChange: (
-        e: React.ChangeEvent<
-            HTMLInputElement |
-            HTMLTextAreaElement |
-            HTMLSelectElement
-        >
+    onDetailChange: (
+        sectionKey: string,
+        attributeKey: string,
+        value: string | boolean
+    ) => void;
+
+    onCateringDetailsChange: (
+        field: string,
+        value: boolean | string[]
+    ) => void;
+
+    onCateringMenuItemsChange: (
+        items: CateringMenuItem[]
     ) => void;
 
     amenities: string[];
@@ -40,38 +33,26 @@ interface Props {
     handleAmenityChange: (
         item: string
     ) => void;
-
 }
 
+/* =========================================
+   CATEGORY AMENITIES
 
-/*
- * =========================================================
- * CATEGORY SPECIFIC AMENITIES
- * =========================================================
- *
- * The existing Hall amenities have been moved here.
- *
- * We are intentionally NOT inventing amenity values for
- * the other categories yet.
- *
- * Add their real business-approved options here when ready.
- */
+   Keep amenity configuration here for now.
 
-const CATEGORY_AMENITIES:
-    Record<string, string[]> = {
+   Category-specific detail fields are NOT
+   stored here. Those come from
+   ServiceDetailSectionUtil.
+========================================= */
+
+const CATEGORY_AMENITIES: Record<string, string[]> = {
 
     hall: [
-
         "Secure Digital Lockers",
-
         "Acoustics suitable for live music or wedding bands",
-
         "Lighting to accommodate professional photography",
-
         "Premium chairs",
-
         "Spacious Event Stage"
-
     ],
 
     catering: [],
@@ -89,191 +70,75 @@ const CATEGORY_AMENITIES:
     decoration: [],
 
     makeup: []
-
 };
 
-
-export default function CategorySpecificSection({
-
+const CategorySpecificSection = ({
     category,
-
     formData,
-
-    handleChange,
-
+    serviceId,
+    onDetailChange,
     amenities,
-
-    handleAmenityChange
-
-}: Props) {
-
+    handleAmenityChange,
+    onCateringDetailsChange,
+    onCateringMenuItemsChange
+}: Props) => {
 
     const normalizedCategory =
-        category
-            ?.toLowerCase()
-            .trim() || "";
-
+        category?.toLowerCase().trim() ?? "";
 
     const amenityList =
-        CATEGORY_AMENITIES[
-        normalizedCategory
-        ] ?? [];
-
-
-    /*
-     * =========================================================
-     * CATEGORY CONTENT
-     * =========================================================
-     */
-
-    let categoryContent:
-        React.ReactNode = null;
-
-
-    switch (
-    normalizedCategory
-    ) {
-
-        case "hall":
-
-            categoryContent = (
-
-                <HallSection
-
-                    formData={
-                        formData
-                    }
-
-                    handleChange={
-                        handleChange
-                    }
-
-                />
-
-            );
-
-            break;
-
-
-        case "catering":
-
-            categoryContent = (
-
-                <CateringSection
-
-                    formData={
-                        formData
-                    }
-
-                    handleChange={
-                        handleChange
-                    }
-
-                />
-
-            );
-
-            break;
-
-
-        case "photography":
-
-            categoryContent = (
-
-                <PhotographySection
-
-                    formData={
-                        formData
-                    }
-
-                    handleChange={
-                        handleChange
-                    }
-
-                />
-
-            );
-
-            break;
-
-
-        case "decoration":
-
-            categoryContent = (
-
-                <DecorationSection
-                />
-
-            );
-
-            break;
-
-
-        case "makeup":
-
-            categoryContent = (
-
-                <MakeupSection
-                />
-
-            );
-
-            break;
-
-
-        default:
-
-            categoryContent =
-                null;
-
-    }
-
+        CATEGORY_AMENITIES[normalizedCategory] ?? [];
 
     return (
-
         <>
 
-            {/* =========================================
-                CATEGORY SPECIFIC INFORMATION
-            ========================================= */}
+            {/* =====================================
+               CATEGORY-SPECIFIC DETAILS
+            ===================================== */}
 
-            {
-                categoryContent
-            }
+            {normalizedCategory === "catering" ? (
+
+                <CateringSection
+                    formData={formData}
+                    onCateringDetailsChange={
+                        onCateringDetailsChange
+                    }
+                    onCateringMenuItemsChange={
+                        onCateringMenuItemsChange
+                    }
+                    serviceId={serviceId}
+                />
+
+            ) : (
+
+                <CategoryDetailSections
+                    category={category}
+                    formData={formData}
+                    onDetailChange={onDetailChange}
+                />
+
+            )}
 
 
-            {/* =========================================
-                CATEGORY SPECIFIC AMENITIES
-            =========================================
+            {/* =====================================
+               CATEGORY AMENITIES
+            ===================================== */}
 
-            Only render the section when this category
-            has configured amenities.
-            ========================================= */}
 
-            {
-                amenityList.length > 0 && (
+            {amenityList.length > 0 && (
 
-                    <AmenitiesSection
+                <AmenitiesSection
+                    amenities={amenities}
+                    amenityList={amenityList}
+                    handleAmenityChange={
+                        handleAmenityChange
+                    }
+                />
 
-                        amenities={
-                            amenities
-                        }
-
-                        amenityList={
-                            amenityList
-                        }
-
-                        handleAmenityChange={
-                            handleAmenityChange
-                        }
-
-                    />
-
-                )
-            }
+            )}
 
         </>
-
     );
+};
 
-}
+export default CategorySpecificSection;

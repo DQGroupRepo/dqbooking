@@ -2,22 +2,24 @@ package com.booking.service.impl;
 
 import com.booking.dto.admin.AdminBookingTrendResponse;
 import com.booking.dto.admin.AdminDashboardResponse;
+import com.booking.dto.admin.AdminPendingActionsResponse;
 import com.booking.dto.admin.AdminRecentBookingResponse;
 import com.booking.dto.admin.AdminRevenueTrendResponse;
 import com.booking.model.Booking;
 import com.booking.model.enums.BookingStatus;
 import com.booking.model.enums.Role;
+import com.booking.model.enums.ServiceModerationStatus;
 import com.booking.model.enums.UserStatus;
+import com.booking.model.enums.VendorVerificationStatus;
 import com.booking.repository.BookingRepository;
 import com.booking.repository.ReviewRepository;
 import com.booking.repository.UserRepository;
 import com.booking.repository.VendorServiceRepository;
 import com.booking.service.AdminDashboardService;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
-import com.booking.dto.admin.AdminPendingActionsResponse;
-import com.booking.model.enums.ServiceModerationStatus;
-import com.booking.model.enums.VendorVerificationStatus;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -28,17 +30,22 @@ import java.util.List;
 public class AdminDashboardServiceImpl
         implements AdminDashboardService {
 
+    private static final Logger log =
+            LoggerFactory.getLogger(AdminDashboardServiceImpl.class);
+
     private final UserRepository userRepository;
 
     private final BookingRepository bookingRepository;
 
-    private final VendorServiceRepository vendorServiceRepository;
+    private final VendorServiceRepository
+            vendorServiceRepository;
 
     private final ReviewRepository reviewRepository;
 
-
     @Override
     public AdminDashboardResponse getDashboard() {
+
+        log.info("Admin dashboard requested");
 
         /*
          * =========================================
@@ -49,11 +56,15 @@ public class AdminDashboardServiceImpl
         long totalUsers =
                 userRepository.count();
 
+        /*
+         * A vendor account is represented by its
+         * VendorAdmin.
+         */
+
         long totalVendors =
                 userRepository.countByRole(
-                        Role.VENDOR
+                        Role.VENDOR_ADMIN
                 );
-
 
         /*
          * =========================================
@@ -67,7 +78,6 @@ public class AdminDashboardServiceImpl
         long totalBookings =
                 allBookings.size();
 
-
         long pendingBookings =
                 allBookings.stream()
                         .filter(booking ->
@@ -75,7 +85,6 @@ public class AdminDashboardServiceImpl
                                         == BookingStatus.PENDING
                         )
                         .count();
-
 
         long confirmedBookings =
                 allBookings.stream()
@@ -85,7 +94,6 @@ public class AdminDashboardServiceImpl
                         )
                         .count();
 
-
         long completedBookings =
                 allBookings.stream()
                         .filter(booking ->
@@ -94,7 +102,6 @@ public class AdminDashboardServiceImpl
                         )
                         .count();
 
-
         long cancelledBookings =
                 allBookings.stream()
                         .filter(booking ->
@@ -102,7 +109,6 @@ public class AdminDashboardServiceImpl
                                         == BookingStatus.CANCELLED
                         )
                         .count();
-
 
         /*
          * =========================================
@@ -113,17 +119,18 @@ public class AdminDashboardServiceImpl
         BigDecimal totalRevenue =
                 allBookings.stream()
 
-                        .map(Booking::getTotalAmount)
+                        .map(
+                                Booking::getTotalAmount
+                        )
 
-                        .filter(amount ->
-                                amount != null
+                        .filter(
+                                amount -> amount != null
                         )
 
                         .reduce(
                                 BigDecimal.ZERO,
                                 BigDecimal::add
                         );
-
 
         /*
          * =========================================
@@ -137,13 +144,11 @@ public class AdminDashboardServiceImpl
                         UserStatus.ACTIVE
                 );
 
-
         long activeVendors =
                 userRepository.countByRoleAndStatus(
-                        Role.VENDOR,
+                        Role.VENDOR_ADMIN,
                         UserStatus.ACTIVE
                 );
-
 
         /*
          * =========================================
@@ -156,7 +161,6 @@ public class AdminDashboardServiceImpl
                         .findByActiveTrueAndDeletedFalse()
                         .size();
 
-
         /*
          * =========================================
          * REVIEWS
@@ -165,7 +169,6 @@ public class AdminDashboardServiceImpl
 
         long totalReviews =
                 reviewRepository.countByDeletedFalse();
-
 
         /*
          * =========================================
@@ -177,7 +180,7 @@ public class AdminDashboardServiceImpl
                 recentBookings =
 
                 bookingRepository
-                        .findTop5ByOrderByCreatedAtDesc()
+                        .findTop5ByOrderByCreatedTsDesc()
 
                         .stream()
 
@@ -186,7 +189,6 @@ public class AdminDashboardServiceImpl
                         )
 
                         .toList();
-
 
         /*
          * =========================================
@@ -201,7 +203,6 @@ public class AdminDashboardServiceImpl
                         .toLocalDate()
                         .atStartOfDay();
 
-
         List<AdminBookingTrendResponse>
                 bookingTrend =
                 bookingRepository
@@ -209,19 +210,23 @@ public class AdminDashboardServiceImpl
                                 trendStart
                         )
                         .stream()
+
                         .map(item ->
                                 AdminBookingTrendResponse
                                         .builder()
+
                                         .period(
                                                 item.getPeriod()
                                         )
+
                                         .bookings(
                                                 item.getBookings()
                                         )
+
                                         .build()
                         )
-                        .toList();
 
+                        .toList();
 
         List<AdminRevenueTrendResponse>
                 revenueTrend =
@@ -230,17 +235,22 @@ public class AdminDashboardServiceImpl
                                 trendStart
                         )
                         .stream()
+
                         .map(item ->
                                 AdminRevenueTrendResponse
                                         .builder()
+
                                         .period(
                                                 item.getPeriod()
                                         )
+
                                         .revenue(
                                                 item.getRevenue()
                                         )
+
                                         .build()
                         )
+
                         .toList();
 
         /*
@@ -250,10 +260,11 @@ public class AdminDashboardServiceImpl
          */
 
         long pendingVendorVerifications =
-                userRepository.countByRoleAndVerificationStatus(
-                        Role.VENDOR,
-                        VendorVerificationStatus.PENDING
-                );
+                userRepository
+                        .countByRoleAndVerificationStatus(
+                                Role.VENDOR_ADMIN,
+                                VendorVerificationStatus.PENDING
+                        );
 
         long pendingServiceModerations =
                 vendorServiceRepository
@@ -261,8 +272,11 @@ public class AdminDashboardServiceImpl
                                 ServiceModerationStatus.PENDING
                         );
 
-        AdminPendingActionsResponse pendingActions =
-                AdminPendingActionsResponse.builder()
+        AdminPendingActionsResponse
+                pendingActions =
+
+                AdminPendingActionsResponse
+                        .builder()
 
                         .pendingVendorVerifications(
                                 pendingVendorVerifications
@@ -277,77 +291,96 @@ public class AdminDashboardServiceImpl
                         )
 
                         .build();
+
         /*
          * =========================================
          * RESPONSE
          * =========================================
          */
 
-        return AdminDashboardResponse.builder()
+        AdminDashboardResponse response =
+                AdminDashboardResponse
+                        .builder()
 
-                .totalUsers(
-                        totalUsers
-                )
+                        .totalUsers(
+                                totalUsers
+                        )
 
-                .totalVendors(
-                        totalVendors
-                )
+                        .totalVendors(
+                                totalVendors
+                        )
 
-                .totalBookings(
-                        totalBookings
-                )
+                        .totalBookings(
+                                totalBookings
+                        )
 
-                .totalRevenue(
-                        totalRevenue
-                )
+                        .totalRevenue(
+                                totalRevenue
+                        )
 
-                .pendingBookings(
-                        pendingBookings
-                )
+                        .pendingBookings(
+                                pendingBookings
+                        )
 
-                .confirmedBookings(
-                        confirmedBookings
-                )
+                        .confirmedBookings(
+                                confirmedBookings
+                        )
 
-                .completedBookings(
-                        completedBookings
-                )
+                        .completedBookings(
+                                completedBookings
+                        )
 
-                .cancelledBookings(
-                        cancelledBookings
-                )
+                        .cancelledBookings(
+                                cancelledBookings
+                        )
 
-                .activeCustomers(
-                        activeCustomers
-                )
+                        .activeCustomers(
+                                activeCustomers
+                        )
 
-                .activeVendors(
-                        activeVendors
-                )
+                        .activeVendors(
+                                activeVendors
+                        )
 
-                .activeServices(
-                        activeServices
-                )
+                        .activeServices(
+                                activeServices
+                        )
 
-                .totalReviews(
-                        totalReviews
-                )
+                        .totalReviews(
+                                totalReviews
+                        )
 
-                .recentBookings(
-                        recentBookings
-                )
+                        .recentBookings(
+                                recentBookings
+                        )
 
-                .bookingTrend(
-                        bookingTrend
-                )
+                        .bookingTrend(
+                                bookingTrend
+                        )
 
-                .revenueTrend(
-                        revenueTrend
-                )
-                .pendingActions(
-                        pendingActions
-                )
-                .build();
+                        .revenueTrend(
+                                revenueTrend
+                        )
+
+                        .pendingActions(
+                                pendingActions
+                        )
+
+                        .build();
+
+        log.info(
+                "Admin dashboard generated totalUsers={} totalVendors={} " +
+                        "totalBookings={} pendingBookings={} activeServices={} " +
+                        "totalReviews={}",
+                totalUsers,
+                totalVendors,
+                totalBookings,
+                pendingBookings,
+                activeServices,
+                totalReviews
+        );
+
+        return response;
     }
 
     /*
@@ -384,7 +417,6 @@ public class AdminDashboardServiceImpl
 
                 .build();
     }
-
 
     /*
      * =========================================

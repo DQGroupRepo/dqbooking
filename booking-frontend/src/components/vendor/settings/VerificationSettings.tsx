@@ -6,76 +6,238 @@ import Button from "../../common/ui/Button/Button";
 
 import VendorProfileService from "../../../services/VendorProfileService";
 
-import type { VendorProfile } from "../../../types/VendorProfile";
+import type {
+    VendorProfile,
+    VendorVerificationStatus
+} from "../../../types/VendorProfile";
+
 import toast from "react-hot-toast";
 
-export default function VerificationSettings(){
 
-    const [profile,setProfile]=useState<VendorProfile>();
+export default function VerificationSettings() {
 
-    useEffect(()=>{
+
+    const [
+        profile,
+        setProfile
+    ] =
+        useState<VendorProfile>();
+
+
+    useEffect(() => {
 
         loadProfile();
 
-    },[]);
+    }, []);
 
-    async function loadProfile(){
 
-        const data=
+    async function loadProfile() {
 
-            await VendorProfileService.getProfile();
+        try {
 
-        setProfile(data);
+            const data =
+                await VendorProfileService
+                    .getProfile();
+
+            setProfile(data);
+
+        } catch (error) {
+
+            console.error(
+                "Failed to load vendor profile:",
+                error
+            );
+
+        }
 
     }
 
+
     function handleChange(
 
-        e:React.ChangeEvent<HTMLInputElement>
+        e: React.ChangeEvent<HTMLInputElement>
 
-    ){
+    ) {
 
-        if(!profile) return;
+        if (!profile) {
+
+            return;
+
+        }
+
 
         setProfile({
 
             ...profile,
 
-            [e.target.name]:e.target.value
+            [e.target.name]:
+                e.target.value
 
         });
 
     }
 
-    async function handleSave(){
 
-        if(!profile) return;
+    async function handleSave() {
 
-        await VendorProfileService.updateProfile(profile);
+        if (!profile) {
 
-        toast.success("Verification details updated.");
+            return;
+
+        }
+
+
+        try {
+
+            await VendorProfileService
+                .updateProfile(
+                    profile
+                );
+
+
+            toast.success(
+                "Verification details updated."
+            );
+
+        } catch (error) {
+
+            console.error(
+                "Failed to update verification details:",
+                error
+            );
+
+
+            toast.error(
+                "Failed to update verification details."
+            );
+
+        }
 
     }
 
-    if(!profile){
 
-        return <h2>Loading...</h2>;
+    /*
+     * =========================================
+     * VERIFICATION STATUS LABEL
+     * =========================================
+     */
+
+    function getVerificationStatusLabel(
+
+        status:
+            VendorVerificationStatus
+
+    ) {
+
+        switch (status) {
+
+            case "APPROVED":
+
+                return "Approved";
+
+
+            case "REJECTED":
+
+                return "Rejected";
+
+
+            case "SUSPENDED":
+
+                return "Suspended";
+
+
+            case "PENDING":
+
+            default:
+
+                return "Pending Approval";
+
+        }
 
     }
 
-    return(
+
+    /*
+     * =========================================
+     * VERIFICATION STATUS CLASS
+     * =========================================
+     */
+
+    function getVerificationStatusClass(
+
+        status:
+            VendorVerificationStatus
+
+    ) {
+
+        switch (status) {
+
+            case "APPROVED":
+
+                return
+                    "verification-status-approved";
+
+
+            case "REJECTED":
+
+                return
+                    "verification-status-rejected";
+
+
+            case "SUSPENDED":
+
+                return
+                    "verification-status-suspended";
+
+
+            case "PENDING":
+
+            default:
+
+                return
+                    "verification-status-pending";
+
+        }
+
+    }
+
+
+    if (!profile) {
+
+        return (
+
+            <h2>
+                Loading...
+            </h2>
+
+        );
+
+    }
+
+
+    return (
 
         <>
+
 
             <SectionHeader
 
                 title="Business Verification"
 
-                subtitle="Manage your legal business information."
+                subtitle="
+                    Manage your legal business
+                    information and verification details.
+                "
 
             />
 
+
             <div className="settings-form">
+
+
+                {/* =============================
+                    BUSINESS DOCUMENT DETAILS
+                ============================= */}
 
                 <Input
 
@@ -83,11 +245,16 @@ export default function VerificationSettings(){
 
                     label="GST Number"
 
-                    value={profile.gstNumber}
+                    value={
+                        profile.gstNumber
+                    }
 
-                    onChange={handleChange}
+                    onChange={
+                        handleChange
+                    }
 
                 />
+
 
                 <Input
 
@@ -95,11 +262,16 @@ export default function VerificationSettings(){
 
                     label="PAN Number"
 
-                    value={profile.panNumber}
+                    value={
+                        profile.panNumber
+                    }
 
-                    onChange={handleChange}
+                    onChange={
+                        handleChange
+                    }
 
                 />
+
 
                 <Input
 
@@ -107,98 +279,177 @@ export default function VerificationSettings(){
 
                     label="Business License"
 
-                    value={profile.businessLicense}
+                    value={
+                        profile.businessLicense
+                    }
 
-                    onChange={handleChange}
+                    onChange={
+                        handleChange
+                    }
 
                 />
-                                <div className="verification-status">
 
-                                    <label>
 
-                                        Verification Status
+                {/* =============================
+                    VERIFICATION STATUS
+                ============================= */}
 
-                                    </label>
+                <div className="verification-status">
 
-                                    <span
-                                        className={
-                                            profile.verificationStatus === "Verified"
-                                                ? "verified-badge"
-                                                : "pending-badge"
-                                        }
-                                    >
 
-                                        {profile.verificationStatus}
+                    <label>
 
-                                    </span>
+                        Verification Status
 
-                                </div>
+                    </label>
 
-                                <div className="document-upload-grid">
 
-                                    <div className="upload-card">
+                    <span
 
-                                        <label>
+                        className={
+                            getVerificationStatusClass(
 
-                                            GST Certificate
+                                profile
+                                    .verificationStatus
 
-                                        </label>
+                            )
+                        }
 
-                                        <input
-                                            type="file"
-                                            accept=".pdf,.jpg,.jpeg,.png"
-                                        />
+                    >
 
-                                    </div>
+                        {
+                            getVerificationStatusLabel(
 
-                                    <div className="upload-card">
+                                profile
+                                    .verificationStatus
 
-                                        <label>
+                            )
+                        }
 
-                                            PAN Card
+                    </span>
 
-                                        </label>
 
-                                        <input
-                                            type="file"
-                                            accept=".pdf,.jpg,.jpeg,.png"
-                                        />
+                </div>
 
-                                    </div>
 
-                                    <div className="upload-card">
+                {/* =============================
+                    DOCUMENT UPLOADS
+                ============================= */}
 
-                                        <label>
+                <div className="document-upload-grid">
 
-                                            Business License
 
-                                        </label>
+                    <div className="upload-card">
 
-                                        <input
-                                            type="file"
-                                            accept=".pdf,.jpg,.jpeg,.png"
-                                        />
 
-                                    </div>
+                        <label>
 
-                                </div>
+                            GST Certificate
 
-                                <div className="settings-actions">
+                        </label>
 
-                                    <Button
-                                        onClick={handleSave}
-                                    >
 
-                                        Save Changes
+                        <input
 
-                                    </Button>
+                            type="file"
 
-                                </div>
+                            accept="
+                                .pdf,
+                                .jpg,
+                                .jpeg,
+                                .png
+                            "
 
-                            </div>
+                        />
 
-                        </>
 
-                    );
+                    </div>
 
-                }
+
+                    <div className="upload-card">
+
+
+                        <label>
+
+                            PAN Card
+
+                        </label>
+
+
+                        <input
+
+                            type="file"
+
+                            accept="
+                                .pdf,
+                                .jpg,
+                                .jpeg,
+                                .png
+                            "
+
+                        />
+
+
+                    </div>
+
+
+                    <div className="upload-card">
+
+
+                        <label>
+
+                            Business License
+
+                        </label>
+
+
+                        <input
+
+                            type="file"
+
+                            accept="
+                                .pdf,
+                                .jpg,
+                                .jpeg,
+                                .png
+                            "
+
+                        />
+
+
+                    </div>
+
+
+                </div>
+
+
+                {/* =============================
+                    ACTIONS
+                ============================= */}
+
+                <div className="settings-actions">
+
+
+                    <Button
+
+                        onClick={
+                            handleSave
+                        }
+
+                    >
+
+                        Save Changes
+
+                    </Button>
+
+
+                </div>
+
+
+            </div>
+
+        </>
+
+    );
+
+}

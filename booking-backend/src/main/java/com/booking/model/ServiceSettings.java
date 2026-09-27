@@ -39,11 +39,6 @@ public class ServiceSettings extends BaseEntity {
     private CancellationPolicy cancellationPolicy =
             new CancellationPolicy();
 
-    /*
-     * Visibility
-     */
-  //  private Boolean active = true;
-
     private Boolean instantBooking = false;
 
 }

@@ -2,9 +2,6 @@ package com.booking.helper;
 
 import com.booking.dto.review.UpdateReviewRequest;
 import com.booking.model.Review;
-import com.booking.model.User;
-
-import java.util.List;
 
 public interface ReviewHelper {
 
@@ -15,11 +12,6 @@ public interface ReviewHelper {
     void prepareReply(
             Review review,
             String reply
-    );
-
-    void updateVendorRating(
-            User vendor,
-            List<Review> reviews
     );
 
     void updateReview(

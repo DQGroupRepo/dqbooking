@@ -14,9 +14,20 @@ const VendorInfo = ({ vendor }: Props) => {
     <div className="vendor-info">
 
 
-      <h1>
-        {vendor.businessName}
-      </h1>
+      <div className="service-title">
+
+        <h1>
+          {vendor.serviceName}
+        </h1>
+
+        <div className="business-name">
+          by
+          <span>
+            {vendor.businessName}
+          </span>
+        </div>
+
+      </div>
 
       <div className="rating-large">
 

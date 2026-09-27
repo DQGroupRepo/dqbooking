@@ -1,3 +1,4 @@
+/*
 import Input from "../../../../common/ui/Input/Input";
 import SectionHeader from "../../../../common/ui/SectionHeader/SectionHeader";
 import CheckboxGroup from "../../../../common/ui/CheckboxGroup/CheckboxGroup";
@@ -100,4 +101,4 @@ export default function PhotographySection({
 
     );
 
-}
+} */

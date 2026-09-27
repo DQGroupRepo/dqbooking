@@ -1,10 +1,23 @@
-import type { VendorServiceForm } from "../types/VendorServiceForm";
+import type {
+    VendorServiceForm
+} from "../types/VendorServiceForm";
+
+import type {
+    CateringDetailsForm
+} from "../types/CateringDetailsForm";
 
 export default class VendorServiceFormFactory {
 
-    static create(category: string): VendorServiceForm {
+
+    static create(
+        category: string
+    ): VendorServiceForm {
 
         return {
+
+            /* =====================================
+               COMMON INFORMATION
+            ===================================== */
 
             category,
 
@@ -12,7 +25,7 @@ export default class VendorServiceFormFactory {
 
             location: "",
 
-            price: "",
+            address: "",
 
             capacity: "",
 
@@ -20,45 +33,73 @@ export default class VendorServiceFormFactory {
 
             description: "",
 
+
+            /* =====================================
+               CONTACT
+            ===================================== */
+
             contactPerson: "",
 
             mobile: "",
 
             email: "",
 
+
+            /* =====================================
+               AVAILABILITY
+            ===================================== */
+
             availableFrom: "",
 
             availableTo: "",
+
+
+            /* =====================================
+               BOOKING SETTINGS
+            ===================================== */
 
             maxSimultaneousBookings: "1",
 
             bundleOfferEnabled: false,
 
+
+            /* =====================================
+               COMMON COLLECTIONS
+            ===================================== */
+
             amenities: [],
 
             imageUrls: [],
 
-            attributes: [],
 
-            hallCapacity: "",
+            /* =====================================
+               CATEGORY-SPECIFIC DETAILS
+            ===================================== */
 
-            diningCapacity: "",
+            detailSections: [],
 
-            parkingCapacity: "",
+            cateringDetails:
+                category.toLowerCase().trim() === "catering"
 
-            rooms: "",
+                    ? {
 
-            parking: false,
+                        vegetarian: false,
 
-            acHall: false,
+                        nonVegetarian: false,
 
-            generator: false,
+                        cuisines: [],
 
-            diningHall: false,
+                        menuItems: [],
 
-            outdoorVenue: false,
+                        providesCateringStaff: false,
 
-            bridalRoom: false
+                        staffCostPerPerson: "",
+
+                        maximumServiceDistanceKm: ""
+
+                    }
+
+                    : undefined,
 
         };
 

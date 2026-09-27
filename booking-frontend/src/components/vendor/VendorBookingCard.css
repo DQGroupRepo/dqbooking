@@ -415,3 +415,135 @@ span {
     }
 
 }
+
+/* =========================================================
+   MOBILE BOOKING CARD
+   ========================================================= */
+
+@media (max-width: 768px) {
+
+    .vendor-booking-card {
+
+        width: 100%;
+
+        padding: 18px;
+
+        border-radius: 12px;
+
+        box-sizing: border-box;
+
+        box-shadow:
+            0 4px 18px rgba(0, 0, 0, 0.10);
+    }
+
+
+    .vendor-booking-card h2 {
+
+        font-size: 30px;
+
+        margin-bottom: 3px;
+    }
+
+
+    .vendor-booking-card p {
+
+        margin-bottom: 15px;
+
+        font-size: 12px;
+    }
+
+
+    .vendor-booking-card label {
+
+        margin-top: 10px;
+
+        margin-bottom: 5px;
+
+        font-size: 13px;
+    }
+
+
+    .vendor-booking-card input,
+    .vendor-booking-card select {
+
+        box-sizing: border-box;
+
+        width: 100%;
+
+        min-height: 40px;
+
+        padding: 9px;
+
+        font-size: 13px;
+
+        border-radius: 6px;
+    }
+
+
+    .book-button {
+
+        margin-top: 16px;
+
+        min-height: 40px;
+
+        padding: 10px;
+
+        font-size: 13px;
+
+        border-radius: 6px;
+    }
+
+
+    .save-button {
+
+        margin-top: 9px;
+
+        min-height: 40px;
+
+        padding: 10px;
+
+        font-size: 13px;
+
+        border-radius: 6px;
+    }
+
+}
+
+
+@media (max-width: 480px) {
+
+    .vendor-booking-card {
+
+        padding: 15px;
+    }
+
+
+    .vendor-booking-card h2 {
+
+        font-size: 27px;
+    }
+
+
+    .vendor-booking-card label {
+
+        font-size: 12px;
+    }
+
+
+    .vendor-booking-card input {
+
+        min-height: 38px;
+
+        font-size: 12px;
+    }
+
+
+    .book-button,
+    .save-button {
+
+        min-height: 38px;
+
+        font-size: 12px;
+    }
+
+}

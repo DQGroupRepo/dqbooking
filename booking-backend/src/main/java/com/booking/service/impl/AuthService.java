@@ -7,12 +7,16 @@ import com.booking.dto.register.VendorRegisterRequest;
 import com.booking.dto.register.VendorRegisterResponse;
 import com.booking.exception.InvalidCredentialsException;
 import com.booking.model.User;
+import com.booking.model.VendorAccount;
 import com.booking.model.enums.Role;
 import com.booking.model.enums.UserStatus;
 import com.booking.model.enums.VendorVerificationStatus;
 import com.booking.repository.UserRepository;
 import com.booking.security.JwtService;
+import com.booking.service.VendorAccountService;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -26,12 +30,41 @@ public class AuthService {
 
     private final JwtService jwtService;
 
+    private final VendorAccountService vendorAccountService;
 
-    public LoginResponse login(LoginRequest request) {
+    private static final Logger log =
+            LoggerFactory.getLogger(AuthService.class);
 
-        User user = userRepository
-                .findByEmail(request.getEmail())
-                .orElseThrow(InvalidCredentialsException::new);
+
+    /*
+     * =========================================
+     * LOGIN
+     * =========================================
+     */
+
+    public LoginResponse login(
+            LoginRequest request
+    ) {
+
+        log.info(
+                "Login attempt email={}",
+                request.getEmail()
+        );
+
+        User user =
+                userRepository
+                        .findByEmail(
+                                request.getEmail()
+                        )
+                        .orElseThrow(() -> {
+
+                            log.warn(
+                                    "Login failed - user not found email={}",
+                                    request.getEmail()
+                            );
+
+                            return new InvalidCredentialsException();
+                        });
 
 
         if (!passwordEncoder.matches(
@@ -39,61 +72,60 @@ public class AuthService {
                 user.getPassword()
         )) {
 
-            throw new InvalidCredentialsException();
+            log.warn(
+                    "Login failed - invalid credentials userId={}",
+                    user.getId()
+            );
 
+            throw new InvalidCredentialsException();
         }
 
 
         /*
-         * Determine the display name.
-         *
-         * Vendor:
-         *     Display the vendor business name.
-         *
-         * Customer:
-         *     Display the customer's full name.
-         *
-         * Admin:
-         *     Display the admin's full name.
+         * =========================================
+         * DISPLAY NAME
+         * =========================================
          */
 
         String name;
 
+        if (user.getRole() == Role.VENDOR_ADMIN ||
+                user.getRole() == Role.VENDOR_USER) {
 
-        if (user.getRole() == Role.VENDOR) {
+            if (user.getBusinessName() != null &&
+                    !user.getBusinessName().isBlank()) {
 
-            User vendor = userRepository
-                    .findById(user.getId())
-                    .orElse(null);
-
-
-            if (vendor != null &&
-                    vendor.getBusinessName() != null) {
-
-                name = vendor.getBusinessName();
+                name =
+                        user.getBusinessName();
 
             } else {
 
-                name = user.getFullName();
-
+                name =
+                        user.getFullName();
             }
 
         } else {
 
-            name = user.getFullName();
-
+            name =
+                    user.getFullName();
         }
 
 
         /*
-         * Generate JWT.
-         *
-         * JWT contains:
-         *     subject = userId
-         *     role    = user role
+         * =========================================
+         * GENERATE JWT
+         * =========================================
          */
 
-        String token = jwtService.generateToken(
+        String token =
+                jwtService.generateToken(
+                        user.getId(),
+                        user.getRole().name()
+                );
+
+
+        log.info(
+                "Login successful userId={} role={}",
                 user.getId(),
                 user.getRole().name()
         );
@@ -101,42 +133,70 @@ public class AuthService {
 
         return LoginResponse.builder()
 
-                .token(token)
+                .token(
+                        token
+                )
 
-                .userId(user.getId())
+                .userId(
+                        user.getId()
+                )
 
-                .role(user.getRole().name())
+                .role(
+                        user.getRole().name()
+                )
 
-                .name(name)
+                .name(
+                        name
+                )
 
                 .build();
-
     }
 
-    public void register(RegisterRequest request) {
 
-        /*
-         * Check whether email already exists
-         */
+    /*
+     * =========================================
+     * CUSTOMER REGISTRATION
+     * =========================================
+     */
 
-        if (userRepository.findByEmail(request.getEmail()).isPresent()) {
+    public void register(
+            RegisterRequest request
+    ) {
+
+        log.info(
+                "Customer registration attempt email={}",
+                request.getEmail()
+        );
+
+
+        if (userRepository
+                .findByEmail(
+                        request.getEmail()
+                )
+                .isPresent()) {
+
+            log.warn(
+                    "Customer registration rejected - email already registered email={}",
+                    request.getEmail()
+            );
 
             throw new IllegalArgumentException(
                     "Email already registered"
             );
-
         }
 
 
-        /*
-         * Create new customer
-         */
+        User user =
+                new User();
 
-        User user = new User();
 
-        user.setEmail(request.getEmail());
+        user.setEmail(
+                request.getEmail()
+        );
 
-        user.setPhone(request.getPhone());
+        user.setPhone(
+                request.getPhone()
+        );
 
         user.setPassword(
                 passwordEncoder.encode(
@@ -144,54 +204,66 @@ public class AuthService {
                 )
         );
 
-        user.setRole(Role.CUSTOMER);
+        user.setRole(
+                Role.CUSTOMER
+        );
+
+        user.setStatus(
+                UserStatus.ACTIVE
+        );
 
 
-        /*
-         * Save customer
-         */
+        User savedUser =
+                userRepository.save(
+                        user
+                );
 
-        userRepository.save(user);
 
+        log.info(
+                "Customer registration successful userId={}",
+                savedUser.getId()
+        );
     }
+
+
+    /*
+     * =========================================
+     * VENDOR REGISTRATION
+     * =========================================
+     *
+     * Registration creates:
+     *
+     * 1. VendorAdmin User
+     * 2. VendorAccount
+     *
+     * The VendorAdmin User's _id is the
+     * canonical vendor ID.
+     *
+     * VendorAdmin.vendorId is null.
+     *
+     * VendorAccount.vendorAdminId points to
+     * the VendorAdmin User's _id.
+     */
 
     public VendorRegisterResponse registerVendor(
             VendorRegisterRequest request
     ) {
 
-        /*
-         * =========================================
-         * CHECK EMAIL
-         * =========================================
-         */
-
-        if (userRepository
-                .findByEmail(request.getEmail())
-                .isPresent()) {
-
-            throw new RuntimeException(
-                    "An account with this email already exists"
-            );
-        }
+        log.info(
+                "Vendor registration started businessName={} email={}",
+                request.getBusinessName(),
+                request.getEmail()
+        );
 
 
         /*
          * =========================================
-         * CREATE VENDOR USER
+         * CREATE VENDOR ADMIN
          * =========================================
-         *
-         * A vendor is now simply a User whose
-         * role is VENDOR.
-         *
-         * We intentionally create only ONE User
-         * document.
          */
 
-        User vendor = new User();
-
-        /*
-         * Account information
-         */
+        User vendor =
+                new User();
 
         vendor.setEmail(
                 request.getEmail()
@@ -204,7 +276,20 @@ public class AuthService {
         );
 
         vendor.setRole(
-                Role.VENDOR
+                Role.VENDOR_ADMIN
+        );
+
+        /*
+         * IMPORTANT:
+         *
+         * VendorAdmin's own User ID is now
+         * the canonical vendor ID.
+         *
+         * VendorAdmin does NOT need a vendorId.
+         */
+
+        vendor.setVendorId(
+                null
         );
 
         vendor.setStatus(
@@ -224,8 +309,7 @@ public class AuthService {
 
 
         /*
-         * ownerName is stored as
-         * firstName + lastName.
+         * Owner name
          */
 
         String ownerName =
@@ -286,14 +370,10 @@ public class AuthService {
 
 
         /*
-         * Default vendor values
+         * =========================================
+         * VENDOR APPROVAL
+         * =========================================
          */
-
-        vendor.setRating(0.0);
-
-        vendor.setTotalReviews(0);
-
-        vendor.setVerified(false);
 
         vendor.setVerificationStatus(
                 VendorVerificationStatus.PENDING
@@ -302,44 +382,57 @@ public class AuthService {
 
         /*
          * =========================================
-         * SAVE ONCE
+         * SAVE VENDOR ADMIN
          * =========================================
          */
 
         User savedVendor =
-                userRepository.save(vendor);
+                userRepository.save(
+                        vendor
+                );
 
 
         /*
          * =========================================
-         * RESPONSE
+         * CREATE VENDOR ACCOUNT
          * =========================================
+         *
+         * The VendorAdmin's User ID is the
+         * canonical vendor ID.
          */
+
+        VendorAccount vendorAccount =
+                vendorAccountService.createVendorAccount(
+                        request.getBusinessName(),
+                        savedVendor.getId()
+                );
+
+
+        log.info(
+                "Vendor registration successful vendorId={} userId={} verificationStatus={}",
+                savedVendor.getId(),
+                savedVendor.getId(),
+                savedVendor.getVerificationStatus()
+        );
+
 
         return VendorRegisterResponse
                 .builder()
-
                 .userId(
                         savedVendor.getId()
                 )
-
                 .vendorId(
                         savedVendor.getId()
                 )
-
                 .email(
                         savedVendor.getEmail()
                 )
-
                 .businessName(
                         savedVendor.getBusinessName()
                 )
-
                 .message(
                         "Vendor registration successful"
                 )
-
                 .build();
     }
-
 }

@@ -6,6 +6,8 @@ import com.booking.model.Booking;
 import com.booking.repository.BookingRepository;
 import com.booking.service.AdminBookingService;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -15,16 +17,29 @@ import java.util.List;
 public class AdminBookingServiceImpl
         implements AdminBookingService {
 
+    private static final Logger log =
+            LoggerFactory.getLogger(AdminBookingServiceImpl.class);
+
     private final BookingRepository bookingRepository;
 
     @Override
     public List<AdminBookingResponse> getBookings() {
 
-        return bookingRepository
-                .findAll()
-                .stream()
-                .map(this::toResponse)
-                .toList();
+        log.info("Admin requested all bookings");
+
+        List<AdminBookingResponse> bookings =
+                bookingRepository
+                        .findAll()
+                        .stream()
+                        .map(this::toResponse)
+                        .toList();
+
+        log.info(
+                "Admin booking list retrieved count={}",
+                bookings.size()
+        );
+
+        return bookings;
     }
 
     @Override
@@ -32,12 +47,24 @@ public class AdminBookingServiceImpl
             String bookingId
     ) {
 
+        log.info(
+                "Admin requested booking bookingId={}",
+                bookingId
+        );
+
         Booking booking =
                 bookingRepository.findById(bookingId)
-                        .orElseThrow(() ->
-                                new ResourceNotFoundException(
-                                        "Booking not found"
-                                ));
+                        .orElseThrow(() -> {
+
+                            log.warn(
+                                    "Admin requested non-existent booking bookingId={}",
+                                    bookingId
+                            );
+
+                            return new ResourceNotFoundException(
+                                    "Booking not found"
+                            );
+                        });
 
         return toResponse(booking);
     }
@@ -109,8 +136,8 @@ public class AdminBookingServiceImpl
                 )
 
                 .createdAt(
-                        booking.getCreatedAt() != null
-                                ? booking.getCreatedAt().toString()
+                        booking.getCreatedTs() != null
+                                ? booking.getCreatedTs().toString()
                                 : null
                 )
 

@@ -1,8 +1,43 @@
-import type { ContactInfo } from "./ContactInfo";
-import type { Availability } from "./Availability";
-import type { BookingSettings } from "./BookingSettings";
-import type { ServiceAttribute } from "./ServiceAttribute";
-import type { ServicePackage } from "./ServicePackage";
+import type {
+    ContactInfo
+} from "./ContactInfo";
+
+import type {
+    Availability
+} from "./Availability";
+
+import type {
+    BookingSettings
+} from "./BookingSettings";
+
+import type {
+    ServiceDetailSection
+} from "./ServiceDetailSection";
+
+import type {
+    CateringDetailsForm
+} from "./CateringDetailsForm";
+
+export type ModerationStatus =
+    | "PENDING"
+    | "APPROVED"
+    | "REJECTED";
+
+export interface ServicePackage {
+
+    id: string;
+
+    type: string;
+
+    price: number;
+
+    features: string[];
+
+    active: boolean;
+
+}
+
+
 
 export interface VendorService {
   id: string;
@@ -15,7 +50,8 @@ export interface VendorService {
 
   description: string;
 
-  price: number;
+
+    startingPrice?: number;
 
   capacity: number;
 
@@ -27,7 +63,12 @@ export interface VendorService {
 
   pricingConfigured: boolean;
 
-  contactInfo: ContactInfo;
+
+    /* =====================================
+       COMMON DETAILS
+    ===================================== */
+
+    contactInfo: ContactInfo;
 
   availability: Availability;
 
@@ -37,13 +78,35 @@ export interface VendorService {
 
   amenities: string[];
 
-  attributes: ServiceAttribute[];
+
+    /* =====================================
+       GENERIC CATEGORY DETAILS
+    ===================================== */
+
+    detailSections: ServiceDetailSection[];
+
+    cateringDetails?: CateringDetailsForm;
+
+
+    /* =====================================
+       SERVICE PACKAGES
+    ===================================== */
+
+    packages?: ServicePackage[];
+
 
   location: string;
 
-  rating?: number;
 
-  reviewCount?: number;
+    /* =====================================
+       OPTIONAL DISPLAY FIELDS
+    ===================================== */
 
-  packages?: ServicePackage[];
+    rating?: number;
+
+    reviewCount?: number;
+
+    moderationStatus?: ModerationStatus;
+
 }
+

@@ -2,6 +2,7 @@ package com.booking.mapper;
 
 import com.booking.dto.pricing.VendorServicePricingRequest;
 import com.booking.dto.pricing.VendorServicePricingResponse;
+import com.booking.model.VendorService;
 import com.booking.model.VendorServicePricing;
 
 public interface PricingMapper {
@@ -12,5 +13,10 @@ public interface PricingMapper {
 
     VendorServicePricingResponse toResponse(
             VendorServicePricing pricing
+    );
+
+    VendorServicePricingResponse toResponse(
+            VendorServicePricing pricing,
+            VendorService service
     );
 }
