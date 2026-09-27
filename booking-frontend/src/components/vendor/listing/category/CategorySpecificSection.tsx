@@ -124,6 +124,7 @@ const CategorySpecificSection = ({
                CATEGORY AMENITIES
             ===================================== */}
 
+
             {amenityList.length > 0 && (
 
                 <AmenitiesSection

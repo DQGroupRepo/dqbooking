@@ -151,7 +151,7 @@ export default function HallSection({
 
                     placeholder="100"
 
-                 />
+                />
 
             </div>
 

@@ -1443,6 +1443,7 @@ console.log("CateringSection SERVICE ID:", serviceId);
 
                                                 <div className="catering-custom-dish-price">
 
+
                                                     <input
                                                         type="number"
                                                         min="0"
@@ -1458,6 +1459,7 @@ console.log("CateringSection SERVICE ID:", serviceId);
                                                         }
                                                         className="catering-menu-price-input"
                                                     />
+
 
                                                     <span>
                                                         / person
