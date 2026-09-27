@@ -69,7 +69,7 @@ export default function CustomerCancelBooking() {
 
     async function confirmCancellation() {
 
-        if (!bookingId || !preview) return;
+        if (!bookingId) return;
 
         try {
 
