@@ -6,7 +6,7 @@ import {
 } from "react-router-dom";
 
 import AuthService from "../../services/AuthService";
-import { useAuth, type AuthUser } from "../../context/AuthContext";
+import { useAuth } from "../../context/AuthContext";
 
 import "./Login.css";
 
@@ -76,11 +76,11 @@ const Login = () => {
        * expected by AuthContext.
        */
 
-      const user: AuthUser = {
+      const user = {
 
         userId: loginData.userId,
 
-        role: loginData.role as AuthUser["role"],
+        role: loginData.role,
 
         name: loginData.name ?? ""
 
