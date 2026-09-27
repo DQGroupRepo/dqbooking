@@ -1,5 +1,6 @@
 package com.booking.service.impl;
 
+import com.booking.config.LoggingContext;
 import com.booking.dto.service.ServicePackageRequest;
 import com.booking.dto.vendorservice.VendorServiceRequest;
 import com.booking.dto.vendorservice.VendorServiceResponse;
@@ -20,6 +21,8 @@ import com.booking.service.VendorOfferingService;
 import com.booking.service.VendorPermissionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -41,7 +44,8 @@ public class VendorOfferingServiceImpl
 
     private final VendorServiceMapper vendorServiceMapper;
 
-
+    private static final Logger log =
+            LoggerFactory.getLogger(VendorOfferingServiceImpl.class);
     /*
      * =========================================
      * CREATE SERVICE
@@ -51,6 +55,12 @@ public class VendorOfferingServiceImpl
     @Override
     public VendorServiceResponse createService(
             VendorServiceRequest request) {
+
+        log.info(
+                "Creating vendor service serviceName={} category={}",
+                request.getServiceName(),
+                request.getCategory()
+        );
 
         vendorPermissionService.checkEdit(
                 VendorPage.SERVICES
@@ -64,6 +74,7 @@ public class VendorOfferingServiceImpl
                 vendorAccessService
                         .getEffectiveVendorId();
 
+        LoggingContext.setVendorId(vendorId);
         /*
          * Load the actual vendor user.
          *
@@ -121,6 +132,10 @@ public class VendorOfferingServiceImpl
             String serviceId,
             VendorServiceRequest request) {
 
+        log.info(
+                "Updating vendor service serviceId={}",
+                serviceId
+        );
         vendorPermissionService.checkEdit(
                 VendorPage.SERVICES
         );
@@ -132,7 +147,7 @@ public class VendorOfferingServiceImpl
         String vendorId =
                 vendorAccessService
                         .getEffectiveVendorId();
-
+        LoggingContext.setVendorId(vendorId);
         VendorService vendorService =
                 vendorServiceRepository
                         .findByIdAndVendorIdAndDeletedFalse(
@@ -170,6 +185,10 @@ public class VendorOfferingServiceImpl
     @Override
     public void deleteService(
             String serviceId) {
+        log.info(
+                "Deleting vendor service serviceId={}",
+                serviceId
+        );
 
         vendorPermissionService.checkEdit(
                 VendorPage.SERVICES
@@ -178,7 +197,7 @@ public class VendorOfferingServiceImpl
         String vendorId =
                 vendorAccessService
                         .getEffectiveVendorId();
-
+        LoggingContext.setVendorId(vendorId);
         VendorService vendorService =
                 vendorServiceRepository
                         .findByIdAndVendorIdAndDeletedFalse(
@@ -218,7 +237,7 @@ public class VendorOfferingServiceImpl
         String vendorId =
                 vendorAccessService
                         .getEffectiveVendorId();
-
+        LoggingContext.setVendorId(vendorId);
         VendorService vendorService =
                 vendorServiceRepository
                         .findByIdAndVendorIdAndDeletedFalse(
@@ -253,7 +272,7 @@ public class VendorOfferingServiceImpl
         String vendorId =
                 vendorAccessService
                         .getEffectiveVendorId();
-
+        LoggingContext.setVendorId(vendorId);
         return vendorServiceRepository
                 .findByVendorIdAndDeletedFalse(
                         vendorId
@@ -277,6 +296,11 @@ public class VendorOfferingServiceImpl
             String serviceId,
             Boolean active
     ) {
+        log.info(
+                "Changing vendor service status serviceId={} active={}",
+                serviceId,
+                active
+        );
 
         vendorPermissionService.checkEdit(
                 VendorPage.SERVICES
@@ -285,7 +309,7 @@ public class VendorOfferingServiceImpl
         String vendorId =
                 vendorAccessService
                         .getEffectiveVendorId();
-
+        LoggingContext.setVendorId(vendorId);
         VendorService vendorService =
                 vendorServiceRepository
                         .findByIdAndVendorIdAndDeletedFalse(
@@ -346,7 +370,7 @@ public class VendorOfferingServiceImpl
         String vendorId =
                 vendorAccessService
                         .getEffectiveVendorId();
-
+        LoggingContext.setVendorId(vendorId);
         /*
          * The selected service must belong to
          * the vendor currently being operated on.
@@ -541,6 +565,10 @@ public class VendorOfferingServiceImpl
             String serviceId,
             List<ServicePackageRequest> packages
     ) {
+        log.info(
+                "Updating service packages serviceId={}",
+                serviceId
+        );
 
         vendorPermissionService.checkEdit(
                 VendorPage.SERVICES
@@ -549,7 +577,7 @@ public class VendorOfferingServiceImpl
         String vendorId =
                 vendorAccessService
                         .getEffectiveVendorId();
-
+        LoggingContext.setVendorId(vendorId);
         /*
          * IMPORTANT:
          *

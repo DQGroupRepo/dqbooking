@@ -12,6 +12,7 @@ import com.booking.repository.PaymentTransactionRepository;
 import com.booking.service.AuthenticatedUserService;
 import com.booking.service.PaymentService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -20,6 +21,7 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class PaymentServiceImpl
         implements PaymentService {
 
@@ -34,6 +36,7 @@ public class PaymentServiceImpl
 
     private final PaymentMapper
             paymentMapper;
+
     @Override
     public PaymentResponse initiatePayment(
             CreatePaymentRequest request
@@ -42,6 +45,9 @@ public class PaymentServiceImpl
         User customer =
                 authenticatedUserService
                         .getCurrentCustomer();
+
+        log.info("Initiating payment customerId={} bookingId={}",
+                customer.getId(), request.getBookingId());
 
         Booking booking =
                 bookingRepository
@@ -55,62 +61,37 @@ public class PaymentServiceImpl
         PaymentTransaction transaction =
                 new PaymentTransaction();
 
-        transaction.setBookingId(
-                booking.getId()
-        );
-
-        transaction.setCustomerId(
-                customer.getId()
-        );
-
-        transaction.setVendorId(
-                booking.getVendorId()
-        );
-
-        transaction.setPaymentType(
-                request.getPaymentType()
-        );
-
-        transaction.setPaymentMethod(
-                request.getPaymentMethod()
-        );
-
-        transaction.setAmount(
-                request.getAmount()
-        );
-
-        transaction.setRemarks(
-                request.getRemarks()
-        );
-
-        transaction.setPaymentStatus(
-                PaymentStatus.PENDING
-        );
-
-        transaction.setPaymentReference(
-                UUID.randomUUID().toString()
-        );
-
-        transaction.setPaidAt(
-                LocalDateTime.now()
-        );
+        transaction.setBookingId(booking.getId());
+        transaction.setCustomerId(customer.getId());
+        transaction.setVendorId(booking.getVendorId());
+        transaction.setPaymentType(request.getPaymentType());
+        transaction.setPaymentMethod(request.getPaymentMethod());
+        transaction.setAmount(request.getAmount());
+        transaction.setRemarks(request.getRemarks());
+        transaction.setPaymentStatus(PaymentStatus.PENDING);
+        transaction.setPaymentReference(UUID.randomUUID().toString());
+        transaction.setPaidAt(LocalDateTime.now());
 
         transaction =
                 paymentTransactionRepository
                         .save(transaction);
 
-        return paymentMapper.toResponse(
-                transaction
-        );
+        log.info("Payment initiated paymentId={} bookingId={} customerId={} vendorId={} status={}",
+                transaction.getId(),
+                transaction.getBookingId(),
+                transaction.getCustomerId(),
+                transaction.getVendorId(),
+                transaction.getPaymentStatus());
 
+        return paymentMapper.toResponse(transaction);
     }
+
     @Override
     public PaymentResponse getPayment(
             String paymentId
     ) {
 
         PaymentTransaction payment =
-
                 paymentTransactionRepository
                         .findById(paymentId)
                         .orElseThrow(() ->
@@ -119,8 +100,10 @@ public class PaymentServiceImpl
                                 )
                         );
 
-        return paymentMapper.toResponse(payment);
+        log.debug("Retrieved payment paymentId={} status={}",
+                paymentId, payment.getPaymentStatus());
 
+        return paymentMapper.toResponse(payment);
     }
 
     @Override
@@ -128,60 +111,58 @@ public class PaymentServiceImpl
             String bookingId
     ) {
 
-        return paymentTransactionRepository
+        List<PaymentResponse> payments =
+                paymentTransactionRepository
+                        .findByBookingId(bookingId)
+                        .stream()
+                        .map(paymentMapper::toResponse)
+                        .toList();
 
-                .findByBookingId(bookingId)
+        log.info("Retrieved booking payments bookingId={} paymentCount={}",
+                bookingId, payments.size());
 
-                .stream()
-
-                .map(paymentMapper::toResponse)
-
-                .toList();
-
+        return payments;
     }
 
     @Override
     public List<PaymentResponse> getCustomerPayments() {
 
         String customerId =
-
                 authenticatedUserService
-
                         .getCurrentCustomer()
-
                         .getId();
 
-        return paymentTransactionRepository
+        List<PaymentResponse> payments =
+                paymentTransactionRepository
+                        .findByCustomerId(customerId)
+                        .stream()
+                        .map(paymentMapper::toResponse)
+                        .toList();
 
-                .findByCustomerId(customerId)
+        log.info("Retrieved customer payments customerId={} paymentCount={}",
+                customerId, payments.size());
 
-                .stream()
-
-                .map(paymentMapper::toResponse)
-
-                .toList();
-
+        return payments;
     }
 
     @Override
     public List<PaymentResponse> getVendorPayments() {
 
         User vendor =
-
                 authenticatedUserService
-
                         .getCurrentVendor();
 
-        return paymentTransactionRepository
+        List<PaymentResponse> payments =
+                paymentTransactionRepository
+                        .findByVendorId(vendor.getId())
+                        .stream()
+                        .map(paymentMapper::toResponse)
+                        .toList();
 
-                .findByVendorId(vendor.getId())
+        log.info("Retrieved vendor payments vendorId={} paymentCount={}",
+                vendor.getId(), payments.size());
 
-                .stream()
-
-                .map(paymentMapper::toResponse)
-
-                .toList();
-
+        return payments;
     }
 
     @Override
@@ -189,25 +170,20 @@ public class PaymentServiceImpl
             String paymentId
     ) {
 
+        log.info("Marking payment as successful paymentId={}",
+                paymentId);
+
         PaymentTransaction transaction =
-
                 paymentTransactionRepository
-
                         .findById(paymentId)
-
                         .orElseThrow(() ->
                                 new IllegalArgumentException(
                                         "Payment not found."
                                 )
                         );
 
-        transaction.setPaymentStatus(
-                PaymentStatus.SUCCESS
-        );
-
-        transaction.setPaidAt(
-                LocalDateTime.now()
-        );
+        transaction.setPaymentStatus(PaymentStatus.SUCCESS);
+        transaction.setPaidAt(LocalDateTime.now());
 
         transaction =
                 paymentTransactionRepository.save(transaction);
@@ -237,13 +213,16 @@ public class PaymentServiceImpl
             booking.setPaymentStatus(
                     PaymentStatus.SUCCESS
             );
-
         }
 
         bookingRepository.save(booking);
 
-        return paymentMapper.toResponse(transaction);
+        log.info("Payment marked successful paymentId={} bookingId={} bookingPaymentStatus={}",
+                transaction.getId(),
+                transaction.getBookingId(),
+                booking.getPaymentStatus());
 
+        return paymentMapper.toResponse(transaction);
     }
 
     @Override
@@ -252,31 +231,27 @@ public class PaymentServiceImpl
             String reason
     ) {
 
+        log.warn("Marking payment as failed paymentId={}", paymentId);
+
         PaymentTransaction transaction =
-
                 paymentTransactionRepository
-
                         .findById(paymentId)
-
                         .orElseThrow(() ->
                                 new IllegalArgumentException(
                                         "Payment not found."
                                 )
                         );
 
-        transaction.setPaymentStatus(
-                PaymentStatus.FAILED
-        );
-
-        transaction.setFailureReason(
-                reason
-        );
+        transaction.setPaymentStatus(PaymentStatus.FAILED);
+        transaction.setFailureReason(reason);
 
         transaction =
                 paymentTransactionRepository.save(transaction);
 
-        return paymentMapper.toResponse(transaction);
+        log.info("Payment marked failed paymentId={} status={}",
+                transaction.getId(), transaction.getPaymentStatus());
 
+        return paymentMapper.toResponse(transaction);
     }
 
 }

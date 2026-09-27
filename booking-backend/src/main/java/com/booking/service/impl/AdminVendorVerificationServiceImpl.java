@@ -14,6 +14,8 @@ import com.booking.repository.UserRepository;
 import com.booking.repository.VendorServiceRepository;
 import com.booking.service.AdminVendorVerificationService;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.util.HashSet;
@@ -25,6 +27,11 @@ import java.util.Set;
 public class AdminVendorVerificationServiceImpl
         implements AdminVendorVerificationService {
 
+    private static final Logger log =
+            LoggerFactory.getLogger(
+                    AdminVendorVerificationServiceImpl.class
+            );
+
     private final UserRepository userRepository;
 
     private final VendorServiceRepository
@@ -33,20 +40,37 @@ public class AdminVendorVerificationServiceImpl
     @Override
     public List<AdminVendorVerificationResponse> getVendors() {
 
+        log.info(
+                "Admin requested vendor verification list"
+        );
+
         List<User> vendors =
                 userRepository.findByRole(
                         Role.VENDOR_ADMIN
                 );
 
-        return vendors.stream()
-                .map(this::buildResponse)
-                .toList();
+        List<AdminVendorVerificationResponse> responses =
+                vendors.stream()
+                        .map(this::buildResponse)
+                        .toList();
+
+        log.info(
+                "Admin vendor verification list retrieved count={}",
+                responses.size()
+        );
+
+        return responses;
     }
 
     @Override
     public AdminVendorVerificationResponse getVendor(
             String vendorId
     ) {
+
+        log.info(
+                "Admin requested vendor verification details vendorId={}",
+                vendorId
+        );
 
         User vendor =
                 getVendorEntity(vendorId);
@@ -158,6 +182,11 @@ public class AdminVendorVerificationServiceImpl
             String vendorId
     ) {
 
+        log.info(
+                "Admin approving vendor vendorId={}",
+                vendorId
+        );
+
         User vendor =
                 getVendorEntity(vendorId);
 
@@ -166,12 +195,22 @@ public class AdminVendorVerificationServiceImpl
         );
 
         userRepository.save(vendor);
+
+        log.info(
+                "Vendor approved vendorId={}",
+                vendorId
+        );
     }
 
     @Override
     public void rejectVendor(
             String vendorId
     ) {
+
+        log.info(
+                "Admin rejecting vendor vendorId={}",
+                vendorId
+        );
 
         User vendor =
                 getVendorEntity(vendorId);
@@ -181,12 +220,22 @@ public class AdminVendorVerificationServiceImpl
         );
 
         userRepository.save(vendor);
+
+        log.info(
+                "Vendor rejected vendorId={}",
+                vendorId
+        );
     }
 
     @Override
     public void suspendVendor(
             String vendorId
     ) {
+
+        log.info(
+                "Admin suspending vendor vendorId={}",
+                vendorId
+        );
 
         User vendor =
                 getVendorEntity(vendorId);
@@ -196,12 +245,22 @@ public class AdminVendorVerificationServiceImpl
         );
 
         userRepository.save(vendor);
+
+        log.info(
+                "Vendor suspended vendorId={}",
+                vendorId
+        );
     }
 
     @Override
     public void reactivateVendor(
             String vendorId
     ) {
+
+        log.info(
+                "Admin reactivating vendor vendorId={}",
+                vendorId
+        );
 
         User vendor =
                 getVendorEntity(vendorId);
@@ -211,29 +270,33 @@ public class AdminVendorVerificationServiceImpl
         );
 
         userRepository.save(vendor);
+
+        log.info(
+                "Vendor reactivated vendorId={}",
+                vendorId
+        );
     }
 
     private User getVendorEntity(
             String vendorId
     ) {
 
-        User vendor =
-                userRepository
-                        .findById(vendorId)
-                        .orElseThrow(() ->
-                                new VendorNotFoundException(
-                                        vendorId
-                                )
-                        );
+        return userRepository
+                .findById(vendorId)
+                .filter(user ->
+                        user.getRole() == Role.VENDOR_ADMIN
+                )
+                .orElseThrow(() -> {
 
-        if (vendor.getRole() != Role.VENDOR_ADMIN) {
+                    log.warn(
+                            "Vendor not found or invalid vendor role vendorId={}",
+                            vendorId
+                    );
 
-            throw new VendorNotFoundException(
-                    vendorId
-            );
-        }
-
-        return vendor;
+                    return new VendorNotFoundException(
+                            vendorId
+                    );
+                });
     }
 
     @Override
@@ -242,19 +305,35 @@ public class AdminVendorVerificationServiceImpl
             Set<ServiceDiscoveryTag> tags
     ) {
 
+        log.info(
+                "Admin updating service discovery tags serviceId={}",
+                serviceId
+        );
+
         VendorService service =
                 vendorServiceRepository
                         .findById(serviceId)
-                        .orElseThrow(() ->
-                                new VendorServiceNotFoundException(
-                                        "Service not found: "
-                                                + serviceId
-                                )
-                        );
+                        .orElseThrow(() -> {
+
+                            log.warn(
+                                    "Service not found while updating discovery tags serviceId={}",
+                                    serviceId
+                            );
+
+                            return new VendorServiceNotFoundException(
+                                    "Service not found: "
+                                            + serviceId
+                            );
+                        });
 
         if (Boolean.TRUE.equals(
                 service.getDeleted()
         )) {
+
+            log.warn(
+                    "Discovery tags update rejected for deleted service serviceId={}",
+                    serviceId
+            );
 
             throw new IllegalStateException(
                     "Deleted service cannot be updated."
@@ -269,6 +348,13 @@ public class AdminVendorVerificationServiceImpl
 
         vendorServiceRepository.save(
                 service
+        );
+
+        log.info(
+                "Service discovery tags updated serviceId={} vendorId={} tagCount={}",
+                serviceId,
+                service.getVendorId(),
+                tags == null ? 0 : tags.size()
         );
     }
 }

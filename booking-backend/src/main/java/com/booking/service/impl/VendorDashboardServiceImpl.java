@@ -13,10 +13,9 @@ import com.booking.repository.ReviewRepository;
 import com.booking.repository.UserRepository;
 import com.booking.service.VendorAccessService;
 import com.booking.service.VendorDashboardService;
-
 import com.booking.service.VendorPermissionService;
 import lombok.RequiredArgsConstructor;
-
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -25,6 +24,7 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class VendorDashboardServiceImpl
         implements VendorDashboardService {
 
@@ -38,41 +38,21 @@ public class VendorDashboardServiceImpl
 
     private final VendorPermissionService vendorPermissionService;
 
-
     @Override
     public DashboardResponse getDashboard() {
 
         vendorPermissionService.checkView(
                 VendorPage.DASHBOARD
         );
-        /*
-         * =========================================
-         * EFFECTIVE VENDOR
-         * =========================================
-         *
-         * VENDOR_ADMIN:
-         *     VendorAdmin User._id
-         *
-         * VENDOR_USER:
-         *     User.vendorId
-         *
-         * ADMIN SUPPORT MODE:
-         *     VendorAdmin User._id stored in
-         *     VendorSupportSession.vendorId
-         */
 
         String vendorId =
                 vendorAccessService
                         .getEffectiveVendorId();
 
-
-        /*
-         * =========================================
-         * LOAD VENDOR ADMIN
-         * =========================================
-         *
-         * vendorId is now the VendorAdmin User._id.
-         */
+        log.info(
+                "Retrieving vendor dashboard vendorId={}",
+                vendorId
+        );
 
         User vendor =
                 userRepository
@@ -82,24 +62,21 @@ public class VendorDashboardServiceImpl
                                         user.getRole() ==
                                                 Role.VENDOR_ADMIN
                         )
-                        .orElseThrow(() ->
-                                new IllegalStateException(
-                                        "Vendor admin not found."
-                                )
-                        );
+                        .orElseThrow(() -> {
+                            log.warn(
+                                    "Vendor admin not found while loading dashboard vendorId={}",
+                                    vendorId
+                            );
 
-
-        /*
-         * =========================================
-         * BOOKINGS
-         * =========================================
-         */
+                            return new IllegalStateException(
+                                    "Vendor admin not found."
+                            );
+                        });
 
         List<Booking> bookings =
                 bookingRepository.findByVendorId(
                         vendorId
                 );
-
 
         int pendingBookings =
                 bookingRepository
@@ -109,7 +86,6 @@ public class VendorDashboardServiceImpl
                         )
                         .size();
 
-
         int completedBookings =
                 bookingRepository
                         .findByVendorIdAndStatus(
@@ -117,13 +93,6 @@ public class VendorDashboardServiceImpl
                                 BookingStatus.COMPLETED
                         )
                         .size();
-
-
-        /*
-         * =========================================
-         * MONTHLY REVENUE
-         * =========================================
-         */
 
         BigDecimal monthlyRevenue =
                 bookingRepository
@@ -146,21 +115,10 @@ public class VendorDashboardServiceImpl
                                 BigDecimal::add
                         );
 
-
-        /*
-         * =========================================
-         * REVIEWS
-         * =========================================
-         *
-         * Rating comes from the reviews
-         * collection.
-         */
-
         List<Review> reviews =
                 reviewRepository.findByVendorId(
                         vendorId
                 );
-
 
         double averageRating =
                 reviews.isEmpty()
@@ -182,13 +140,6 @@ public class VendorDashboardServiceImpl
                         .average()
                         .orElse(0.0);
 
-
-        /*
-         * =========================================
-         * RECENT BOOKINGS
-         * =========================================
-         */
-
         List<RecentBookingDto> recentBookings =
                 bookingRepository
                         .findTop5ByVendorIdOrderByCreatedTsDesc(
@@ -200,48 +151,44 @@ public class VendorDashboardServiceImpl
                         )
                         .toList();
 
+        DashboardResponse response =
+                DashboardResponse
+                        .builder()
+                        .vendorName(
+                                vendor.getBusinessName()
+                        )
+                        .totalBookings(
+                                bookings.size()
+                        )
+                        .pendingBookings(
+                                pendingBookings
+                        )
+                        .completedBookings(
+                                completedBookings
+                        )
+                        .monthlyRevenue(
+                                monthlyRevenue
+                        )
+                        .averageRating(
+                                averageRating
+                        )
+                        .recentBookings(
+                                recentBookings
+                        )
+                        .build();
 
-        /*
-         * =========================================
-         * RESPONSE
-         * =========================================
-         */
+        log.info(
+                "Vendor dashboard retrieved vendorId={} bookingCount={} pendingCount={} completedCount={} reviewCount={} recentBookingCount={}",
+                vendorId,
+                bookings.size(),
+                pendingBookings,
+                completedBookings,
+                reviews.size(),
+                recentBookings.size()
+        );
 
-        return DashboardResponse
-                .builder()
-
-                .vendorName(
-                        vendor.getBusinessName()
-                )
-
-                .totalBookings(
-                        bookings.size()
-                )
-
-                .pendingBookings(
-                        pendingBookings
-                )
-
-                .completedBookings(
-                        completedBookings
-                )
-
-                .monthlyRevenue(
-                        monthlyRevenue
-                )
-
-                .averageRating(
-                        averageRating
-                )
-
-                .recentBookings(
-                        recentBookings
-                )
-
-                .build();
-
+        return response;
     }
-
 
     private RecentBookingDto toRecentBooking(
             Booking booking
@@ -259,36 +206,26 @@ public class VendorDashboardServiceImpl
                                 "Unknown"
                         );
 
-
         return RecentBookingDto
                 .builder()
-
                 .bookingId(
                         booking.getBookingNumber()
                 )
-
                 .customerName(
                         customerEmail
                 )
-
                 .serviceName(
                         booking.getServiceName()
                 )
-
                 .eventDate(
                         booking.getEventDate()
                 )
-
                 .status(
                         booking.getStatus().name()
                 )
-
                 .amount(
                         booking.getTotalAmount()
                 )
-
                 .build();
-
     }
-
 }

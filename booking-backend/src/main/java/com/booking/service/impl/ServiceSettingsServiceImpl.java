@@ -14,11 +14,13 @@ import com.booking.service.ServiceSettingsService;
 import com.booking.service.VendorAccessService;
 import com.booking.service.VendorPermissionService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class ServiceSettingsServiceImpl
         implements ServiceSettingsService {
 
@@ -34,7 +36,6 @@ public class ServiceSettingsServiceImpl
 
     private final CancellationPolicyMapper cancellationPolicyMapper;
 
-
     @Override
     public ServiceSettingsResponse getSettings(
             String serviceId
@@ -43,6 +44,13 @@ public class ServiceSettingsServiceImpl
         vendorPermissionService.checkView(
                 VendorPage.SETTINGS
         );
+
+        String vendorId =
+                vendorAccessService
+                        .getEffectiveVendorId();
+
+        log.info("Retrieving service settings vendorId={} serviceId={}",
+                vendorId, serviceId);
 
         VendorService vendorService =
                 vendorServiceRepository
@@ -53,24 +61,19 @@ public class ServiceSettingsServiceImpl
                                 )
                         );
 
-
-        String vendorId =
-                vendorAccessService
-                        .getEffectiveVendorId();
-
-
         if (
                 !vendorService
                         .getVendorId()
                         .equals(vendorId)
         ) {
 
+            log.warn("Service settings access denied vendorId={} serviceId={}",
+                    vendorId, serviceId);
+
             throw new AccessDeniedException(
                     "Access denied."
             );
-
         }
-
 
         ServiceSettings settings =
                 serviceSettingsRepository
@@ -79,13 +82,13 @@ public class ServiceSettingsServiceImpl
                                 createDefault(serviceId)
                         );
 
+        log.info("Service settings retrieved vendorId={} serviceId={}",
+                vendorId, serviceId);
 
         return serviceSettingsMapper.toResponse(
                 settings
         );
-
     }
-
 
     @Override
     public ServiceSettingsResponse updateSettings(
@@ -97,6 +100,13 @@ public class ServiceSettingsServiceImpl
                 VendorPage.SETTINGS
         );
 
+        String vendorId =
+                vendorAccessService
+                        .getEffectiveVendorId();
+
+        log.info("Updating service settings vendorId={} serviceId={}",
+                vendorId, serviceId);
+
         VendorService vendorService =
                 vendorServiceRepository
                         .findById(serviceId)
@@ -106,24 +116,19 @@ public class ServiceSettingsServiceImpl
                                 )
                         );
 
-
-        String vendorId =
-                vendorAccessService
-                        .getEffectiveVendorId();
-
-
         if (
                 !vendorService
                         .getVendorId()
                         .equals(vendorId)
         ) {
 
+            log.warn("Service settings update denied vendorId={} serviceId={}",
+                    vendorId, serviceId);
+
             throw new AccessDeniedException(
                     "Access denied."
             );
-
         }
-
 
         ServiceSettings settings =
                 serviceSettingsRepository
@@ -131,7 +136,6 @@ public class ServiceSettingsServiceImpl
                         .orElseGet(() ->
                                 createDefault(serviceId)
                         );
-
 
         settings.setMinimumAdvanceDays(
                 request.getMinimumAdvanceDays()
@@ -157,92 +161,58 @@ public class ServiceSettingsServiceImpl
                 request.getBalanceDueDays()
         );
 
-
-        if (
-                request.getCancellationPolicy() != null
-        ) {
+        if (request.getCancellationPolicy() != null) {
 
             settings.setCancellationPolicy(
                     cancellationPolicyMapper.toEntity(
                             request.getCancellationPolicy()
                     )
             );
-
         }
-
 
         settings.setInstantBooking(
                 request.getInstantBooking()
         );
-
 
         settings =
                 serviceSettingsRepository.save(
                         settings
                 );
 
+        log.info("Service settings updated vendorId={} serviceId={}",
+                vendorId, serviceId);
 
         return serviceSettingsMapper.toResponse(
                 settings
         );
-
     }
-
 
     private ServiceSettings createDefault(
             String serviceId
     ) {
 
+        log.info("Creating default service settings serviceId={}",
+                serviceId);
+
         ServiceSettings settings =
                 new ServiceSettings();
 
-
-        settings.setServiceId(
-                serviceId
-        );
-
-        settings.setMinimumAdvanceDays(
-                1
-        );
-
-        settings.setMaximumAdvanceDays(
-                365
-        );
-
-        settings.setMinimumGuests(
-                1
-        );
-
-        settings.setMaximumGuests(
-                500
-        );
-
-        settings.setDepositPercentage(
-                25
-        );
-
-        settings.setBalanceDueDays(
-                7
-        );
-
+        settings.setServiceId(serviceId);
+        settings.setMinimumAdvanceDays(1);
+        settings.setMaximumAdvanceDays(365);
+        settings.setMinimumGuests(1);
+        settings.setMaximumGuests(500);
+        settings.setDepositPercentage(25);
+        settings.setBalanceDueDays(7);
         settings.setCancellationPolicy(
-                cancellationPolicyMapper
-                        .defaultPolicy()
+                cancellationPolicyMapper.defaultPolicy()
         );
-
-        settings.setActive(
-                true
-        );
-
-        settings.setInstantBooking(
-                false
-        );
-
+        settings.setActive(true);
+        settings.setInstantBooking(false);
 
         return serviceSettingsRepository.save(
                 settings
         );
-
     }
 
 }

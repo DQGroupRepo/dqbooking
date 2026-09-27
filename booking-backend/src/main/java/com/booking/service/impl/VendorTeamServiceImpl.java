@@ -15,6 +15,7 @@ import com.booking.service.VendorAccountService;
 import com.booking.service.VendorTeamService;
 import com.booking.util.SecurityUtil;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -25,6 +26,7 @@ import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class VendorTeamServiceImpl
         implements VendorTeamService {
 
@@ -41,13 +43,6 @@ public class VendorTeamServiceImpl
 
     private final PasswordEncoder passwordEncoder;
 
-
-    /*
-     * =========================================
-     * CREATE VENDOR USER
-     * =========================================
-     */
-
     @Override
     public VendorTeamMemberResponse createVendorUser(
             VendorTeamMemberRequest request
@@ -55,69 +50,55 @@ public class VendorTeamServiceImpl
 
         requireVendorTeamManager();
 
-
         if (request == null) {
+
+            log.warn("Vendor user creation rejected because request is null");
 
             throw new IllegalArgumentException(
                     "Request is required."
             );
         }
 
-
         if (isBlank(request.getFirstName())) {
+
+            log.warn("Vendor user creation rejected because first name is missing");
 
             throw new IllegalArgumentException(
                     "First name is required."
             );
         }
 
-
         if (isBlank(request.getEmail())) {
+
+            log.warn("Vendor user creation rejected because email is missing");
 
             throw new IllegalArgumentException(
                     "Email is required."
             );
         }
 
-
         if (isBlank(request.getPassword())) {
+
+            log.warn("Vendor user creation rejected because password is missing");
 
             throw new IllegalArgumentException(
                     "Password is required."
             );
         }
 
-
-        /*
-         * =========================================
-         * EFFECTIVE VENDOR
-         * =========================================
-         * vendorId is the canonical VendorAdmin
-         * User._id.
-         */
-
         String vendorId =
                 vendorAccessService
                         .getEffectiveVendorId();
 
-
-        /*
-         * =========================================
-         * CHECK PLAN LIMIT
-         * =========================================
-         */
+        log.info(
+                "Creating vendor user vendorId={}",
+                vendorId
+        );
 
         vendorAccountService
                 .checkVendorUserLimit(
                         vendorId
                 );
-
-
-        /*
-         * =========================================
-         * CHECK EMAIL
-         * =========================================
-         */
 
         if (userRepository
                 .findByEmail(
@@ -125,21 +106,18 @@ public class VendorTeamServiceImpl
                 )
                 .isPresent()) {
 
+            log.warn(
+                    "Vendor user creation rejected because email already exists vendorId={}",
+                    vendorId
+            );
+
             throw new IllegalArgumentException(
                     "A user with this email already exists."
             );
         }
 
-
-        /*
-         * =========================================
-         * CREATE USER
-         * =========================================
-         */
-
         User user =
                 new User();
-
 
         user.setFirstName(
                 request.getFirstName()
@@ -163,14 +141,6 @@ public class VendorTeamServiceImpl
                 )
         );
 
-
-        /*
-         * IMPORTANT:
-         *
-         * VendorUser belongs to the VendorAdmin
-         * identified by the canonical vendorId.
-         */
-
         user.setRole(
                 Role.VENDOR_USER
         );
@@ -178,7 +148,6 @@ public class VendorTeamServiceImpl
         user.setVendorId(
                 vendorId
         );
-
 
         user.setStatus(
                 UserStatus.ACTIVE
@@ -188,18 +157,10 @@ public class VendorTeamServiceImpl
                 true
         );
 
-
         user =
                 userRepository.save(
                         user
                 );
-
-
-        /*
-         * =========================================
-         * CREATE PERMISSIONS
-         * =========================================
-         */
 
         Set<VendorPage> viewPages =
                 request.getViewPages() == null
@@ -208,7 +169,6 @@ public class VendorTeamServiceImpl
                         request.getViewPages()
                 );
 
-
         Set<VendorPage> editPages =
                 request.getEditPages() == null
                         ? new HashSet<>()
@@ -216,42 +176,35 @@ public class VendorTeamServiceImpl
                         request.getEditPages()
                 );
 
-
-        /*
-         * Edit automatically grants View.
-         */
-
         viewPages.addAll(
                 editPages
         );
 
-
         VendorUserPermission permission =
                 VendorUserPermission.builder()
-
                         .userId(
                                 user.getId()
                         )
-
                         .vendorId(
                                 vendorId
                         )
-
                         .viewPages(
                                 viewPages
                         )
-
                         .editPages(
                                 editPages
                         )
-
                         .build();
-
 
         permissionRepository.save(
                 permission
         );
 
+        log.info(
+                "Vendor user created userId={} vendorId={}",
+                user.getId(),
+                vendorId
+        );
 
         return buildResponse(
                 user,
@@ -259,43 +212,36 @@ public class VendorTeamServiceImpl
         );
     }
 
-
-    /*
-     * =========================================
-     * GET TEAM MEMBERS
-     * =========================================
-     */
-
     @Override
     public List<VendorTeamMemberResponse>
     getTeamMembers() {
 
         requireVendorTeamManager();
 
-
         String vendorId =
                 vendorAccessService
                         .getEffectiveVendorId();
 
+        List<VendorTeamMemberResponse> members =
+                userRepository
+                        .findByVendorIdAndRole(
+                                vendorId,
+                                Role.VENDOR_USER
+                        )
+                        .stream()
+                        .map(
+                                this::buildResponse
+                        )
+                        .toList();
 
-        return userRepository
-                .findByVendorIdAndRole(
-                        vendorId,
-                        Role.VENDOR_USER
-                )
-                .stream()
-                .map(
-                        this::buildResponse
-                )
-                .toList();
+        log.info(
+                "Retrieved vendor team members vendorId={} memberCount={}",
+                vendorId,
+                members.size()
+        );
+
+        return members;
     }
-
-
-    /*
-     * =========================================
-     * GET ONE TEAM MEMBER
-     * =========================================
-     */
 
     @Override
     public VendorTeamMemberResponse getTeamMember(
@@ -304,11 +250,9 @@ public class VendorTeamServiceImpl
 
         requireVendorTeamManager();
 
-
         String vendorId =
                 vendorAccessService
                         .getEffectiveVendorId();
-
 
         User user =
                 findVendorUser(
@@ -316,18 +260,16 @@ public class VendorTeamServiceImpl
                         vendorId
                 );
 
+        log.info(
+                "Retrieved vendor team member userId={} vendorId={}",
+                userId,
+                vendorId
+        );
 
         return buildResponse(
                 user
         );
     }
-
-
-    /*
-     * =========================================
-     * UPDATE VENDOR USER
-     * =========================================
-     */
 
     @Override
     public VendorTeamMemberResponse updateVendorUser(
@@ -337,26 +279,27 @@ public class VendorTeamServiceImpl
 
         requireVendorTeamManager();
 
-
         if (request == null) {
+
+            log.warn(
+                    "Vendor user update rejected because request is null userId={}",
+                    userId
+            );
 
             throw new IllegalArgumentException(
                     "Request is required."
             );
         }
 
-
         String vendorId =
                 vendorAccessService
                         .getEffectiveVendorId();
-
 
         User user =
                 findVendorUser(
                         userId,
                         vendorId
                 );
-
 
         if (!isBlank(
                 request.getFirstName()
@@ -367,7 +310,6 @@ public class VendorTeamServiceImpl
             );
         }
 
-
         if (!isBlank(
                 request.getLastName()
         )) {
@@ -377,7 +319,6 @@ public class VendorTeamServiceImpl
             );
         }
 
-
         if (!isBlank(
                 request.getPhone()
         )) {
@@ -386,11 +327,6 @@ public class VendorTeamServiceImpl
                     request.getPhone()
             );
         }
-
-
-        /*
-         * Email can be changed.
-         */
 
         if (!isBlank(
                 request.getEmail()
@@ -406,21 +342,21 @@ public class VendorTeamServiceImpl
                     )
                     .isPresent()) {
 
+                log.warn(
+                        "Vendor user update rejected because email already exists userId={} vendorId={}",
+                        userId,
+                        vendorId
+                );
+
                 throw new IllegalArgumentException(
                         "A user with this email already exists."
                 );
             }
 
-
             user.setEmail(
                     request.getEmail()
             );
         }
-
-
-        /*
-         * Password is optional during update.
-         */
 
         if (!isBlank(
                 request.getPassword()
@@ -433,24 +369,21 @@ public class VendorTeamServiceImpl
             );
         }
 
-
         user =
                 userRepository.save(
                         user
                 );
 
+        log.info(
+                "Vendor user updated userId={} vendorId={}",
+                userId,
+                vendorId
+        );
 
         return buildResponse(
                 user
         );
     }
-
-
-    /*
-     * =========================================
-     * ENABLE / DISABLE
-     * =========================================
-     */
 
     @Override
     public VendorTeamMemberResponse
@@ -461,11 +394,9 @@ public class VendorTeamServiceImpl
 
         requireVendorTeamManager();
 
-
         String vendorId =
                 vendorAccessService
                         .getEffectiveVendorId();
-
 
         User user =
                 findVendorUser(
@@ -473,29 +404,26 @@ public class VendorTeamServiceImpl
                         vendorId
                 );
 
-
         user.setActive(
                 active
         );
-
 
         user =
                 userRepository.save(
                         user
                 );
 
+        log.info(
+                "Vendor user status updated userId={} vendorId={} active={}",
+                userId,
+                vendorId,
+                active
+        );
 
         return buildResponse(
                 user
         );
     }
-
-
-    /*
-     * =========================================
-     * DELETE
-     * =========================================
-     */
 
     @Override
     public void deleteVendorUser(
@@ -504,11 +432,9 @@ public class VendorTeamServiceImpl
 
         requireVendorTeamManager();
 
-
         String vendorId =
                 vendorAccessService
                         .getEffectiveVendorId();
-
 
         User user =
                 findVendorUser(
@@ -516,24 +442,21 @@ public class VendorTeamServiceImpl
                         vendorId
                 );
 
-
         permissionRepository
                 .deleteByUserId(
                         user.getId()
                 );
 
-
         userRepository.delete(
                 user
         );
+
+        log.info(
+                "Vendor user deleted userId={} vendorId={}",
+                userId,
+                vendorId
+        );
     }
-
-
-    /*
-     * =========================================
-     * UPDATE PERMISSIONS
-     * =========================================
-     */
 
     @Override
     public void updatePermissions(
@@ -543,26 +466,27 @@ public class VendorTeamServiceImpl
 
         requireVendorTeamManager();
 
-
         if (request == null) {
+
+            log.warn(
+                    "Vendor permission update rejected because request is null userId={}",
+                    userId
+            );
 
             throw new IllegalArgumentException(
                     "Permission request is required."
             );
         }
 
-
         String vendorId =
                 vendorAccessService
                         .getEffectiveVendorId();
-
 
         User user =
                 findVendorUser(
                         userId,
                         vendorId
                 );
-
 
         Set<VendorPage> viewPages =
                 request.getViewPages() == null
@@ -571,7 +495,6 @@ public class VendorTeamServiceImpl
                         request.getViewPages()
                 );
 
-
         Set<VendorPage> editPages =
                 request.getEditPages() == null
                         ? new HashSet<>()
@@ -579,15 +502,9 @@ public class VendorTeamServiceImpl
                         request.getEditPages()
                 );
 
-
-        /*
-         * Edit automatically implies View.
-         */
-
         viewPages.addAll(
                 editPages
         );
-
 
         VendorUserPermission permission =
                 permissionRepository
@@ -607,7 +524,6 @@ public class VendorTeamServiceImpl
                                         .build()
                         );
 
-
         permission.setViewPages(
                 viewPages
         );
@@ -616,38 +532,23 @@ public class VendorTeamServiceImpl
                 editPages
         );
 
-
         permissionRepository.save(
                 permission
         );
+
+        log.info(
+                "Vendor user permissions updated userId={} vendorId={} viewCount={} editCount={}",
+                userId,
+                vendorId,
+                viewPages.size(),
+                editPages.size()
+        );
     }
 
-
-    /*
-     * =========================================
-     * VENDOR TEAM MANAGEMENT ACCESS
-     * =========================================
-     *
-     * VendorAdmin:
-     *     Always allowed to manage team.
-     *
-     * ADMIN:
-     *     Allowed only while Support Mode is active.
-     *
-     * VendorUser:
-     *     Never allowed to manage team.
-     */
     private void requireVendorTeamManager() {
 
         User currentUser =
                 SecurityUtil.getCurrentUser();
-
-
-        /*
-         * =========================================
-         * VENDOR ADMIN
-         * =========================================
-         */
 
         if (
                 currentUser.getRole()
@@ -655,21 +556,7 @@ public class VendorTeamServiceImpl
         ) {
 
             return;
-
         }
-
-
-        /*
-         * =========================================
-         * ADMIN SUPPORT MODE
-         * =========================================
-         *
-         * getEffectiveVendorId() will verify that
-         * the ADMIN has an active VendorSupportSession.
-         *
-         * We deliberately call it here rather than
-         * only checking the role.
-         */
 
         if (
                 currentUser.getRole()
@@ -680,27 +567,18 @@ public class VendorTeamServiceImpl
                     .getEffectiveVendorId();
 
             return;
-
         }
 
-
-        /*
-         * =========================================
-         * EVERYTHING ELSE
-         * =========================================
-         */
+        log.warn(
+                "Vendor team management access denied userId={} role={}",
+                currentUser.getId(),
+                currentUser.getRole()
+        );
 
         throw new AccessDeniedException(
                 "Only VendorAdmin or Admin in Support Mode can manage team members."
         );
     }
-
-
-    /*
-     * =========================================
-     * FIND VENDOR USER
-     * =========================================
-     */
 
     private User findVendorUser(
             String userId,
@@ -712,41 +590,49 @@ public class VendorTeamServiceImpl
                         .findById(
                                 userId
                         )
-                        .orElseThrow(() ->
-                                new IllegalArgumentException(
-                                        "VendorUser not found."
-                                )
-                        );
+                        .orElseThrow(() -> {
+                            log.warn(
+                                    "Vendor user not found userId={} vendorId={}",
+                                    userId,
+                                    vendorId
+                            );
 
+                            return new IllegalArgumentException(
+                                    "VendorUser not found."
+                            );
+                        });
 
         if (user.getRole()
                 != Role.VENDOR_USER) {
+
+            log.warn(
+                    "Vendor team access denied because target is not a VendorUser userId={} role={}",
+                    userId,
+                    user.getRole()
+            );
 
             throw new AccessDeniedException(
                     "This user is not a VendorUser."
             );
         }
 
-
         if (!vendorId.equals(
                 user.getVendorId()
         )) {
+
+            log.warn(
+                    "Vendor team access denied due to vendor ownership mismatch userId={} vendorId={}",
+                    userId,
+                    vendorId
+            );
 
             throw new AccessDeniedException(
                     "Access denied."
             );
         }
 
-
         return user;
     }
-
-
-    /*
-     * =========================================
-     * RESPONSE
-     * =========================================
-     */
 
     private VendorTeamMemberResponse
     buildResponse(
@@ -760,13 +646,11 @@ public class VendorTeamServiceImpl
                         )
                         .orElse(null);
 
-
         return buildResponse(
                 user,
                 permission
         );
     }
-
 
     private VendorTeamMemberResponse
     buildResponse(
@@ -784,7 +668,6 @@ public class VendorTeamServiceImpl
                         permission.getViewPages()
                 );
 
-
         Set<VendorPage> editPages =
                 permission == null ||
                         permission.getEditPages() == null
@@ -795,58 +678,41 @@ public class VendorTeamServiceImpl
                         permission.getEditPages()
                 );
 
-
-        /*
-         * Always enforce Edit => View.
-         */
-
         viewPages.addAll(
                 editPages
         );
 
-
         return VendorTeamMemberResponse
                 .builder()
-
                 .id(
                         user.getId()
                 )
-
                 .fullName(
                         user.getFullName()
                 )
-
                 .email(
                         user.getEmail()
                 )
-
                 .phone(
                         user.getPhone()
                 )
-
                 .role(
                         user.getRole()
                 )
-
                 .vendorId(
                         user.getVendorId()
                 )
-
                 .active(
                         user.getActive()
                 )
-
                 .viewPages(
                         viewPages
                 )
-
                 .editPages(
                         editPages
                 )
-
                 .build();
     }
-
 
     private boolean isBlank(
             String value

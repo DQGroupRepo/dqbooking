@@ -11,6 +11,8 @@ import com.booking.repository.UserRepository;
 import com.booking.repository.VendorServiceRepository;
 import com.booking.service.AdminReviewService;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -19,6 +21,9 @@ import java.util.List;
 @RequiredArgsConstructor
 public class AdminReviewServiceImpl
         implements AdminReviewService {
+
+    private static final Logger log =
+            LoggerFactory.getLogger(AdminReviewServiceImpl.class);
 
     private final ReviewRepository reviewRepository;
 
@@ -31,17 +36,26 @@ public class AdminReviewServiceImpl
     @Override
     public List<ReviewResponse> getAllReviews() {
 
-        return reviewRepository
-                .findAll()
-                .stream()
-                .filter(review ->
-                        !Boolean.TRUE.equals(
-                                review.getDeleted()
-                        )
-                )
-                .map(this::buildReviewResponse)
-                .toList();
+        log.info("Admin requested all active reviews");
 
+        List<ReviewResponse> reviews =
+                reviewRepository
+                        .findAll()
+                        .stream()
+                        .filter(review ->
+                                !Boolean.TRUE.equals(
+                                        review.getDeleted()
+                                )
+                        )
+                        .map(this::buildReviewResponse)
+                        .toList();
+
+        log.info(
+                "Admin review list retrieved count={}",
+                reviews.size()
+        );
+
+        return reviews;
     }
 
     @Override
@@ -49,18 +63,34 @@ public class AdminReviewServiceImpl
             String reviewId
     ) {
 
+        log.info(
+                "Admin deleting review reviewId={}",
+                reviewId
+        );
+
         Review review =
                 reviewRepository.findById(reviewId)
-                        .orElseThrow(() ->
-                                new ReviewNotFoundException(
-                                        "Review not found"
-                                ));
+                        .orElseThrow(() -> {
+
+                            log.warn(
+                                    "Admin attempted to delete non-existent review reviewId={}",
+                                    reviewId
+                            );
+
+                            return new ReviewNotFoundException(
+                                    "Review not found"
+                            );
+                        });
 
         review.setDeleted(true);
         review.setActive(false);
 
         reviewRepository.save(review);
 
+        log.info(
+                "Review deleted successfully reviewId={}",
+                reviewId
+        );
     }
 
     private ReviewResponse buildReviewResponse(
@@ -119,7 +149,5 @@ public class AdminReviewServiceImpl
                 )
 
                 .build();
-
     }
-
 }

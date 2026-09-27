@@ -12,6 +12,7 @@ import com.booking.repository.VendorServiceRepository;
 import com.booking.service.VendorAccessService;
 import com.booking.service.VendorServicePricingService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
@@ -20,6 +21,7 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class VendorServicePricingServiceImpl
         implements VendorServicePricingService {
 
@@ -34,79 +36,43 @@ public class VendorServicePricingServiceImpl
     private final VendorAccessService
             vendorAccessService;
 
-
-    /*
-     * =========================================================
-     * CREATE NEW PRICING VERSION
-     * =========================================================
-     *
-     * IMPORTANT:
-     *
-     * We do NOT modify existing pricing.
-     *
-     * Every pricing change creates a NEW document/version.
-     *
-     * This protects historical bookings.
-     */
     @Override
     public VendorServicePricingResponse createPricing(
             VendorServicePricingRequest request
     ) {
+
+        log.info(
+                "Creating pricing configuration serviceId={}",
+                request.getServiceId()
+        );
 
         VendorService service =
                 getService(
                         request.getServiceId()
                 );
 
-
-        /*
-         * Verify that the effective vendor owns
-         * this service.
-         *
-         * Normal VENDOR:
-         *      current vendor
-         *
-         * ADMIN Support Mode:
-         *      supported vendor
-         */
         validateVendorOwnership(
                 service
         );
 
-
-        /*
-         * Convert request to entity.
-         */
         VendorServicePricing pricing =
                 pricingMapper.toEntity(
                         request
                 );
 
-
-        /*
-         * Always derive vendorId from the service.
-         *
-         * Do NOT trust vendorId sent by frontend.
-         */
         pricing.setVendorId(
                 service.getVendorId()
         );
-
 
         pricing.setServiceId(
                 service.getId()
         );
 
-
-        /*
-         * Determine next version.
-         */
         List<VendorServicePricing> existingPricing =
                 vendorServicePricingRepository
                         .findByServiceIdOrderByVersionDesc(
                                 service.getId()
                         );
-
 
         int nextVersion =
                 existingPricing.isEmpty()
@@ -118,66 +84,34 @@ public class VendorServicePricingServiceImpl
                         .getVersion()
                         + 1;
 
-
         pricing.setVersion(
                 nextVersion
         );
 
-
-        /*
-         * BaseEntity auditing handles:
-         *
-         * created_user
-         * created_ts
-         * last_update_user
-         * last_update_ts
-         *
-         * No manual audit timestamps are needed.
-         */
-
-
-        /*
-         * Save the new pricing version.
-         */
         VendorServicePricing savedPricing =
                 vendorServicePricingRepository
                         .save(
                                 pricing
                         );
 
-
-        /*
-         * =====================================================
-         * SYNC STARTING PRICE
-         * =====================================================
-         *
-         * VendorServicePricing remains the pricing
-         * configuration/history source.
-         *
-         * VendorService.startingPrice is maintained as
-         * a searchable/filterable/listing value.
-         *
-         * It is synchronized whenever a new pricing
-         * version is created.
-         */
         syncStartingPrice(
                 savedPricing.getServiceId(),
                 savedPricing.getBaseAmount()
         );
 
+        log.info(
+                "Pricing configuration created pricingId={} serviceId={} vendorId={} version={}",
+                savedPricing.getId(),
+                savedPricing.getServiceId(),
+                savedPricing.getVendorId(),
+                savedPricing.getVersion()
+        );
 
         return pricingMapper.toResponse(
                 savedPricing
         );
-
     }
 
-
-    /*
-     * =========================================================
-     * SYNC STARTING PRICE
-     * =========================================================
-     */
     private void syncStartingPrice(
             String serviceId,
             BigDecimal baseAmount
@@ -188,109 +122,96 @@ public class VendorServicePricingServiceImpl
                         .findById(
                                 serviceId
                         )
-                        .orElseThrow(() ->
-                                new VendorServiceNotFoundException(
-                                        "Service not found"
-                                )
-                        );
+                        .orElseThrow(() -> {
+                            log.warn(
+                                    "Service not found while synchronizing starting price serviceId={}",
+                                    serviceId
+                            );
 
+                            return new VendorServiceNotFoundException(
+                                    "Service not found"
+                            );
+                        });
 
-        /*
-         * Keep VendorService.startingPrice synchronized
-         * with the latest pricing base amount.
-         *
-         * This value can then be used efficiently for:
-         *
-         * - customer listing
-         * - filtering
-         * - sorting
-         * - discovery sections
-         * - search results
-         */
         vendorService.setStartingPrice(
                 baseAmount
         );
-
 
         vendorServiceRepository.save(
                 vendorService
         );
 
+        log.debug(
+                "Vendor service starting price synchronized serviceId={}",
+                serviceId
+        );
     }
 
-
-    /*
-     * =========================================================
-     * GET PRICING BY ID
-     * =========================================================
-     */
     @Override
     public VendorServicePricingResponse getPricingById(
             String pricingId
     ) {
+
+        log.info(
+                "Retrieving pricing configuration pricingId={}",
+                pricingId
+        );
 
         VendorServicePricing pricing =
                 vendorServicePricingRepository
                         .findById(
                                 pricingId
                         )
-                        .orElseThrow(() ->
-                                new ResourceNotFoundException(
-                                        "Pricing configuration not found."
-                                )
-                        );
+                        .orElseThrow(() -> {
+                            log.warn(
+                                    "Pricing configuration not found pricingId={}",
+                                    pricingId
+                            );
 
+                            return new ResourceNotFoundException(
+                                    "Pricing configuration not found."
+                            );
+                        });
 
-        /*
-         * Get associated service.
-         */
         VendorService service =
                 getService(
                         pricing.getServiceId()
                 );
 
-
-        /*
-         * Effective vendor can only access
-         * pricing belonging to their service.
-         */
         validateVendorOwnership(
                 service
         );
 
+        log.info(
+                "Pricing configuration retrieved pricingId={} serviceId={} version={}",
+                pricingId,
+                pricing.getServiceId(),
+                pricing.getVersion()
+        );
 
         return pricingMapper.toResponse(
                 pricing
         );
-
     }
 
-
-    /*
-     * =========================================================
-     * GET CURRENT PRICING
-     * =========================================================
-     *
-     * Used by vendor pricing screen.
-     */
     @Override
     public VendorServicePricingResponse getCurrentPricing(
             String serviceId
     ) {
+
+        log.info(
+                "Retrieving current pricing serviceId={}",
+                serviceId
+        );
 
         VendorService service =
                 getService(
                         serviceId
                 );
 
-
-        /*
-         * Security check.
-         */
         validateVendorOwnership(
                 service
         );
-
 
         List<VendorServicePricing> pricingVersions =
                 vendorServicePricingRepository
@@ -298,39 +219,36 @@ public class VendorServicePricingServiceImpl
                                 serviceId
                         );
 
-
         if (
                 pricingVersions.isEmpty()
         ) {
 
+            log.warn(
+                    "No pricing configuration found for service serviceId={}",
+                    serviceId
+            );
+
             throw new ResourceNotFoundException(
                     "No pricing configuration found for this service."
             );
-
         }
 
-
-        /*
-         * First record is the latest version
-         * because repository sorts by version DESC.
-         */
         VendorServicePricing currentPricing =
                 pricingVersions.get(0);
 
+        log.info(
+                "Current pricing retrieved serviceId={} pricingId={} version={}",
+                serviceId,
+                currentPricing.getId(),
+                currentPricing.getVersion()
+        );
 
         return pricingMapper.toResponse(
                 currentPricing,
                 service
         );
-
     }
 
-
-    /*
-     * =========================================================
-     * GET SERVICE
-     * =========================================================
-     */
     private VendorService getService(
             String serviceId
     ) {
@@ -339,31 +257,18 @@ public class VendorServicePricingServiceImpl
                 .findById(
                         serviceId
                 )
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "Vendor service not found."
-                        )
-                );
+                .orElseThrow(() -> {
+                    log.warn(
+                            "Vendor service not found serviceId={}",
+                            serviceId
+                    );
 
+                    return new ResourceNotFoundException(
+                            "Vendor service not found."
+                    );
+                });
     }
 
-
-    /*
-     * =========================================================
-     * VALIDATE VENDOR OWNERSHIP
-     * =========================================================
-     *
-     * Normal Vendor:
-     *
-     *      effectiveVendorId = logged-in vendor ID
-     *
-     * Admin Support Mode:
-     *
-     *      effectiveVendorId = supported vendor ID
-     *
-     * This prevents Vendor A, or an admin supporting
-     * Vendor A, from accessing Vendor B's pricing.
-     */
     private void validateVendorOwnership(
             VendorService service
     ) {
@@ -372,67 +277,70 @@ public class VendorServicePricingServiceImpl
                 vendorAccessService
                         .getEffectiveVendorId();
 
-
         if (
                 !service
                         .getVendorId()
                         .equals(effectiveVendorId)
         ) {
 
+            log.warn(
+                    "Vendor service access denied serviceId={} requestedVendorId={} ownerVendorId={}",
+                    service.getId(),
+                    effectiveVendorId,
+                    service.getVendorId()
+            );
+
             throw new AccessDeniedException(
                     "You do not have access to this service."
             );
-
         }
-
     }
 
-
-    /*
-     * =========================================================
-     * GET PRICING
-     * =========================================================
-     */
     @Override
     public VendorServicePricingResponse getPricing(
             String pricingId
     ) {
+
+        log.info(
+                "Retrieving pricing pricingId={}",
+                pricingId
+        );
 
         VendorServicePricing pricing =
                 vendorServicePricingRepository
                         .findById(
                                 pricingId
                         )
-                        .orElseThrow(() ->
-                                new ResourceNotFoundException(
-                                        "Pricing not found."
-                                )
-                        );
+                        .orElseThrow(() -> {
+                            log.warn(
+                                    "Pricing not found pricingId={}",
+                                    pricingId
+                            );
 
+                            return new ResourceNotFoundException(
+                                    "Pricing not found."
+                            );
+                        });
 
         VendorService service =
                 getService(
                         pricing.getServiceId()
                 );
 
-
-        /*
-         * Validate ownership here as well.
-         *
-         * The previous implementation loaded the
-         * pricing/service but did not verify that
-         * the current vendor owned the service.
-         */
         validateVendorOwnership(
                 service
         );
 
+        log.info(
+                "Pricing retrieved pricingId={} serviceId={} version={}",
+                pricingId,
+                pricing.getServiceId(),
+                pricing.getVersion()
+        );
 
         return pricingMapper.toResponse(
                 pricing,
                 service
         );
-
     }
-
 }

@@ -7,11 +7,13 @@ import com.booking.repository.UserRepository;
 import com.booking.repository.VendorAccountRepository;
 import com.booking.service.VendorAccountService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class VendorAccountServiceImpl
         implements VendorAccountService {
 
@@ -19,28 +21,16 @@ public class VendorAccountServiceImpl
 
     private final UserRepository userRepository;
 
-
-    /*
-     * =========================================
-     * CREATE VENDOR ACCOUNT
-     * =========================================
-     *
-     * Every newly registered vendor starts
-     * with the BASIC plan.
-     *
-     * BASIC allows zero VendorUsers.
-     *
-     * Platform Admin can later change the
-     * plan and VendorUser limit.
-     *
-     * vendorAdminId = VendorAdmin User._id
-     */
-
     @Override
     public VendorAccount createVendorAccount(
             String businessName,
             String vendorAdminId
     ) {
+
+        log.info(
+                "Creating vendor account vendorAdminId={}",
+                vendorAdminId
+        );
 
         VendorAccount account =
                 VendorAccount.builder()
@@ -51,60 +41,69 @@ public class VendorAccountServiceImpl
                         .active(true)
                         .build();
 
-        return vendorAccountRepository.save(account);
+        VendorAccount savedAccount =
+                vendorAccountRepository.save(account);
+
+        log.info(
+                "Vendor account created accountId={} vendorAdminId={} plan={}",
+                savedAccount.getId(),
+                vendorAdminId,
+                savedAccount.getPlan()
+        );
+
+        return savedAccount;
     }
-
-
-    /*
-     * =========================================
-     * CHECK VENDOR USER LIMIT
-     * =========================================
-     */
 
     @Override
     public void checkVendorUserLimit(
             String vendorId
     ) {
 
-        /*
-         * vendorId is the VendorAdmin User._id.
-         *
-         * VendorAccount has its own Mongo _id,
-         * so it must be located using
-         * vendorAdminId.
-         */
-
         VendorAccount account =
                 vendorAccountRepository
                         .findByVendorAdminId(vendorId)
-                        .orElseThrow(() ->
-                                new IllegalStateException(
-                                        "Vendor account not found."
-                                )
-                        );
+                        .orElseThrow(() -> {
+                            log.warn(
+                                    "Vendor account not found while checking user limit vendorId={}",
+                                    vendorId
+                            );
 
+                            return new IllegalStateException(
+                                    "Vendor account not found."
+                            );
+                        });
 
         if (!account.isActive()) {
+
+            log.warn(
+                    "Vendor user creation denied because vendor account is inactive vendorId={} accountId={}",
+                    vendorId,
+                    account.getId()
+            );
 
             throw new AccessDeniedException(
                     "Vendor account is inactive."
             );
         }
 
-
         int currentCount =
                 getVendorUserCount(
                         vendorId
                 );
-
 
         int maximum =
                 account.getMaxVendorUsers() == null
                         ? 0
                         : account.getMaxVendorUsers();
 
-
         if (currentCount >= maximum) {
+
+            log.warn(
+                    "Vendor user limit reached vendorId={} currentCount={} maximum={}",
+                    vendorId,
+                    currentCount,
+                    maximum
+            );
 
             throw new IllegalStateException(
                     "VendorUser limit reached. " +
@@ -113,55 +112,66 @@ public class VendorAccountServiceImpl
                             " VendorUser(s)."
             );
         }
+
+        log.debug(
+                "Vendor user limit check passed vendorId={} currentCount={} maximum={}",
+                vendorId,
+                currentCount,
+                maximum
+        );
     }
-
-
-    /*
-     * =========================================
-     * GET VENDOR USER COUNT
-     * =========================================
-     */
 
     @Override
     public int getVendorUserCount(
             String vendorId
     ) {
 
-        return (int) userRepository
-                .countByVendorIdAndRole(
-                        vendorId,
-                        Role.VENDOR_USER
-                );
+        int count =
+                (int) userRepository
+                        .countByVendorIdAndRole(
+                                vendorId,
+                                Role.VENDOR_USER
+                        );
+
+        log.debug(
+                "Retrieved vendor user count vendorId={} count={}",
+                vendorId,
+                count
+        );
+
+        return count;
     }
-
-
-    /*
-     * =========================================
-     * GET MAX VENDOR USERS
-     * =========================================
-     */
 
     @Override
     public int getMaxVendorUsers(
             String vendorId
     ) {
 
-        /*
-         * vendorId is the VendorAdmin User._id.
-         */
-
         VendorAccount account =
                 vendorAccountRepository
                         .findByVendorAdminId(vendorId)
-                        .orElseThrow(() ->
-                                new IllegalStateException(
-                                        "Vendor account not found."
-                                )
-                        );
+                        .orElseThrow(() -> {
+                            log.warn(
+                                    "Vendor account not found while retrieving maximum users vendorId={}",
+                                    vendorId
+                            );
 
+                            return new IllegalStateException(
+                                    "Vendor account not found."
+                            );
+                        });
 
-        return account.getMaxVendorUsers() == null
-                ? 0
-                : account.getMaxVendorUsers();
+        int maximum =
+                account.getMaxVendorUsers() == null
+                        ? 0
+                        : account.getMaxVendorUsers();
+
+        log.debug(
+                "Retrieved maximum vendor users vendorId={} maximum={}",
+                vendorId,
+                maximum
+        );
+
+        return maximum;
     }
 }
