@@ -1,26 +1,24 @@
 import type { RecentBooking } from "./RecentBooking";
 
 export interface VendorDashboardSummary {
-  vendorName: string;
 
-  totalBookings: number;
+    vendorName: string;
 
-  pendingBookings: number;
+    totalBookings: number;
 
-  confirmedBookings: number;
+    pendingBookings: number;
 
-  completedBookings: number;
+    completedBookings: number;
 
-  monthlyRevenue: number;
+    monthlyRevenue: number;
 
-  totalRevenue: number;
+    averageRating: number;
 
-  averageRating: number;
+    recentBookings: RecentBooking[];
 
-  recentBookings: RecentBooking[];
+    // Optional - we'll populate these later
+    totalServices?: number;
 
-  // Optional - we'll populate these later
-  totalServices?: number;
+    activeServices?: number;
 
-  activeServices?: number;
 }
