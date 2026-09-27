@@ -2,6 +2,7 @@ import api from "../api/axiosConfig";
 import type { Booking } from "../types/Booking";
 import type { CancellationPreview } from "../types/CancellationPreview";
 import type { BookingGroup } from "../types/BookingGroup";
+import type { BookingGroupResponse } from "../types/BookingGroupResponse";
 
 export interface CreateBookingRequest {
   serviceId: string;
@@ -10,6 +11,7 @@ export interface CreateBookingRequest {
   specialRequest?: string;
   eventType: string;
 }
+
 
 export interface PricingHeadSnapshot {
   code: string;
@@ -20,6 +22,7 @@ export interface PricingHeadSnapshot {
   displayOrder?: number;
 }
 
+
 export interface DiscountSnapshot {
   name: string;
   discountType: string;
@@ -27,7 +30,9 @@ export interface DiscountSnapshot {
   calculatedAmount: number;
 }
 
+
 export interface PricingCalculationResult {
+
   pricingId: string;
 
   pricingVersion: number;
@@ -49,6 +54,7 @@ export interface PricingCalculationResult {
   balanceAmount: number;
 }
 
+
 /*
  * =========================================
  * CREATE BOOKING
@@ -56,9 +62,14 @@ export interface PricingCalculationResult {
  */
 
 export const createBooking = async (
-  booking: CreateBookingRequest,
+  booking: CreateBookingRequest
 ): Promise<Booking> => {
-  const response = await api.post<Booking>("/bookings", booking);
+
+  const response =
+    await api.post<Booking>(
+      "/bookings",
+      booking
+    );
 
   return response.data;
 };
@@ -70,12 +81,17 @@ export const createBooking = async (
  */
 
 export const getBookingGroupById = async (
-  bookingGroupId: string,
+    bookingGroupId: string
 ): Promise<BookingGroup> => {
-  const response = await api.get<BookingGroup>(`/bookings/${bookingGroupId}`);
 
-  return response.data;
+    const response =
+        await api.get<BookingGroup>(
+            `/bookings/${bookingGroupId}`
+        );
+
+    return response.data;
 };
+
 
 /*
  * =========================================
@@ -83,11 +99,17 @@ export const getBookingGroupById = async (
  * =========================================
  */
 
-export const getCustomerBookings = async (): Promise<Booking[]> => {
-  const response = await api.get<Booking[]>("/bookings/customer");
+export const getCustomerBookings =
+  async (): Promise<Booking[]> => {
 
-  return response.data;
-};
+    const response =
+      await api.get<Booking[]>(
+        "/bookings/customer"
+      );
+
+    return response.data;
+  };
+
 
 /*
  * =========================================
@@ -95,11 +117,17 @@ export const getCustomerBookings = async (): Promise<Booking[]> => {
  * =========================================
  */
 
-export const getVendorBookings = async (): Promise<Booking[]> => {
-  const response = await api.get<Booking[]>("/bookings/vendor");
+export const getVendorBookings =
+  async (): Promise<Booking[]> => {
 
-  return response.data;
-};
+    const response =
+      await api.get<Booking[]>(
+        "/bookings/vendor"
+      );
+
+    return response.data;
+  };
+
 
 /*
  * =========================================
@@ -108,18 +136,22 @@ export const getVendorBookings = async (): Promise<Booking[]> => {
  */
 
 export const getPricingPreview = async (
+
   serviceId: string,
 
-  eventDate: string,
+  eventDate: string
+
 ): Promise<PricingCalculationResult> => {
-  const response = await api.get<PricingCalculationResult>(
-    `/pricing/services/${serviceId}/calculate`,
-    {
-      params: {
-        eventDate,
-      },
-    },
-  );
+
+  const response =
+    await api.get<PricingCalculationResult>(
+      `/pricing/services/${serviceId}/calculate`,
+      {
+        params: {
+          eventDate
+        }
+      }
+    );
 
   return response.data;
 };
@@ -131,13 +163,20 @@ export const getPricingPreview = async (
  */
 
 export const getCancellationPreview = async (
-  bookingId: string,
-): Promise<CancellationPreview> => {
-  const response = await api.get<CancellationPreview>(
-    `/bookings/${bookingId}/cancellation-preview`,
-  );
 
-  return response.data;
+    bookingId: string
+
+): Promise<CancellationPreview> => {
+
+    const response =
+        await api.get<CancellationPreview>(
+
+            `/bookings/${bookingId}/cancellation-preview`
+
+        );
+
+    return response.data;
+
 };
 
 /*
@@ -146,8 +185,19 @@ export const getCancellationPreview = async (
  * =========================================
  */
 
-export const cancelBooking = async (bookingId: string) => {
-  const response = await api.patch(`/bookings/${bookingId}/cancel`);
+export const cancelBooking = async (
 
-  return response.data;
+    bookingId: string
+
+) => {
+
+    const response =
+        await api.patch(
+
+            `/bookings/${bookingId}/cancel`
+
+        );
+
+    return response.data;
+
 };
