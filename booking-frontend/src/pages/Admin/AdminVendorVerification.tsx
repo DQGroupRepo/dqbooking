@@ -11,7 +11,7 @@ import AdminVendorVerificationService, {
 } from "../../services/AdminVendorVerificationService";
 
 import type {
-    AdminVendorVerification as AdminVendorVerificationRecord,
+    AdminVendorVerification,
     VendorVerificationStatus,
     ServiceModerationStatus
 } from "../../types/AdminVendorVerification";
@@ -24,42 +24,42 @@ const discoveryOptions: {
     label: string;
 }[] = [
 
-        {
-            key: "FEATURED",
-            label: "Featured"
-        },
+    {
+        key: "FEATURED",
+        label: "Featured"
+    },
 
-        {
-            key: "TRENDING_NOW",
-            label: "Trending Now"
-        },
+    {
+        key: "TRENDING_NOW",
+        label: "Trending Now"
+    },
 
-        {
-            key: "MOST_BOOKED",
-            label: "Most Booked"
-        },
+    {
+        key: "MOST_BOOKED",
+        label: "Most Booked"
+    },
 
-        {
-            key: "POPULAR_HALL",
-            label: "Popular Hall"
-        },
+    {
+        key: "POPULAR_HALL",
+        label: "Popular Hall"
+    },
 
-        {
-            key: "TOP_BRIDAL_MAKEUP",
-            label: "Top Bridal Makeup"
-        },
+    {
+        key: "TOP_BRIDAL_MAKEUP",
+        label: "Top Bridal Makeup"
+    },
 
-        {
-            key: "PROFESSIONAL_PHOTOGRAPHY",
-            label: "Professional Photography"
-        },
+    {
+        key: "PROFESSIONAL_PHOTOGRAPHY",
+        label: "Professional Photography"
+    },
 
-        {
-            key: "WEDDING_VIDEOGRAPHY",
-            label: "Wedding Videography"
-        }
+    {
+        key: "WEDDING_VIDEOGRAPHY",
+        label: "Wedding Videography"
+    }
 
-    ];
+];
 
 
 const AdminVendorVerification = () => {
@@ -69,7 +69,7 @@ const AdminVendorVerification = () => {
         vendors,
         setVendors
     ] =
-        useState<AdminVendorVerificationRecord[]>([]);
+        useState<AdminVendorVerification[]>([]);
 
 
     const [
@@ -107,7 +107,7 @@ const AdminVendorVerification = () => {
         setSelectedVendor
     ] =
         useState<
-            AdminVendorVerificationRecord | null
+            AdminVendorVerification | null
         >(null);
 
 
@@ -200,7 +200,7 @@ const AdminVendorVerification = () => {
                     vendor =>
 
                         vendor.vendorId ===
-                            updatedVendor.vendorId
+                        updatedVendor.vendorId
 
                             ? updatedVendor
 
@@ -389,7 +389,7 @@ const AdminVendorVerification = () => {
 
 
             switch (
-            action
+                action
             ) {
 
                 case "approve":
@@ -501,7 +501,7 @@ const AdminVendorVerification = () => {
 
 
             switch (
-            action
+                action
             ) {
 
                 case "approve":
@@ -704,7 +704,7 @@ const AdminVendorVerification = () => {
      */
 
     function renderVendorActions(
-        vendor: AdminVendorVerificationRecord
+        vendor: AdminVendorVerification
     ) {
 
         if (
@@ -827,7 +827,7 @@ const AdminVendorVerification = () => {
         service: {
             serviceId: string;
             moderationStatus:
-            ServiceModerationStatus;
+                ServiceModerationStatus;
         }
     ) {
 
@@ -1301,9 +1301,10 @@ const AdminVendorVerification = () => {
 
                                         <span
                                             className={
-                                                `verification-badge ${vendor
-                                                    .verificationStatus
-                                                    .toLowerCase()
+                                                `verification-badge ${
+                                                    vendor
+                                                        .verificationStatus
+                                                        .toLowerCase()
                                                 }`
                                             }
                                         >
@@ -1482,9 +1483,10 @@ const AdminVendorVerification = () => {
 
                                     <strong
                                         className={
-                                            `verification-badge ${selectedVendor
-                                                .verificationStatus
-                                                .toLowerCase()
+                                            `verification-badge ${
+                                                selectedVendor
+                                                    .verificationStatus
+                                                    .toLowerCase()
                                             }`
                                         }
                                     >
@@ -1628,7 +1630,7 @@ const AdminVendorVerification = () => {
                                                                     {
                                                                         service
                                                                             .category
-                                                                        || "—"
+                                                                            || "—"
                                                                     }
 
                                                                 </span>
@@ -1648,9 +1650,10 @@ const AdminVendorVerification = () => {
 
                                                                     <strong
                                                                         className={
-                                                                            `verification-badge ${service
-                                                                                .moderationStatus
-                                                                                .toLowerCase()
+                                                                            `verification-badge ${
+                                                                                service
+                                                                                    .moderationStatus
+                                                                                    .toLowerCase()
                                                                             }`
                                                                         }
                                                                     >
