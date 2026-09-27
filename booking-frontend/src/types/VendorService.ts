@@ -38,30 +38,27 @@ export interface ServicePackage {
 }
 
 
-
 export interface VendorService {
-  id: string;
 
-  serviceId?: string;
+    id: string;
 
-  serviceName: string;
+    serviceName: string;
 
-  category: string;
+    category: string;
 
-  description: string;
-
+    description: string;
 
     startingPrice?: number;
 
-  capacity: number;
+    capacity: number;
 
-  durationHours: number;
+    durationHours: number;
 
-  active: boolean;
+    active: boolean;
 
-  featured: boolean;
+    featured: boolean;
 
-  pricingConfigured: boolean;
+    pricingConfigured: boolean;
 
 
     /* =====================================
@@ -70,13 +67,13 @@ export interface VendorService {
 
     contactInfo: ContactInfo;
 
-  availability: Availability;
+    availability: Availability;
 
-  bookingSettings: BookingSettings;
+    bookingSettings: BookingSettings;
 
-  imageUrls?: string[];
+    imageUrls?: string[];
 
-  amenities: string[];
+    amenities: string[];
 
 
     /* =====================================
@@ -95,7 +92,7 @@ export interface VendorService {
     packages?: ServicePackage[];
 
 
-  location: string;
+    location: string;
 
 
     /* =====================================
@@ -109,4 +106,3 @@ export interface VendorService {
     moderationStatus?: ModerationStatus;
 
 }
-
