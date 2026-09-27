@@ -59,9 +59,9 @@ interface PricingHead {
     name: string;
 
     calculationType:
-    | "FIXED"
-    | "PERCENTAGE"
-    | string;
+        | "FIXED"
+        | "PERCENTAGE"
+        | string;
 
     value: number;
 
@@ -79,9 +79,9 @@ interface Discount {
     name: string;
 
     discountType:
-    | "FIXED"
-    | "PERCENTAGE"
-    | string;
+        | "FIXED"
+        | "PERCENTAGE"
+        | string;
 
     value: number;
 
@@ -420,7 +420,7 @@ const BookingCheckout = () => {
 
                     const pricing =
                         cartItemPricing[
-                        item.serviceId
+                            item.serviceId
                         ];
 
 
@@ -535,7 +535,7 @@ const BookingCheckout = () => {
 
                                 const pricing =
                                     cartItemPricing[
-                                    item.serviceId
+                                        item.serviceId
                                     ];
 
 
@@ -642,7 +642,7 @@ const BookingCheckout = () => {
 
                             const itemPricing =
                                 cartItemPricing[
-                                item.serviceId
+                                    item.serviceId
                                 ];
 
 
@@ -813,7 +813,7 @@ const BookingCheckout = () => {
         }
 
 
-        setCurrentCart(
+        setCart(
             updatedCart
         );
 
@@ -941,7 +941,7 @@ const BookingCheckout = () => {
 
                 }
                 catch (
-                err: any
+                    err: any
                 ) {
 
                     console.error(
@@ -1081,55 +1081,55 @@ const BookingCheckout = () => {
                             Array.from(
                                 bundleGroups.entries()
                             )
-                                .map(
-                                    async ([
-                                        bundleId,
-                                        items
-                                    ]) => {
+                            .map(
+                                async ([
+                                    bundleId,
+                                    items
+                                ]) => {
 
-                                        try {
+                                    try {
 
-                                            const response =
-                                                await api.post<BundleCalculationResponse>(
-                                                    "/bundles/calculate",
-                                                    {
+                                        const response =
+                                            await api.post<BundleCalculationResponse>(
+                                                "/bundles/calculate",
+                                                {
 
-                                                        bundleId,
+                                                    bundleId,
 
-                                                        items:
-                                                            items.map(
-                                                                item => ({
+                                                    items:
+                                                        items.map(
+                                                            item => ({
 
-                                                                    serviceId:
-                                                                        item.serviceId,
+                                                                serviceId:
+                                                                    item.serviceId,
 
-                                                                    packageId:
-                                                                        item.packageId
+                                                                packageId:
+                                                                    item.packageId
 
-                                                                })
-                                                            )
+                                                            })
+                                                        )
 
-                                                    }
-                                                );
-
-
-                                            return response.data;
-
-                                        }
-                                        catch (error) {
-
-                                            console.error(
-                                                `Bundle calculation failed for ${bundleId}:`,
-                                                error
+                                                }
                                             );
 
 
-                                            return null;
-
-                                        }
+                                        return response.data;
 
                                     }
-                                )
+                                    catch (error) {
+
+                                        console.error(
+                                            `Bundle calculation failed for ${bundleId}:`,
+                                            error
+                                        );
+
+
+                                        return null;
+
+                                    }
+
+                                }
+                            )
 
                         );
 
@@ -1461,7 +1461,7 @@ const BookingCheckout = () => {
         useMemo(() => {
 
             switch (
-            paymentPreference
+                paymentPreference
             ) {
 
                 case "ADVANCE_PAYMENT":
@@ -1910,7 +1910,7 @@ const BookingCheckout = () => {
 
                 }
                 catch (
-                err: any
+                    err: any
                 ) {
 
                     console.error(
@@ -2052,7 +2052,7 @@ const BookingCheckout = () => {
 
             }
             catch (
-            err: any
+                err: any
             ) {
 
                 console.error(
@@ -2225,7 +2225,7 @@ const BookingCheckout = () => {
 
                                                     const itemPricing =
                                                         cartItemPricing[
-                                                        item.serviceId
+                                                            item.serviceId
                                                         ];
 
 
@@ -2909,7 +2909,7 @@ const BookingCheckout = () => {
 
                                                     const itemPricing =
                                                         cartItemPricing[
-                                                        item.serviceId
+                                                            item.serviceId
                                                         ];
 
 
