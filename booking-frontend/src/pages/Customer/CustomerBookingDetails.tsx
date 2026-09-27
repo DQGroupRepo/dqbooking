@@ -3,7 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 
 import CustomerBookingService from "../../services/CustomerBookingService";
 
-import type { CustomerBookingDetailsResponse } from "../../types/CustomerBookingDetailsResponse";
+import type { Booking } from "../../types/Booking";
 import BookingSummaryCard from "../../components/customer/BookingSummaryCard";
 import BookingVendorCard from "../../components/customer/BookingVendorCard";
 import BookingPaymentCard from "../../components/customer/BookingPaymentCard";
@@ -19,7 +19,7 @@ export default function CustomerBookingDetails() {
     const navigate = useNavigate();
 
     const [booking, setBooking] =
-        useState<CustomerBookingDetailsResponse>();
+        useState<Booking>();
 
     const [loading, setLoading] =
         useState(true);
@@ -108,46 +108,46 @@ export default function CustomerBookingDetails() {
             <BookingRefundCard
                 booking={booking}
             />
-            <button
-                type="button"
-                className="write-review-button"
-                onClick={() =>
-                    navigate(
-                        `/customer/bookings/${booking.bookingId}/review`
-                    )
-                }
-            >
-                Write a Review
-            </button>
+             <button
+                                    type="button"
+                                    className="write-review-button"
+                                    onClick={() =>
+                                        navigate(
+                                            `/customer/bookings/${booking.bookingId}/review`
+                                        )
+                                    }
+                                >
+                                    Write a Review
+                                </button>
 
-            {booking.eventDate &&
-                new Date(booking.eventDate) < new Date() &&
-                booking.bookingStatus !== "CANCELLED" &&
-                booking.bookingStatus !== "REJECTED" && (
+             {booking.eventDate &&
+                 new Date(booking.eventDate) < new Date() &&
+                 booking.bookingStatus !== "CANCELLED" &&
+                 booking.bookingStatus !== "REJECTED" && (
 
-                    reviewSubmitted ? (
+                     reviewSubmitted ? (
 
-                        <div className="review-submitted">
-                            ✓ Review Submitted
-                        </div>
+                         <div className="review-submitted">
+                             ✓ Review Submitted
+                         </div>
 
-                    ) : (
+                     ) : (
 
-                        <button
-                            type="button"
-                            className="write-review-button"
-                            onClick={() =>
-                                navigate(
-                                    `/customer/bookings/${booking.bookingId}/review`
-                                )
-                            }
-                        >
-                            Write a Review
-                        </button>
+                         <button
+                             type="button"
+                             className="write-review-button"
+                             onClick={() =>
+                                 navigate(
+                                     `/customer/bookings/${booking.bookingId}/review`
+                                 )
+                             }
+                         >
+                             Write a Review
+                         </button>
 
-                    )
+                     )
 
-                )}
+             )}
 
         </div>
 
