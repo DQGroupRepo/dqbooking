@@ -91,7 +91,7 @@ export default function PhotographySection({
 
                 options={facilities}
 
-                values={formData as unknown as Record<string, boolean>}
+                values={formData}
 
                 onChange={handleChange}
 
