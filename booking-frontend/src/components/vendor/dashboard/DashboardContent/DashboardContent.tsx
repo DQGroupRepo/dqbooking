@@ -3,8 +3,8 @@ import VendorBookingTable from "../../booking/VendorBookingTable/VendorBookingTa
 import TodaySummary from "../TodaySummary/TodaySummary";
 import QuickActions from "../QuickActions/QuickActions";
 
-import type { RecentBooking } from "../../../../types/RecentBooking";
-import type { VendorDashboardSummary } from "../../../../types/VendorDashboard";
+import type { RecentBooking } from "../../../types/RecentBooking";
+import type { VendorDashboardSummary } from "../../../types/VendorDashboard";
 
 import styles from "./DashboardContent.module.css";
 
