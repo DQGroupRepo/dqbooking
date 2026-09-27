@@ -345,12 +345,12 @@ const Header = () => {
 
         };
 
-        /*
-            * Update immediately when
-            * Header is mounted.
-            */
+         /*
+             * Update immediately when
+             * Header is mounted.
+             */
 
-        updateCartCount();
+         updateCartCount();
 
         window.addEventListener(
             "cartUpdated",
@@ -375,6 +375,21 @@ const Header = () => {
                 "storage",
                 updateCartCount
             );
+
+            return () => {
+
+                    window.removeEventListener(
+                        "cartUpdated",
+                        updateCartCount
+                    );
+
+
+                    window.removeEventListener(
+                        "storage",
+                        updateCartCount
+                    );
+
+                };
 
         };
 
@@ -1001,10 +1016,11 @@ const Header = () => {
 
                                 <button
                                     type="button"
-                                    className={`header-action-button notification-action ${showNotifications
+                                    className={`header-action-button notification-action ${
+                                        showNotifications
                                             ? "action-active"
                                             : ""
-                                        }`}
+                                    }`}
                                     onClick={() =>
                                         setShowNotifications(
                                             current =>
@@ -1125,10 +1141,11 @@ const Header = () => {
                                                                         notification.id
                                                                     }
 
-                                                                    className={`notification-item ${!notification.read
+                                                                    className={`notification-item ${
+                                                                        !notification.read
                                                                             ? "notification-unread"
                                                                             : ""
-                                                                        }`}
+                                                                    }`}
 
                                                                     onClick={() =>
                                                                         handleNotificationClick(
@@ -1139,10 +1156,11 @@ const Header = () => {
 
 
                                                                     <div
-                                                                        className={`notification-icon ${getNotificationTypeClass(
-                                                                            notification.type
-                                                                        )
-                                                                            }`}
+                                                                        className={`notification-icon ${
+                                                                            getNotificationTypeClass(
+                                                                                notification.type
+                                                                            )
+                                                                        }`}
                                                                     >
 
                                                                         {
@@ -1265,10 +1283,11 @@ const Header = () => {
 
                                 <button
                                     type="button"
-                                    className={`header-profile ${showProfile
+                                    className={`header-profile ${
+                                        showProfile
                                             ? "profile-active"
                                             : ""
-                                        }`}
+                                    }`}
                                     onClick={() =>
                                         setShowProfile(
                                             current =>
@@ -1486,10 +1505,11 @@ const Header = () => {
 
                     <Link
                         to="/"
-                        className={`navigation-link ${isHomeActive
+                        className={`navigation-link ${
+                            isHomeActive
                                 ? "active"
                                 : ""
-                            }`}
+                        }`}
                     >
                         Home
                     </Link>
@@ -1501,10 +1521,11 @@ const Header = () => {
 
                     <Link
                         to="/categories?category=HALL"
-                        className={`navigation-link ${isCategoryActive("HALL")
+                        className={`navigation-link ${
+                            isCategoryActive("HALL")
                                 ? "active"
                                 : ""
-                            }`}
+                        }`}
                     >
                         Venues
                     </Link>
@@ -1516,10 +1537,11 @@ const Header = () => {
 
                     <Link
                         to="/categories?category=PHOTOGRAPHY"
-                        className={`navigation-link ${isCategoryActive("PHOTOGRAPHY")
+                        className={`navigation-link ${
+                            isCategoryActive("PHOTOGRAPHY")
                                 ? "active"
                                 : ""
-                            }`}
+                        }`}
                     >
                         Photography
                     </Link>
@@ -1531,10 +1553,11 @@ const Header = () => {
 
                     <Link
                         to="/categories?category=MAKEUP"
-                        className={`navigation-link ${isCategoryActive("MAKEUP")
+                        className={`navigation-link ${
+                            isCategoryActive("MAKEUP")
                                 ? "active"
                                 : ""
-                            }`}
+                        }`}
                     >
                         Makeup
                     </Link>
@@ -1546,10 +1569,11 @@ const Header = () => {
 
                     <Link
                         to="/categories?category=CATERING"
-                        className={`navigation-link ${isCategoryActive("CATERING")
+                        className={`navigation-link ${
+                            isCategoryActive("CATERING")
                                 ? "active"
                                 : ""
-                            }`}
+                        }`}
                     >
                         Catering
                     </Link>
@@ -1561,10 +1585,11 @@ const Header = () => {
 
                     <Link
                         to="/categories?category=DECORATION"
-                        className={`navigation-link ${isCategoryActive("DECORATION")
+                        className={`navigation-link ${
+                            isCategoryActive("DECORATION")
                                 ? "active"
                                 : ""
-                            }`}
+                        }`}
                     >
                         Decor
                     </Link>
@@ -1594,11 +1619,12 @@ const Header = () => {
 
                         <Link
                             to="/customer/bookings"
-                            className={`navigation-bookings ${location.pathname ===
-                                    "/customer/bookings"
+                            className={`navigation-bookings ${
+                                location.pathname ===
+                                "/customer/bookings"
                                     ? "active"
                                     : ""
-                                }`}
+                            }`}
                         >
                             My Bookings
                         </Link>
