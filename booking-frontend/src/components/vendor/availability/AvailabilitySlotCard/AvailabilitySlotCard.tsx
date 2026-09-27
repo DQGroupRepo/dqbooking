@@ -33,7 +33,7 @@ export default function AvailabilitySlotCard({
 
     const capacity =
 
-        override?.capacityOverride ??
+        override?.capacityOverride  ??
 
         slot.maxBookings;
 
@@ -81,25 +81,25 @@ export default function AvailabilitySlotCard({
 
                         )
 
-                            : slot.active ? (
+                        : slot.active ? (
 
-                                <span className="status active">
+                            <span className="status active">
 
-                                    ✅ Available
+                                ✅ Available
 
-                                </span>
+                            </span>
 
-                            )
+                        )
 
-                                : (
+                        : (
 
-                                    <span className="status inactive">
+                            <span className="status inactive">
 
-                                        ⛔ Disabled
+                                ⛔ Disabled
 
-                                    </span>
+                            </span>
 
-                                )
+                        )
 
                     }
 
