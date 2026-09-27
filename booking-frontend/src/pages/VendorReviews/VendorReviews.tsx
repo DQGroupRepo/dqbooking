@@ -18,23 +18,23 @@ import ReviewList from "../../components/vendor/reviews/ReviewList";
 
 import "./VendorReviews.css";
 
-export default function VendorReviews() {
+export default function VendorReviews(){
 
-    const [reviews, setReviews] = useState<Review[]>([]);
+    const [reviews,setReviews]=useState<Review[]>([]);
 
-    const [search, setSearch] = useState("");
+    const [search,setSearch]=useState("");
 
-    const [filter, setFilter] = useState(0);
+    const [filter,setFilter]=useState(0);
 
-    useEffect(() => {
+    useEffect(()=>{
 
         loadReviews();
 
-    }, []);
+    },[]);
 
-    async function loadReviews() {
+    async function loadReviews(){
 
-        const data =
+        const data=
 
             await ReviewService.getReviews();
 
@@ -42,13 +42,13 @@ export default function VendorReviews() {
 
     }
 
-    const filteredReviews = useMemo(() => {
+    const filteredReviews=useMemo(()=>{
 
-        return reviews.filter(review => {
+        return reviews.filter(review=>{
 
-            const matchesSearch =
+            const matchesSearch=
 
-                review.customerName ?? "Customer"
+                review.customerName
 
                     .toLowerCase()
 
@@ -58,13 +58,13 @@ export default function VendorReviews() {
 
                     );
 
-            const matchesRating =
+            const matchesRating=
 
-                filter === 0 ||
+                filter===0 ||
 
-                review.rating === filter;
+                review.rating===filter;
 
-            return (
+            return(
 
                 matchesSearch &&
 
@@ -74,9 +74,9 @@ export default function VendorReviews() {
 
         });
 
-    }, [reviews, search, filter]);
+    },[reviews,search,filter]);
 
-    return (
+    return(
 
         <section className="vendor-reviews">
 
