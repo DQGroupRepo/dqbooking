@@ -15,6 +15,7 @@ import com.booking.service.VendorAccessService;
 import com.booking.service.VendorCateringMenuService;
 import com.booking.service.VendorPermissionService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,6 +24,7 @@ import java.util.*;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class VendorCateringMenuServiceImpl
         implements VendorCateringMenuService {
 
@@ -40,13 +42,6 @@ public class VendorCateringMenuServiceImpl
 
     private final VendorPermissionService
             vendorPermissionService;
-
-
-    /*
-     * =========================================
-     * GET MENU
-     * =========================================
-     */
 
     @Override
     @Transactional(readOnly = true)
@@ -78,6 +73,12 @@ public class VendorCateringMenuServiceImpl
 
         if (menu == null) {
 
+            log.info(
+                    "Catering menu not found, returning empty menu vendorId={} serviceId={}",
+                    vendorId,
+                    serviceId
+            );
+
             CateringMenuResponse response =
                     new CateringMenuResponse();
 
@@ -96,17 +97,22 @@ public class VendorCateringMenuServiceImpl
             return response;
         }
 
-        return toResponse(
-                menu
+        CateringMenuResponse response =
+                toResponse(
+                        menu
+                );
+
+        log.info(
+                "Catering menu retrieved vendorId={} serviceId={} itemCount={}",
+                vendorId,
+                serviceId,
+                response.getItems() == null
+                        ? 0
+                        : response.getItems().size()
         );
+
+        return response;
     }
-
-
-    /*
-     * =========================================
-     * UPDATE MENU
-     * =========================================
-     */
 
     @Override
     @Transactional
@@ -122,6 +128,12 @@ public class VendorCateringMenuServiceImpl
         String vendorId =
                 vendorAccessService
                         .getEffectiveVendorId();
+
+        log.info(
+                "Updating catering menu vendorId={} serviceId={}",
+                vendorId,
+                serviceId
+        );
 
         VendorService service =
                 getOwnedCateringService(
@@ -140,6 +152,12 @@ public class VendorCateringMenuServiceImpl
                                 vendorId
                         )
                         .orElseGet(() -> {
+
+                            log.debug(
+                                    "Creating new catering menu vendorId={} serviceId={}",
+                                    vendorId,
+                                    serviceId
+                            );
 
                             VendorCateringMenu newMenu =
                                     new VendorCateringMenu();
@@ -178,17 +196,20 @@ public class VendorCateringMenuServiceImpl
                         menu
                 );
 
+        log.info(
+                "Catering menu updated vendorId={} serviceId={} menuId={} itemCount={}",
+                vendorId,
+                serviceId,
+                savedMenu.getId(),
+                savedMenu.getItems() == null
+                        ? 0
+                        : savedMenu.getItems().size()
+        );
+
         return toResponse(
                 savedMenu
         );
     }
-
-
-    /*
-     * =========================================
-     * GET OWNED CATERING SERVICE
-     * =========================================
-     */
 
     private VendorService getOwnedCateringService(
             String serviceId,
@@ -201,16 +222,29 @@ public class VendorCateringMenuServiceImpl
                                 serviceId,
                                 vendorId
                         )
-                        .orElseThrow(() ->
-                                new ResourceNotFoundException(
-                                        "Service not found."
-                                )
-                        );
+                        .orElseThrow(() -> {
+                            log.warn(
+                                    "Catering service not found or not owned vendorId={} serviceId={}",
+                                    vendorId,
+                                    serviceId
+                            );
+
+                            return new ResourceNotFoundException(
+                                    "Service not found."
+                            );
+                        });
 
         if (
                 service.getCategory()
                         != ServiceCategory.CATERING
         ) {
+
+            log.warn(
+                    "Requested service is not a catering service vendorId={} serviceId={} category={}",
+                    vendorId,
+                    serviceId,
+                    service.getCategory()
+            );
 
             throw new ResourceNotFoundException(
                     "Catering service not found."
@@ -220,18 +254,13 @@ public class VendorCateringMenuServiceImpl
         return service;
     }
 
-
-    /*
-     * =========================================
-     * VALIDATE MENU REQUEST
-     * =========================================
-     */
-
     private void validateRequest(
             CateringMenuRequest request
     ) {
 
         if (request == null) {
+
+            log.warn("Catering menu update rejected because request is null");
 
             throw new IllegalArgumentException(
                     "Catering menu request is required."
@@ -254,10 +283,6 @@ public class VendorCateringMenuServiceImpl
                     itemRequest
             );
 
-            /*
-             * Existing vendor menu item IDs
-             * must not occur twice.
-             */
             if (
                     itemRequest.getId() != null &&
                             !itemRequest.getId().isBlank()
@@ -269,6 +294,10 @@ public class VendorCateringMenuServiceImpl
                         )
                 ) {
 
+                    log.warn(
+                            "Catering menu update rejected because of duplicate item ID"
+                    );
+
                     throw new IllegalArgumentException(
                             "Duplicate catering menu item ID."
                     );
@@ -277,18 +306,13 @@ public class VendorCateringMenuServiceImpl
         }
     }
 
-
-    /*
-     * =========================================
-     * VALIDATE MENU ITEM
-     * =========================================
-     */
-
     private void validateMenuItem(
             CateringMenuItemRequest request
     ) {
 
         if (request == null) {
+
+            log.warn("Catering menu item validation failed because item is null");
 
             throw new IllegalArgumentException(
                     "Catering menu item cannot be null."
@@ -305,6 +329,8 @@ public class VendorCateringMenuServiceImpl
                         ) < 0
         ) {
 
+            log.warn("Catering menu item validation failed because price is invalid");
+
             throw new IllegalArgumentException(
                     "Catering menu item price must be zero or greater."
             );
@@ -318,42 +344,33 @@ public class VendorCateringMenuServiceImpl
                 request.getCustomName() != null &&
                         !request.getCustomName().isBlank();
 
-        /*
-         * A menu item must be either:
-         *
-         * 1. standard catalog dish
-         * OR
-         * 2. custom dish
-         */
         if (
                 !hasDishId &&
                         !hasCustomName
         ) {
+
+            log.warn(
+                    "Catering menu item validation failed because neither dish nor custom name was supplied"
+            );
 
             throw new IllegalArgumentException(
                     "A catering menu item must reference a dish or provide a custom dish name."
             );
         }
 
-        /*
-         * Do not allow an item to behave as
-         * both a standard and custom dish.
-         */
         if (
                 hasDishId &&
                         hasCustomName
         ) {
 
+            log.warn(
+                    "Catering menu item validation failed because both standard and custom dish values were supplied"
+            );
+
             throw new IllegalArgumentException(
                     "A catering menu item cannot contain both a dish ID and a custom dish name."
             );
         }
-
-        /*
-         * =========================================
-         * STANDARD MASTER DISH
-         * =========================================
-         */
 
         if (hasDishId) {
 
@@ -362,11 +379,16 @@ public class VendorCateringMenuServiceImpl
                             .findById(
                                     request.getDishId()
                             )
-                            .orElseThrow(() ->
-                                    new ResourceNotFoundException(
-                                            "Catering dish not found."
-                                    )
-                            );
+                            .orElseThrow(() -> {
+                                log.warn(
+                                        "Catering dish not found dishId={}",
+                                        request.getDishId()
+                                );
+
+                                return new ResourceNotFoundException(
+                                        "Catering dish not found."
+                                );
+                            });
 
             if (
                     Boolean.FALSE.equals(
@@ -377,37 +399,27 @@ public class VendorCateringMenuServiceImpl
                             )
             ) {
 
+                log.warn(
+                        "Catering menu item rejected because selected dish is inactive dishId={}",
+                        request.getDishId()
+                );
+
                 throw new IllegalArgumentException(
                         "The selected catering dish is inactive."
                 );
             }
 
-            /*
-             * The authoritative values for a
-             * standard dish come from the master
-             * catalog, not from the client.
-             *
-             * Therefore the request's:
-             *
-             * cuisine
-             * category
-             * foodType
-             *
-             * are not trusted.
-             */
             return;
         }
-
-        /*
-         * =========================================
-         * CUSTOM DISH
-         * =========================================
-         */
 
         if (
                 request.getCuisine() == null ||
                         request.getCuisine().isBlank()
         ) {
+
+            log.warn(
+                    "Custom catering dish rejected because cuisine is missing"
+            );
 
             throw new IllegalArgumentException(
                     "Custom dish cuisine is required."
@@ -419,6 +431,10 @@ public class VendorCateringMenuServiceImpl
                         request.getCategory().isBlank()
         ) {
 
+            log.warn(
+                    "Custom catering dish rejected because category is missing"
+            );
+
             throw new IllegalArgumentException(
                     "Custom dish category is required."
             );
@@ -429,18 +445,15 @@ public class VendorCateringMenuServiceImpl
                         request.getFoodType().isBlank()
         ) {
 
+            log.warn(
+                    "Custom catering dish rejected because food type is missing"
+            );
+
             throw new IllegalArgumentException(
                     "Custom dish food type is required."
             );
         }
     }
-
-
-    /*
-     * =========================================
-     * MAP REQUEST ITEMS
-     * =========================================
-     */
 
     private List<VendorCateringMenuItem> mapItems(
             List<CateringMenuItemRequest> requests
@@ -462,13 +475,6 @@ public class VendorCateringMenuServiceImpl
                 .toList();
     }
 
-
-    /*
-     * =========================================
-     * MAP SINGLE ITEM
-     * =========================================
-     */
-
     private VendorCateringMenuItem mapItem(
             CateringMenuItemRequest request
     ) {
@@ -476,12 +482,6 @@ public class VendorCateringMenuServiceImpl
         VendorCateringMenuItem item =
                 new VendorCateringMenuItem();
 
-        /*
-         * Preserve the frontend/vendor item ID
-         * during an update.
-         *
-         * Generate one for new items.
-         */
         if (
                 request.getId() != null &&
                         !request.getId().isBlank()
@@ -515,10 +515,6 @@ public class VendorCateringMenuServiceImpl
                 request.isActive()
         );
 
-        /*
-         * Standard dishes get their
-         * catalog metadata from the master.
-         */
         if (
                 request.getDishId() != null &&
                         !request.getDishId().isBlank()
@@ -549,9 +545,6 @@ public class VendorCateringMenuServiceImpl
 
         } else {
 
-            /*
-             * Custom dish owns its own metadata.
-             */
             item.setCuisine(
                     request.getCuisine()
             );
@@ -567,13 +560,6 @@ public class VendorCateringMenuServiceImpl
 
         return item;
     }
-
-
-    /*
-     * =========================================
-     * MAP RESPONSE
-     * =========================================
-     */
 
     private CateringMenuResponse toResponse(
             VendorCateringMenu menu
@@ -609,13 +595,6 @@ public class VendorCateringMenuServiceImpl
         return response;
     }
 
-
-    /*
-     * =========================================
-     * MAP ITEM RESPONSE
-     * =========================================
-     */
-
     private CateringMenuItemResponse toItemResponse(
             VendorCateringMenuItem item
     ) {
@@ -639,9 +618,6 @@ public class VendorCateringMenuServiceImpl
                 item.isActive()
         );
 
-        /*
-         * Custom item.
-         */
         if (
                 item.getDishId() == null ||
                         item.getDishId().isBlank()
@@ -670,9 +646,6 @@ public class VendorCateringMenuServiceImpl
             return response;
         }
 
-        /*
-         * Standard catalog item.
-         */
         CateringDish dish =
                 cateringDishRepository
                         .findById(
@@ -700,13 +673,6 @@ public class VendorCateringMenuServiceImpl
 
         } else {
 
-            /*
-             * Keep the vendor menu item usable even
-             * if the master record is no longer found.
-             *
-             * This is particularly useful when
-             * inspecting an existing vendor menu.
-             */
             response.setCuisine(
                     item.getCuisine()
             );
@@ -735,33 +701,19 @@ public class VendorCateringMenuServiceImpl
             String foodType
     ) {
 
-        /*
-         * =========================================
-         * VIEW PERMISSION
-         * =========================================
-         */
-
         vendorPermissionService.checkView(
                 VendorPage.SERVICES
         );
-
-
-        /*
-         * =========================================
-         * EFFECTIVE VENDOR
-         * =========================================
-         */
 
         String vendorId =
                 vendorAccessService
                         .getEffectiveVendorId();
 
-
-        /*
-         * =========================================
-         * SERVICE OWNERSHIP
-         * =========================================
-         */
+        log.info(
+                "Retrieving catering menu options vendorId={} serviceId={}",
+                vendorId,
+                serviceId
+        );
 
         VendorService service =
                 vendorServiceRepository
@@ -775,44 +727,28 @@ public class VendorCateringMenuServiceImpl
                                 )
                         );
 
-
-        /*
-         * =========================================
-         * CATEGORY CHECK
-         * =========================================
-         */
-
         if (
                 service.getCategory() !=
                         ServiceCategory.CATERING
         ) {
 
+            log.warn(
+                    "Catering menu options requested for non-catering service vendorId={} serviceId={} category={}",
+                    vendorId,
+                    serviceId,
+                    service.getCategory()
+            );
+
             throw new IllegalArgumentException(
                     "Catering menu options are only available for catering services."
             );
-
         }
-
-
-        /*
-         * =========================================
-         * MASTER DISHES
-         * =========================================
-         *
-         * Get global dishes matching cuisine.
-         */
 
         List<CateringDish> masterDishes =
                 cateringDishRepository
                         .findByCuisineAndActiveTrueAndDeletedFalse(
                                 cuisine
                         );
-
-
-        /*
-         * Apply food type filtering when
-         * exactly one food type is requested.
-         */
 
         if (
                 foodType != null &&
@@ -837,15 +773,7 @@ public class VendorCateringMenuServiceImpl
                                                             )
                             )
                             .toList();
-
         }
-
-
-        /*
-         * =========================================
-         * EXISTING VENDOR MENU
-         * =========================================
-         */
 
         VendorCateringMenu vendorMenu =
                 vendorCateringMenuRepository
@@ -855,26 +783,11 @@ public class VendorCateringMenuServiceImpl
                         )
                         .orElse(null);
 
-
-        /*
-         * =========================================
-         * SAVED STANDARD ITEMS
-         * =========================================
-         */
-
         Map<String, VendorCateringMenuItem> savedStandardItems =
                 new HashMap<>();
 
-
-        /*
-         * =========================================
-         * SAVED CUSTOM ITEMS
-         * =========================================
-         */
-
         List<VendorCateringMenuItem> customItems =
                 new ArrayList<>();
-
 
         if (
                 vendorMenu != null &&
@@ -886,9 +799,6 @@ public class VendorCateringMenuServiceImpl
                     vendorMenu.getItems()
             ) {
 
-                /*
-                 * Standard master dish
-                 */
                 if (
                         item.getDishId() != null &&
                                 !item.getDishId().isBlank()
@@ -899,12 +809,7 @@ public class VendorCateringMenuServiceImpl
                             item
                     );
 
-                }
-
-                /*
-                 * Vendor custom dish
-                 */
-                else if (
+                } else if (
                         item.getCustomName() != null &&
                                 !item.getCustomName().isBlank()
                 ) {
@@ -919,7 +824,6 @@ public class VendorCateringMenuServiceImpl
                                                                     cuisine
                                                             )
                                     );
-
 
                     boolean foodTypeMatches =
                             foodType == null ||
@@ -936,7 +840,6 @@ public class VendorCateringMenuServiceImpl
                                                             )
                                     );
 
-
                     if (
                             cuisineMatches &&
                                     foodTypeMatches &&
@@ -946,31 +849,13 @@ public class VendorCateringMenuServiceImpl
                         customItems.add(
                                 item
                         );
-
                     }
-
                 }
-
             }
-
         }
-
-
-        /*
-         * =========================================
-         * BUILD RESPONSE
-         * =========================================
-         */
 
         List<CateringMenuOptionResponse> result =
                 new ArrayList<>();
-
-
-        /*
-         * =========================================
-         * ADD MASTER DISHES
-         * =========================================
-         */
 
         for (
                 CateringDish dish :
@@ -979,7 +864,6 @@ public class VendorCateringMenuServiceImpl
 
             CateringMenuOptionResponse response =
                     new CateringMenuOptionResponse();
-
 
             response.setId(
                     dish.getId()
@@ -1013,12 +897,10 @@ public class VendorCateringMenuServiceImpl
                     false
             );
 
-
             VendorCateringMenuItem savedItem =
                     savedStandardItems.get(
                             dish.getId()
                     );
-
 
             if (
                     savedItem != null
@@ -1032,8 +914,7 @@ public class VendorCateringMenuServiceImpl
                         savedItem.getPricePerPerson()
                 );
 
-            }
-            else {
+            } else {
 
                 response.setSelected(
                         false
@@ -1042,22 +923,12 @@ public class VendorCateringMenuServiceImpl
                 response.setPricePerPerson(
                         null
                 );
-
             }
-
 
             result.add(
                     response
             );
-
         }
-
-
-        /*
-         * =========================================
-         * ADD VENDOR CUSTOM DISHES
-         * =========================================
-         */
 
         for (
                 VendorCateringMenuItem item :
@@ -1066,7 +937,6 @@ public class VendorCateringMenuServiceImpl
 
             CateringMenuOptionResponse response =
                     new CateringMenuOptionResponse();
-
 
             response.setId(
                     item.getId()
@@ -1104,24 +974,22 @@ public class VendorCateringMenuServiceImpl
                     true
             );
 
-            /*
-             * A custom item returned from
-             * vendor_catering_menus is already
-             * part of the vendor's menu.
-             */
             response.setSelected(
                     true
             );
 
-
             result.add(
                     response
             );
-
         }
 
+        log.info(
+                "Catering menu options retrieved vendorId={} serviceId={} optionCount={}",
+                vendorId,
+                serviceId,
+                result.size()
+        );
 
         return result;
     }
-
 }

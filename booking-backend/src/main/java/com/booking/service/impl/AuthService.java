@@ -15,6 +15,8 @@ import com.booking.repository.UserRepository;
 import com.booking.security.JwtService;
 import com.booking.service.VendorAccountService;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -30,6 +32,9 @@ public class AuthService {
 
     private final VendorAccountService vendorAccountService;
 
+    private static final Logger log =
+            LoggerFactory.getLogger(AuthService.class);
+
 
     /*
      * =========================================
@@ -41,20 +46,36 @@ public class AuthService {
             LoginRequest request
     ) {
 
+        log.info(
+                "Login attempt email={}",
+                request.getEmail()
+        );
+
         User user =
                 userRepository
                         .findByEmail(
                                 request.getEmail()
                         )
-                        .orElseThrow(
-                                InvalidCredentialsException::new
-                        );
+                        .orElseThrow(() -> {
+
+                            log.warn(
+                                    "Login failed - user not found email={}",
+                                    request.getEmail()
+                            );
+
+                            return new InvalidCredentialsException();
+                        });
 
 
         if (!passwordEncoder.matches(
                 request.getPassword(),
                 user.getPassword()
         )) {
+
+            log.warn(
+                    "Login failed - invalid credentials userId={}",
+                    user.getId()
+            );
 
             throw new InvalidCredentialsException();
         }
@@ -67,7 +88,6 @@ public class AuthService {
          */
 
         String name;
-
 
         if (user.getRole() == Role.VENDOR_ADMIN ||
                 user.getRole() == Role.VENDOR_USER) {
@@ -104,6 +124,13 @@ public class AuthService {
                 );
 
 
+        log.info(
+                "Login successful userId={} role={}",
+                user.getId(),
+                user.getRole().name()
+        );
+
+
         return LoginResponse.builder()
 
                 .token(
@@ -136,11 +163,22 @@ public class AuthService {
             RegisterRequest request
     ) {
 
+        log.info(
+                "Customer registration attempt email={}",
+                request.getEmail()
+        );
+
+
         if (userRepository
                 .findByEmail(
                         request.getEmail()
                 )
                 .isPresent()) {
+
+            log.warn(
+                    "Customer registration rejected - email already registered email={}",
+                    request.getEmail()
+            );
 
             throw new IllegalArgumentException(
                     "Email already registered"
@@ -175,8 +213,15 @@ public class AuthService {
         );
 
 
-        userRepository.save(
-                user
+        User savedUser =
+                userRepository.save(
+                        user
+                );
+
+
+        log.info(
+                "Customer registration successful userId={}",
+                savedUser.getId()
         );
     }
 
@@ -203,6 +248,14 @@ public class AuthService {
     public VendorRegisterResponse registerVendor(
             VendorRegisterRequest request
     ) {
+
+        log.info(
+                "Vendor registration started businessName={} email={}",
+                request.getBusinessName(),
+                request.getEmail()
+        );
+
+
         /*
          * =========================================
          * CREATE VENDOR ADMIN
@@ -234,6 +287,7 @@ public class AuthService {
          *
          * VendorAdmin does NOT need a vendorId.
          */
+
         vendor.setVendorId(
                 null
         );
@@ -353,6 +407,15 @@ public class AuthService {
                         savedVendor.getId()
                 );
 
+
+        log.info(
+                "Vendor registration successful vendorId={} userId={} verificationStatus={}",
+                savedVendor.getId(),
+                savedVendor.getId(),
+                savedVendor.getVerificationStatus()
+        );
+
+
         return VendorRegisterResponse
                 .builder()
                 .userId(
@@ -372,5 +435,4 @@ public class AuthService {
                 )
                 .build();
     }
-
 }

@@ -22,6 +22,7 @@ import com.booking.service.*;
 import com.booking.util.BookingNumberGenerator;
 import com.booking.util.SecurityUtil;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
@@ -36,6 +37,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class BookingServiceImpl implements BookingService
 {
 
@@ -83,6 +85,11 @@ public class BookingServiceImpl implements BookingService
         User customer =
                 authenticatedUserService
                         .getCurrentCustomer();
+
+        log.info("Creating booking group customerId={} serviceCount={} bundleCount={}",
+                customer.getId(),
+                request.getServices() == null ? 0 : request.getServices().size(),
+                request.getBundles() == null ? 0 : request.getBundles().size());
 
 
         /*
@@ -292,10 +299,17 @@ public class BookingServiceImpl implements BookingService
 
         if (serviceItems.isEmpty()) {
 
+            log.warn("Booking creation rejected: no service items customerId={}",
+                    customer.getId());
+
             throw new IllegalArgumentException(
                     "At least one service is required."
             );
         }
+
+        log.debug("Prepared booking items bookingGroupId={} distinctServiceItems={}",
+                bookingGroupId,
+                serviceItems.size());
 
 
         /*
@@ -1040,6 +1054,16 @@ public class BookingServiceImpl implements BookingService
                             booking
                     );
 
+            log.info("Booking created bookingId={} bookingNumber={} bookingGroupId={} customerId={} vendorId={} serviceId={} eventDate={} bundleId={}",
+                    booking.getId(),
+                    booking.getBookingNumber(),
+                    bookingGroupId,
+                    customer.getId(),
+                    booking.getVendorId(),
+                    booking.getServiceId(),
+                    booking.getEventDate(),
+                    booking.getBundleId());
+
 
             /*
              * =========================================
@@ -1110,6 +1134,15 @@ public class BookingServiceImpl implements BookingService
          * =========================================
          */
 
+        log.info("Booking group created bookingGroupId={} customerId={} bookingCount={} originalTotal={} totalDiscount={} finalTotal={} bundleApplied={}",
+                bookingGroupId,
+                customer.getId(),
+                bookingResponses.size(),
+                originalTotal,
+                totalDiscount,
+                finalTotal,
+                bundleApplied);
+
         return BookingGroupResponse
                 .builder()
 
@@ -1168,6 +1201,9 @@ public class BookingServiceImpl implements BookingService
 
         List<Booking> bookings =
                 bookingRepository.findByVendorId(vendorId);
+
+        log.info("Retrieved vendor bookings vendorId={} bookingCount={}",
+                vendorId, bookings.size());
 
         return enrichBookingResponses(bookings);
     }
@@ -1256,6 +1292,9 @@ public class BookingServiceImpl implements BookingService
                                 customerId
                         );
 
+        log.info("Retrieved customer bookings customerId={} bookingCount={}",
+                customerId, bookings.size());
+
         return enrichBookingResponses(
                 bookings
         );
@@ -1296,6 +1335,9 @@ public class BookingServiceImpl implements BookingService
                 bookingRepository.findByServiceId(
                         serviceId
                 );
+
+        log.info("Retrieved service bookings vendorId={} serviceId={} bookingCount={}",
+                vendorId, serviceId, bookings.size());
 
         return enrichBookingResponses(
                 bookings
@@ -1525,6 +1567,8 @@ public class BookingServiceImpl implements BookingService
             String bookingId
     ) {
 
+        log.info("Cancelling booking bookingId={}", bookingId);
+
         String email =
                 SecurityUtil.getCurrentUserEmail();
 
@@ -1589,6 +1633,12 @@ public class BookingServiceImpl implements BookingService
                 booking
         );
 
+        log.info("Booking cancelled bookingId={} bookingNumber={} refundPercentage={} paymentStatus={}",
+                booking.getId(),
+                booking.getBookingNumber(),
+                calculation.getRefundPercentage(),
+                booking.getPaymentStatus());
+
         return BookingCancellationResponse
                 .builder()
 
@@ -1628,6 +1678,8 @@ public class BookingServiceImpl implements BookingService
     public CustomerBookingDetailsResponse getBookingDetails(
             String bookingId
     ) {
+
+        log.info("Retrieving booking details bookingId={}", bookingId);
 
         /*
          * =========================================
@@ -1951,9 +2003,10 @@ public class BookingServiceImpl implements BookingService
             String bookingId
     ) {
 
+        log.info("Calculating cancellation preview bookingId={}", bookingId);
+
         String email =
                 SecurityUtil.getCurrentUserEmail();
-        System.out.println("Logged in email = " + email);
         User customer =
                 userRepository
                         .findByEmail(email)
@@ -2271,6 +2324,8 @@ public class BookingServiceImpl implements BookingService
             String bookingGroupId
     ) {
 
+        log.info("Retrieving booking group bookingGroupId={}", bookingGroupId);
+
         List<Booking> bookings =
                 bookingRepository.findByBookingGroupId(
                         bookingGroupId
@@ -2280,6 +2335,9 @@ public class BookingServiceImpl implements BookingService
                 bookings == null ||
                         bookings.isEmpty()
         ) {
+
+            log.warn("Booking group not found bookingGroupId={}",
+                    bookingGroupId);
 
             throw new BookingNotFoundException(
                     "Booking group not found"
@@ -2373,6 +2431,12 @@ public class BookingServiceImpl implements BookingService
                                                 !booking.getBundleId().isBlank()
                         )
                         .count();
+
+        log.info("Booking group retrieved bookingGroupId={} bookingCount={} finalTotal={} bundleApplied={}",
+                bookingGroupId,
+                bookings.size(),
+                finalTotal,
+                bundleApplied);
 
         return BookingGroupResponse
                 .builder()

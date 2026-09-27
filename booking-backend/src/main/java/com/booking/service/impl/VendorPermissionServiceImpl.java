@@ -9,11 +9,13 @@ import com.booking.repository.VendorUserPermissionRepository;
 import com.booking.service.VendorPermissionService;
 import com.booking.util.SecurityUtil;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class VendorPermissionServiceImpl
         implements VendorPermissionService {
 
@@ -26,38 +28,13 @@ public class VendorPermissionServiceImpl
         User user =
                 SecurityUtil.getCurrentUser();
 
-        /*
-         * =========================================
-         * VENDOR ADMIN
-         * =========================================
-         *
-         * VendorAdmin has complete access to all
-         * vendor pages.
-         */
         if (user.getRole() == Role.VENDOR_ADMIN) {
             return true;
         }
 
-        /*
-         * =========================================
-         * PLATFORM ADMIN
-         * =========================================
-         *
-         * Admin in Vendor Support Mode has the
-         * same vendor-level access as VendorAdmin.
-         *
-         * VendorAccessService is responsible for
-         * verifying that Support Mode is active.
-         */
         if (user.getRole() == Role.ADMIN) {
             return true;
         }
-
-        /*
-         * =========================================
-         * VENDOR USER
-         * =========================================
-         */
 
         if (user.getRole() != Role.VENDOR_USER) {
             return false;
@@ -80,19 +57,12 @@ public class VendorPermissionServiceImpl
             return false;
         }
 
-        /*
-         * Edit permission automatically grants
-         * View permission.
-         */
         if (permission.getEditPages() != null &&
                 permission.getEditPages().contains(page)) {
 
             return true;
         }
 
-        /*
-         * Explicit View permission.
-         */
         return permission.getViewPages() != null &&
                 permission.getViewPages().contains(page);
     }
@@ -103,32 +73,13 @@ public class VendorPermissionServiceImpl
         User user =
                 SecurityUtil.getCurrentUser();
 
-        /*
-         * =========================================
-         * VENDOR ADMIN
-         * =========================================
-         */
-
         if (user.getRole() == Role.VENDOR_ADMIN) {
             return true;
         }
 
-        /*
-         * =========================================
-         * PLATFORM ADMIN
-         * =========================================
-         *
-         * Admin Support Mode has full vendor access.
-         */
         if (user.getRole() == Role.ADMIN) {
             return true;
         }
-
-        /*
-         * =========================================
-         * VENDOR USER
-         * =========================================
-         */
 
         if (user.getRole() != Role.VENDOR_USER) {
             return false;
@@ -164,6 +115,16 @@ public class VendorPermissionServiceImpl
 
         if (!canView(page)) {
 
+            User user =
+                    SecurityUtil.getCurrentUser();
+
+            log.warn(
+                    "Vendor view permission denied userId={} role={} page={}",
+                    user.getId(),
+                    user.getRole(),
+                    page
+            );
+
             throw new AccessDeniedException(
                     "You do not have permission to view this page."
             );
@@ -177,6 +138,16 @@ public class VendorPermissionServiceImpl
 
         if (!canEdit(page)) {
 
+            User user =
+                    SecurityUtil.getCurrentUser();
+
+            log.warn(
+                    "Vendor edit permission denied userId={} role={} page={}",
+                    user.getId(),
+                    user.getRole(),
+                    page
+            );
+
             throw new AccessDeniedException(
                     "You do not have permission to edit this page."
             );
@@ -189,16 +160,14 @@ public class VendorPermissionServiceImpl
         User user =
                 SecurityUtil.getCurrentUser();
 
-        /*
-         * =========================================
-         * VENDOR ADMIN
-         * =========================================
-         *
-         * VendorAdmin has full access to every
-         * vendor page.
-         */
         if (user.getRole() == Role.VENDOR_ADMIN) {
 
+            log.debug(
+                    "Returning full vendor permissions userId={} role={}",
+                    user.getId(),
+                    user.getRole()
+            );
+
             return VendorPermissionsResponse.builder()
                     .viewPages(
                             java.util.EnumSet.allOf(
@@ -213,15 +182,13 @@ public class VendorPermissionServiceImpl
                     .build();
         }
 
-        /*
-         * =========================================
-         * PLATFORM ADMIN
-         * =========================================
-         *
-         * Support Mode has full vendor access.
-         */
         if (user.getRole() == Role.ADMIN) {
 
+            log.debug(
+                    "Returning full vendor permissions for support-mode admin userId={}",
+                    user.getId()
+            );
+
             return VendorPermissionsResponse.builder()
                     .viewPages(
                             java.util.EnumSet.allOf(
@@ -235,17 +202,16 @@ public class VendorPermissionServiceImpl
                     )
                     .build();
         }
-
-        /*
-         * =========================================
-         * VENDOR USER
-         * =========================================
-         */
 
         if (user.getRole() == Role.VENDOR_USER) {
 
             if (user.getVendorId() == null ||
                     user.getVendorId().isBlank()) {
+
+                log.warn(
+                        "VendorUser has no vendor assignment while retrieving permissions userId={}",
+                        user.getId()
+                );
 
                 return VendorPermissionsResponse.builder()
                         .viewPages(
@@ -270,6 +236,12 @@ public class VendorPermissionServiceImpl
                             .orElse(null);
 
             if (permission == null) {
+
+                log.debug(
+                        "No vendor permissions found userId={} vendorId={}",
+                        user.getId(),
+                        user.getVendorId()
+                );
 
                 return VendorPermissionsResponse.builder()
                         .viewPages(
@@ -299,10 +271,15 @@ public class VendorPermissionServiceImpl
                             permission.getEditPages()
                     );
 
-            /*
-             * Edit automatically implies View.
-             */
             viewPages.addAll(editPages);
+
+            log.debug(
+                    "Vendor permissions retrieved userId={} vendorId={} viewCount={} editCount={}",
+                    user.getId(),
+                    user.getVendorId(),
+                    viewPages.size(),
+                    editPages.size()
+            );
 
             return VendorPermissionsResponse.builder()
                     .viewPages(viewPages)
@@ -310,10 +287,12 @@ public class VendorPermissionServiceImpl
                     .build();
         }
 
-        /*
-         * CUSTOMER or any other role
-         * has no vendor permissions.
-         */
+        log.debug(
+                "No vendor permissions for non-vendor role userId={} role={}",
+                user.getId(),
+                user.getRole()
+        );
+
         return VendorPermissionsResponse.builder()
                 .viewPages(
                         java.util.EnumSet.noneOf(

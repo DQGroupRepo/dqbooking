@@ -5,6 +5,8 @@ import com.booking.model.CateringDish;
 import com.booking.repository.CateringDishRepository;
 import com.booking.service.CateringDishService;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,33 +17,33 @@ import java.util.List;
 public class CateringDishServiceImpl
         implements CateringDishService {
 
-    private final CateringDishRepository
-            cateringDishRepository;
+    private static final Logger log =
+            LoggerFactory.getLogger(CateringDishServiceImpl.class);
 
-
-    /*
-     * =========================================
-     * GET ALL ACTIVE DISHES
-     * =========================================
-     */
+    private final CateringDishRepository cateringDishRepository;
 
     @Override
     @Transactional(readOnly = true)
     public List<CateringDishResponse> getAllDishes() {
 
-        return cateringDishRepository
-                .findByActiveTrueAndDeletedFalse()
-                .stream()
-                .map(this::toResponse)
-                .toList();
+        log.debug(
+                "Fetching all active catering dishes"
+        );
+
+        List<CateringDishResponse> responses =
+                cateringDishRepository
+                        .findByActiveTrueAndDeletedFalse()
+                        .stream()
+                        .map(this::toResponse)
+                        .toList();
+
+        log.info(
+                "Active catering dishes fetched count={}",
+                responses.size()
+        );
+
+        return responses;
     }
-
-
-    /*
-     * =========================================
-     * GET BY CUISINE
-     * =========================================
-     */
 
     @Override
     @Transactional(readOnly = true)
@@ -49,21 +51,28 @@ public class CateringDishServiceImpl
             String cuisine
     ) {
 
-        return cateringDishRepository
-                .findByCuisineAndActiveTrueAndDeletedFalse(
-                        cuisine
-                )
-                .stream()
-                .map(this::toResponse)
-                .toList();
+        log.debug(
+                "Fetching catering dishes by cuisine cuisine={}",
+                cuisine
+        );
+
+        List<CateringDishResponse> responses =
+                cateringDishRepository
+                        .findByCuisineAndActiveTrueAndDeletedFalse(
+                                cuisine
+                        )
+                        .stream()
+                        .map(this::toResponse)
+                        .toList();
+
+        log.info(
+                "Catering dishes fetched by cuisine cuisine={} count={}",
+                cuisine,
+                responses.size()
+        );
+
+        return responses;
     }
-
-
-    /*
-     * =========================================
-     * GET BY CUISINE + CATEGORY
-     * =========================================
-     */
 
     @Override
     @Transactional(readOnly = true)
@@ -73,22 +82,31 @@ public class CateringDishServiceImpl
             String category
     ) {
 
-        return cateringDishRepository
-                .findByCuisineAndCategoryAndActiveTrueAndDeletedFalse(
-                        cuisine,
-                        category
-                )
-                .stream()
-                .map(this::toResponse)
-                .toList();
+        log.debug(
+                "Fetching catering dishes cuisine={} category={}",
+                cuisine,
+                category
+        );
+
+        List<CateringDishResponse> responses =
+                cateringDishRepository
+                        .findByCuisineAndCategoryAndActiveTrueAndDeletedFalse(
+                                cuisine,
+                                category
+                        )
+                        .stream()
+                        .map(this::toResponse)
+                        .toList();
+
+        log.info(
+                "Catering dishes fetched cuisine={} category={} count={}",
+                cuisine,
+                category,
+                responses.size()
+        );
+
+        return responses;
     }
-
-
-    /*
-     * =========================================
-     * GET BY CUISINE + CATEGORY + FOOD TYPE
-     * =========================================
-     */
 
     @Override
     @Transactional(readOnly = true)
@@ -99,23 +117,34 @@ public class CateringDishServiceImpl
             String foodType
     ) {
 
-        return cateringDishRepository
-                .findByCuisineAndCategoryAndFoodTypeAndActiveTrueAndDeletedFalse(
-                        cuisine,
-                        category,
-                        foodType
-                )
-                .stream()
-                .map(this::toResponse)
-                .toList();
+        log.debug(
+                "Fetching catering dishes cuisine={} category={} foodType={}",
+                cuisine,
+                category,
+                foodType
+        );
+
+        List<CateringDishResponse> responses =
+                cateringDishRepository
+                        .findByCuisineAndCategoryAndFoodTypeAndActiveTrueAndDeletedFalse(
+                                cuisine,
+                                category,
+                                foodType
+                        )
+                        .stream()
+                        .map(this::toResponse)
+                        .toList();
+
+        log.info(
+                "Catering dishes fetched cuisine={} category={} foodType={} count={}",
+                cuisine,
+                category,
+                foodType,
+                responses.size()
+        );
+
+        return responses;
     }
-
-
-    /*
-     * =========================================
-     * MAP RESPONSE
-     * =========================================
-     */
 
     private CateringDishResponse toResponse(
             CateringDish dish
@@ -152,5 +181,4 @@ public class CateringDishServiceImpl
 
         return response;
     }
-
 }

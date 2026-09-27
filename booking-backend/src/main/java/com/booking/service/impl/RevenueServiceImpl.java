@@ -4,14 +4,14 @@ import com.booking.dto.revenue.MonthlyRevenueResponse;
 import com.booking.dto.revenue.PaymentHistoryResponse;
 import com.booking.dto.revenue.RevenueSummaryResponse;
 import com.booking.model.Booking;
-import com.booking.model.User;
 import com.booking.repository.BookingRepository;
 import com.booking.service.RevenueService;
 import com.booking.service.VendorAccessService;
+import com.booking.service.VendorPermissionService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import com.booking.model.enums.VendorPage;
-import com.booking.service.VendorPermissionService;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -23,6 +23,7 @@ import java.util.Locale;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class RevenueServiceImpl implements RevenueService {
 
     private final BookingRepository bookingRepository;
@@ -37,11 +38,15 @@ public class RevenueServiceImpl implements RevenueService {
         vendorPermissionService.checkView(
                 VendorPage.REVENUE
         );
+
         String vendorId =
                 vendorAccessService.getEffectiveVendorId();
 
         List<Booking> bookings =
                 bookingRepository.findByVendorId(vendorId);
+
+        log.info("Calculating revenue summary vendorId={} bookingCount={}",
+                vendorId, bookings.size());
 
         BigDecimal totalRevenue = BigDecimal.ZERO;
         BigDecimal pendingPayments = BigDecimal.ZERO;
@@ -71,9 +76,7 @@ public class RevenueServiceImpl implements RevenueService {
                     && booking.getEventDate().getYear() == today.getYear()) {
 
                 thisMonth = thisMonth.add(total);
-
             }
-
         }
 
         BigDecimal average =
@@ -86,13 +89,15 @@ public class RevenueServiceImpl implements RevenueService {
                                 RoundingMode.HALF_UP
                         );
 
+        log.info("Revenue summary calculated vendorId={} bookingCount={}",
+                vendorId, bookings.size());
+
         return RevenueSummaryResponse.builder()
                 .thisMonth(thisMonth)
                 .totalRevenue(totalRevenue)
                 .pendingPayments(pendingPayments)
                 .averageBookingValue(average)
                 .build();
-
     }
 
     @Override
@@ -101,33 +106,41 @@ public class RevenueServiceImpl implements RevenueService {
         vendorPermissionService.checkView(
                 VendorPage.REVENUE
         );
+
         String vendorId =
                 vendorAccessService.getEffectiveVendorId();
 
         List<Booking> bookings =
                 bookingRepository.findByVendorId(vendorId);
 
-        return List.of(Month.values()).stream()
-                .map(month -> {
+        log.info("Calculating monthly revenue vendorId={} bookingCount={}",
+                vendorId, bookings.size());
 
-                    BigDecimal revenue = bookings.stream()
-                            .filter(b -> b.getEventDate() != null)
-                            .filter(b -> b.getEventDate().getMonth() == month)
-                            .map(b -> b.getTotalAmount() == null
-                                    ? BigDecimal.ZERO
-                                    : b.getTotalAmount())
-                            .reduce(BigDecimal.ZERO, BigDecimal::add);
+        List<MonthlyRevenueResponse> monthlyRevenue =
+                List.of(Month.values()).stream()
+                        .map(month -> {
 
-                    return MonthlyRevenueResponse.builder()
-                            .month(month.getDisplayName(
-                                    TextStyle.SHORT,
-                                    Locale.ENGLISH))
-                            .revenue(revenue)
-                            .build();
+                            BigDecimal revenue = bookings.stream()
+                                    .filter(b -> b.getEventDate() != null)
+                                    .filter(b -> b.getEventDate().getMonth() == month)
+                                    .map(b -> b.getTotalAmount() == null
+                                            ? BigDecimal.ZERO
+                                            : b.getTotalAmount())
+                                    .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-                })
-                .toList();
+                            return MonthlyRevenueResponse.builder()
+                                    .month(month.getDisplayName(
+                                            TextStyle.SHORT,
+                                            Locale.ENGLISH))
+                                    .revenue(revenue)
+                                    .build();
+                        })
+                        .toList();
 
+        log.info("Monthly revenue calculated vendorId={} monthCount={}",
+                vendorId, monthlyRevenue.size());
+
+        return monthlyRevenue;
     }
 
     @Override
@@ -136,16 +149,21 @@ public class RevenueServiceImpl implements RevenueService {
         vendorPermissionService.checkView(
                 VendorPage.REVENUE
         );
+
         String vendorId =
                 vendorAccessService.getEffectiveVendorId();
 
-        return bookingRepository
-                .findTop5ByVendorIdOrderByCreatedTsDesc(
-                        vendorId)
-                .stream()
-                .map(this::mapPayment)
-                .toList();
+        List<PaymentHistoryResponse> paymentHistory =
+                bookingRepository
+                        .findTop5ByVendorIdOrderByCreatedTsDesc(vendorId)
+                        .stream()
+                        .map(this::mapPayment)
+                        .toList();
 
+        log.info("Retrieved payment history vendorId={} paymentCount={}",
+                vendorId, paymentHistory.size());
+
+        return paymentHistory;
     }
 
     private PaymentHistoryResponse mapPayment(
@@ -160,7 +178,6 @@ public class RevenueServiceImpl implements RevenueService {
                 .paymentStatus(booking.getPaymentStatus())
                 .eventDate(booking.getEventDate())
                 .build();
-
     }
 
 }

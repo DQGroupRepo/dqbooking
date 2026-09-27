@@ -5,7 +5,7 @@ spring:
 
   data:
     mongodb:
-      uri: mongodb://localhost:27017/Catalog
+      uri: mongodb://127.0.0.1:27017/Catalog
 
   servlet:
     multipart:
@@ -17,8 +17,13 @@ server:
 
 logging:
   level:
+    root: INFO
+    com.booking: INFO
     org.springframework.data.mongodb: INFO
-    org.springframework.security: DEBUG
+    org.springframework.security: INFO
+
+  pattern:
+    console: "%d{yyyy-MM-dd'T'HH:mm:ss.SSSXXX} %-5level [correlationId=%X{correlationId:-}] [userId=%X{userId:-} role=%X{role:-} vendorId=%X{vendorId:-}] %logger{36} - %msg%n"
 
 jwt:
   secret: 4A6B4D6E5A715564586E3272357538782F413F4428472B4B6250655368566D5971

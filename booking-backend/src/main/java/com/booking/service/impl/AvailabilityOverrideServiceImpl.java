@@ -14,6 +14,8 @@ import com.booking.repository.BookingSlotRepository;
 import com.booking.repository.VendorServiceRepository;
 import com.booking.service.AvailabilityOverrideService;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -23,6 +25,9 @@ import java.util.List;
 @RequiredArgsConstructor
 public class AvailabilityOverrideServiceImpl
         implements AvailabilityOverrideService {
+
+    private static final Logger log =
+            LoggerFactory.getLogger(AvailabilityOverrideServiceImpl.class);
 
     private final AvailabilityOverrideRepository repository;
 
@@ -37,25 +42,49 @@ public class AvailabilityOverrideServiceImpl
             String serviceId,
             CreateAvailabilityOverrideRequest request) {
 
+        log.info(
+                "Creating availability override serviceId={} slotId={} date={}",
+                serviceId,
+                request.getSlotId(),
+                request.getDate()
+        );
+
         VendorService service = vendorServiceRepository.findById(serviceId)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "Vendor Service not found."
-                        ));
+                .orElseThrow(() -> {
+                    log.warn(
+                            "Cannot create availability override. Service not found serviceId={}",
+                            serviceId
+                    );
+
+                    return new ResourceNotFoundException(
+                            "Vendor Service not found."
+                    );
+                });
 
         BookingSlot slot = bookingSlotRepository.findById(
                         request.getSlotId())
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "Booking Slot not found."
-                        ));
+                .orElseThrow(() -> {
+                    log.warn(
+                            "Cannot create availability override. Booking slot not found slotId={}",
+                            request.getSlotId()
+                    );
+
+                    return new ResourceNotFoundException(
+                            "Booking Slot not found."
+                    );
+                });
 
         if (!slot.getServiceId().equals(serviceId)) {
+
+            log.warn(
+                    "Booking slot does not belong to service serviceId={} slotId={}",
+                    serviceId,
+                    request.getSlotId()
+            );
 
             throw new IllegalArgumentException(
                     "Booking Slot does not belong to this service."
             );
-
         }
 
         validateOverride(request.getCapacityOverride());
@@ -65,10 +94,16 @@ public class AvailabilityOverrideServiceImpl
                 request.getSlotId(),
                 request.getDate())) {
 
+            log.warn(
+                    "Availability override already exists serviceId={} slotId={} date={}",
+                    serviceId,
+                    request.getSlotId(),
+                    request.getDate()
+            );
+
             throw new ResourceAlreadyExistsException(
                     "Availability override already exists."
             );
-
         }
 
         AvailabilityOverride override =
@@ -78,14 +113,26 @@ public class AvailabilityOverrideServiceImpl
 
         override = repository.save(override);
 
-        return mapper.toResponse(override);
+        log.info(
+                "Availability override created overrideId={} serviceId={} slotId={} date={}",
+                override.getId(),
+                serviceId,
+                request.getSlotId(),
+                request.getDate()
+        );
 
+        return mapper.toResponse(override);
     }
 
     @Override
     public AvailabilityOverrideResponse updateOverride(
             String overrideId,
             UpdateAvailabilityOverrideRequest request) {
+
+        log.info(
+                "Updating availability override overrideId={}",
+                overrideId
+        );
 
         AvailabilityOverride override =
                 getOverrideEntity(overrideId);
@@ -99,31 +146,50 @@ public class AvailabilityOverrideServiceImpl
 
         override = repository.save(override);
 
-        return mapper.toResponse(override);
+        log.info(
+                "Availability override updated overrideId={} serviceId={} date={}",
+                override.getId(),
+                override.getServiceId(),
+                override.getDate()
+        );
 
+        return mapper.toResponse(override);
     }
 
     @Override
     public void deleteOverride(
             String overrideId) {
 
+        log.info(
+                "Deleting availability override overrideId={}",
+                overrideId
+        );
+
         AvailabilityOverride override =
                 getOverrideEntity(overrideId);
 
         repository.delete(override);
 
+        log.info(
+                "Availability override deleted overrideId={} serviceId={} date={}",
+                overrideId,
+                override.getServiceId(),
+                override.getDate()
+        );
     }
 
     @Override
     public AvailabilityOverrideResponse getOverride(
             String overrideId) {
 
-        return mapper.toResponse(
-
-                getOverrideEntity(overrideId)
-
+        log.debug(
+                "Fetching availability override overrideId={}",
+                overrideId
         );
 
+        return mapper.toResponse(
+                getOverrideEntity(overrideId)
+        );
     }
 
     @Override
@@ -131,15 +197,28 @@ public class AvailabilityOverrideServiceImpl
             String serviceId,
             LocalDate date) {
 
-        return mapper.toResponseList(
-
-                repository.findByServiceIdAndDateOrderByCreatedTsAsc(
-                        serviceId,
-                        date
-                )
-
+        log.debug(
+                "Fetching availability overrides serviceId={} date={}",
+                serviceId,
+                date
         );
 
+        List<AvailabilityOverrideResponse> responses =
+                mapper.toResponseList(
+                        repository.findByServiceIdAndDateOrderByCreatedTsAsc(
+                                serviceId,
+                                date
+                        )
+                );
+
+        log.info(
+                "Availability overrides fetched serviceId={} date={} count={}",
+                serviceId,
+                date,
+                responses.size()
+        );
+
+        return responses;
     }
 
     /* =======================================================
@@ -151,12 +230,17 @@ public class AvailabilityOverrideServiceImpl
 
         return repository.findById(overrideId)
 
-                .orElseThrow(() ->
+                .orElseThrow(() -> {
 
-                        new ResourceNotFoundException(
-                                "Availability Override not found."
-                        ));
+                    log.warn(
+                            "Availability override not found overrideId={}",
+                            overrideId
+                    );
 
+                    return new ResourceNotFoundException(
+                            "Availability Override not found."
+                    );
+                });
     }
 
     private void validateOverride(
@@ -165,12 +249,14 @@ public class AvailabilityOverrideServiceImpl
         if (maxBookingsOverride != null
                 && maxBookingsOverride < 0) {
 
+            log.warn(
+                    "Invalid availability capacity override value={}",
+                    maxBookingsOverride
+            );
+
             throw new IllegalArgumentException(
                     "Maximum bookings override cannot be negative."
             );
-
         }
-
     }
-
 }

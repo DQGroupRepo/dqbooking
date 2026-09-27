@@ -26,9 +26,7 @@ public class PercentagePricingHeadCalculator
         }
 
         return baseAmount
-
                 .multiply(pricingHead.getValue())
-
                 .divide(
                         BigDecimal.valueOf(100),
                         2,

@@ -14,6 +14,8 @@ import com.booking.repository.BundleRepository;
 import com.booking.repository.VendorServiceRepository;
 import com.booking.service.BundleCalculationService;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -21,7 +23,6 @@ import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
@@ -29,48 +30,56 @@ import java.util.stream.Collectors;
 public class BundleCalculationServiceImpl
         implements BundleCalculationService {
 
-    private final VendorServiceRepository vendorServiceRepository;
-    private final BundleRepository bundleRepository;
+    private static final Logger log =
+            LoggerFactory.getLogger(BundleCalculationServiceImpl.class);
 
+    private final VendorServiceRepository vendorServiceRepository;
+
+    private final BundleRepository bundleRepository;
 
     @Override
     public BundleCalculationResponse calculateBundle(
             BundleCalculationRequest request
     ) {
 
-        /*
-         * =========================================
-         * 1. LOAD BUNDLE
-         * =========================================
-         */
+        log.debug(
+                "Starting bundle calculation bundleId={} itemCount={}",
+                request.getBundleId(),
+                request.getItems() == null
+                        ? 0
+                        : request.getItems().size()
+        );
 
         Bundle bundle =
                 bundleRepository
                         .findById(
                                 request.getBundleId()
                         )
-                        .orElseThrow(() ->
-                                new ResourceNotFoundException(
-                                        "Bundle not found: "
-                                                + request.getBundleId()
-                                )
-                        );
+                        .orElseThrow(() -> {
 
+                            log.warn(
+                                    "Bundle calculation failed. Bundle not found bundleId={}",
+                                    request.getBundleId()
+                            );
 
-        /*
-         * =========================================
-         * 2. LOAD SERVICES
-         * =========================================
-         */
+                            return new ResourceNotFoundException(
+                                    "Bundle not found: "
+                                            + request.getBundleId()
+                            );
+                        });
 
         List<BundleCalculationItemRequest> requestItems =
                 request.getItems();
-
 
         if (
                 requestItems == null ||
                         requestItems.isEmpty()
         ) {
+
+            log.debug(
+                    "Bundle calculation has no service items bundleId={}",
+                    request.getBundleId()
+            );
 
             return BundleCalculationResponse.builder()
                     .bundleApplied(false)
@@ -81,7 +90,6 @@ public class BundleCalculationServiceImpl
                     .items(List.of())
                     .build();
         }
-
 
         Map<String, VendorService> serviceMap =
                 requestItems
@@ -99,12 +107,11 @@ public class BundleCalculationServiceImpl
                                 )
                         );
 
-
-        /*
-         * =========================================
-         * 3. VERIFY BUNDLE SERVICES
-         * =========================================
-         */
+        log.debug(
+                "Bundle services loaded bundleId={} serviceCount={}",
+                bundle.getId(),
+                serviceMap.size()
+        );
 
         List<BundleCalculationLine> lines =
                 requestItems
@@ -116,20 +123,18 @@ public class BundleCalculationServiceImpl
                                             item.getServiceId()
                                     );
 
-
                             if (service == null) {
+
+                                log.warn(
+                                        "Bundle calculation service not found serviceId={}",
+                                        item.getServiceId()
+                                );
 
                                 throw new VendorServiceNotFoundException(
                                         "Service not found: "
                                                 + item.getServiceId()
                                 );
-
                             }
-
-
-                            /*
-                             * Verify service belongs to bundle.
-                             */
 
                             if (
                                     !bundle
@@ -139,15 +144,19 @@ public class BundleCalculationServiceImpl
                                             )
                             ) {
 
+                                log.warn(
+                                        "Service does not belong to bundle serviceId={} bundleId={}",
+                                        service.getId(),
+                                        bundle.getId()
+                                );
+
                                 throw new IllegalArgumentException(
                                         "Service "
                                                 + service.getId()
                                                 + " does not belong to bundle "
                                                 + bundle.getId()
                                 );
-
                             }
-
 
                             ServicePackage selectedPackage =
                                     resolvePackage(
@@ -155,23 +164,19 @@ public class BundleCalculationServiceImpl
                                             item.getPackageId()
                                     );
 
-
                             return new BundleCalculationLine(
                                     service,
                                     selectedPackage
                             );
-
                         })
                         .toList();
 
-
-        /*
-         * =========================================
-         * 4. VERIFY SAME VENDOR
-         * =========================================
-         */
-
         if (lines.isEmpty()) {
+
+            log.debug(
+                    "Bundle calculation produced no qualifying lines bundleId={}",
+                    bundle.getId()
+            );
 
             return BundleCalculationResponse.builder()
                     .bundleApplied(false)
@@ -183,12 +188,10 @@ public class BundleCalculationServiceImpl
                     .build();
         }
 
-
         String vendorId =
                 lines.get(0)
                         .service()
                         .getVendorId();
-
 
         boolean sameVendor =
                 lines.stream()
@@ -196,43 +199,26 @@ public class BundleCalculationServiceImpl
                                 line ->
                                         line.service()
                                                 .getVendorId()
-                                                .equals(
-                                                        vendorId
-                                                )
+                                                .equals(vendorId)
                         );
 
-
         if (!sameVendor) {
+
+            log.warn(
+                    "Bundle calculation rejected because services belong to different vendors bundleId={}",
+                    bundle.getId()
+            );
 
             throw new IllegalArgumentException(
                     "All services in a bundle must belong to the same vendor."
             );
-
         }
-
-
-        /*
-         * =========================================
-         * 5. QUALIFICATION
-         * =========================================
-         */
 
         int qualifyingServiceCount =
                 lines.size();
 
-
         boolean bundleApplied =
                 qualifyingServiceCount >= 2;
-
-
-        /*
-         * =========================================
-         * 6. ORIGINAL TOTAL
-         * =========================================
-         *
-         * Package price is used when selected.
-         * Otherwise normal service price is used.
-         */
 
         BigDecimal originalTotal =
                 lines.stream()
@@ -247,31 +233,20 @@ public class BundleCalculationServiceImpl
                                         line.selectedPackage()
                                                 .getPrice()
                                 );
-
                             }
-
 
                             return safe(
                                     line.service()
                                             .getStartingPrice()
                             );
-
                         })
                         .reduce(
                                 BigDecimal.ZERO,
                                 BigDecimal::add
                         );
 
-
-        /*
-         * =========================================
-         * 7. CALCULATE BUNDLE DISCOUNT
-         * =========================================
-         */
-
         BigDecimal totalDiscount =
                 BigDecimal.ZERO;
-
 
         if (bundleApplied) {
 
@@ -279,7 +254,6 @@ public class BundleCalculationServiceImpl
                     safe(
                             bundle.getDiscountValue()
                     );
-
 
             if (
                     "PERCENTAGE".equalsIgnoreCase(
@@ -298,8 +272,7 @@ public class BundleCalculationServiceImpl
                                         RoundingMode.HALF_UP
                                 );
 
-            }
-            else if (
+            } else if (
                     "FIXED".equalsIgnoreCase(
                             bundle.getDiscountType()
                     )
@@ -309,27 +282,16 @@ public class BundleCalculationServiceImpl
                         discountValue.min(
                                 originalTotal
                         );
-
             }
-
         }
-
-
-        /*
-         * =========================================
-         * 8. ALLOCATE DISCOUNT
-         * =========================================
-         */
 
         List<BundleDiscountItem> resultItems =
                 new ArrayList<>();
-
 
         BigDecimal finalTotal =
                 originalTotal.subtract(
                         totalDiscount
                 );
-
 
         for (
                 BundleCalculationLine line :
@@ -339,10 +301,8 @@ public class BundleCalculationServiceImpl
             VendorService service =
                     line.service();
 
-
             ServicePackage selectedPackage =
                     line.selectedPackage();
-
 
             BigDecimal originalAmount =
                     selectedPackage != null
@@ -353,10 +313,8 @@ public class BundleCalculationServiceImpl
                             service.getStartingPrice()
                     );
 
-
             BigDecimal itemDiscount =
                     BigDecimal.ZERO;
-
 
             if (
                     bundleApplied &&
@@ -375,9 +333,7 @@ public class BundleCalculationServiceImpl
                                         2,
                                         RoundingMode.HALF_UP
                                 );
-
             }
-
 
             BigDecimal itemFinalAmount =
                     originalAmount
@@ -388,89 +344,70 @@ public class BundleCalculationServiceImpl
                                     BigDecimal.ZERO
                             );
 
-
             resultItems.add(
                     BundleDiscountItem.builder()
-
                             .serviceId(
                                     service.getId()
                             )
-
                             .serviceName(
                                     service.getServiceName()
                             )
-
                             .vendorId(
                                     service.getVendorId()
                             )
-
                             .originalAmount(
                                     originalAmount
                             )
-
                             .discountValue(
                                     bundle.getDiscountValue()
                             )
-
                             .discountAmount(
                                     itemDiscount
                             )
-
                             .finalAmount(
                                     itemFinalAmount
                             )
-
                             .bundleApplied(
                                     itemDiscount.compareTo(
                                             BigDecimal.ZERO
                                     ) > 0
                             )
-
                             .build()
             );
-
         }
 
+        log.info(
+                "Bundle calculation completed bundleId={} vendorId={} serviceCount={} bundleApplied={}",
+                bundle.getId(),
+                vendorId,
+                qualifyingServiceCount,
+                bundleApplied
+        );
 
         return BundleCalculationResponse.builder()
-
                 .bundleApplied(
                         bundleApplied
                 )
-
                 .vendorId(
                         vendorId
                 )
-
                 .qualifyingServiceCount(
                         qualifyingServiceCount
                 )
-
                 .originalTotal(
                         originalTotal
                 )
-
                 .totalDiscount(
                         totalDiscount
                 )
-
                 .finalTotal(
                         finalTotal
                 )
-
                 .items(
                         resultItems
                 )
-
                 .build();
     }
-
-
-    /*
-     * =========================================
-     * FIND SERVICE
-     * =========================================
-     */
 
     private VendorService getService(
             String serviceId
@@ -480,47 +417,36 @@ public class BundleCalculationServiceImpl
                 .findByIdAndDeletedFalse(
                         serviceId
                 )
-                .orElseThrow(() ->
-                        new VendorServiceNotFoundException(
-                                "Service not found: "
-                                        + serviceId
-                        )
-                );
+                .orElseThrow(() -> {
+
+                    log.warn(
+                            "Bundle calculation service not found serviceId={}",
+                            serviceId
+                    );
+
+                    return new VendorServiceNotFoundException(
+                            "Service not found: "
+                                    + serviceId
+                    );
+                });
     }
-
-
-    /*
-     * =========================================
-     * RESOLVE PACKAGE
-     * =========================================
-     */
 
     private ServicePackage resolvePackage(
             VendorService service,
             String packageId
     ) {
 
-        /*
-         * No package selected.
-         *
-         * Existing service pricing behaviour
-         * continues.
-         */
-
         if (
                 packageId == null ||
                         packageId.isBlank()
         ) {
-
             return null;
         }
-
 
         List<ServicePackage> packages =
                 service.getPackages() == null
                         ? List.of()
                         : service.getPackages();
-
 
         ServicePackage selectedPackage =
                 packages
@@ -533,37 +459,35 @@ public class BundleCalculationServiceImpl
                                                 )
                         )
                         .findFirst()
-                        .orElseThrow(() ->
-                                new VendorServiceNotFoundException(
-                                        "Selected package not found: "
-                                                + packageId
-                                )
-                        );
+                        .orElseThrow(() -> {
 
+                            log.warn(
+                                    "Selected package not found serviceId={} packageId={}",
+                                    service.getId(),
+                                    packageId
+                            );
 
-        /*
-         * Package must be active.
-         */
+                            return new VendorServiceNotFoundException(
+                                    "Selected package not found: "
+                                            + packageId
+                            );
+                        });
 
-        if (
-                !selectedPackage.isActive()
-        ) {
+        if (!selectedPackage.isActive()) {
+
+            log.warn(
+                    "Selected package is inactive serviceId={} packageId={}",
+                    service.getId(),
+                    packageId
+            );
 
             throw new IllegalArgumentException(
                     "Selected package is not active."
             );
         }
 
-
         return selectedPackage;
     }
-
-
-    /*
-     * =========================================
-     * CALCULATE BUNDLE DISCOUNT
-     * =========================================
-     */
 
     private BigDecimal calculateDiscount(
             BigDecimal originalAmount,
@@ -574,28 +498,19 @@ public class BundleCalculationServiceImpl
                 service.getBundleDiscountValue() == null ||
                         service.getBundleDiscountType() == null
         ) {
-
             return BigDecimal.ZERO;
         }
 
-
         BigDecimal value =
                 service.getBundleDiscountValue();
-
 
         if (
                 value.compareTo(
                         BigDecimal.ZERO
                 ) <= 0
         ) {
-
             return BigDecimal.ZERO;
         }
-
-
-        /*
-         * PERCENTAGE
-         */
 
         if (
                 service.getBundleDiscountType()
@@ -603,21 +518,13 @@ public class BundleCalculationServiceImpl
         ) {
 
             return originalAmount
-
                     .multiply(value)
-
                     .divide(
                             BigDecimal.valueOf(100),
                             2,
                             RoundingMode.HALF_UP
                     );
-
         }
-
-
-        /*
-         * FIXED
-         */
 
         if (
                 service.getBundleDiscountType()
@@ -627,19 +534,10 @@ public class BundleCalculationServiceImpl
             return value.min(
                     originalAmount
             );
-
         }
-
 
         return BigDecimal.ZERO;
     }
-
-
-    /*
-     * =========================================
-     * SAFE DECIMAL
-     * =========================================
-     */
 
     private BigDecimal safe(
             BigDecimal value
@@ -650,17 +548,9 @@ public class BundleCalculationServiceImpl
                 : value;
     }
 
-
-    /*
-     * =========================================
-     * INTERNAL CALCULATION LINE
-     * =========================================
-     */
-
     private record BundleCalculationLine(
             VendorService service,
             ServicePackage selectedPackage
     ) {
     }
-
 }

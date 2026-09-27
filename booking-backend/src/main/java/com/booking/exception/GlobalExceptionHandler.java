@@ -8,15 +8,24 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import java.time.LocalDateTime;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    private static final Logger log =
+            LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleResourceNotFound(
             ResourceNotFoundException ex) {
 
+        log.warn(
+                "Resource not found: {}",
+                ex.getMessage()
+        );
         ErrorResponse error = new ErrorResponse(
                 HttpStatus.NOT_FOUND.value(),
                 ex.getMessage(),
@@ -46,6 +55,10 @@ public class GlobalExceptionHandler {
             AccessDeniedException ex
     ) {
 
+        log.warn(
+                "Access denied: {}",
+                ex.getMessage()
+        );
         String message =
                 ex.getMessage();
 
@@ -80,6 +93,10 @@ public class GlobalExceptionHandler {
             FileSizeExceededException ex
     ) {
 
+        log.warn(
+                "File upload rejected: {}",
+                ex.getMessage()
+        );
         ErrorResponse errorResponse =
                 new ErrorResponse(
                         HttpStatus.PAYLOAD_TOO_LARGE.value(),
@@ -100,6 +117,10 @@ public class GlobalExceptionHandler {
             MaxUploadSizeExceededException ex
     ) {
 
+        log.warn(
+                "Maximum upload size exceeded"
+        );
+
         ErrorResponse errorResponse =
                 new ErrorResponse(
                         HttpStatus.PAYLOAD_TOO_LARGE.value(),
@@ -119,6 +140,10 @@ public class GlobalExceptionHandler {
             IllegalStateException ex
     ) {
 
+        log.warn(
+                "Business validation failed: {}",
+                ex.getMessage()
+        );
         ErrorResponse error =
                 new ErrorResponse(
                         HttpStatus.BAD_REQUEST.value(),
@@ -129,5 +154,24 @@ public class GlobalExceptionHandler {
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
                 .body(error);
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ErrorResponse> handleUnexpectedException(
+            Exception ex
+    ) {
+
+        log.error(
+                "Unhandled application exception",
+                ex
+        );
+
+        return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ErrorResponse(
+                        HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                        "An unexpected error occurred",
+                        LocalDateTime.now()
+                ));
     }
 }

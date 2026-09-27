@@ -12,13 +12,19 @@ import com.booking.repository.BookingSlotRepository;
 import com.booking.repository.VendorServiceRepository;
 import com.booking.service.BookingSlotService;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-public class BookingSlotServiceImpl implements BookingSlotService {
+public class BookingSlotServiceImpl
+        implements BookingSlotService {
+
+    private static final Logger log =
+            LoggerFactory.getLogger(BookingSlotServiceImpl.class);
 
     private final BookingSlotRepository bookingSlotRepository;
 
@@ -31,19 +37,43 @@ public class BookingSlotServiceImpl implements BookingSlotService {
             String serviceId,
             CreateBookingSlotRequest request) {
 
+        log.info(
+                "Creating booking slot serviceId={} slotName={}",
+                serviceId,
+                request.getSlotName()
+        );
+
         VendorService service = vendorServiceRepository.findById(serviceId)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException("Vendor Service not found."));
+                .orElseThrow(() -> {
+
+                    log.warn(
+                            "Cannot create booking slot. Service not found serviceId={}",
+                            serviceId
+                    );
+
+                    return new ResourceNotFoundException(
+                            "Vendor Service not found."
+                    );
+                });
 
         validateSlot(request, serviceId);
 
-        BookingSlot bookingSlot = bookingSlotMapper.toEntity(request);
+        BookingSlot bookingSlot =
+                bookingSlotMapper.toEntity(request);
 
         bookingSlot.setServiceId(service.getId());
 
         bookingSlot.setActive(true);
 
-        bookingSlot = bookingSlotRepository.save(bookingSlot);
+        bookingSlot =
+                bookingSlotRepository.save(bookingSlot);
+
+        log.info(
+                "Booking slot created slotId={} serviceId={} slotName={}",
+                bookingSlot.getId(),
+                serviceId,
+                bookingSlot.getSlotName()
+        );
 
         return bookingSlotMapper.toResponse(bookingSlot);
     }
@@ -53,15 +83,44 @@ public class BookingSlotServiceImpl implements BookingSlotService {
             String slotId,
             UpdateBookingSlotRequest request) {
 
-        BookingSlot bookingSlot = bookingSlotRepository.findById(slotId)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException("Booking Slot not found."));
+        log.info(
+                "Updating booking slot slotId={} slotName={}",
+                slotId,
+                request.getSlotName()
+        );
 
-        validateSlotForUpdate(request, bookingSlot);
+        BookingSlot bookingSlot =
+                bookingSlotRepository.findById(slotId)
+                        .orElseThrow(() -> {
 
-        bookingSlotMapper.updateEntity(bookingSlot, request);
+                            log.warn(
+                                    "Cannot update booking slot. Slot not found slotId={}",
+                                    slotId
+                            );
 
-        bookingSlot = bookingSlotRepository.save(bookingSlot);
+                            return new ResourceNotFoundException(
+                                    "Booking Slot not found."
+                            );
+                        });
+
+        validateSlotForUpdate(
+                request,
+                bookingSlot
+        );
+
+        bookingSlotMapper.updateEntity(
+                bookingSlot,
+                request
+        );
+
+        bookingSlot =
+                bookingSlotRepository.save(bookingSlot);
+
+        log.info(
+                "Booking slot updated slotId={} serviceId={}",
+                bookingSlot.getId(),
+                bookingSlot.getServiceId()
+        );
 
         return bookingSlotMapper.toResponse(bookingSlot);
     }
@@ -69,32 +128,83 @@ public class BookingSlotServiceImpl implements BookingSlotService {
     @Override
     public void deleteSlot(String slotId) {
 
-        BookingSlot bookingSlot = bookingSlotRepository.findById(slotId)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException("Booking Slot not found."));
+        log.info(
+                "Deleting booking slot slotId={}",
+                slotId
+        );
+
+        BookingSlot bookingSlot =
+                bookingSlotRepository.findById(slotId)
+                        .orElseThrow(() -> {
+
+                            log.warn(
+                                    "Cannot delete booking slot. Slot not found slotId={}",
+                                    slotId
+                            );
+
+                            return new ResourceNotFoundException(
+                                    "Booking Slot not found."
+                            );
+                        });
 
         bookingSlotRepository.delete(bookingSlot);
+
+        log.info(
+                "Booking slot deleted slotId={} serviceId={}",
+                slotId,
+                bookingSlot.getServiceId()
+        );
     }
 
     @Override
     public BookingSlotResponse getSlot(String slotId) {
 
-        BookingSlot bookingSlot = bookingSlotRepository.findById(slotId)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException("Booking Slot not found."));
+        log.debug(
+                "Fetching booking slot slotId={}",
+                slotId
+        );
+
+        BookingSlot bookingSlot =
+                bookingSlotRepository.findById(slotId)
+                        .orElseThrow(() -> {
+
+                            log.warn(
+                                    "Booking slot not found slotId={}",
+                                    slotId
+                            );
+
+                            return new ResourceNotFoundException(
+                                    "Booking Slot not found."
+                            );
+                        });
 
         return bookingSlotMapper.toResponse(bookingSlot);
     }
 
     @Override
-    public List<BookingSlotResponse> getSlots(String serviceId) {
+    public List<BookingSlotResponse> getSlots(
+            String serviceId) {
 
-        return bookingSlotMapper.toResponseList(
-
-                bookingSlotRepository
-                        .findByServiceIdOrderByDisplayOrderAsc(serviceId)
-
+        log.debug(
+                "Fetching booking slots serviceId={}",
+                serviceId
         );
+
+        List<BookingSlotResponse> responses =
+                bookingSlotMapper.toResponseList(
+                        bookingSlotRepository
+                                .findByServiceIdOrderByDisplayOrderAsc(
+                                        serviceId
+                                )
+                );
+
+        log.info(
+                "Booking slots fetched serviceId={} count={}",
+                serviceId,
+                responses.size()
+        );
+
+        return responses;
     }
 
     /* =======================================================
@@ -105,14 +215,25 @@ public class BookingSlotServiceImpl implements BookingSlotService {
             CreateBookingSlotRequest request,
             String serviceId) {
 
-        validateTime(request.getStartTime(), request.getEndTime());
+        validateTime(
+                request.getStartTime(),
+                request.getEndTime()
+        );
 
-        if (bookingSlotRepository.existsByServiceIdAndSlotNameIgnoreCase(
-                serviceId,
-                request.getSlotName())) {
+        if (bookingSlotRepository
+                .existsByServiceIdAndSlotNameIgnoreCase(
+                        serviceId,
+                        request.getSlotName())) {
+
+            log.warn(
+                    "Booking slot name already exists serviceId={} slotName={}",
+                    serviceId,
+                    request.getSlotName()
+            );
 
             throw new ResourceAlreadyExistsException(
-                    "Slot name already exists.");
+                    "Slot name already exists."
+            );
         }
     }
 
@@ -120,7 +241,10 @@ public class BookingSlotServiceImpl implements BookingSlotService {
             UpdateBookingSlotRequest request,
             BookingSlot existingSlot) {
 
-        validateTime(request.getStartTime(), request.getEndTime());
+        validateTime(
+                request.getStartTime(),
+                request.getEndTime()
+        );
 
         bookingSlotRepository
                 .findByServiceIdAndSlotNameIgnoreCase(
@@ -128,12 +252,19 @@ public class BookingSlotServiceImpl implements BookingSlotService {
                         request.getSlotName())
                 .ifPresent(slot -> {
 
-                    if (!slot.getId().equals(existingSlot.getId())) {
+                    if (!slot.getId()
+                            .equals(existingSlot.getId())) {
+
+                        log.warn(
+                                "Booking slot name already exists serviceId={} slotName={}",
+                                existingSlot.getServiceId(),
+                                request.getSlotName()
+                        );
 
                         throw new ResourceAlreadyExistsException(
-                                "Slot name already exists.");
+                                "Slot name already exists."
+                        );
                     }
-
                 });
     }
 
@@ -143,11 +274,16 @@ public class BookingSlotServiceImpl implements BookingSlotService {
 
         if (!end.isAfter(start)) {
 
+            log.warn(
+                    "Invalid booking slot time range startTime={} endTime={}",
+                    start,
+                    end
+            );
+
             throw new IllegalArgumentException(
-                    "End time must be after start time.");
-
+                    "End time must be after start time."
+            );
         }
-
     }
 
     @Override
@@ -155,15 +291,37 @@ public class BookingSlotServiceImpl implements BookingSlotService {
             String slotId,
             Boolean active) {
 
-        BookingSlot slot = bookingSlotRepository.findById(slotId)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException("Booking Slot not found."));
+        log.info(
+                "Changing booking slot status slotId={} active={}",
+                slotId,
+                active
+        );
+
+        BookingSlot slot =
+                bookingSlotRepository.findById(slotId)
+                        .orElseThrow(() -> {
+
+                            log.warn(
+                                    "Cannot change booking slot status. Slot not found slotId={}",
+                                    slotId
+                            );
+
+                            return new ResourceNotFoundException(
+                                    "Booking Slot not found."
+                            );
+                        });
 
         slot.setActive(active);
 
-        slot = bookingSlotRepository.save(slot);
+        slot =
+                bookingSlotRepository.save(slot);
+
+        log.info(
+                "Booking slot status changed slotId={} active={}",
+                slot.getId(),
+                slot.getActive()
+        );
 
         return bookingSlotMapper.toResponse(slot);
     }
-
 }

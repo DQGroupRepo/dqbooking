@@ -17,6 +17,8 @@ import com.booking.repository.UserRepository;
 import com.booking.repository.VendorServiceRepository;
 import com.booking.service.AdminDashboardService;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -27,6 +29,9 @@ import java.util.List;
 @RequiredArgsConstructor
 public class AdminDashboardServiceImpl
         implements AdminDashboardService {
+
+    private static final Logger log =
+            LoggerFactory.getLogger(AdminDashboardServiceImpl.class);
 
     private final UserRepository userRepository;
 
@@ -39,6 +44,8 @@ public class AdminDashboardServiceImpl
 
     @Override
     public AdminDashboardResponse getDashboard() {
+
+        log.info("Admin dashboard requested");
 
         /*
          * =========================================
@@ -291,74 +298,89 @@ public class AdminDashboardServiceImpl
          * =========================================
          */
 
-        return AdminDashboardResponse
-                .builder()
+        AdminDashboardResponse response =
+                AdminDashboardResponse
+                        .builder()
 
-                .totalUsers(
-                        totalUsers
-                )
+                        .totalUsers(
+                                totalUsers
+                        )
 
-                .totalVendors(
-                        totalVendors
-                )
+                        .totalVendors(
+                                totalVendors
+                        )
 
-                .totalBookings(
-                        totalBookings
-                )
+                        .totalBookings(
+                                totalBookings
+                        )
 
-                .totalRevenue(
-                        totalRevenue
-                )
+                        .totalRevenue(
+                                totalRevenue
+                        )
 
-                .pendingBookings(
-                        pendingBookings
-                )
+                        .pendingBookings(
+                                pendingBookings
+                        )
 
-                .confirmedBookings(
-                        confirmedBookings
-                )
+                        .confirmedBookings(
+                                confirmedBookings
+                        )
 
-                .completedBookings(
-                        completedBookings
-                )
+                        .completedBookings(
+                                completedBookings
+                        )
 
-                .cancelledBookings(
-                        cancelledBookings
-                )
+                        .cancelledBookings(
+                                cancelledBookings
+                        )
 
-                .activeCustomers(
-                        activeCustomers
-                )
+                        .activeCustomers(
+                                activeCustomers
+                        )
 
-                .activeVendors(
-                        activeVendors
-                )
+                        .activeVendors(
+                                activeVendors
+                        )
 
-                .activeServices(
-                        activeServices
-                )
+                        .activeServices(
+                                activeServices
+                        )
 
-                .totalReviews(
-                        totalReviews
-                )
+                        .totalReviews(
+                                totalReviews
+                        )
 
-                .recentBookings(
-                        recentBookings
-                )
+                        .recentBookings(
+                                recentBookings
+                        )
 
-                .bookingTrend(
-                        bookingTrend
-                )
+                        .bookingTrend(
+                                bookingTrend
+                        )
 
-                .revenueTrend(
-                        revenueTrend
-                )
+                        .revenueTrend(
+                                revenueTrend
+                        )
 
-                .pendingActions(
-                        pendingActions
-                )
+                        .pendingActions(
+                                pendingActions
+                        )
 
-                .build();
+                        .build();
+
+        log.info(
+                "Admin dashboard generated totalUsers={} totalVendors={} " +
+                        "totalBookings={} pendingBookings={} activeServices={} " +
+                        "totalReviews={}",
+                totalUsers,
+                totalVendors,
+                totalBookings,
+                pendingBookings,
+                activeServices,
+                totalReviews
+        );
+
+        return response;
     }
 
     /*

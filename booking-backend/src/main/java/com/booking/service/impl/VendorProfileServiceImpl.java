@@ -8,12 +8,14 @@ import com.booking.repository.UserRepository;
 import com.booking.service.VendorAccessService;
 import com.booking.service.VendorProfileService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import com.booking.model.enums.VendorPage;
 import com.booking.service.VendorPermissionService;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class VendorProfileServiceImpl
         implements VendorProfileService {
 
@@ -23,7 +25,6 @@ public class VendorProfileServiceImpl
     private final UserRepository userRepository;
 
     private final VendorProfileMapper mapper;
-
 
     @Override
     public VendorProfileResponse getProfile() {
@@ -36,18 +37,35 @@ public class VendorProfileServiceImpl
                 vendorAccessService
                         .getEffectiveVendorId();
 
+        log.info(
+                "Retrieving vendor profile vendorId={}",
+                vendorId
+        );
+
         User vendor =
                 userRepository
                         .findById(vendorId)
-                        .orElseThrow(() ->
-                                new IllegalStateException(
-                                        "Vendor not found."
-                                )
-                        );
+                        .orElseThrow(() -> {
+                            log.warn(
+                                    "Vendor not found while retrieving profile vendorId={}",
+                                    vendorId
+                            );
 
-        return mapper.toResponse(vendor);
+                            return new IllegalStateException(
+                                    "Vendor not found."
+                            );
+                        });
+
+        VendorProfileResponse response =
+                mapper.toResponse(vendor);
+
+        log.info(
+                "Vendor profile retrieved vendorId={}",
+                vendorId
+        );
+
+        return response;
     }
-
 
     @Override
     public VendorProfileResponse updateProfile(
@@ -61,14 +79,24 @@ public class VendorProfileServiceImpl
                 vendorAccessService
                         .getEffectiveVendorId();
 
+        log.info(
+                "Updating vendor profile vendorId={}",
+                vendorId
+        );
+
         User vendor =
                 userRepository
                         .findById(vendorId)
-                        .orElseThrow(() ->
-                                new IllegalStateException(
-                                        "Vendor not found."
-                                )
-                        );
+                        .orElseThrow(() -> {
+                            log.warn(
+                                    "Vendor not found while updating profile vendorId={}",
+                                    vendorId
+                            );
+
+                            return new IllegalStateException(
+                                    "Vendor not found."
+                            );
+                        });
 
         mapper.updateEntity(
                 vendor,
@@ -80,7 +108,11 @@ public class VendorProfileServiceImpl
                         vendor
                 );
 
+        log.info(
+                "Vendor profile updated vendorId={}",
+                vendorId
+        );
+
         return mapper.toResponse(vendor);
     }
-
 }

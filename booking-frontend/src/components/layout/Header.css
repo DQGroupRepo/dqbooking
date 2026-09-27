@@ -48,6 +48,8 @@
     display: flex;
     align-items: center;
     gap: 14px;
+
+    flex-shrink: 0;
 }
 
 
@@ -84,8 +86,14 @@
     height: 18px;
 
     background: rgba(255, 255, 255, 0.25);
+
+    flex-shrink: 0;
 }
 
+
+/* =========================================================
+   TAGLINE
+========================================================= */
 
 .utility-tagline {
     position: absolute;
@@ -95,11 +103,17 @@
 
     display: flex;
     align-items: center;
+    justify-content: center;
+
     gap: 15px;
 
     color: #e6b84a;
 
     white-space: nowrap;
+
+    pointer-events: none;
+
+    z-index: 2;
 }
 
 
@@ -108,6 +122,8 @@
     height: 1px;
 
     background: #e6b84a;
+
+    flex-shrink: 0;
 }
 
 
@@ -117,6 +133,8 @@
     font-family: Georgia, serif;
 
     font-weight: 500;
+
+    font-style: italic;
 }
 
 
@@ -277,6 +295,8 @@
 .search-keyword {
     flex: 1;
 
+    min-width: 0;
+
     padding-left: 17px;
 }
 
@@ -336,13 +356,22 @@
     height: 28px;
 
     background: #e0e7ec;
+
+    flex-shrink: 0;
 }
 
+
+/* =========================================================
+   SEARCH BUTTON
+   SAME VISUAL STYLE AT ALL BREAKPOINTS
+========================================================= */
 
 .header-search-button {
     height: 56px;
 
     min-width: 125px;
+
+    flex-shrink: 0;
 
     border: none;
 
@@ -469,7 +498,6 @@
 
 .notification-wrapper {
     position: relative;
-
     z-index: 100;
 }
 
@@ -692,35 +720,30 @@
 
 .notification-type-booking {
     background: #e8f1fb;
-
     color: #2469a5;
 }
 
 
 .notification-type-payment {
     background: #e8f7ef;
-
     color: #16834a;
 }
 
 
 .notification-type-review {
     background: #fff5dc;
-
     color: #d99000;
 }
 
 
 .notification-type-cancelled {
     background: #ffeded;
-
     color: #d93636;
 }
 
 
 .notification-type-system {
     background: #efedfb;
-
     color: #6955d9;
 }
 
@@ -731,16 +754,13 @@
 
 .notification-content {
     min-width: 0;
-
     flex: 1;
 }
 
 
 .notification-title-row {
     display: flex;
-
     align-items: center;
-
     gap: 7px;
 }
 
@@ -1025,6 +1045,7 @@
 
 .profile-dropdown {
     position: absolute;
+
     z-index: 1000;
 
     top: calc(100% + 11px);
@@ -1126,9 +1147,6 @@
 /* =========================================================
    GUEST ACTIONS
 ========================================================= */
-/* =========================================================
-   GUEST LOGIN / REGISTER
-========================================================= */
 
 .guest-actions {
     display: flex;
@@ -1140,6 +1158,7 @@
 .header-login,
 .header-register {
     display: inline-flex;
+
     align-items: center;
     justify-content: center;
 
@@ -1215,7 +1234,6 @@
 
     transform: translateY(-1px);
 }
-
 
 
 /* =========================================================
@@ -1321,12 +1339,10 @@
     color: #073654;
 }
 
+
 .navigation-link.active {
     color: #073654;
 
-    /*
-     * Active menu is intentionally bold.
-     */
     font-weight: 800;
 }
 
@@ -1349,9 +1365,9 @@
 }
 
 
-/* =========================================
+/* =========================================================
    ACTIVE CUSTOMER BOOKINGS
-========================================= */
+========================================================= */
 
 .navigation-bookings.active {
     color: #073654;
@@ -1392,6 +1408,11 @@
 
 /* =========================================================
    RESPONSIVE
+   ========================================================= */
+
+/* =========================================================
+   COMPACT DESKTOP / TABLET
+   Keep the full desktop structure at 1000px.
 ========================================================= */
 
 @media (max-width: 1250px) {
@@ -1400,80 +1421,214 @@
         width: min(1180px, calc(100% - 32px));
     }
 
-
     .main-header-container {
         gap: 16px;
     }
-
 
     .brand-name {
         font-size: 27px;
     }
 
-
     .header-search {
         min-width: 280px;
     }
-
 
     .search-location {
         width: 120px;
     }
 
-
     .search-date {
         width: 115px;
     }
-
 
     .header-main-actions {
         gap: 5px;
     }
 
-
     .navigation-container {
         gap: 28px;
     }
-
 }
 
 
+/* =========================================================
+   1000px
+   IMPORTANT:
+   Full search remains available.
+   Tagline gets its own safe row.
+========================================================= */
+
 @media (max-width: 1000px) {
 
-    .utility-tagline {
-        display: none;
+    .header-container {
+        width: calc(100% - 32px);
     }
 
+
+    /* -----------------------------------------------------
+       UTILITY BAR
+       ----------------------------------------------------- */
+
+    .header-utility {
+        padding: 0;
+    }
+
+    .utility-container {
+        min-height: 72px;
+
+        display: grid;
+
+        grid-template-columns: 1fr;
+
+        grid-template-rows: 38px 34px;
+
+        justify-items: center;
+    }
+
+    .utility-left {
+        position: absolute;
+
+        left: 0;
+        top: 0;
+
+        height: 38px;
+    }
+
+    .utility-right {
+        position: absolute;
+
+        right: 0;
+        top: 0;
+
+        height: 38px;
+    }
+
+    /*
+     * Tagline is no longer absolutely centered over
+     * the left/right utility controls.
+     *
+     * It gets its own row.
+     */
+    .utility-tagline {
+        position: static;
+
+        grid-row: 2;
+
+        transform: none;
+
+        height: 34px;
+
+        display: flex;
+
+        justify-content: center;
+
+        gap: 10px;
+
+        width: 100%;
+
+        pointer-events: none;
+    }
+
+    .utility-tagline span {
+        width: 32px;
+    }
+
+    .utility-tagline em {
+        font-size: 14px;
+    }
+
+
+    /* -----------------------------------------------------
+       MAIN HEADER
+       ----------------------------------------------------- */
 
     .main-header-container {
         flex-wrap: wrap;
 
-        padding: 14px 0;
+        padding: 14px 0 16px;
+
+        gap: 14px;
     }
 
 
+    /* -----------------------------------------------------
+       SEARCH
+       ----------------------------------------------------- */
+
+    /*
+     * Keep the complete search bar at 1000px.
+     */
     .header-search {
         order: 3;
 
         flex-basis: 100%;
+
+        width: 100%;
+
+        min-width: 0;
+
+        height: 56px;
     }
 
+    .search-keyword {
+        min-width: 0;
+
+        flex: 1;
+    }
+
+    .search-location {
+        width: 145px;
+
+        flex: 0 0 145px;
+    }
+
+    .search-date {
+        width: 135px;
+
+        flex: 0 0 135px;
+    }
+
+    .header-search-button {
+        height: 56px;
+
+        min-width: 120px;
+    }
+
+
+    /* -----------------------------------------------------
+       NAVIGATION
+       ----------------------------------------------------- */
 
     .header-navigation {
         overflow-x: auto;
+        overflow-y: hidden;
+
+        scrollbar-width: none;
+        -ms-overflow-style: none;
     }
 
+    .header-navigation::-webkit-scrollbar {
+        display: none;
+    }
 
     .navigation-container {
         justify-content: flex-start;
 
         width: max-content;
 
-        padding: 0 25px;
-    }
+        min-width: 100%;
 
+        padding: 0 24px;
+
+        gap: 28px;
+    }
 }
 
+
+/* =========================================================
+   MOBILE
+   <= 700px
+========================================================= */
 
 @media (max-width: 700px) {
 
@@ -1482,69 +1637,163 @@
     }
 
 
-    .utility-left .utility-selector:first-child span {
-        display: none;
+    /* -----------------------------------------------------
+       UTILITY BAR
+       ----------------------------------------------------- */
+
+    .utility-container {
+        min-height: 68px;
+
+        grid-template-rows: 36px 32px;
     }
 
+    .utility-left,
+    .utility-right {
+        gap: 8px;
+
+        height: 36px;
+    }
+
+    .utility-left {
+        left: 0;
+    }
+
+    .utility-right {
+        right: 0;
+    }
+
+    .utility-selector {
+        font-size: 11px;
+
+        gap: 5px;
+    }
+
+    .utility-selector svg {
+        font-size: 10px;
+    }
+
+    .utility-selector svg:last-child {
+        font-size: 7px;
+    }
+
+    .utility-divider {
+        height: 16px;
+    }
 
     .utility-right .utility-link:first-child {
-        font-size: 0;
+        font-size: 11px;
     }
-
 
     .utility-right .utility-link:first-child svg {
-        font-size: 14px;
+        font-size: 12px;
     }
 
+
+    /* -----------------------------------------------------
+       TAGLINE
+       ----------------------------------------------------- */
+
+    .utility-tagline {
+        gap: 7px;
+
+        height: 32px;
+    }
+
+    .utility-tagline span {
+        width: 24px;
+    }
+
+    .utility-tagline em {
+        font-size: 12px;
+    }
+
+
+    /* -----------------------------------------------------
+       MAIN HEADER
+       ----------------------------------------------------- */
+
+    .main-header-container {
+        gap: 10px;
+
+        padding: 12px 0 14px;
+    }
+
+
+    /* -----------------------------------------------------
+       BRAND
+       ----------------------------------------------------- */
 
     .eventnest-brand {
         flex: 1;
-    }
 
+        min-width: 0;
+    }
 
     .brand-icon {
         width: 42px;
+        height: 42px;
 
         font-size: 30px;
     }
-
 
     .brand-name {
         font-size: 23px;
     }
 
-
     .brand-tagline {
         font-size: 9px;
+
+        margin-top: 4px;
     }
 
+
+    /* -----------------------------------------------------
+       ACTIONS
+       ----------------------------------------------------- */
 
     .header-main-actions {
-        gap: 4px;
-    }
+        gap: 5px;
 
+        flex-shrink: 0;
+    }
 
     .header-action-button {
         width: 38px;
         height: 38px;
     }
 
-
     .profile-text,
     .header-dashboard {
         display: none;
     }
-
 
     .header-profile {
         padding: 0;
     }
 
 
-    .header-search {
-        height: 52px;
-    }
+    /* -----------------------------------------------------
+       SEARCH
+       ----------------------------------------------------- */
 
+    /*
+     * At 700px the search becomes a clean mobile search:
+     * keyword + button.
+     *
+     * Location/date are removed because there is not
+     * enough horizontal space.
+     */
+    .header-search {
+        order: 3;
+
+        width: 100%;
+
+        min-width: 0;
+
+        height: 52px;
+
+        border-radius: 14px;
+    }
 
     .search-location,
     .search-date,
@@ -1552,18 +1801,41 @@
         display: none;
     }
 
+    .search-keyword {
+        min-width: 0;
+
+        flex: 1;
+
+        padding-left: 14px;
+    }
+
+    .search-keyword input {
+        min-width: 0;
+
+        font-size: 12px;
+    }
 
     .header-search-button {
         height: 52px;
 
-        min-width: 85px;
+        min-width: 100px;
+
+        padding: 0 18px;
+
+        border-radius: 0 13px 13px 0;
+
+        font-size: 13px;
     }
 
+
+    /* -----------------------------------------------------
+       NOTIFICATIONS
+       ----------------------------------------------------- */
 
     .notification-dropdown {
         position: fixed;
 
-        top: 115px;
+        top: 118px;
 
         left: 12px;
         right: 12px;
@@ -1571,40 +1843,385 @@
         width: auto;
     }
 
-
     .notification-dropdown::before {
         display: none;
     }
 
+
+    /* -----------------------------------------------------
+       NAVIGATION
+       ----------------------------------------------------- */
+
+    .header-navigation {
+        overflow-x: auto;
+        overflow-y: hidden;
+
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+
+    .header-navigation::-webkit-scrollbar {
+        display: none;
+    }
+
+    .navigation-container {
+        width: max-content;
+
+        min-width: 100%;
+
+        justify-content: flex-start;
+
+        padding: 0 16px;
+
+        gap: 24px;
+    }
+
+    .navigation-link,
+    .navigation-more,
+    .navigation-bookings {
+        height: 52px;
+
+        flex: 0 0 auto;
+
+        font-size: 12px;
+
+        white-space: nowrap;
+    }
+
+    .navigation-bookings {
+        margin-left: 0;
+    }
+
+    .navigation-more {
+        padding-right: 4px;
+    }
 }
 
 
+/* =========================================================
+   SMALL MOBILE
+   <= 450px
+========================================================= */
+
 @media (max-width: 450px) {
 
+    .header-container {
+        width: calc(100% - 20px);
+    }
+
+
+    /* -----------------------------------------------------
+       UTILITY BAR
+       ----------------------------------------------------- */
+
+    .utility-container {
+        min-height: 64px;
+
+        grid-template-rows: 34px 30px;
+    }
+
+    .utility-left,
+    .utility-right {
+        gap: 5px;
+
+        height: 34px;
+    }
+
+    .utility-selector {
+        font-size: 9px;
+
+        gap: 3px;
+    }
+
+    .utility-selector svg {
+        font-size: 9px;
+    }
+
+    .utility-selector svg:last-child {
+        font-size: 6px;
+    }
+
+    .utility-divider {
+        height: 14px;
+    }
+
     .utility-right .utility-link {
-        display: none;
+        display: flex;
+
+        font-size: 9px;
+
+        gap: 4px;
+    }
+
+    .utility-right .utility-link:first-child {
+        font-size: 9px;
     }
 
 
-    .guest-actions .header-login {
-        display: none;
+    /* -----------------------------------------------------
+       TAGLINE
+       ----------------------------------------------------- */
+
+    .utility-tagline {
+        gap: 5px;
+
+        height: 30px;
     }
 
+    .utility-tagline span {
+        width: 18px;
+    }
+
+    .utility-tagline em {
+        font-size: 10px;
+    }
+
+
+    /* -----------------------------------------------------
+       BRAND
+       ----------------------------------------------------- */
+
+    .brand-icon {
+        width: 38px;
+        height: 38px;
+
+        font-size: 27px;
+    }
+
+    .brand-name {
+        font-size: 21px;
+    }
+
+    .brand-tagline {
+        font-size: 8px;
+    }
+
+
+    /* -----------------------------------------------------
+       GUEST BUTTONS
+       ----------------------------------------------------- */
+
+    .guest-actions {
+        gap: 5px;
+    }
+
+    .header-login,
+    .header-register {
+        padding: 7px 10px;
+
+        font-size: 10px;
+    }
+
+
+    /* -----------------------------------------------------
+       SEARCH
+       ----------------------------------------------------- */
 
     .header-search {
         min-width: 0;
+
+        height: 50px;
     }
 
+    .search-keyword {
+        padding-left: 11px;
+    }
 
     .search-keyword input {
         font-size: 11px;
     }
 
-
     .header-search-button {
-        min-width: 72px;
+        height: 50px;
+
+        min-width: 78px;
+
+        padding: 0 12px;
 
         font-size: 11px;
+    }
+
+
+    /* -----------------------------------------------------
+       NAVIGATION
+       ----------------------------------------------------- */
+
+    .navigation-container {
+        padding: 0 14px;
+
+        gap: 20px;
+    }
+
+    .navigation-link,
+    .navigation-more,
+    .navigation-bookings {
+        font-size: 11px;
+
+        height: 50px;
+    }
+}
+
+/* =========================================================
+   CATEGORY CARDS - RESPONSIVE COMPACT LAYOUT
+========================================================= */
+
+/*
+ * Desktop
+ * Keep the existing desktop design essentially unchanged.
+ */
+@media (min-width: 1001px) {
+
+    .categories-grid {
+        gap: 30px;
+    }
+
+    .category-card {
+        min-height: 225px;
+        padding: 38px 24px 32px;
+    }
+
+}
+
+
+/* =========================================================
+   TABLET
+========================================================= */
+
+@media (max-width: 1000px) {
+
+    .categories-grid {
+        gap: 20px;
+    }
+
+    .category-card {
+        min-height: 190px;
+        padding: 28px 20px 24px;
+    }
+
+    .category-card-icon {
+        margin-bottom: 12px;
+    }
+
+    .category-card h3 {
+        margin-bottom: 7px;
+        font-size: 21px;
+    }
+
+    .category-card p {
+        font-size: 15px;
+    }
+
+}
+
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 700px) {
+
+    .categories-grid {
+        display: grid;
+
+        grid-template-columns: 1fr;
+
+        gap: 16px;
+
+        width: 100%;
+    }
+
+
+    /*
+     * Much more compact cards.
+     *
+     * The important change is reducing the large
+     * vertical padding and fixed/minimum height.
+     */
+    .category-card {
+        min-height: 0;
+
+        height: 180px;
+
+        padding: 22px 18px;
+
+        border-radius: 22px;
+
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+
+        box-sizing: border-box;
+    }
+
+
+    .category-card-icon {
+        margin-bottom: 9px;
+
+        font-size: 38px;
+
+        line-height: 1;
+    }
+
+
+    .category-card h3 {
+        margin: 0 0 6px;
+
+        font-size: 20px;
+
+        line-height: 1.2;
+    }
+
+
+    .category-card p {
+        margin: 0;
+
+        font-size: 14px;
+
+        line-height: 1.35;
+
+        text-align: center;
+    }
+
+}
+
+
+/* =========================================================
+   SMALL MOBILE
+========================================================= */
+
+@media (max-width: 450px) {
+
+    .categories-grid {
+        gap: 14px;
+    }
+
+
+    .category-card {
+        height: 155px;
+
+        padding: 18px 14px;
+
+        border-radius: 20px;
+    }
+
+
+    .category-card-icon {
+        margin-bottom: 7px;
+
+        font-size: 32px;
+    }
+
+
+    .category-card h3 {
+        margin-bottom: 5px;
+
+        font-size: 18px;
+    }
+
+
+    .category-card p {
+        font-size: 13px;
     }
 
 }

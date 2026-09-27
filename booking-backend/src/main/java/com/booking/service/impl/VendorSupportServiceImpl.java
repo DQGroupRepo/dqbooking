@@ -7,9 +7,8 @@ import com.booking.repository.UserRepository;
 import com.booking.repository.VendorSupportSessionRepository;
 import com.booking.service.VendorSupportService;
 import com.booking.util.SecurityUtil;
-
 import lombok.RequiredArgsConstructor;
-
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
@@ -17,9 +16,9 @@ import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class VendorSupportServiceImpl
         implements VendorSupportService {
-
 
     private final VendorSupportSessionRepository
             supportSessionRepository;
@@ -27,89 +26,77 @@ public class VendorSupportServiceImpl
     private final UserRepository
             userRepository;
 
-
-    /*
-     * =========================================
-     * START SUPPORT
-     * =========================================
-     */
-
-    @Override
     public VendorSupportSession startSupport(
             String vendorId
     ) {
 
-        /*
-         * Get the currently authenticated user.
-         */
-
         User admin =
                 SecurityUtil.getCurrentUser();
-
-
-        /*
-         * Only ADMIN can start vendor support.
-         */
 
         if (
                 admin.getRole() != Role.ADMIN
         ) {
+
+            log.warn(
+                    "Vendor support start denied userId={} role={}",
+                    admin.getId(),
+                    admin.getRole()
+            );
 
             throw new AccessDeniedException(
                     "Only administrators can enter vendor support mode."
             );
         }
 
-
-        /*
-         * =========================================
-         * VENDOR ID = VENDOR ADMIN USER ID
-         * =========================================
-         *
-         * The canonical vendorId is now the
-         * VendorAdmin's User._id.
-         *
-         * Therefore the selected vendorId
-         * directly identifies the VendorAdmin.
-         */
+        log.info(
+                "Starting vendor support adminId={} vendorId={}",
+                admin.getId(),
+                vendorId
+        );
 
         User vendorAdmin =
                 userRepository
                         .findById(vendorId)
-                        .orElseThrow(() ->
-                                new IllegalArgumentException(
-                                        "VendorAdmin not found."
-                                )
-                        );
+                        .orElseThrow(() -> {
+                            log.warn(
+                                    "VendorAdmin not found for support adminId={} vendorId={}",
+                                    admin.getId(),
+                                    vendorId
+                            );
 
-
-        /*
-         * Only a VendorAdmin represents a
-         * vendor account.
-         */
+                            return new IllegalArgumentException(
+                                    "VendorAdmin not found."
+                            );
+                        });
 
         if (
                 vendorAdmin.getRole()
                         != Role.VENDOR_ADMIN
         ) {
 
+            log.warn(
+                    "Vendor support target is not a VendorAdmin adminId={} vendorId={} role={}",
+                    admin.getId(),
+                    vendorId,
+                    vendorAdmin.getRole()
+            );
+
             throw new IllegalArgumentException(
                     "Selected user is not a VendorAdmin."
             );
         }
-
-
-        /*
-         * =========================================
-         * END EXISTING SUPPORT SESSION
-         * =========================================
-         */
 
         supportSessionRepository
                 .findByAdminIdAndActiveTrue(
                         admin.getId()
                 )
                 .ifPresent(existing -> {
+
+                    log.info(
+                            "Ending existing vendor support session sessionId={} adminId={}",
+                            existing.getId(),
+                            admin.getId()
+                    );
 
                     existing.setActive(false);
 
@@ -122,95 +109,93 @@ public class VendorSupportServiceImpl
                     );
                 });
 
-
-        /*
-         * =========================================
-         * CREATE SUPPORT SESSION
-         * =========================================
-         *
-         * vendorId stores the VendorAdmin's
-         * User._id.
-         */
-
         VendorSupportSession session =
                 new VendorSupportSession();
-
 
         session.setAdminId(
                 admin.getId()
         );
 
-
         session.setVendorId(
                 vendorAdmin.getId()
         );
-
 
         session.setStartedAt(
                 LocalDateTime.now()
         );
 
-
         session.setActive(
                 true
         );
 
+        VendorSupportSession savedSession =
+                supportSessionRepository.save(
+                        session
+                );
 
-        return supportSessionRepository.save(
-                session
+        log.info(
+                "Vendor support session started sessionId={} adminId={} vendorId={}",
+                savedSession.getId(),
+                admin.getId(),
+                vendorAdmin.getId()
         );
+
+        return savedSession;
     }
 
-
-    /*
-     * =========================================
-     * CURRENT SUPPORT SESSION
-     * =========================================
-     */
-
-    @Override
     public VendorSupportSession getCurrentSupport() {
 
         User admin =
                 SecurityUtil.getCurrentUser();
 
+        VendorSupportSession session =
+                supportSessionRepository
+                        .findByAdminIdAndActiveTrue(
+                                admin.getId()
+                        )
+                        .orElse(null);
 
-        return supportSessionRepository
-                .findByAdminIdAndActiveTrue(
-                        admin.getId()
-                )
-                .orElse(null);
+        log.debug(
+                "Retrieved current vendor support session adminId={} activeSessionPresent={}",
+                admin.getId(),
+                session != null
+        );
+
+        return session;
     }
 
-
-    /*
-     * =========================================
-     * END SUPPORT SESSION
-     * =========================================
-     */
-
-    @Override
     public void endSupport() {
 
         User admin =
                 SecurityUtil.getCurrentUser();
 
-
         supportSessionRepository
                 .findByAdminIdAndActiveTrue(
                         admin.getId()
                 )
-                .ifPresent(session -> {
+                .ifPresentOrElse(
+                        session -> {
 
-                    session.setActive(false);
+                            session.setActive(false);
 
-                    session.setEndedAt(
-                            LocalDateTime.now()
-                    );
+                            session.setEndedAt(
+                                    LocalDateTime.now()
+                            );
 
-                    supportSessionRepository.save(
-                            session
-                    );
-                });
+                            supportSessionRepository.save(
+                                    session
+                            );
+
+                            log.info(
+                                    "Vendor support session ended sessionId={} adminId={}",
+                                    session.getId(),
+                                    admin.getId()
+                            );
+                        },
+                        () -> log.debug(
+                                "No active vendor support session to end adminId={}",
+                                admin.getId()
+                        )
+                );
     }
 }
