@@ -1,23 +1,23 @@
 export interface BookingSlot {
+  id: string;
 
-    id: string;
+  serviceId: string;
 
-    serviceId: string;
+  slotName: string;
 
-    slotName: string;
+  startTime: string;
 
-    startTime: string;
+  endTime: string;
 
-    endTime: string;
+  maxBookings: number;
 
-    maxBookings: number;
+  allowOverlap?: boolean;
 
-    displayOrder: number;
+  displayOrder: number;
 
-    active: boolean;
+  active: boolean;
 
-    createdAt?: string;
+  createdAt?: string;
 
-    updatedAt?: string;
-
+  updatedAt?: string;
 }

@@ -230,7 +230,7 @@ const ManageServices = () => {
                             service =>
 
                                 service.id ===
-                                updatedService.id
+                                    updatedService.id
 
                                     ? {
                                         ...service,
@@ -385,7 +385,7 @@ const ManageServices = () => {
 
 
         switch (
-            moderationStatus
+        moderationStatus
         ) {
 
 
@@ -749,7 +749,7 @@ const ManageServices = () => {
 
                                                 {" "}₹
 
-                                                {(service.price ?? 0)
+                                                {(service.startingPrice ?? 0)
                                                     .toLocaleString(
                                                         "en-IN"
                                                     )}

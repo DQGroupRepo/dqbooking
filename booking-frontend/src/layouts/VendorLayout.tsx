@@ -26,7 +26,7 @@ import VendorSidebar
   from "../components/vendor/layout/Sidebar/VendorSidebar";
 
 import VendorTopBar
-  from "../components/vendor/layout/TopBar/VendorTopbar";
+  from "../components/vendor/layout/Topbar/VendorTopbar";
 
 import "./VendorLayout.css";
 
@@ -396,8 +396,8 @@ const VendorLayout = () => {
       <div className="vendor-layout">
 
         <VendorSidebar
-            viewPages={permissions.viewPages}
-            supportActive={false}
+          viewPages={permissions.viewPages}
+          supportActive={false}
         />
 
         <div className="vendor-main">
@@ -435,8 +435,8 @@ const VendorLayout = () => {
       <div className="vendor-layout">
 
         <VendorSidebar
-            viewPages={permissions.viewPages}
-            supportActive={supportActive}
+          viewPages={permissions.viewPages}
+          supportActive={supportActive}
         />
 
         <div className="vendor-main">

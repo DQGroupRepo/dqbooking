@@ -41,10 +41,10 @@ import "./VendorPricing.css";
  * The vendor creates their own rules.
  */
 
- const emptyCancellationPolicy = {
-     processingDays: 0,
-     refundRules: []
- };
+const emptyCancellationPolicy = {
+    processingDays: 0,
+    refundRules: []
+};
 
 const emptyPricing:
     VendorServicePricing = {
@@ -243,7 +243,13 @@ const VendorPricing = () => {
 
 
             setPackages(
-                service.packages ?? []
+                (service.packages ?? []).map(packageItem => ({
+                    id: packageItem.id,
+                    name: packageItem.type,
+                    price: packageItem.price,
+                    features: packageItem.features,
+                    active: packageItem.active
+                }))
             );
 
         }
@@ -1139,9 +1145,9 @@ const VendorPricing = () => {
 
             if (
                 rule.maxDaysBeforeEvent !==
-                    null &&
+                null &&
                 rule.maxDaysBeforeEvent <
-                    rule.minDaysBeforeEvent
+                rule.minDaysBeforeEvent
             ) {
 
                 toast.error(
@@ -1620,10 +1626,9 @@ const VendorPricing = () => {
                                                     <div
                                                         key={packageId}
                                                         className={
-                                                            `service-package-card ${
-                                                                pkg.active
-                                                                    ? "active"
-                                                                    : "inactive"
+                                                            `service-package-card ${pkg.active
+                                                                ? "active"
+                                                                : "inactive"
                                                             }`
                                                         }
                                                     >
@@ -2084,7 +2089,7 @@ const VendorPricing = () => {
 
                         {
                             pricing.pricingHeads.length ===
-                            0 ? (
+                                0 ? (
 
                                 <div className="empty-pricing-state">
 
@@ -2252,7 +2257,7 @@ const VendorPricing = () => {
 
                         {
                             pricing.discounts.length ===
-                            0 ? (
+                                0 ? (
 
                                 <div className="empty-pricing-state">
 
@@ -2401,8 +2406,8 @@ const VendorPricing = () => {
                                 onChange={e =>
                                     updateAdvancePaymentType(
                                         e.target.value as
-                                            | "PERCENTAGE"
-                                            | "FIXED_AMOUNT"
+                                        | "PERCENTAGE"
+                                        | "FIXED_AMOUNT"
                                     )
                                 }
 
@@ -2428,7 +2433,7 @@ const VendorPricing = () => {
                                 {
                                     pricing.paymentConfiguration
                                         ?.advancePaymentType ===
-                                    "FIXED_AMOUNT"
+                                        "FIXED_AMOUNT"
 
                                         ? "Advance Amount (₹)"
 
@@ -2447,7 +2452,7 @@ const VendorPricing = () => {
                                 max={
                                     pricing.paymentConfiguration
                                         ?.advancePaymentType ===
-                                    "PERCENTAGE"
+                                        "PERCENTAGE"
 
                                         ? 100
 
@@ -2668,7 +2673,7 @@ const VendorPricing = () => {
                                                             min="0"
                                                             value={
                                                                 rule.maxDaysBeforeEvent ===
-                                                                null
+                                                                    null
                                                                     ? ""
                                                                     : rule.maxDaysBeforeEvent
                                                             }
@@ -2832,7 +2837,7 @@ const VendorPricing = () => {
 
                                                 {
                                                     head.calculationType ===
-                                                    "FIXED"
+                                                        "FIXED"
 
                                                         ? `₹${Number(
                                                             head.value ||
@@ -2890,7 +2895,7 @@ const VendorPricing = () => {
 
                                                 {
                                                     discount.discountType ===
-                                                    "FIXED"
+                                                        "FIXED"
 
                                                         ? `- ₹${Number(
                                                             discount.value ||
@@ -2929,7 +2934,7 @@ const VendorPricing = () => {
                                 pkg =>
                                     pkg.active
                             ).length ===
-                            0 ? (
+                                0 ? (
 
                                 <div className="summary-empty">
 
@@ -3013,12 +3018,12 @@ const VendorPricing = () => {
                                 {
                                     pricing.paymentConfiguration
                                         ?.advancePaymentValue !== null &&
-                                    pricing.paymentConfiguration
-                                        ?.advancePaymentValue !== undefined &&
-                                    Number(
                                         pricing.paymentConfiguration
-                                            .advancePaymentValue
-                                    ) > 0
+                                            ?.advancePaymentValue !== undefined &&
+                                        Number(
+                                            pricing.paymentConfiguration
+                                                .advancePaymentValue
+                                        ) > 0
 
                                         ? pricing.paymentConfiguration
                                             .advancePaymentType ===

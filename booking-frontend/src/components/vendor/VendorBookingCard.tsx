@@ -358,8 +358,8 @@ const BookingCard = ({
 
                 image:
                     getVendorImage(
-                            vendor
-                        ),
+                        vendor
+                    ),
 
                 eventDate,
 
@@ -376,7 +376,13 @@ const BookingCard = ({
                     selectedPackage?.id,
 
                 packageType:
-                    selectedPackage?.name,
+                    selectedPackage?.name?.toUpperCase() === "SILVER"
+                        ? "SILVER"
+                        : selectedPackage?.name?.toUpperCase() === "GOLD"
+                            ? "GOLD"
+                            : selectedPackage?.name?.toUpperCase() === "PREMIUM"
+                                ? "PREMIUM"
+                                : undefined,
 
                 packagePrice:
                     selectedPackage
@@ -394,7 +400,7 @@ const BookingCard = ({
                  * =========================================
                  */
 
-                 bundleEnabled:
+                bundleEnabled:
                     !!bundle,
                 bundleId:
                     bundle?.id,
@@ -624,31 +630,31 @@ const BookingCard = ({
         }
 
 
-         /*
-             * =========================================
-             * ADD CURRENT SERVICE TO CART
-             * =========================================
-             *
-             * IMPORTANT:
-             *
-             * This is the FIRST service selected from
-             * the bundle.
-             *
-             * We MUST pass the selected bundle here so
-             * that the cart item receives:
-             *
-             * bundleId
-             * bundleName
-             * bundleServiceIds
-             * bundleDiscountType
-             * bundleDiscountValue
-             *
-             * Previously this was:
-             *
-             *     addCurrentServiceToCart();
-             *
-             * which caused bundle to be undefined.
-             */
+        /*
+            * =========================================
+            * ADD CURRENT SERVICE TO CART
+            * =========================================
+            *
+            * IMPORTANT:
+            *
+            * This is the FIRST service selected from
+            * the bundle.
+            *
+            * We MUST pass the selected bundle here so
+            * that the cart item receives:
+            *
+            * bundleId
+            * bundleName
+            * bundleServiceIds
+            * bundleDiscountType
+            * bundleDiscountValue
+            *
+            * Previously this was:
+            *
+            *     addCurrentServiceToCart();
+            *
+            * which caused bundle to be undefined.
+            */
         addCurrentServiceToCart(bundle);
 
 
@@ -914,7 +920,7 @@ const BookingCard = ({
 
                                                 {
                                                     bundle.discountType ===
-                                                    "PERCENTAGE"
+                                                        "PERCENTAGE"
 
                                                         ? `${bundle.discountValue}%`
 

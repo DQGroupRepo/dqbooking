@@ -7,6 +7,7 @@ import {
 
 import AuthService from "../../services/AuthService";
 import { useAuth } from "../../context/AuthContext";
+import type { UserRole } from "../../context/AuthContext";
 
 import "./Login.css";
 
@@ -80,7 +81,7 @@ const Login = () => {
 
         userId: loginData.userId,
 
-        role: loginData.role,
+        role: loginData.role as UserRole,
 
         name: loginData.name ?? ""
 

@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import AdminBookingService from "../../services/AdminBookingService";
 
 import type { AdminBooking }
-    from "../../../types/AdminBooking";
+    from "../../types/AdminBooking";
 
 import "./AdminBookings.css";
 
@@ -495,9 +495,8 @@ const AdminBookings = () => {
 
                                                 <span
                                                     className={
-                                                        `admin-payment-badge ${
-                                                            booking.paymentStatus
-                                                                .toLowerCase()
+                                                        `admin-payment-badge ${booking.paymentStatus
+                                                            .toLowerCase()
                                                         }`
                                                     }
                                                 >
@@ -517,9 +516,8 @@ const AdminBookings = () => {
 
                                                 <span
                                                     className={
-                                                        `admin-booking-status ${
-                                                            booking.status
-                                                                .toLowerCase()
+                                                        `admin-booking-status ${booking.status
+                                                            .toLowerCase()
                                                         }`
                                                     }
                                                 >

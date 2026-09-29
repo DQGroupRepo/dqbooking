@@ -1,54 +1,49 @@
 export interface CartItem {
+  serviceId: string;
 
-    serviceId: string;
+  vendorId: string;
 
-    vendorId: string;
+  vendorName: string;
 
-    vendorName: string;
+  serviceName: string;
 
-    serviceName: string;
+  category?: string;
 
-    category?: string;
+  price: number;
 
-    price: number;
+  quantity?: number;
 
-    image?: string;
+  image?: string;
 
-    eventDate?: string;
+  eventDate?: string;
 
-    guestCount?: number;
+  guestCount?: number;
 
-    /*
-     * =========================================
-     * BUNDLE INFORMATION
-     * =========================================
-     */
+  /*
+   * =========================================
+   * BUNDLE INFORMATION
+   * =========================================
+   */
 
-    bundleEnabled?: boolean;
+  bundleEnabled?: boolean;
 
-    bundleId?: string;
+  bundleId?: string;
 
-    bundleName?: string;
+  bundleName?: string;
 
-    bundleDescription?: string;
+  bundleDescription?: string;
 
-    bundleServiceIds?: string[];
+  bundleServiceIds?: string[];
 
-    bundleDiscountType?:
-        | "PERCENTAGE"
-        | "FIXED";
+  bundleDiscountType?: "PERCENTAGE" | "FIXED";
 
-    bundleDiscountValue?: number;
+  bundleDiscountValue?: number;
 
-    packageId?: string;
+  packageId?: string;
 
-    packageType?:
-        | "SILVER"
-        | "GOLD"
-        | "PREMIUM";
+  packageType?: "SILVER" | "GOLD" | "PREMIUM";
 
-    packagePrice?: number;
+  packagePrice?: number;
 
-    packageFeatures?: string[];
-
+  packageFeatures?: string[];
 }
