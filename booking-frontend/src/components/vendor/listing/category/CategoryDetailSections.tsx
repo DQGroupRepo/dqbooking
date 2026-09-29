@@ -144,6 +144,10 @@ export default function CategoryDetailSections({
                                                                 attribute.key
                                                             }
 
+                                                            name={
+                                                                attribute.key
+                                                            }
+
                                                             label={
                                                                 attribute.label
                                                             }

@@ -5,9 +5,9 @@ import AvailabilityOverrideService
     from "../../../../services/AvailabilityOverrideService";
 
 import type { AvailabilityOverride }
-    from "../../../types/AvailabilityOverride";
+    from "../../../../types/AvailabilityOverride";
 
-import type { BookingSlot } from "../../../types/BookingSlot";
+import type { BookingSlot } from "../../../../types/BookingSlot";
 
 import Button from "../../../common/ui/Button/Button";
 

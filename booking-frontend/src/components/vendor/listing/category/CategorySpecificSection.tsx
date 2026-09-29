@@ -5,7 +5,7 @@ import CategoryDetailSections from "./CategoryDetailSections";
 import type { VendorServiceForm } from "../../../../types/VendorServiceForm";
 
 import CateringSection from "./CateringSection/CateringSection";
-import type { CateringMenuItem } from "../../../types/CateringMenuItem";
+import type { CateringMenuItem } from "../../../../types/CateringMenuItem";
 
 interface Props {
     category: string;

@@ -1,59 +1,62 @@
 import type { BookingPricingResponse } from "./BookingPricing";
 
 export interface Booking {
+  id: string;
 
-    id: string;
+  bookingGroupId?: string;
 
-    bookingGroupId?: string;
+  bookingNumber: string;
 
-    bookingNumber: string;
+  serviceId?: string;
 
-    serviceId?: string;
+  serviceName: string;
 
-    serviceName: string;
+  serviceImage?: string | null;
 
-    serviceImage?: string | null;
+  serviceCategory?: string | null;
 
-    serviceCategory?: string | null;
+  totalAmount: number;
 
-    totalAmount: number;
+  eventDate: string;
 
-    eventDate: string;
+  guestCount: number;
 
-    guestCount: number;
+  status: string;
 
-    status: string;
+  paymentStatus: string;
 
-    paymentStatus: string;
+  specialRequest?: string;
 
-    specialRequest?: string;
+  eventType: string;
 
-    eventType: string;
+  customerName: string;
 
-    customerName: string;
+  customerPhone: string;
 
-    customerPhone: string;
+  customerEmail: string;
 
-    customerEmail: string;
+  venue: string;
 
-    venue: string;
+  paidAmount: number;
 
-    paidAmount: number;
+  pricing: BookingPricingResponse;
 
-    pricing: BookingPricingResponse;
+  packageId?: string;
 
-    packageId?: string;
+  packageType?: "SILVER" | "GOLD" | "PREMIUM";
 
-    packageType?: "SILVER" | "GOLD" | "PREMIUM";
+  cancellable?: boolean;
 
-    cancellable?: boolean;
+  cancelledAt?: string | null;
 
-    cancelledAt?: string | null;
+  refundPercentage?: number | null;
 
-    refundPercentage?: number | null;
+  cancellationCharge?: number | null;
 
-    cancellationCharge?: number | null;
-
-    refundableAmount?: number | null;
-
+  refundableAmount?: number | null;
 }
+
+export type BookingResponse = Pick<
+  Booking,
+  "customerName" | "customerPhone" | "customerEmail"
+>;

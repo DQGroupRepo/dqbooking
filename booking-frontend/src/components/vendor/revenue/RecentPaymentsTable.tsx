@@ -44,7 +44,7 @@ export default function RecentPaymentsTable({
 
                         payments.map(payment => (
 
-                            <tr key={payment.id}>
+                            <tr key={payment.bookingNumber}>
 
                                 <td>
 
@@ -54,19 +54,19 @@ export default function RecentPaymentsTable({
 
                                 <td>
 
-                                    {payment.customer}
+                                    {payment.customerName}
 
                                 </td>
 
                                 <td>
 
-                                    {payment.date}
+                                    {payment.eventDate}
 
                                 </td>
 
                                 <td>
 
-                                    ₹{payment.amount.toLocaleString()}
+                                    ₹{payment.totalAmount.toLocaleString()}
 
                                 </td>
 
@@ -74,11 +74,11 @@ export default function RecentPaymentsTable({
 
                                     <span
 
-                                        className={`payment-status ${payment.status.toLowerCase()}`}
+                                        className={`payment-status ${payment.paymentStatus.toLowerCase()}`}
 
                                     >
 
-                                        {payment.status}
+                                        {payment.paymentStatus}
 
                                     </span>
 

@@ -252,15 +252,15 @@ const Header = () => {
         ) {
 
             if (
-              user?.role === "VENDOR_ADMIN" ||
-              user?.role === "VENDOR_USER"
+                user?.role === "VENDOR_ADMIN" ||
+                user?.role === "VENDOR_USER"
             ) {
 
-              navigate(
-                `/vendor/bookings/${notification.referenceId}`
-              );
+                navigate(
+                    `/vendor/bookings/${notification.referenceId}`
+                );
 
-              return;
+                return;
 
             }
 
@@ -345,12 +345,12 @@ const Header = () => {
 
         };
 
-         /*
-             * Update immediately when
-             * Header is mounted.
-             */
+        /*
+            * Update immediately when
+            * Header is mounted.
+            */
 
-         updateCartCount();
+        updateCartCount();
 
         window.addEventListener(
             "cartUpdated",
@@ -375,21 +375,6 @@ const Header = () => {
                 "storage",
                 updateCartCount
             );
-
-            return () => {
-
-                    window.removeEventListener(
-                        "cartUpdated",
-                        updateCartCount
-                    );
-
-
-                    window.removeEventListener(
-                        "storage",
-                        updateCartCount
-                    );
-
-                };
 
         };
 
@@ -797,41 +782,41 @@ const Header = () => {
 
 
                                 {(
-                                  user.role === "VENDOR_ADMIN" ||
-                                  user.role === "VENDOR_USER"
+                                    user.role === "VENDOR_ADMIN" ||
+                                    user.role === "VENDOR_USER"
                                 ) && (
 
-                                  <Link
-                                    to="/vendor/create-listing"
-                                    className="utility-link"
-                                  >
+                                        <Link
+                                            to="/vendor/create-listing"
+                                            className="utility-link"
+                                        >
 
-                                    <FaStore />
+                                            <FaStore />
 
-                                    List Your Service
+                                            List Your Service
 
-                                  </Link>
+                                        </Link>
 
-                                )}
+                                    )}
 
 
                                 {(
-                                  user.role !== "VENDOR_ADMIN" &&
-                                  user.role !== "VENDOR_USER"
+                                    user.role !== "VENDOR_ADMIN" &&
+                                    user.role !== "VENDOR_USER"
                                 ) && (
 
-                                  <Link
-                                    to="/register"
-                                    className="utility-link"
-                                  >
+                                        <Link
+                                            to="/register"
+                                            className="utility-link"
+                                        >
 
-                                    <FaStore />
+                                            <FaStore />
 
-                                    List Your Service
+                                            List Your Service
 
-                                  </Link>
+                                        </Link>
 
-                                )}
+                                    )}
 
 
                             </>
@@ -1016,11 +1001,10 @@ const Header = () => {
 
                                 <button
                                     type="button"
-                                    className={`header-action-button notification-action ${
-                                        showNotifications
-                                            ? "action-active"
-                                            : ""
-                                    }`}
+                                    className={`header-action-button notification-action ${showNotifications
+                                        ? "action-active"
+                                        : ""
+                                        }`}
                                     onClick={() =>
                                         setShowNotifications(
                                             current =>
@@ -1141,11 +1125,10 @@ const Header = () => {
                                                                         notification.id
                                                                     }
 
-                                                                    className={`notification-item ${
-                                                                        !notification.read
-                                                                            ? "notification-unread"
-                                                                            : ""
-                                                                    }`}
+                                                                    className={`notification-item ${!notification.read
+                                                                        ? "notification-unread"
+                                                                        : ""
+                                                                        }`}
 
                                                                     onClick={() =>
                                                                         handleNotificationClick(
@@ -1156,11 +1139,10 @@ const Header = () => {
 
 
                                                                     <div
-                                                                        className={`notification-icon ${
-                                                                            getNotificationTypeClass(
-                                                                                notification.type
-                                                                            )
-                                                                        }`}
+                                                                        className={`notification-icon ${getNotificationTypeClass(
+                                                                            notification.type
+                                                                        )
+                                                                            }`}
                                                                     >
 
                                                                         {
@@ -1283,11 +1265,10 @@ const Header = () => {
 
                                 <button
                                     type="button"
-                                    className={`header-profile ${
-                                        showProfile
-                                            ? "profile-active"
-                                            : ""
-                                    }`}
+                                    className={`header-profile ${showProfile
+                                        ? "profile-active"
+                                        : ""
+                                        }`}
                                     onClick={() =>
                                         setShowProfile(
                                             current =>
@@ -1454,19 +1435,19 @@ const Header = () => {
                         {/* DASHBOARD */}
 
                         {isAuthenticated &&
-                          (
-                            user?.role === "VENDOR_ADMIN" ||
-                            user?.role === "VENDOR_USER"
-                          ) && (
+                            (
+                                user?.role === "VENDOR_ADMIN" ||
+                                user?.role === "VENDOR_USER"
+                            ) && (
 
-                            <Link
-                              to="/vendor/dashboard"
-                              className="header-dashboard"
-                            >
-                              Dashboard
-                            </Link>
+                                <Link
+                                    to="/vendor/dashboard"
+                                    className="header-dashboard"
+                                >
+                                    Dashboard
+                                </Link>
 
-                          )
+                            )
                         }
 
 
@@ -1505,11 +1486,10 @@ const Header = () => {
 
                     <Link
                         to="/"
-                        className={`navigation-link ${
-                            isHomeActive
-                                ? "active"
-                                : ""
-                        }`}
+                        className={`navigation-link ${isHomeActive
+                            ? "active"
+                            : ""
+                            }`}
                     >
                         Home
                     </Link>
@@ -1521,11 +1501,10 @@ const Header = () => {
 
                     <Link
                         to="/categories?category=HALL"
-                        className={`navigation-link ${
-                            isCategoryActive("HALL")
-                                ? "active"
-                                : ""
-                        }`}
+                        className={`navigation-link ${isCategoryActive("HALL")
+                            ? "active"
+                            : ""
+                            }`}
                     >
                         Venues
                     </Link>
@@ -1537,11 +1516,10 @@ const Header = () => {
 
                     <Link
                         to="/categories?category=PHOTOGRAPHY"
-                        className={`navigation-link ${
-                            isCategoryActive("PHOTOGRAPHY")
-                                ? "active"
-                                : ""
-                        }`}
+                        className={`navigation-link ${isCategoryActive("PHOTOGRAPHY")
+                            ? "active"
+                            : ""
+                            }`}
                     >
                         Photography
                     </Link>
@@ -1553,11 +1531,10 @@ const Header = () => {
 
                     <Link
                         to="/categories?category=MAKEUP"
-                        className={`navigation-link ${
-                            isCategoryActive("MAKEUP")
-                                ? "active"
-                                : ""
-                        }`}
+                        className={`navigation-link ${isCategoryActive("MAKEUP")
+                            ? "active"
+                            : ""
+                            }`}
                     >
                         Makeup
                     </Link>
@@ -1569,11 +1546,10 @@ const Header = () => {
 
                     <Link
                         to="/categories?category=CATERING"
-                        className={`navigation-link ${
-                            isCategoryActive("CATERING")
-                                ? "active"
-                                : ""
-                        }`}
+                        className={`navigation-link ${isCategoryActive("CATERING")
+                            ? "active"
+                            : ""
+                            }`}
                     >
                         Catering
                     </Link>
@@ -1585,11 +1561,10 @@ const Header = () => {
 
                     <Link
                         to="/categories?category=DECORATION"
-                        className={`navigation-link ${
-                            isCategoryActive("DECORATION")
-                                ? "active"
-                                : ""
-                        }`}
+                        className={`navigation-link ${isCategoryActive("DECORATION")
+                            ? "active"
+                            : ""
+                            }`}
                     >
                         Decor
                     </Link>
@@ -1619,12 +1594,11 @@ const Header = () => {
 
                         <Link
                             to="/customer/bookings"
-                            className={`navigation-bookings ${
-                                location.pathname ===
+                            className={`navigation-bookings ${location.pathname ===
                                 "/customer/bookings"
-                                    ? "active"
-                                    : ""
-                            }`}
+                                ? "active"
+                                : ""
+                                }`}
                         >
                             My Bookings
                         </Link>
