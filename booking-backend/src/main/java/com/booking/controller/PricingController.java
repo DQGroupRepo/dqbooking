@@ -1,12 +1,8 @@
 package com.booking.controller;
 
-import com.booking.dto.pricing.VendorServicePricingRequest;
 import com.booking.dto.pricing.PricingCalculationResult;
+import com.booking.dto.pricing.VendorServicePricingRequest;
 import com.booking.dto.pricing.VendorServicePricingResponse;
-import com.booking.exception.ResourceNotFoundException;
-import com.booking.model.VendorService;
-import com.booking.model.embedded.ServicePackage;
-import com.booking.repository.VendorServiceRepository;
 import com.booking.service.PricingCalculationService;
 import com.booking.service.VendorServicePricingService;
 import jakarta.validation.Valid;
@@ -22,12 +18,11 @@ import java.time.LocalDate;
 @RequiredArgsConstructor
 public class PricingController {
 
-    private final PricingCalculationService pricingCalculationService;
+    private final PricingCalculationService
+            pricingCalculationService;
 
     private final VendorServicePricingService
             vendorServicePricingService;
-    private final VendorServiceRepository
-            vendorServiceRepository;
 
 
     /*
@@ -36,7 +31,7 @@ public class PricingController {
      * =========================================
      *
      * Used by vendor/frontend to retrieve
-     * the applicable pricing configuration.
+     * the current pricing configuration.
      */
     @GetMapping("/services/{serviceId}")
     public VendorServicePricingResponse getServicePricing(
@@ -53,13 +48,24 @@ public class PricingController {
      * CALCULATE BOOKING PRICE
      * =========================================
      *
-     * This is the endpoint that Checkout should
-     * call before submitting the booking.
+     * Checkout calls this endpoint before
+     * submitting the booking.
+     *
+     * The pricing service is responsible for:
+     *
+     * 1. Finding the pricing version applicable
+     *    to the event date.
+     *
+     * 2. Finding the selected package inside
+     *    that pricing version.
+     *
+     * 3. Calculating the final price.
      *
      * Example:
      *
      * GET /api/pricing/services/{serviceId}/calculate
      *     ?eventDate=2026-08-15
+     *     &packageId=PACKAGE_ID
      */
     @GetMapping("/services/{serviceId}/calculate")
     public PricingCalculationResult calculatePrice(
@@ -79,61 +85,23 @@ public class PricingController {
 
     ) {
 
-        ServicePackage selectedPackage =
-                null;
-
-
-        if (packageId != null) {
-
-            VendorService service =
-                    vendorServiceRepository
-                            .findByIdAndDeletedFalse(
-                                    serviceId
-                            )
-                            .orElseThrow(() ->
-                                    new ResourceNotFoundException(
-                                            "Service not found."
-                                    )
-                            );
-
-
-            selectedPackage =
-                    service.getPackages()
-                            .stream()
-                            .filter(
-                                    pkg ->
-                                            pkg.getId()
-                                                    .equals(
-                                                            packageId
-                                                    )
-                            )
-                            .findFirst()
-                            .orElseThrow(() ->
-                                    new ResourceNotFoundException(
-                                            "Selected package not found."
-                                    )
-                            );
-
-
-            if (!selectedPackage.isActive()) {
-
-                throw new IllegalArgumentException(
-                        "Selected package is not active."
-                );
-
-            }
-
-        }
-
-
         return pricingCalculationService
                 .calculatePrice(
                         serviceId,
                         eventDate,
-                        selectedPackage
+                        packageId
                 );
     }
 
+
+    /*
+     * =========================================
+     * CREATE PRICING CONFIGURATION
+     * =========================================
+     *
+     * Packages are now submitted as part of the
+     * pricing document.
+     */
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public VendorServicePricingResponse createPricing(
@@ -144,17 +112,22 @@ public class PricingController {
 
     ) {
 
-        return vendorServicePricingService.createPricing(request);
-
+        return vendorServicePricingService
+                .createPricing(request);
     }
 
+
+    /*
+     * =========================================
+     * GET PRICING BY ID
+     * =========================================
+     */
     @GetMapping("/{pricingId}")
     public VendorServicePricingResponse getPricingById(
             @PathVariable String pricingId
     ) {
 
-        return vendorServicePricingService.getPricing(pricingId);
-
+        return vendorServicePricingService
+                .getPricing(pricingId);
     }
-
 }

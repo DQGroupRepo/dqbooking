@@ -16,9 +16,6 @@ import type {
 import VendorPricingService
     from "../../../services/VendorPricingService";
 
-import VendorServiceService
-    from "../../../services/VendorServiceService";
-
 import toast
     from "react-hot-toast";
 
@@ -97,10 +94,14 @@ const PACKAGE_ORDER:
  * The vendor creates their own rules.
  */
 
- const emptyCancellationPolicy = {
-     processingDays: 0,
-     refundRules: []
- };
+const emptyCancellationPolicy = {
+
+    processingDays: 0,
+
+    refundRules: []
+
+};
+
 
 const emptyPricing:
     VendorServicePricing = {
@@ -116,6 +117,8 @@ const emptyPricing:
     pricingHeads: [],
 
     discounts: [],
+
+    packages: [],
 
     paymentConfiguration: {
 
@@ -136,8 +139,6 @@ const emptyPricing:
     }
 
 };
-
-
 
 
 /*
@@ -207,6 +208,36 @@ const VendorPricing = () => {
     ]);
 
 
+    /*
+     * =========================================================
+     * PACKAGE NAME
+     * =========================================================
+     *
+     * The UI uses SILVER/GOLD/PREMIUM internally.
+     *
+     * The backend ServicePackage uses:
+     *
+     *     name = "Silver"
+     *     name = "Gold"
+     *     name = "Premium"
+     *
+     */
+
+    function getPackageName(
+        type: ServicePackageType
+    ): string {
+
+        return PACKAGE_LABELS[type];
+
+    }
+
+
+    /*
+     * =========================================================
+     * LOAD PRICING
+     * =========================================================
+     */
+
     async function loadPricing() {
 
         try {
@@ -218,6 +249,8 @@ const VendorPricing = () => {
 
             /*
              * Load pricing configuration.
+             *
+             * Packages now belong to the pricing response.
              */
 
             const response =
@@ -235,7 +268,6 @@ const VendorPricing = () => {
 
                     ...response,
 
-
                     paymentConfiguration: {
 
                         ...emptyPricing.paymentConfiguration,
@@ -249,7 +281,6 @@ const VendorPricing = () => {
 
                             "PERCENTAGE",
 
-
                         advancePaymentValue:
 
                             response.paymentConfiguration
@@ -258,7 +289,6 @@ const VendorPricing = () => {
                             null
 
                     },
-
 
                     cancellationPolicy: {
 
@@ -278,23 +308,34 @@ const VendorPricing = () => {
 
                 });
 
+
+                /*
+                 * Packages come directly from
+                 * VendorServicePricing.
+                 */
+
+                setPackages(
+                    response.packages ?? []
+                );
+
             }
+            else {
 
+                setPricing({
 
-            /*
-             * Load packages from service.
-             */
+                    ...emptyPricing,
 
-            const service =
-                await VendorServiceService
-                    .getServiceById(
+                    serviceId:
                         serviceId!
-                    );
+
+                });
 
 
-            setPackages(
-                service.packages ?? []
-            );
+                setPackages(
+                    []
+                );
+
+            }
 
         }
         catch (error) {
@@ -339,6 +380,9 @@ const VendorPricing = () => {
      * Important:
      *
      * Never mutate the packages state with .sort().
+     *
+     * The backend package uses "name", while the UI
+     * uses ServicePackageType.
      */
 
     const sortedPackages =
@@ -346,9 +390,52 @@ const VendorPricing = () => {
             (
                 a,
                 b
-            ) =>
-                PACKAGE_ORDER[a.type] -
-                PACKAGE_ORDER[b.type]
+            ) => {
+
+                const aType =
+                    Object.entries(
+                        PACKAGE_LABELS
+                    ).find(
+                        (
+                            [
+                                ,
+                                label
+                            ]
+                        ) =>
+                            label === a.name
+                    )?.[0] as
+                        | ServicePackageType
+                        | undefined;
+
+
+                const bType =
+                    Object.entries(
+                        PACKAGE_LABELS
+                    ).find(
+                        (
+                            [
+                                ,
+                                label
+                            ]
+                        ) =>
+                            label === b.name
+                    )?.[0] as
+                        | ServicePackageType
+                        | undefined;
+
+
+                return (
+                    PACKAGE_ORDER[
+                        aType ??
+                        "SILVER"
+                    ] -
+                    PACKAGE_ORDER[
+                        bType ??
+                        "SILVER"
+                    ]
+                );
+
+            }
         );
 
 
@@ -362,9 +449,15 @@ const VendorPricing = () => {
         type: ServicePackageType
     ) {
 
+        const packageName =
+            getPackageName(
+                type
+            );
+
+
         return packages.find(
             pkg =>
-                pkg.type === type
+                pkg.name === packageName
         );
 
     }
@@ -380,9 +473,15 @@ const VendorPricing = () => {
         type: ServicePackageType
     ) {
 
+        const packageName =
+            getPackageName(
+                type
+            );
+
+
         return packages.findIndex(
             pkg =>
-                pkg.type === type
+                pkg.name === packageName
         );
 
     }
@@ -479,6 +578,7 @@ const VendorPricing = () => {
 
     }
 
+
     function updateAdvancePaymentValue(
         value: string
     ) {
@@ -487,6 +587,7 @@ const VendorPricing = () => {
             value === ""
                 ? null
                 : Number(value);
+
 
         setPricing(
             current => ({
@@ -773,7 +874,10 @@ const VendorPricing = () => {
 
             id: undefined,
 
-            type,
+            name:
+                getPackageName(
+                    type
+                ),
 
             price: 0,
 
@@ -822,11 +926,17 @@ const VendorPricing = () => {
         }
 
 
+        const packageName =
+            getPackageName(
+                type
+            );
+
+
         setPackages(
             previous =>
                 previous.map(
                     pkg =>
-                        pkg.type === type
+                        pkg.name === packageName
 
                             ? {
 
@@ -861,11 +971,17 @@ const VendorPricing = () => {
 
     ) {
 
+        const packageName =
+            getPackageName(
+                type
+            );
+
+
         setPackages(
             previous =>
                 previous.map(
                     pkg =>
-                        pkg.type === type
+                        pkg.name === packageName
 
                             ? {
 
@@ -893,11 +1009,17 @@ const VendorPricing = () => {
         type: ServicePackageType
     ) {
 
+        const packageName =
+            getPackageName(
+                type
+            );
+
+
         setPackages(
             previous =>
                 previous.filter(
                     pkg =>
-                        pkg.type !== type
+                        pkg.name !== packageName
                 )
         );
 
@@ -914,11 +1036,17 @@ const VendorPricing = () => {
         type: ServicePackageType
     ) {
 
+        const packageName =
+            getPackageName(
+                type
+            );
+
+
         setPackages(
             previous =>
                 previous.map(
                     pkg =>
-                        pkg.type === type
+                        pkg.name === packageName
 
                             ? {
 
@@ -957,13 +1085,19 @@ const VendorPricing = () => {
 
     ) {
 
+        const packageName =
+            getPackageName(
+                type
+            );
+
+
         setPackages(
             previous =>
                 previous.map(
                     pkg => {
 
                         if (
-                            pkg.type !== type
+                            pkg.name !== packageName
                         ) {
 
                             return pkg;
@@ -1013,13 +1147,19 @@ const VendorPricing = () => {
 
     ) {
 
+        const packageName =
+            getPackageName(
+                type
+            );
+
+
         setPackages(
             previous =>
                 previous.map(
                     pkg => {
 
                         if (
-                            pkg.type !== type
+                            pkg.name !== packageName
                         ) {
 
                             return pkg;
@@ -1089,19 +1229,6 @@ const VendorPricing = () => {
      * =========================================================
      * ADD REFUND RULE
      * =========================================================
-     *
-     * No business assumptions are made.
-     *
-     * Vendor defines the rule.
-     *
-     * maxDaysBeforeEvent = null means:
-     *
-     *     No upper limit
-     *
-     * Example:
-     *
-     *     31+ days
-     *
      */
 
     function addRefundRule() {
@@ -1402,7 +1529,7 @@ const VendorPricing = () => {
             ) {
 
                 toast.error(
-                    `Enter a valid price for the ${PACKAGE_LABELS[pkg.type]} package.`
+                    `Enter a valid price for the ${pkg.name} package.`
                 );
 
                 return;
@@ -1433,22 +1560,13 @@ const VendorPricing = () => {
 
 
             /*
-             * =========================================
-             * SAVE PACKAGES
-             * =========================================
-             */
-
-            await VendorServiceService
-                .updatePackages(
-                    serviceId,
-                    packages
-                );
-
-
-            /*
-             * =========================================
-             * SAVE PRICING
-             * =========================================
+             * =====================================================
+             * SAVE PRICING + PACKAGES TOGETHER
+             * =====================================================
+             *
+             * Packages now belong to VendorServicePricing.
+             *
+             * There is no separate package API call.
              */
 
             await VendorPricingService
@@ -1456,7 +1574,9 @@ const VendorPricing = () => {
 
                     ...pricing,
 
-                    serviceId
+                    serviceId,
+
+                    packages
 
                 });
 
@@ -2644,6 +2764,7 @@ const VendorPricing = () => {
                         {/* =================================================
                             REFUND RULES
                         ================================================= */}
+
                         <div className="refund-rules-header">
 
                             <div>
@@ -2833,8 +2954,6 @@ const VendorPricing = () => {
 
                             )
                         }
-
-
 
                     </section>
 
@@ -3034,65 +3153,86 @@ const VendorPricing = () => {
                                     )
 
                                     .map(
-                                        pkg => (
+                                        pkg => {
 
-                                            <div
-
-                                                key={
-                                                    pkg.id ??
-                                                    pkg.type
-                                                }
-
-                                                className="package-summary-row"
-
-                                            >
-
-                                                <div>
-
-                                                    <span
-
-                                                        className={
-                                                            `package-summary-dot ${
-                                                                pkg.type.toLowerCase()
-                                                            }`
-                                                        }
-
-                                                    />
+                                            const packageType =
+                                                Object.entries(
+                                                    PACKAGE_LABELS
+                                                ).find(
+                                                    (
+                                                        [
+                                                            ,
+                                                            label
+                                                        ]
+                                                    ) =>
+                                                        label ===
+                                                        pkg.name
+                                                )?.[0] as
+                                                    | ServicePackageType
+                                                    | undefined;
 
 
-                                                    <span>
+                                            return (
 
+                                                <div
+
+                                                    key={
+                                                        pkg.id ??
+                                                        pkg.name
+                                                    }
+
+                                                    className="package-summary-row"
+
+                                                >
+
+                                                    <div>
+
+                                                        <span
+
+                                                            className={
+                                                                `package-summary-dot ${
+                                                                    packageType
+                                                                        ?.toLowerCase() ??
+                                                                    ""
+                                                                }`
+                                                            }
+
+                                                        />
+
+
+                                                        <span>
+
+                                                            {
+                                                                pkg.name
+                                                            }
+
+                                                            {" "}
+                                                            Package
+
+                                                        </span>
+
+                                                    </div>
+
+
+                                                    <strong>
+
+                                                        ₹
                                                         {
-                                                            PACKAGE_LABELS[
-                                                                pkg.type
-                                                            ]
+                                                            Number(
+                                                                pkg.price ||
+                                                                0
+                                                            ).toLocaleString(
+                                                                "en-IN"
+                                                            )
                                                         }
 
-                                                        {" "}
-                                                        Package
-
-                                                    </span>
+                                                    </strong>
 
                                                 </div>
 
+                                            );
 
-                                                <strong>
-
-                                                    ₹
-                                                    {
-                                                        Number(
-                                                            pkg.price ||
-                                                            0
-                                                        ).toLocaleString(
-                                                            "en-IN"
-                                                        )
-                                                    }
-
-                                                </strong>
-
-                                            </div>
-
-                                        )
+                                        }
                                     )
 
                             )

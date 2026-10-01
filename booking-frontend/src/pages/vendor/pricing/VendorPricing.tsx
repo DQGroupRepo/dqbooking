@@ -15,9 +15,6 @@ import type {
 import VendorPricingService
     from "../../../services/VendorPricingService";
 
-import VendorServiceService
-    from "../../../services/VendorServiceService";
-
 import toast
     from "react-hot-toast";
 
@@ -1366,8 +1363,8 @@ const VendorPricing = () => {
                 .savePricing({
 
                     ...pricing,
-
-                    serviceId
+                    serviceId,
+                    packages
 
                 });
 

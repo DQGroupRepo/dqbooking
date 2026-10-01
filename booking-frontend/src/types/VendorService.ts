@@ -27,8 +27,6 @@ export interface ServicePackage {
 
     id: string;
 
-    type: string;
-
     price: number;
 
     features: string[];
@@ -83,14 +81,6 @@ export interface VendorService {
     detailSections: ServiceDetailSection[];
 
     cateringDetails?: CateringDetailsForm;
-
-
-    /* =====================================
-       SERVICE PACKAGES
-    ===================================== */
-
-    packages?: ServicePackage[];
-
 
     location: string;
 

@@ -1,6 +1,5 @@
 package com.booking.mapper.impl;
 
-import com.booking.dto.service.ServicePackageResponse;
 import com.booking.dto.vendorservice.VendorServiceRequest;
 import com.booking.dto.vendorservice.VendorServiceResponse;
 import com.booking.mapper.*;
@@ -8,8 +7,6 @@ import com.booking.model.User;
 import com.booking.model.VendorService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
-
-import java.util.List;
 
 @Component
 @RequiredArgsConstructor
@@ -21,6 +18,7 @@ public class VendorServiceMapperImpl implements VendorServiceMapper {
 
     private final ServiceDetailSectionMapper
             serviceDetailSectionMapper;
+
     private final CateringDetailsMapper cateringDetailsMapper;
 
     @Override
@@ -44,11 +42,15 @@ public class VendorServiceMapperImpl implements VendorServiceMapper {
         service.setDurationHours(request.getDurationHours());
 
         service.setContactInfo(
-                contactInfoMapper.toEntity(request.getContactInfo())
+                contactInfoMapper.toEntity(
+                        request.getContactInfo()
+                )
         );
 
         service.setBookingSettings(
-                bookingSettingsMapper.toEntity(request.getBookingSettings())
+                bookingSettingsMapper.toEntity(
+                        request.getBookingSettings()
+                )
         );
 
         service.setImageUrls(request.getImageUrls());
@@ -60,118 +62,135 @@ public class VendorServiceMapperImpl implements VendorServiceMapper {
                         request.getDetailSections()
                 )
         );
+
         service.setCateringDetails(
                 cateringDetailsMapper.toEntity(
                         request.getCateringDetails()
                 )
         );
 
-        service
-                .setLocation(request.getLocation());
+        service.setLocation(
+                request.getLocation()
+        );
 
-        /* * ========================================= * BUNDLE CONFIGURATION * ========================================= */
-        service.setBundleEnabled( request.getBundleEnabled() );
-        service.setBundleDiscountType( request.getBundleDiscountType() );
-        service.setBundleDiscountValue( request.getBundleDiscountValue() );
+        /*
+         * =========================================
+         * BUNDLE CONFIGURATION
+         * =========================================
+         */
+
+        service.setBundleEnabled(
+                request.getBundleEnabled()
+        );
+
+        service.setBundleDiscountType(
+                request.getBundleDiscountType()
+        );
+
+        service.setBundleDiscountValue(
+                request.getBundleDiscountValue()
+        );
 
         return service;
     }
 
     @Override
-    public VendorServiceResponse toResponse(VendorService service) {
+    public VendorServiceResponse toResponse(
+            VendorService service) {
 
         if (service == null) {
             return null;
         }
 
-        VendorServiceResponse response = new VendorServiceResponse();
+        VendorServiceResponse response =
+                new VendorServiceResponse();
 
         response.setId(service.getId());
-        response.setServiceName(service.getServiceName());
-        response.setCategory(service.getCategory().name());
-        response.setDescription(service.getDescription());
-        response.setCapacity(service.getCapacity());
-        response.setDurationHours(service.getDurationHours());
 
-        response.setActive(service.getActive());
+        response.setServiceName(
+                service.getServiceName()
+        );
+
+        response.setCategory(
+                service.getCategory() != null
+                        ? service.getCategory().name()
+                        : null
+        );
+
+        response.setDescription(
+                service.getDescription()
+        );
+
+        response.setCapacity(
+                service.getCapacity()
+        );
+
+        response.setDurationHours(
+                service.getDurationHours()
+        );
+
+        response.setActive(
+                service.getActive()
+        );
+
         response.setModerationStatus(
                 service.getModerationStatus()
         );
 
         response.setContactInfo(
-                contactInfoMapper.toDto(service.getContactInfo())
+                contactInfoMapper.toDto(
+                        service.getContactInfo()
+                )
         );
 
         response.setBookingSettings(
-                bookingSettingsMapper.toDto(service.getBookingSettings())
+                bookingSettingsMapper.toDto(
+                        service.getBookingSettings()
+                )
         );
 
-        response.setImageUrls(service.getImageUrls());
+        response.setImageUrls(
+                service.getImageUrls()
+        );
 
-        response.setAmenities(service.getAmenities());
+        response.setAmenities(
+                service.getAmenities()
+        );
 
         response.setDetailSections(
                 serviceDetailSectionMapper.toResponseList(
                         service.getDetailSections()
                 )
         );
+
         response.setCateringDetails(
                 cateringDetailsMapper.toResponse(
                         service.getCateringDetails()
                 )
         );
 
-        response.setLocation(service.getLocation());
-
-        response.setPricingConfigured(
-                service.getPackages() != null
-                        &&
-                        !service.getPackages().isEmpty()
+        response.setLocation(
+                service.getLocation()
         );
 
-        response.setPackages(
+        /*
+         * Pricing and packages are no longer mapped here.
+         *
+         * They belong to VendorServicePricing and must be
+         * populated by the pricing/service layer.
+         */
 
-                service.getPackages() == null
-
-                        ? List.of()
-
-                        : service.getPackages()
-                        .stream()
-                        .map(servicePackage -> {
-
-                            ServicePackageResponse packageResponse =
-                                    new ServicePackageResponse();
-
-                            packageResponse.setId(
-                                    servicePackage.getId()
-                            );
-
-                            packageResponse.setName(
-                                    servicePackage.getName()
-                            );
-
-                            packageResponse.setPrice(
-                                    servicePackage.getPrice()
-                            );
-
-                            packageResponse.setFeatures(
-                                    servicePackage.getFeatures()
-                            );
-
-                            packageResponse.setActive(
-                                    servicePackage.isActive()
-                            );
-
-                            return packageResponse;
-
-                        })
-                        .toList()
-
+        response.setBundleEnabled(
+                service.getBundleEnabled()
         );
 
-        response.setBundleEnabled( service.getBundleEnabled() );
-        response.setBundleDiscountType( service.getBundleDiscountType() );
-        response.setBundleDiscountValue( service.getBundleDiscountValue() );
+        response.setBundleDiscountType(
+                service.getBundleDiscountType()
+        );
+
+        response.setBundleDiscountValue(
+                service.getBundleDiscountValue()
+        );
 
         return response;
     }
@@ -181,42 +200,78 @@ public class VendorServiceMapperImpl implements VendorServiceMapper {
             VendorService entity,
             VendorServiceRequest request) {
 
-        entity.setServiceName(request.getServiceName());
-        entity.setCategory(request.getCategory());
-        entity.setDescription(request.getDescription());
+        entity.setServiceName(
+                request.getServiceName()
+        );
 
-        entity.setCapacity(request.getCapacity());
-        entity.setDurationHours(request.getDurationHours());
+        entity.setCategory(
+                request.getCategory()
+        );
+
+        entity.setDescription(
+                request.getDescription()
+        );
+
+        entity.setCapacity(
+                request.getCapacity()
+        );
+
+        entity.setDurationHours(
+                request.getDurationHours()
+        );
 
         entity.setContactInfo(
-                contactInfoMapper.toEntity(request.getContactInfo())
+                contactInfoMapper.toEntity(
+                        request.getContactInfo()
+                )
         );
 
         entity.setBookingSettings(
-                bookingSettingsMapper.toEntity(request.getBookingSettings())
+                bookingSettingsMapper.toEntity(
+                        request.getBookingSettings()
+                )
         );
 
-        entity.setImageUrls(request.getImageUrls());
+        entity.setImageUrls(
+                request.getImageUrls()
+        );
 
-        entity.setAmenities(request.getAmenities());
+        entity.setAmenities(
+                request.getAmenities()
+        );
 
         entity.setDetailSections(
                 serviceDetailSectionMapper.toEntityList(
                         request.getDetailSections()
                 )
         );
+
         entity.setCateringDetails(
                 cateringDetailsMapper.toEntity(
                         request.getCateringDetails()
                 )
         );
+
         entity.setLocation(
                 request.getLocation()
         );
 
-        /* * ========================================= * BUNDLE CONFIGURATION * ========================================= */
-        entity.setBundleEnabled( request.getBundleEnabled() );
-        entity.setBundleDiscountType( request.getBundleDiscountType() );
-        entity.setBundleDiscountValue( request.getBundleDiscountValue() );
+        /*
+         * =========================================
+         * BUNDLE CONFIGURATION
+         * =========================================
+         */
+
+        entity.setBundleEnabled(
+                request.getBundleEnabled()
+        );
+
+        entity.setBundleDiscountType(
+                request.getBundleDiscountType()
+        );
+
+        entity.setBundleDiscountValue(
+                request.getBundleDiscountValue()
+        );
     }
 }

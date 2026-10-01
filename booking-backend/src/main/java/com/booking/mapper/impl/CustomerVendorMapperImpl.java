@@ -7,10 +7,13 @@ import com.booking.mapper.ServiceDetailSectionMapper;
 import com.booking.model.Review;
 import com.booking.model.User;
 import com.booking.model.VendorService;
+import com.booking.model.VendorServicePricing;
 import com.booking.repository.ReviewRepository;
+import com.booking.repository.VendorServicePricingRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import java.util.Collections;
 import java.util.List;
 
 @Component
@@ -23,6 +26,9 @@ public class CustomerVendorMapperImpl
 
     private final ReviewRepository
             reviewRepository;
+
+    private final VendorServicePricingRepository
+            vendorServicePricingRepository;
 
 
     @Override
@@ -87,13 +93,9 @@ public class CustomerVendorMapperImpl
                 )
 
                 .imageUrl(
-
                         service.getImageUrls() != null
-                                &&
-                                !service.getImageUrls().isEmpty()
-
+                                && !service.getImageUrls().isEmpty()
                                 ? service.getImageUrls().get(0)
-
                                 : null
                 )
 
@@ -110,7 +112,6 @@ public class CustomerVendorMapperImpl
                 )
 
                 .build();
-
     }
 
 
@@ -132,6 +133,17 @@ public class CustomerVendorMapperImpl
 
         int reviewCount =
                 reviews.size();
+
+        /*
+         * Packages now belong to VendorServicePricing.
+         *
+         * For the customer service-detail view, retrieve
+         * the latest/current pricing version.
+         */
+        List<com.booking.model.embedded.ServicePackage> packages =
+                getCurrentPackages(
+                        service.getId()
+                );
 
         return VendorDetailResponse.builder()
 
@@ -187,10 +199,6 @@ public class CustomerVendorMapperImpl
                         service.getAmenities()
                 )
 
-                /*
-                 * Convert entity sections
-                 * to API response sections.
-                 */
                 .detailSections(
                         serviceDetailSectionMapper
                                 .toResponseList(
@@ -211,12 +219,28 @@ public class CustomerVendorMapperImpl
                 )
 
                 .packages(
-                        service.getPackages()
+                        packages
                 )
 
                 .build();
-
     }
+
+
+    private List<com.booking.model.embedded.ServicePackage>
+    getCurrentPackages(
+            String serviceId
+    ) {
+
+        return vendorServicePricingRepository
+                .findByServiceIdOrderByVersionDesc(
+                        serviceId
+                )
+                .stream()
+                .findFirst()
+                .map(VendorServicePricing::getPackages)
+                .orElse(Collections.emptyList());
+    }
+
 
     private List<Review> getVendorReviews(
             String vendorId
@@ -226,7 +250,6 @@ public class CustomerVendorMapperImpl
                 .findByVendorIdAndDeletedFalse(
                         vendorId
                 );
-
     }
 
 
@@ -235,26 +258,18 @@ public class CustomerVendorMapperImpl
     ) {
 
         if (reviews == null || reviews.isEmpty()) {
-
             return 0.0;
-
         }
 
         return reviews.stream()
-
                 .filter(
                         review ->
                                 review.getRating() != null
                 )
-
                 .mapToInt(
                         Review::getRating
                 )
-
                 .average()
-
                 .orElse(0.0);
-
     }
-
 }
