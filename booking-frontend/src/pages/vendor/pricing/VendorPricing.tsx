@@ -229,18 +229,11 @@ const VendorPricing = () => {
 
 
             /*
-             * Load packages from service.
+             * Load packages from pricing.
              */
 
-            const service =
-                await VendorServiceService
-                    .getServiceById(
-                        serviceId!
-                    );
-
-
             setPackages(
-                service.packages ?? []
+                response?.packages ?? []
             );
 
         }
@@ -1346,11 +1339,11 @@ const VendorPricing = () => {
              * =========================================
              */
 
-            await VendorServiceService
-                .updatePackages(
-                    serviceId,
-                    packages
-                );
+            await VendorPricingService.savePricing(
+                serviceId,
+                pricing,
+                packages
+            );
 
 
             /*
@@ -1359,14 +1352,11 @@ const VendorPricing = () => {
              * =========================================
              */
 
-            await VendorPricingService
-                .savePricing({
-
-                    ...pricing,
-                    serviceId,
-                    packages
-
-                });
+            await VendorPricingService.savePricing(
+                serviceId,
+                pricing,
+                packages
+            );
 
 
             toast.success(

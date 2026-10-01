@@ -4,9 +4,16 @@ import type {
     VendorServicePricing
 } from "../types/VendorPricing";
 
+import type {
+    ServicePackage
+} from "../types/ServicePackage";
+
+
 const VendorPricingService = {
 
-    async getPricing(serviceId: string) {
+    async getPricing(
+        serviceId: string
+    ) {
 
         const response =
             await api.get<VendorServicePricing>(
@@ -16,19 +23,33 @@ const VendorPricingService = {
         return response.data;
     },
 
+
     async savePricing(
-        pricing: VendorServicePricing
+        serviceId: string,
+        pricing: VendorServicePricing,
+        packages: ServicePackage[]
     ) {
+
+        const request = {
+
+            ...pricing,
+
+            serviceId,
+
+            packages
+
+        };
 
         const response =
             await api.post<VendorServicePricing>(
                 "/pricing",
-                pricing
+                request
             );
 
         return response.data;
     }
 
 };
+
 
 export default VendorPricingService;
