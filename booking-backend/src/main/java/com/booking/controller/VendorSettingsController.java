@@ -1,5 +1,7 @@
 package com.booking.controller;
 
+import com.booking.dto.vendor.BankDetailsRequest;
+import com.booking.dto.vendor.BankDetailsResponse;
 import com.booking.dto.vendorservice.VendorServiceRequest;
 import com.booking.dto.vendorservice.VendorServiceResponse;
 import jakarta.validation.Valid;
@@ -13,8 +15,9 @@ public class VendorSettingsController {
 
 
     @PostMapping("/bankdetails")
-    public ResponseEntity<VendorServiceResponse> createService(
-            @Valid @RequestBody VendorServiceRequest request) {
+    public BankDetailsResponse insertBankDetails(
+            @PathVariable String serviceId,
+            @Valid @RequestBody BankDetailsRequest request) {
 
        VendorServiceResponse response =
                 //vendorOfferingService.createService(request);
