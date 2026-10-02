@@ -1,7 +1,7 @@
 import api from "../api/axiosConfig";
 
 import type {
-    VendorServicePricing
+    VendorServicePricing, PricingVersionSummary
 } from "../types/VendorPricing";
 
 import type {
@@ -47,7 +47,32 @@ const VendorPricingService = {
             );
 
         return response.data;
-    }
+    },
+
+    async getPricingVersions(
+        serviceId: string
+    ): Promise<PricingVersionSummary[]> {
+
+        const response =
+            await api.get(
+                `/pricing/services/${serviceId}/versions`
+            );
+
+        return response.data;
+    },
+
+
+    async getPricingById(
+        pricingId: string
+    ): Promise<VendorServicePricing> {
+
+        const response =
+            await api.get<VendorServicePricing>(
+                `/pricing/${pricingId}`
+            );
+
+        return response.data;
+    },
 
 };
 

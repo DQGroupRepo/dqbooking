@@ -1783,55 +1783,237 @@
 }
 
 /* =========================================================
+   PRICING VERSION HISTORY
+   Added without changing the existing page/card design.
+========================================================= */
+
+.pricing-version-history {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.pricing-version-history .section-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 14px;
+}
+
+.pricing-version-history .section-header h3 {
+    margin: 0 0 4px;
+    color: #0f172a;
+    font-size: 16px;
+    font-weight: 700;
+}
+
+.pricing-version-history .section-description {
+    margin: 0;
+    color: #64748b;
+    font-size: 11px;
+    line-height: 1.45;
+}
+
+.version-count {
+    flex-shrink: 0;
+    padding: 5px 10px;
+    border-radius: 999px;
+    background: #eff6ff;
+    color: #2563eb;
+    font-size: 10px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.version-empty-state {
+    display: flex;
+    align-items: center;
+    min-height: 58px;
+    padding: 12px 14px;
+    border: 1px dashed #cbd5e1;
+    border-radius: 8px;
+    background: #fbfcfe;
+    color: #64748b;
+    font-size: 11px;
+}
+
+.pricing-version-table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+    border: 1px solid #e5e7eb;
+    border-radius: 9px;
+    background: #ffffff;
+}
+
+.pricing-version-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: auto;
+    font-size: 11px;
+}
+
+.pricing-version-table thead {
+    background: #f8fafc;
+}
+
+.pricing-version-table th {
+    padding: 10px 12px;
+    border-bottom: 1px solid #e5e7eb;
+    color: #64748b;
+    font-size: 10px;
+    font-weight: 700;
+    text-align: left;
+    white-space: nowrap;
+}
+
+.pricing-version-table td {
+    padding: 11px 12px;
+    border-bottom: 1px solid #edf1f5;
+    color: #334155;
+    vertical-align: middle;
+    white-space: nowrap;
+}
+
+.pricing-version-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.pricing-version-table tbody tr {
+    background: #ffffff;
+    transition: background 0.15s ease;
+}
+
+.pricing-version-table tbody tr:hover {
+    background: #f8fafc;
+}
+
+.pricing-version-table tbody tr.selected {
+    background: #f8fbff;
+}
+
+.version-cell {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    min-width: 78px;
+}
+
+.version-cell strong {
+    color: #0f172a;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.current-version-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 7px;
+    border-radius: 999px;
+    background: #eff6ff;
+    color: #2563eb;
+    font-size: 9px;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.view-version-btn {
+    min-width: 54px;
+    padding: 5px 9px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    background: #ffffff;
+    color: #2563eb;
+    font-size: 10px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.view-version-btn:hover:not(:disabled) {
+    border-color: #2563eb;
+    background: #eff6ff;
+}
+
+.view-version-btn:disabled {
+    border-color: #dbeafe;
+    background: #eff6ff;
+    color: #64748b;
+    cursor: default;
+}
+
+/* =========================================================
+   SERVICE PACKAGES — CURRENT UI
+========================================================= */
+
+.package-section-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 7px;
+    flex-shrink: 0;
+}
+
+.package-section-actions .package-count {
+    min-width: 110px;
+    box-sizing: border-box;
+    text-align: center;
+}
+
+/* =/* =========================================================
    CUSTOM SERVICE PACKAGES
    ========================================================= */
 
+/* Keep the existing pricing-card layout, colors and overall visual language.
+   These rules only refine the Service Packages section. */
 
-/* =========================================================
-   PACKAGE HEADER
-   ========================================================= */
+.package-card-section {
+    padding: 16px;
+}
+
+.package-section-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 14px;
+}
 
 .package-header-actions {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 10px;
+    flex-shrink: 0;
+}
+
+.package-count {
+    flex-shrink: 0;
+    padding: 5px 10px;
+    border-radius: 999px;
+    background: #eff6ff;
+    color: #2563eb;
+    font-size: 10px;
+    font-weight: 700;
 }
 
 .add-package-btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-
-    min-height: 36px;
-
-    padding: 8px 16px;
-
+    min-height: 34px;
+    padding: 7px 13px;
     border: none;
     border-radius: 7px;
-
     background: #dfa974;
-
     color: #ffffff;
-
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 600;
-
     cursor: pointer;
-
-    transition:
-        background 0.2s ease,
-        transform 0.2s ease,
-        box-shadow 0.2s ease;
+    transition: background 0.2s ease, box-shadow 0.2s ease;
 }
 
 .add-package-btn:hover {
     background: #cf965d;
-
-    transform: translateY(-1px);
-
-    box-shadow: 0 4px 12px rgba(223, 169, 116, 0.25);
+    box-shadow: 0 3px 10px rgba(223, 169, 116, 0.22);
 }
-
 
 /* =========================================================
    EMPTY STATE
@@ -1839,64 +2021,45 @@
 
 .packages-empty-state {
     display: flex;
-
     flex-direction: column;
-
     align-items: center;
     justify-content: center;
-
-    min-height: 220px;
-
-    padding: 30px;
-
-    margin-top: 20px;
-
+    min-height: 125px;
+    padding: 18px;
+    margin-top: 4px;
     border: 1px dashed #cbd5e1;
-
-    border-radius: 12px;
-
-    background: #f8fafc;
-
+    border-radius: 9px;
+    background: #fbfcfe;
     text-align: center;
 }
 
 .packages-empty-icon {
     display: flex;
-
     align-items: center;
     justify-content: center;
-
-    width: 44px;
-    height: 44px;
-
-    margin-bottom: 12px;
-
+    width: 30px;
+    height: 30px;
+    margin-bottom: 7px;
+    border: 1px solid #bfdbfe;
     border-radius: 50%;
-
     background: #eff6ff;
-
     color: #2563eb;
-
-    font-size: 22px;
+    font-size: 16px;
     font-weight: 600;
 }
 
 .packages-empty-state h4 {
-    margin: 0 0 6px;
-
+    margin: 0 0 4px;
     color: #0f172a;
-
-    font-size: 16px;
+    font-size: 13px;
+    font-weight: 700;
 }
 
 .packages-empty-state p {
-    margin: 0 0 18px;
-
+    margin: 0 0 10px;
     color: #64748b;
-
-    font-size: 13px;
+    font-size: 11px;
 }
-
 
 /* =========================================================
    PACKAGE GRID
@@ -1904,17 +2067,11 @@
 
 .package-editor-grid {
     display: grid;
-
-    grid-template-columns:
-        repeat(3, minmax(0, 1fr));
-
-    gap: 12px;
-
-    margin-top: 20px;
-
-    align-items: stretch;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+    margin-top: 2px;
+    align-items: start;
 }
-
 
 /* =========================================================
    PACKAGE CARD
@@ -1922,41 +2079,26 @@
 
 .service-package-card {
     display: flex;
-
     flex-direction: column;
-
     min-width: 0;
-
-    min-height: 390px;
-
+    min-height: 0;
     border: 1px solid #dbe3ef;
-
     border-radius: 10px;
-
     background: #ffffff;
-
     overflow: hidden;
-
     box-sizing: border-box;
-
-    transition:
-        border-color 0.2s ease,
-        box-shadow 0.2s ease;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .service-package-card.active {
     border-color: #2563eb;
-
-    box-shadow:
-        0 4px 14px rgba(37, 99, 235, 0.08);
+    box-shadow: 0 3px 12px rgba(37, 99, 235, 0.07);
 }
 
 .service-package-card.inactive {
     border-color: #e2e8f0;
-
     background: #f8fafc;
 }
-
 
 /* =========================================================
    PACKAGE CARD HEADER
@@ -1964,26 +2106,18 @@
 
 .package-card-header {
     display: flex;
-
     align-items: center;
     justify-content: space-between;
-
-    min-height: 58px;
-
-    padding: 12px;
-
+    min-height: 52px;
+    padding: 10px 12px;
     border-bottom: 1px solid #e2e8f0;
-
     box-sizing: border-box;
 }
 
 .package-card-title-area {
     display: flex;
-
     align-items: center;
-
     gap: 8px;
-
     min-width: 0;
 }
 
@@ -1992,36 +2126,26 @@
 }
 
 .package-card-title-area h4 {
-    margin: 1px 0 1px;
-
+    margin: 1px 0;
     color: #0f172a;
-
-    font-size: 15px;
+    font-size: 14px;
     font-weight: 700;
-
     line-height: 1.2;
-
     white-space: nowrap;
-
     overflow: hidden;
-
     text-overflow: ellipsis;
 }
 
 .package-card-title-area span:not(.package-checkmark) {
     color: #64748b;
-
     font-size: 10px;
 }
 
 .package-number {
     display: block;
-
     color: #94a3b8;
-
     font-size: 9px;
 }
-
 
 /* =========================================================
    PACKAGE TOGGLE
@@ -2029,62 +2153,45 @@
 
 .package-toggle {
     position: relative;
-
     display: flex;
-
     align-items: center;
     justify-content: center;
-
     width: 18px;
     height: 18px;
-
     flex-shrink: 0;
-
     cursor: pointer;
 }
 
 .package-toggle input {
     position: absolute;
-
     opacity: 0;
-
     width: 0;
     height: 0;
 }
 
 .package-checkmark {
     display: flex;
-
     align-items: center;
     justify-content: center;
-
     width: 16px;
     height: 16px;
-
     border: 1px solid #cbd5e1;
-
     border-radius: 4px;
-
     background: #ffffff;
-
     box-sizing: border-box;
 }
 
 .package-toggle input:checked + .package-checkmark {
     border-color: #2563eb;
-
     background: #2563eb;
 }
 
 .package-toggle input:checked + .package-checkmark::after {
     content: "✓";
-
     color: #ffffff;
-
     font-size: 11px;
     font-weight: 700;
 }
-
 
 /* =========================================================
    PACKAGE CONTENT
@@ -2097,114 +2204,74 @@
     margin-right: 12px;
 }
 
-
-/* =========================================================
-   PACKAGE NAME / PRICE
-   ========================================================= */
-
 .package-price-field {
-    margin-top: 12px;
+    margin-top: 10px;
 }
 
 .package-price-field label {
     display: block;
-
     margin-bottom: 5px;
-
     color: #334155;
-
     font-size: 10px;
     font-weight: 600;
 }
 
 .package-price-field > input {
     width: 100%;
-
     height: 32px;
-
     padding: 0 10px;
-
     border: 1px solid #cbd5e1;
-
     border-radius: 6px;
-
     background: #ffffff;
-
     color: #0f172a;
-
     font-size: 12px;
-
     box-sizing: border-box;
-
     outline: none;
 }
 
 .package-price-field > input:focus {
     border-color: #2563eb;
-
-    box-shadow:
-        0 0 0 2px rgba(37, 99, 235, 0.08);
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.08);
 }
-
-
-/* =========================================================
-   PRICE INPUT
-   ========================================================= */
 
 .package-price-input {
     display: flex;
-
     align-items: center;
-
     height: 32px;
-
     border: 1px solid #cbd5e1;
-
     border-radius: 6px;
-
     background: #ffffff;
-
     overflow: hidden;
 }
 
 .package-price-input span {
     display: flex;
-
     align-items: center;
     justify-content: center;
-
     width: 32px;
     height: 100%;
-
     border-right: 1px solid #e2e8f0;
-
     background: #f8fafc;
-
     color: #64748b;
-
     font-size: 11px;
 }
 
 .package-price-input input {
     flex: 1;
-
     width: 100%;
-
     height: 100%;
-
     padding: 0 10px;
-
     border: none;
-
     outline: none;
-
     background: transparent;
-
     color: #0f172a;
-
     font-size: 12px;
 }
 
+.package-price-input:focus-within {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.08);
+}
 
 /* =========================================================
    FEATURES
@@ -2212,46 +2279,31 @@
 
 .package-features-section {
     display: flex;
-
     flex-direction: column;
-
-    flex: 1;
-
-    min-height: 0;
-
-    margin-top: 12px;
+    margin-top: 10px;
 }
 
 .package-features-header {
     display: flex;
-
     align-items: center;
     justify-content: space-between;
-
-    margin-bottom: 7px;
+    margin-bottom: 6px;
 }
 
 .package-features-header h5 {
     margin: 0;
-
     color: #334155;
-
     font-size: 10px;
     font-weight: 600;
 }
 
 .add-feature-btn {
     padding: 0;
-
     border: none;
-
     background: transparent;
-
     color: #2563eb;
-
     font-size: 9px;
     font-weight: 600;
-
     cursor: pointer;
 }
 
@@ -2259,56 +2311,33 @@
     text-decoration: underline;
 }
 
-
-/* =========================================================
-   FEATURE LIST
-   ========================================================= */
-
 .package-feature-list {
     display: flex;
-
     flex-direction: column;
-
-    gap: 6px;
-
-    min-height: 42px;
-
-    max-height: 88px;
-
+    gap: 5px;
+    min-height: 28px;
+    max-height: 96px;
     overflow-y: auto;
-
     padding-right: 2px;
 }
 
 .package-feature-item {
     display: flex;
-
     align-items: center;
-
     gap: 5px;
-
     flex-shrink: 0;
 }
 
 .package-feature-item input {
     flex: 1;
-
     min-width: 0;
-
     height: 28px;
-
     padding: 0 8px;
-
     border: 1px solid #cbd5e1;
-
     border-radius: 5px;
-
     background: #ffffff;
-
     color: #334155;
-
     font-size: 9px;
-
     outline: none;
 }
 
@@ -2318,83 +2347,57 @@
 
 .remove-feature-btn {
     display: flex;
-
     align-items: center;
     justify-content: center;
-
     width: 22px;
     height: 22px;
-
     flex-shrink: 0;
-
     padding: 0;
-
     border: none;
-
     border-radius: 4px;
-
     background: #f8fafc;
-
     color: #94a3b8;
-
     font-size: 13px;
-
     cursor: pointer;
 }
 
 .remove-feature-btn:hover {
     background: #fee2e2;
-
     color: #dc2626;
 }
 
 .no-features {
     display: flex;
-
     align-items: center;
-
     min-height: 28px;
-
     color: #94a3b8;
-
     font-size: 9px;
 }
-
 
 /* =========================================================
    FOOTER
    ========================================================= */
 
 .package-card-footer {
-    margin-top: auto;
-
-    padding-top: 10px;
-    padding-bottom: 10px;
-
+    margin-top: 8px;
+    padding: 9px 0 8px;
     border-top: 1px solid #e2e8f0;
 }
 
 .remove-package-btn {
     padding: 0;
-
     border: none;
-
     background: transparent;
-
     color: #dc2626;
-
     font-size: 9px;
     font-weight: 600;
-
     cursor: pointer;
 }
 
 .remove-package-btn:hover {
     color: #b91c1c;
-
     text-decoration: underline;
 }
-
 
 /* =========================================================
    INACTIVE PACKAGE
@@ -2402,65 +2405,44 @@
 
 .inactive-package-content {
     display: flex;
-
     flex: 1;
-
     flex-direction: column;
-
     align-items: center;
     justify-content: center;
-
-    padding: 25px;
-
+    min-height: 175px;
+    padding: 20px;
     text-align: center;
 }
 
 .inactive-package-icon {
     display: flex;
-
     align-items: center;
     justify-content: center;
-
-    width: 38px;
-    height: 38px;
-
-    margin-bottom: 10px;
-
+    width: 34px;
+    height: 34px;
+    margin-bottom: 8px;
     border: 1px dashed #cbd5e1;
-
     border-radius: 50%;
-
     color: #94a3b8;
-
-    font-size: 18px;
+    font-size: 16px;
 }
 
 .inactive-package-content p {
     max-width: 220px;
-
-    margin: 0 0 14px;
-
+    margin: 0 0 12px;
     color: #64748b;
-
     font-size: 10px;
-
     line-height: 1.5;
 }
 
 .enable-package-btn {
     padding: 7px 12px;
-
     border: 1px solid #2563eb;
-
     border-radius: 6px;
-
     background: #ffffff;
-
     color: #2563eb;
-
     font-size: 10px;
     font-weight: 600;
-
     cursor: pointer;
 }
 
@@ -2468,59 +2450,41 @@
     background: #eff6ff;
 }
 
-
 /* =========================================================
    PACKAGE INFO
    ========================================================= */
 
 .package-info-banner {
     display: flex;
-
     align-items: flex-start;
-
     gap: 10px;
-
-    margin-top: 14px;
-
-    padding: 10px 12px;
-
+    margin-top: 12px;
+    padding: 9px 11px;
     border: 1px solid #dbeafe;
-
     border-radius: 7px;
-
     background: #eff6ff;
-
     box-sizing: border-box;
 }
 
 .package-info-icon {
     flex-shrink: 0;
-
     color: #2563eb;
-
     font-size: 13px;
 }
 
 .package-info-banner strong {
     display: block;
-
     margin-bottom: 2px;
-
     color: #1e3a8a;
-
     font-size: 10px;
 }
 
 .package-info-banner p {
     margin: 0;
-
     color: #2563eb;
-
     font-size: 9px;
-
     line-height: 1.4;
 }
-
 
 /* =========================================================
    PACKAGE SUMMARY
@@ -2528,32 +2492,32 @@
 
 .package-summary-dot {
     display: inline-block;
-
     width: 7px;
     height: 7px;
-
     margin-right: 6px;
-
     border-radius: 50%;
-
     background: #cbd5e1;
 }
 
-
 /* =========================================================
-   RESPONSIVE
+   PACKAGE RESPONSIVE
    ========================================================= */
 
 @media (max-width: 1100px) {
-
     .package-editor-grid {
-        grid-template-columns:
-            repeat(2, minmax(0, 1fr));
+        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
-
 }
 
 @media (max-width: 700px) {
+    .pricing-version-history .section-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .pricing-version-table {
+        min-width: 760px;
+    }
 
     .package-editor-grid {
         grid-template-columns: 1fr;
@@ -2561,10 +2525,7 @@
 
     .package-header-actions {
         flex-direction: column;
-
         align-items: flex-end;
-
         gap: 6px;
     }
-
 }

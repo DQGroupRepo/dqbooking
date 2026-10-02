@@ -7,6 +7,7 @@ import lombok.Setter;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -80,4 +81,14 @@ public class VendorServicePricing extends BaseEntity {
      */
     private CancellationPolicy cancellationPolicy =
             new CancellationPolicy();
+
+    /*
+     * =========================================
+     * PRICING AUDIT
+     * =========================================
+     */
+
+    private Instant createdAt;
+
+    private String createdBy;
 }

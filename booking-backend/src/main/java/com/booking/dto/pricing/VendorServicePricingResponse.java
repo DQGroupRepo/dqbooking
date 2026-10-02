@@ -33,13 +33,8 @@ public class VendorServicePricingResponse {
 
     private CancellationPolicyResponse cancellationPolicy;
 
-
     /*
-     * Packages belong to VendorService.
-     *
-     * They are included here so the frontend
-     * can retrieve pricing and packages together.
+     * Packages belong to the pricing version.
      */
     private List<ServicePackageResponse> packages;
-
 }
