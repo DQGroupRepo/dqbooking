@@ -522,6 +522,10 @@ public class BookingServiceImpl implements BookingService
                                         item.getPackageId()
                                 );
 
+                                calculationItem.setEventDate(
+                                        item.getEventDate()
+                                );
+
                                 return calculationItem;
 
                             })
@@ -654,53 +658,6 @@ public class BookingServiceImpl implements BookingService
                                 + item.getServiceId()
                 );
             }
-            /*
-             * =========================================
-             * RESOLVE SELECTED PACKAGE
-             * =========================================
-             */
-            ServicePackage selectedPackage = null;
-
-            if (
-                    item.getPackageId() != null &&
-                            !item.getPackageId().isBlank()
-            ) {
-
-                List<ServicePackage> packages =
-                        vendorService.getPackages() == null
-                                ? List.of()
-                                : vendorService.getPackages();
-
-
-                selectedPackage =
-                        packages
-                                .stream()
-                                .filter(
-                                        pkg ->
-                                                item.getPackageId()
-                                                        .equals(
-                                                                pkg.getId()
-                                                        )
-                                )
-                                .findFirst()
-                                .orElseThrow(() ->
-                                        new ResourceNotFoundException(
-                                                "Selected package not found: "
-                                                        + item.getPackageId()
-                                        )
-                                );
-
-
-                if (!selectedPackage.isActive()) {
-
-                    throw new IllegalArgumentException(
-                            "Selected package is not active."
-                    );
-                }
-            }
-
-
-
 
             /*
              * =========================================
@@ -731,7 +688,15 @@ public class BookingServiceImpl implements BookingService
             PricingCalculationResult pricingResult =
                     pricingCalculationService.calculatePrice(
                             vendorService.getId(),
-                            item.getEventDate(), selectedPackage
+                            item.getEventDate(),
+                            item.getPackageId()
+                    );
+
+            ServicePackage selectedPackage =
+                    resolvePackage(
+                            vendorService,
+                            item.getPackageId(),
+                            item.getEventDate()
                     );
 
 
@@ -1342,6 +1307,84 @@ public class BookingServiceImpl implements BookingService
         return enrichBookingResponses(
                 bookings
         );
+    }
+
+    private ServicePackage resolvePackage(
+            VendorService service,
+            String packageId,
+            LocalDate eventDate
+    ) {
+
+        if (packageId == null || packageId.isBlank()) {
+            return null;
+        }
+
+        VendorServicePricing pricing =
+                pricingRepository
+                        .findByServiceIdOrderByVersionDesc(
+                                service.getId()
+                        )
+                        .stream()
+                        .filter(candidate ->
+                                isPricingApplicable(
+                                        candidate,
+                                        eventDate
+                                )
+                        )
+                        .findFirst()
+                        .orElseThrow(() ->
+                                new ResourceNotFoundException(
+                                        "No applicable pricing found for service: "
+                                                + service.getId()
+                                ));
+
+        List<ServicePackage> packages =
+                pricing.getPackages() == null
+                        ? List.of()
+                        : pricing.getPackages();
+
+        ServicePackage selectedPackage =
+                packages
+                        .stream()
+                        .filter(pkg ->
+                                packageId.equals(pkg.getId())
+                        )
+                        .findFirst()
+                        .orElseThrow(() ->
+                                new ResourceNotFoundException(
+                                        "Selected package not found: "
+                                                + packageId
+                                ));
+
+        if (!selectedPackage.isActive()) {
+            throw new IllegalArgumentException(
+                    "Selected package is not active."
+            );
+        }
+
+        return selectedPackage;
+    }
+
+    private boolean isPricingApplicable(
+            VendorServicePricing pricing,
+            LocalDate eventDate
+    ) {
+
+        if (pricing.getEffectiveFrom() != null
+                && eventDate.isBefore(
+                pricing.getEffectiveFrom()
+        )) {
+            return false;
+        }
+
+        if (pricing.getEffectiveUntil() != null
+                && eventDate.isAfter(
+                pricing.getEffectiveUntil()
+        )) {
+            return false;
+        }
+
+        return true;
     }
 
     private BookingPricingSnapshot createPricingSnapshot(

@@ -1,16 +1,13 @@
 package com.booking.service.impl;
 
 import com.booking.config.LoggingContext;
-import com.booking.dto.service.ServicePackageRequest;
 import com.booking.dto.vendorservice.VendorServiceRequest;
 import com.booking.dto.vendorservice.VendorServiceResponse;
-import com.booking.exception.ResourceNotFoundException;
 import com.booking.exception.VendorServiceNotFoundException;
 import com.booking.model.enums.ServiceCategory;
 import com.booking.mapper.VendorServiceMapper;
 import com.booking.model.User;
 import com.booking.model.VendorService;
-import com.booking.model.embedded.ServicePackage;
 import com.booking.model.enums.Role;
 import com.booking.model.enums.ServiceModerationStatus;
 import com.booking.model.enums.VendorPage;
@@ -24,10 +21,7 @@ import org.springframework.stereotype.Service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.math.BigDecimal;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -404,219 +398,7 @@ public class VendorOfferingServiceImpl
                 .toList();
     }
 
-
-    /*
-     * =========================================
-     * PACKAGE VALIDATION
-     * =========================================
-     */
-
-    private void validatePackages(List<ServicePackageRequest> packages) {
-
-        if (packages == null || packages.isEmpty()) {
-            return;
-        }
-
-        for (ServicePackageRequest request : packages) {
-
-            if (request.getName() == null || request.getName().trim().isEmpty()) {
-                throw new IllegalArgumentException("Package name is required.");
-            }
-
-            if (request.getPrice() == null
-                    || request.getPrice().compareTo(BigDecimal.ZERO) <= 0) {
-                throw new IllegalArgumentException(
-                        "Package price must be greater than zero."
-                );
-            }
-        }
-    }
-
-
-    /*
-     * =========================================
-     * MAP NEW PACKAGES
-     * =========================================
-     */
-
-    private List<ServicePackage> mapPackages(
-            List<ServicePackageRequest> requests
-    ) {
-
-        if (requests == null || requests.isEmpty()) {
-            return new ArrayList<>();
-        }
-
-        return requests.stream()
-                .map(request -> {
-
-                    ServicePackage servicePackage = new ServicePackage();
-
-                    servicePackage.setId(
-                            request.getId() != null
-                                    && !request.getId().isBlank()
-                                    ? request.getId()
-                                    : UUID.randomUUID().toString()
-                    );
-
-                    servicePackage.setName(
-                            request.getName().trim()
-                    );
-
-                    servicePackage.setPrice(
-                            request.getPrice()
-                    );
-
-                    servicePackage.setFeatures(
-                            request.getFeatures() == null
-                                    ? new ArrayList<>()
-                                    : new ArrayList<>(request.getFeatures())
-                    );
-
-                    servicePackage.setActive(
-                            request.isActive()
-                    );
-
-                    return servicePackage;
-                })
-                .toList();
-    }
-
-
-    /*
-     * =========================================
-     * MAP UPDATED PACKAGES
-     * =========================================
-     */
-
-    private List<ServicePackage> mapUpdatedPackages(
-            List<ServicePackageRequest> requests,
-            List<ServicePackage> existingPackages
-    ) {
-
-        if (requests == null || requests.isEmpty()) {
-            return new ArrayList<>();
-        }
-
-        if (existingPackages == null) {
-            existingPackages = new ArrayList<>();
-        }
-
-        List<ServicePackage> oldPackages = existingPackages;
-
-        return requests.stream()
-                .map(request -> {
-
-                    ServicePackage existingPackage = oldPackages.stream()
-                            .filter(existing ->
-                                    existing.getId() != null
-                                            && existing.getId().equals(request.getId())
-                            )
-                            .findFirst()
-                            .orElse(null);
-
-                    ServicePackage servicePackage;
-
-                    if (existingPackage != null) {
-                        servicePackage = existingPackage;
-                    } else {
-                        servicePackage = new ServicePackage();
-
-                        servicePackage.setId(
-                                request.getId() != null
-                                        && !request.getId().isBlank()
-                                        ? request.getId()
-                                        : UUID.randomUUID().toString()
-                        );
-                    }
-
-                    servicePackage.setName(
-                            request.getName().trim()
-                    );
-
-                    servicePackage.setPrice(
-                            request.getPrice()
-                    );
-
-                    servicePackage.setFeatures(
-                            request.getFeatures() == null
-                                    ? new ArrayList<>()
-                                    : new ArrayList<>(request.getFeatures())
-                    );
-
-                    servicePackage.setActive(
-                            request.isActive()
-                    );
-
-                    return servicePackage;
-                })
-                .toList();
-    }
-
-
-    /*
-     * =========================================
-     * UPDATE PACKAGES
-     * =========================================
-     */
-
-    @Override
-    public VendorServiceResponse updatePackages(
-            String serviceId,
-            List<ServicePackageRequest> packages
-    ) {
-        log.info(
-                "Updating service packages serviceId={}",
-                serviceId
-        );
-
-        vendorPermissionService.checkEdit(
-                VendorPage.SERVICES
-        );
-
-        String vendorId =
-                vendorAccessService
-                        .getEffectiveVendorId();
-        LoggingContext.setVendorId(vendorId);
-        /*
-         * IMPORTANT:
-         *
-         * Do not allow an admin in support mode
-         * to update a service belonging to another
-         * vendor simply by knowing its serviceId.
-         */
-
-        VendorService service =
-                vendorServiceRepository
-                        .findByIdAndVendorIdAndDeletedFalse(
-                                serviceId,
-                                vendorId
-                        )
-                        .orElseThrow(() ->
-                                new ResourceNotFoundException(
-                                        "Service not found."
-                                )
-                        );
-
-        validatePackages(
-                packages
-        );
-
-        service.setPackages(
-                mapUpdatedPackages(
-                        packages,
-                        service.getPackages()
-                )
-        );
-
-        return vendorServiceMapper.toResponse(
-                vendorServiceRepository.save(
-                        service
-                )
-        );
-    }
-
-    /*
+ /*
      * =========================================
      * CATERING VALIDATION
      * =========================================

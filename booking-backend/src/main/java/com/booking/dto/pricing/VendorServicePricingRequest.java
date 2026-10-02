@@ -1,5 +1,6 @@
 package com.booking.dto.pricing;
 
+import com.booking.dto.service.ServicePackageRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotNull;
@@ -8,6 +9,7 @@ import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 @Getter
@@ -31,20 +33,37 @@ public class VendorServicePricingRequest {
     private BigDecimal baseAmount;
 
     @Valid
-    private List<VendorPricingHeadRequest> pricingHeads;
+    private List<VendorPricingHeadRequest> pricingHeads =
+            new ArrayList<>();
 
     @Valid
-    private List<VendorDiscountRequest> discounts;
+    private List<VendorDiscountRequest> discounts =
+            new ArrayList<>();
 
     @Valid
     private PaymentConfigurationRequest paymentConfiguration;
 
     /*
      * =========================================
+     * SERVICE PACKAGES
+     * =========================================
+     *
+     * Packages belong to this pricing version.
+     *
+     * This ensures that package definitions remain
+     * historically consistent with the pricing
+     * configuration used for a booking.
+     */
+    @Valid
+    private List<ServicePackageRequest> packages =
+            new ArrayList<>();
+
+    /*
+     * =========================================
      * CANCELLATION POLICY
      * =========================================
      */
+
     @Valid
     private CancellationPolicyRequest cancellationPolicy;
-
 }

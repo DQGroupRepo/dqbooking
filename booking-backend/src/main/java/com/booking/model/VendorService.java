@@ -5,7 +5,6 @@ import com.booking.model.enums.DiscountType;
 import com.booking.model.enums.ServiceCategory;
 import com.booking.model.enums.ServiceDiscoveryTag;
 import com.booking.model.enums.ServiceModerationStatus;
-import com.booking.model.embedded.CateringDetails;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -82,6 +81,7 @@ public class VendorService extends BaseEntity {
 
     private String location;
 
+
     /*
      * =========================================
      * BUNDLE CONFIGURATION
@@ -97,20 +97,12 @@ public class VendorService extends BaseEntity {
 
     /*
      * =========================================
-     * SERVICE PACKAGES
-     * =========================================
-     */
-
-    private List<ServicePackage> packages;
-
-
-    /*
-     * =========================================
      * DISCOVERY
      * =========================================
      */
 
     private Set<ServiceDiscoveryTag> discoveryTags;
+
     private CateringDetails cateringDetails;
 
 }
