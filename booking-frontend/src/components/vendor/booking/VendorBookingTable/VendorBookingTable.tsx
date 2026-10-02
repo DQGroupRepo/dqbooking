@@ -7,7 +7,7 @@ import styles
 
 import type {
     RecentBooking
-} from "../../../types/RecentBooking";
+} from "../../../../types/RecentBooking";
 
 
 interface VendorBookingTableProps {

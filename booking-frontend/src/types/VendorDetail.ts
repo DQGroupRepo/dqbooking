@@ -1,103 +1,75 @@
-import type { ContactInfo }
-    from "./ContactInfo";
-
-import type { Availability }
-    from "./Availability";
-
-import type { BookingSettings }
-    from "./BookingSettings";
-
-import type { ServicePackage }
-    from "./ServicePackage";
+import type { ServicePackage } from "./ServicePackage";
 
 export interface DetailAttribute {
+  key: string;
 
-    key: string;
-
-    value: string;
-
+  value: string;
 }
-
 
 export interface DetailSection {
+  key: string;
 
-    key: string;
+  title: string;
 
-    title: string;
-
-    attributes:
-        DetailAttribute[];
-
+  attributes: DetailAttribute[];
 }
-
 
 export interface Availability {
+  availableFrom?: string;
 
-    availableFrom?: string;
-
-    availableTo?: string;
-
+  availableTo?: string;
 }
-
 
 export interface ContactInfo {
+  contactPerson?: string;
 
-    contactPerson?: string;
+  mobile?: string;
 
-    mobile?: string;
-
-    email?: string;
-
+  email?: string;
 }
-
 
 export interface BookingSettings {
+  maxSimultaneousBookings?: number;
 
-    maxSimultaneousBookings?: number;
-
-    bundleOfferEnabled?: boolean;
-
+  bundleOfferEnabled?: boolean;
 }
 
-
 export interface VendorDetail {
+  serviceId: string;
 
-    serviceId: string;
+  vendorId: string;
 
-    vendorId: string;
+  businessName: string;
 
-    businessName: string;
+  serviceName: string;
 
-    serviceName: string;
+  description: string;
 
-    description: string;
+  category: string;
 
-    category: string;
+  city: string;
 
-    city: string;
+  location?: string;
 
-    location?: string;
+  startingPrice: number;
 
-    startingPrice: number;
+  rating?: number;
 
-    rating?: number;
+  reviewCount?: number;
 
-    reviewCount?: number;
+  capacity?: number;
 
-    capacity?: number;
+  imageUrls?: string[];
 
-    imageUrls?: string[];
+  amenities?: string[];
 
-    amenities?: string[];
+  detailSections?: DetailSection[];
 
-    detailSections?: DetailSection[];
+  contactInfo?: ContactInfo;
 
-    contactInfo?: ContactInfo;
+  bookingSettings?: BookingSettings;
 
-    bookingSettings?: BookingSettings;
+  availability?: Availability;
 
-    availability?: Availability;
-
-    packages?: ServicePackage[];
-
+  packages?: ServicePackage[];
 }

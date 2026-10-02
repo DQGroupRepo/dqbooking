@@ -1,11 +1,9 @@
 spring:
-
   application:
     name: booking-backend
-
   data:
     mongodb:
-      uri: mongodb://127.0.0.1:27017/Catalog
+      uri: ${SPRING_DATA_MONGODB_URI:mongodb://localhost:27017/Catalog}
 
   servlet:
     multipart:
@@ -13,7 +11,7 @@ spring:
       max-request-size: 500MB
 
 server:
-  port: 8080
+  port: ${SERVER_PORT:8080}
 
 logging:
   level:
@@ -26,12 +24,18 @@ logging:
     console: "%d{yyyy-MM-dd'T'HH:mm:ss.SSSXXX} %-5level [correlationId=%X{correlationId:-}] [userId=%X{userId:-} role=%X{role:-} vendorId=%X{vendorId:-}] %logger{36} - %msg%n"
 
 jwt:
-  secret: 4A6B4D6E5A715564586E3272357538782F413F4428472B4B6250655368566D5971
-  expiration: 3600000
+  secret: ${JWT_SECRET}
+  expiration: ${JWT_EXPIRATION:3600000}
 
 app:
+  cors:
+    allowed-origins: ${APP_CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:8080}
+    allowed-methods: ${APP_CORS_ALLOWED_METHODS:GET,POST,PUT,DELETE,OPTIONS}
+    allowed-headers: ${APP_CORS_ALLOWED_HEADERS:Authorization,Content-Type}
+    exposed-headers: ${APP_CORS_EXPOSED_HEADERS:Authorization}
+    allow-credentials: ${APP_CORS_ALLOW_CREDENTIALS:true}
   upload:
-    path: C://workspace//DqBooking//booking-backend//src//main//resources
-    base-url: http://localhost:8080/uploads
-    image-max-size-mb: 5
-    video-max-size-mb: 50
+    path: ${APP_UPLOAD_PATH:/tmp/uploads}
+    base-url: ${APP_UPLOAD_BASE_URL:http://localhost:8080/uploads}
+    image-max-size-mb: ${APP_IMAGE_MAX_SIZE_MB:5}
+    video-max-size-mb: ${APP_VIDEO_MAX_SIZE_MB:50}

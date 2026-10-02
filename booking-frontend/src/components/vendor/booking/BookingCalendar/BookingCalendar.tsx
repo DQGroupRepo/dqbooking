@@ -9,7 +9,7 @@ import {
 
 import type {
     BookingStats
-} from "../../../types/BookingStats";
+} from "../../../../types/BookingStats";
 
 import styles from "./BookingCalendar.module.css";
 

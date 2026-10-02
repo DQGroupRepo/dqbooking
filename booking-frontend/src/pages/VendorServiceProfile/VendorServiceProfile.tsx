@@ -380,7 +380,7 @@ export default function VendorServiceProfile() {
         service as VendorService & {
 
             detailSections?:
-                ServiceDetailSection[];
+            ServiceDetailSection[];
 
         };
 
@@ -592,7 +592,7 @@ export default function VendorServiceProfile() {
                         ₹
                         {
                             Number(
-                                service.price ?? 0
+                                service.startingPrice ?? 0
                             ).toLocaleString()
                         }
 
@@ -981,7 +981,7 @@ export default function VendorServiceProfile() {
                         {
 
                             service.packages &&
-                            service.packages.length > 0
+                                service.packages.length > 0
 
                                 ? (
 
@@ -1000,10 +1000,9 @@ export default function VendorServiceProfile() {
                                                         }
 
                                                         className={
-                                                            `package-card ${
-                                                                !pkg.active
-                                                                    ? "inactive-package"
-                                                                    : ""
+                                                            `package-card ${!pkg.active
+                                                                ? "inactive-package"
+                                                                : ""
                                                             }`
                                                         }
 

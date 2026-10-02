@@ -11,7 +11,7 @@ import AdminVendorVerificationService, {
 } from "../../services/AdminVendorVerificationService";
 
 import type {
-    AdminVendorVerification,
+    AdminVendorVerification as AdminVendorVerificationRecord,
     VendorVerificationStatus,
     ServiceModerationStatus
 } from "../../types/AdminVendorVerification";
@@ -24,42 +24,42 @@ const discoveryOptions: {
     label: string;
 }[] = [
 
-    {
-        key: "FEATURED",
-        label: "Featured"
-    },
+        {
+            key: "FEATURED",
+            label: "Featured"
+        },
 
-    {
-        key: "TRENDING_NOW",
-        label: "Trending Now"
-    },
+        {
+            key: "TRENDING_NOW",
+            label: "Trending Now"
+        },
 
-    {
-        key: "MOST_BOOKED",
-        label: "Most Booked"
-    },
+        {
+            key: "MOST_BOOKED",
+            label: "Most Booked"
+        },
 
-    {
-        key: "POPULAR_HALL",
-        label: "Popular Hall"
-    },
+        {
+            key: "POPULAR_HALL",
+            label: "Popular Hall"
+        },
 
-    {
-        key: "TOP_BRIDAL_MAKEUP",
-        label: "Top Bridal Makeup"
-    },
+        {
+            key: "TOP_BRIDAL_MAKEUP",
+            label: "Top Bridal Makeup"
+        },
 
-    {
-        key: "PROFESSIONAL_PHOTOGRAPHY",
-        label: "Professional Photography"
-    },
+        {
+            key: "PROFESSIONAL_PHOTOGRAPHY",
+            label: "Professional Photography"
+        },
 
-    {
-        key: "WEDDING_VIDEOGRAPHY",
-        label: "Wedding Videography"
-    }
+        {
+            key: "WEDDING_VIDEOGRAPHY",
+            label: "Wedding Videography"
+        }
 
-];
+    ];
 
 
 const AdminVendorVerification = () => {
@@ -69,7 +69,7 @@ const AdminVendorVerification = () => {
         vendors,
         setVendors
     ] =
-        useState<AdminVendorVerification[]>([]);
+        useState<AdminVendorVerificationRecord[]>([]);
 
 
     const [
@@ -107,7 +107,7 @@ const AdminVendorVerification = () => {
         setSelectedVendor
     ] =
         useState<
-            AdminVendorVerification | null
+            AdminVendorVerificationRecord | null
         >(null);
 
 
@@ -200,7 +200,7 @@ const AdminVendorVerification = () => {
                     vendor =>
 
                         vendor.vendorId ===
-                        updatedVendor.vendorId
+                            updatedVendor.vendorId
 
                             ? updatedVendor
 
@@ -210,61 +210,61 @@ const AdminVendorVerification = () => {
 
     }
 
-        /*
-         * =========================================
-         * OPEN VENDOR SUPPORT MODE
-         * =========================================
-         */
+    /*
+     * =========================================
+     * OPEN VENDOR SUPPORT MODE
+     * =========================================
+     */
 
-        async function handleOpenSupportMode() {
+    async function handleOpenSupportMode() {
 
-            if (!selectedVendor) {
-                return;
-            }
-
-
-            try {
-
-                setActionLoading(true);
-
-                setError("");
+        if (!selectedVendor) {
+            return;
+        }
 
 
-                await AdminVendorVerificationService
-                    .startVendorSupport(
-                        selectedVendor.vendorId
-                    );
+        try {
+
+            setActionLoading(true);
+
+            setError("");
 
 
-                /*
-                 * Navigate to the vendor area.
-                 *
-                 * The backend support session determines
-                 * which vendor the ADMIN is operating for.
-                 */
-                navigate("/vendor/dashboard");
-
-            }
-            catch (error) {
-
-                console.error(
-                    "Failed to start vendor support mode:",
-                    error
+            await AdminVendorVerificationService
+                .startVendorSupport(
+                    selectedVendor.vendorId
                 );
 
 
-                setError(
-                    "Unable to open vendor support mode."
-                );
-
-            }
-            finally {
-
-                setActionLoading(false);
-
-            }
+            /*
+             * Navigate to the vendor area.
+             *
+             * The backend support session determines
+             * which vendor the ADMIN is operating for.
+             */
+            navigate("/vendor/dashboard");
 
         }
+        catch (error) {
+
+            console.error(
+                "Failed to start vendor support mode:",
+                error
+            );
+
+
+            setError(
+                "Unable to open vendor support mode."
+            );
+
+        }
+        finally {
+
+            setActionLoading(false);
+
+        }
+
+    }
 
 
     /*
@@ -389,7 +389,7 @@ const AdminVendorVerification = () => {
 
 
             switch (
-                action
+            action
             ) {
 
                 case "approve":
@@ -501,7 +501,7 @@ const AdminVendorVerification = () => {
 
 
             switch (
-                action
+            action
             ) {
 
                 case "approve":
@@ -704,7 +704,7 @@ const AdminVendorVerification = () => {
      */
 
     function renderVendorActions(
-        vendor: AdminVendorVerification
+        vendor: AdminVendorVerificationRecord
     ) {
 
         if (
@@ -827,7 +827,7 @@ const AdminVendorVerification = () => {
         service: {
             serviceId: string;
             moderationStatus:
-                ServiceModerationStatus;
+            ServiceModerationStatus;
         }
     ) {
 
@@ -1301,10 +1301,9 @@ const AdminVendorVerification = () => {
 
                                         <span
                                             className={
-                                                `verification-badge ${
-                                                    vendor
-                                                        .verificationStatus
-                                                        .toLowerCase()
+                                                `verification-badge ${vendor
+                                                    .verificationStatus
+                                                    .toLowerCase()
                                                 }`
                                             }
                                         >
@@ -1483,10 +1482,9 @@ const AdminVendorVerification = () => {
 
                                     <strong
                                         className={
-                                            `verification-badge ${
-                                                selectedVendor
-                                                    .verificationStatus
-                                                    .toLowerCase()
+                                            `verification-badge ${selectedVendor
+                                                .verificationStatus
+                                                .toLowerCase()
                                             }`
                                         }
                                     >
@@ -1630,7 +1628,7 @@ const AdminVendorVerification = () => {
                                                                     {
                                                                         service
                                                                             .category
-                                                                            || "—"
+                                                                        || "—"
                                                                     }
 
                                                                 </span>
@@ -1650,10 +1648,9 @@ const AdminVendorVerification = () => {
 
                                                                     <strong
                                                                         className={
-                                                                            `verification-badge ${
-                                                                                service
-                                                                                    .moderationStatus
-                                                                                    .toLowerCase()
+                                                                            `verification-badge ${service
+                                                                                .moderationStatus
+                                                                                .toLowerCase()
                                                                             }`
                                                                         }
                                                                     >

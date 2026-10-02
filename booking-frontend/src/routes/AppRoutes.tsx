@@ -43,19 +43,19 @@ import BookingConfirmation from "../pages/BookingConfirmation/BookingConfirmatio
 import CustomerBookings from "../pages/Customer/CustomerBookings";
 import CustomerCancelBooking from "../pages/Customer/CustomerCancelBooking";
 import BookingCancellationSuccess from "../pages/Customer/BookingCancellationSuccess";
-import CustomerBookingDetails from "../pages/customer/CustomerBookingDetails";
-import Review from "../pages/customer/Review";
-import CustomerBookingGroupDetails from "../pages/customer/CustomerBookingGroupDetails";
+import CustomerBookingDetails from "../pages/Customer/CustomerBookingDetails";
+import Review from "../pages/Customer/Review";
+import CustomerBookingGroupDetails from "../pages/Customer/CustomerBookingGroupDetails";
 
 import AdminLayout from "../layouts/AdminLayout";
 import AdminDashboard from "../pages/Admin/AdminDashboard";
-import AdminUsers from "../pages/admin/AdminUsers";
-import AdminBookings from "../pages/admin/AdminBookings";
-import AdminReviews from "../pages/admin/AdminReviews";
-import AdminVendorVerification from "../pages/admin/AdminVendorVerification";
+import AdminUsers from "../pages/Admin/AdminUsers";
+import AdminBookings from "../pages/Admin/AdminBookings";
+import AdminReviews from "../pages/Admin/AdminReviews";
+import AdminVendorVerification from "../pages/Admin/AdminVendorVerification";
 import VendorTeam from "../pages/vendor/VendorTeam";
 
-import Cart from "../pages/cart/Cart";
+import Cart from "../pages/Cart/Cart";
 
 import VendorBundles from "../pages/VendorBundles/VendorBundles";
 
@@ -152,9 +152,9 @@ const ScrollManager = () => {
 
         if (
             location.pathname ===
-                "/categories" &&
+            "/categories" &&
             navigationType ===
-                "POP"
+            "POP"
         ) {
 
             const savedScroll =

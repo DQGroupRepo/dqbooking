@@ -200,7 +200,6 @@ background: #fef2f2;
 
 @media (max-width: 768px) {
 
-```
 .vendor-bundle-management {
     padding: 24px 20px;
 }
@@ -217,13 +216,11 @@ background: #fef2f2;
 .bundle-grid {
     grid-template-columns: 1fr;
 }
-```
 
 }
 
 @media (max-width: 480px) {
 
-```
 .bundle-details {
     grid-template-columns: 1fr;
 }

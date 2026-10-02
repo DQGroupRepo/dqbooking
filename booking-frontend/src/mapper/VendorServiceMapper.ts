@@ -1,323 +1,184 @@
-import type {
-    VendorService
-} from "../types/VendorService";
+import type { VendorService } from "../types/VendorService";
 
-import type {
-    VendorServiceForm
-} from "../types/VendorServiceForm";
+import type { VendorServiceForm } from "../types/VendorServiceForm";
 
-import type {
-    VendorServiceRequest
-} from "../types/VendorServiceRequest";
-
+import type { VendorServiceRequest } from "../types/VendorServiceRequest";
 
 export default class VendorServiceMapper {
+  /*
+   * =====================================
+   * RESPONSE → FORM
+   * =====================================
+   */
 
+  static responseToForm(service: VendorService): VendorServiceForm {
+    return {
+      category: service.category,
 
-    /*
-     * =====================================
-     * RESPONSE → FORM
-     * =====================================
-     */
+      serviceName: service.serviceName,
 
-    static responseToForm(
-        service: VendorService
-    ): VendorServiceForm {
+      location: service.location,
 
-        return {
+      capacity: service.capacity?.toString() ?? "",
 
-            category:
-                service.category,
+      durationHours: service.durationHours?.toString() ?? "",
 
-            serviceName:
-                service.serviceName,
+      description: service.description ?? "",
 
-            location:
-                service.location,
+      /* CONTACT */
 
-            capacity:
-                service.capacity?.toString() ?? "",
+      contactPerson: service.contactInfo?.contactPerson ?? "",
 
-            durationHours:
-                service.durationHours?.toString() ?? "",
+      mobile: service.contactInfo?.mobile ?? "",
 
-            description:
-                service.description ?? "",
+      email: service.contactInfo?.email ?? "",
 
+      address: service.contactInfo?.address ?? "",
 
-            /* CONTACT */
+      /* AVAILABILITY */
 
-            contactPerson:
-                service.contactInfo
-                    ?.contactPerson ?? "",
+      availableFrom: service.availability?.availableFrom ?? "",
 
-            mobile:
-                service.contactInfo
-                    ?.mobile ?? "",
+      availableTo: service.availability?.availableTo ?? "",
 
-            email:
-                service.contactInfo
-                    ?.email ?? "",
+      /* BOOKING SETTINGS */
 
-            address:
-                service.contactInfo
-                    ?.address ?? "",
+      maxSimultaneousBookings:
+        service.bookingSettings?.maxSimultaneousBookings?.toString() ?? "",
 
+      bundleOfferEnabled: service.bookingSettings?.bundleOfferEnabled ?? false,
 
-            /* AVAILABILITY */
+      /* MEDIA */
 
-            availableFrom:
-                service.availability
-                    ?.availableFrom ?? "",
+      imageUrls: service.imageUrls ?? [],
 
-            availableTo:
-                service.availability
-                    ?.availableTo ?? "",
+      /* AMENITIES */
 
+      amenities: service.amenities ?? [],
 
-            /* BOOKING SETTINGS */
+      /* DETAILS */
 
-            maxSimultaneousBookings:
+      detailSections: service.detailSections ?? [],
 
-                service.bookingSettings
-                    ?.maxSimultaneousBookings
-                    ?.toString() ?? "",
+      /* CATERING DETAILS */
 
-            bundleOfferEnabled:
+      cateringDetails:
+        service.category?.toLowerCase().trim() === "catering"
+          ? {
+              vegetarian: service.cateringDetails?.vegetarian ?? false,
 
-                service.bookingSettings
-                    ?.bundleOfferEnabled ?? false,
+              nonVegetarian: service.cateringDetails?.nonVegetarian ?? false,
 
+              cuisines: service.cateringDetails?.cuisines ?? [],
 
-            /* MEDIA */
+              /*
+               * Catering menu is stored separately
+               * through VendorCateringMenuService.
+               *
+               * It is intentionally initialized empty
+               * here and loaded separately when required.
+               */
+              menuItems: [],
 
-            imageUrls:
-                service.imageUrls ?? [],
+              providesCateringStaff:
+                service.cateringDetails?.providesCateringStaff ?? false,
 
+              staffCostPerPerson:
+                service.cateringDetails?.staffCostPerPerson?.toString() ?? "",
 
-            /* AMENITIES */
+              maximumServiceDistanceKm:
+                service.cateringDetails?.maximumServiceDistanceKm?.toString() ??
+                "",
+            }
+          : undefined,
+    };
+  }
 
-            amenities:
-                service.amenities ?? [],
+  /*
+   * =====================================
+   * FORM → REQUEST
+   * =====================================
+   */
 
+  static formToRequest(form: VendorServiceForm): VendorServiceRequest {
+    return {
+      serviceName: form.serviceName,
 
-            /* DETAILS */
+      category: form.category.toUpperCase(),
 
-            detailSections:
-                service.detailSections ?? [],
+      location: form.location,
 
+      description: form.description,
 
-            /* CATERING DETAILS */
+      capacity: Number(form.capacity),
 
-            cateringDetails:
+      durationHours: Number(form.durationHours),
 
-                service.category
-                    ?.toLowerCase()
-                    .trim() === "catering"
+      /* CONTACT */
 
-                    ? {
+      contactInfo: {
+        contactPerson: form.contactPerson,
 
-                        vegetarian:
-                            service.cateringDetails
-                                ?.vegetarian ?? false,
+        mobile: form.mobile,
 
-                        nonVegetarian:
-                            service.cateringDetails
-                                ?.nonVegetarian ?? false,
+        email: form.email,
 
-                        cuisines:
-                            service.cateringDetails
-                                ?.cuisines ?? [],
+        address: form.address,
+      },
 
-                        /*
-                         * Catering menu is stored separately
-                         * through VendorCateringMenuService.
-                         *
-                         * It is intentionally initialized empty
-                         * here and loaded separately when required.
-                         */
-                        menuItems:
-                            [],
+      /* AVAILABILITY */
 
-                        providesCateringStaff:
-                            service.cateringDetails
-                                ?.providesCateringStaff ?? false,
+      availability: {
+        availableFrom: form.availableFrom,
 
-                        staffCostPerPerson:
-                            service.cateringDetails
-                                ?.staffCostPerPerson
-                                ?.toString() ?? "",
+        availableTo: form.availableTo,
+      },
 
-                        maximumServiceDistanceKm:
-                            service.cateringDetails
-                                ?.maximumServiceDistanceKm
-                                ?.toString() ?? ""
+      /* BOOKING SETTINGS */
 
-                    }
+      bookingSettings: {
+        maxSimultaneousBookings: Number(form.maxSimultaneousBookings),
 
-                    : undefined
+        bundleOfferEnabled: form.bundleOfferEnabled,
+      },
 
-        };
+      /* MEDIA */
 
-    }
+      imageUrls: form.imageUrls,
 
+      /* AMENITIES */
 
-    /*
-     * =====================================
-     * FORM → REQUEST
-     * =====================================
-     */
+      amenities: form.amenities,
 
-    static formToRequest(
-        form: VendorServiceForm
-    ): VendorServiceRequest {
+      /* DETAIL SECTIONS */
 
-        return {
+      detailSections: form.detailSections,
 
-            serviceName:
-                form.serviceName,
+      /* CATERING DETAILS */
 
-            category:
-                form.category
-                    .toUpperCase(),
+      cateringDetails: form.cateringDetails
+        ? {
+            vegetarian: form.cateringDetails.vegetarian,
 
-            location:
-                form.location,
+            nonVegetarian: form.cateringDetails.nonVegetarian,
 
-            description:
-                form.description,
+            cuisines: form.cateringDetails.cuisines,
 
-            capacity:
-                Number(
-                    form.capacity
-                ),
+            menuItems: form.cateringDetails.menuItems,
 
-            durationHours:
-                Number(
-                    form.durationHours
-                ),
+            providesCateringStaff: form.cateringDetails.providesCateringStaff,
 
+            staffCostPerPerson:
+              form.cateringDetails.staffCostPerPerson === ""
+                ? null
+                : Number(form.cateringDetails.staffCostPerPerson),
 
-            /* CONTACT */
-
-            contactInfo: {
-
-                contactPerson:
-                    form.contactPerson,
-
-                mobile:
-                    form.mobile,
-
-                email:
-                    form.email,
-
-                address:
-                    form.address
-
-            },
-
-
-            /* AVAILABILITY */
-
-            availability: {
-
-                availableFrom:
-                    form.availableFrom,
-
-                availableTo:
-                    form.availableTo
-
-            },
-
-
-            /* BOOKING SETTINGS */
-
-            bookingSettings: {
-
-                maxSimultaneousBookings:
-
-                    Number(
-                        form.maxSimultaneousBookings
-                    ),
-
-                bundleOfferEnabled:
-                    form.bundleOfferEnabled
-
-            },
-
-
-            /* MEDIA */
-
-            imageUrls:
-                form.imageUrls,
-
-
-            /* AMENITIES */
-
-            amenities:
-                form.amenities,
-
-
-            /* DETAIL SECTIONS */
-
-            detailSections:
-                form.detailSections,
-
-
-            /* CATERING DETAILS */
-
-            cateringDetails:
-
-                form.cateringDetails
-
-                    ? {
-
-                        vegetarian:
-                            form.cateringDetails
-                                .vegetarian,
-
-                        nonVegetarian:
-                            form.cateringDetails
-                                .nonVegetarian,
-
-                        cuisines:
-                            form.cateringDetails
-                                .cuisines,
-
-                        providesCateringStaff:
-                            form.cateringDetails
-                                .providesCateringStaff,
-
-                        staffCostPerPerson:
-
-                            form.cateringDetails
-                                .staffCostPerPerson === ""
-
-                                ? null
-
-                                : Number(
-                                    form.cateringDetails
-                                        .staffCostPerPerson
-                                ),
-
-                        maximumServiceDistanceKm:
-
-                            form.cateringDetails
-                                .maximumServiceDistanceKm === ""
-
-                                ? null
-
-                                : Number(
-                                    form.cateringDetails
-                                        .maximumServiceDistanceKm
-                                )
-
-                    }
-
-                    : undefined
-
-        };
-
-    }
-
+            maximumServiceDistanceKm:
+              form.cateringDetails.maximumServiceDistanceKm === ""
+                ? null
+                : Number(form.cateringDetails.maximumServiceDistanceKm),
+          }
+        : undefined,
+    };
+  }
 }

@@ -174,28 +174,24 @@ export default function VerificationSettings() {
 
             case "APPROVED":
 
-                return
-                    "verification-status-approved";
+                return "verification-status-approved";
 
 
             case "REJECTED":
 
-                return
-                    "verification-status-rejected";
+                return "verification-status-rejected";
 
 
             case "SUSPENDED":
 
-                return
-                    "verification-status-suspended";
+                return "verification-status-suspended";
 
 
             case "PENDING":
 
             default:
 
-                return
-                    "verification-status-pending";
+                return "verification-status-pending";
 
         }
 
