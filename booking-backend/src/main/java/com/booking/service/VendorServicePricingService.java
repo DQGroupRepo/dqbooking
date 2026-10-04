@@ -1,9 +1,11 @@
 package com.booking.service;
 
+import com.booking.dto.customer.VendorPricingForDateResponse;
 import com.booking.dto.pricing.VendorServicePricingRequest;
 import com.booking.dto.pricing.VendorServicePricingResponse;
 import com.booking.dto.pricing.VendorServicePricingVersionResponse;
 
+import java.time.LocalDate;
 import java.util.List;
 
 public interface VendorServicePricingService {
@@ -28,4 +30,5 @@ public interface VendorServicePricingService {
     getPricingVersions(
             String serviceId
     );
+
 }

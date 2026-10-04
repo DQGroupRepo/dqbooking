@@ -52,6 +52,14 @@ public class BookingResponse extends BaseEntity {
 
     private LocalDate eventDate;
 
+    private String slotId;
+
+    private String slotName;
+
+    private String slotStartTime;
+
+    private String slotEndTime;
+
     private Integer guestCount;
 
     private BookingStatus status;

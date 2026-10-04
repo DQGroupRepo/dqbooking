@@ -2,7 +2,10 @@ package com.booking.service;
 
 import com.booking.dto.customer.VendorDetailResponse;
 import com.booking.dto.customer.VendorListingResponse;
+import com.booking.dto.customer.VendorPricingForDateResponse;
+import com.booking.model.VendorServicePricing;
 
+import java.time.LocalDate;
 import java.util.List;
 
 public interface CustomerService {
@@ -21,4 +24,7 @@ public interface CustomerService {
     List<VendorListingResponse> getProfessionalPhotography();
 
     List<VendorListingResponse> getWeddingVideography();
+
+    VendorPricingForDateResponse getPricingForEventDate(
+            String serviceId, LocalDate eventDate);
 }

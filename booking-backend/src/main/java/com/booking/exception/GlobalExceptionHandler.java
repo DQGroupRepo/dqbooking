@@ -4,6 +4,7 @@ import com.booking.dto.common.ErrorResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
@@ -87,6 +88,79 @@ public class GlobalExceptionHandler {
 
     }
 
+    @ExceptionHandler(InvalidCredentialsException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidCredentials(
+            InvalidCredentialsException ex
+    ) {
+
+        log.warn(
+                "Invalid Credentials: {}",
+                ex.getMessage()
+        );
+        String message =
+                ex.getMessage();
+
+        if (
+                message == null ||
+                        message.isBlank()
+        ) {
+
+            message =
+                    "Invalid Credentials.";
+
+        }
+
+
+        ErrorResponse errorResponse =
+                new ErrorResponse(
+                        HttpStatus.UNAUTHORIZED.value(),
+                        message,
+                        LocalDateTime.now()
+                );
+
+
+        return ResponseEntity
+                .status(HttpStatus.UNAUTHORIZED)
+                .body(errorResponse);
+
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ErrorResponse> handleMethodArgumentNotValid(
+            MethodArgumentNotValidException ex
+    ) {
+
+        log.warn(
+                "Invalid Method Arguments - Validation failed: {}",
+                ex.getMessage()
+        );
+        String message =
+                ex.getMessage();
+
+        if (
+                message == null ||
+                        message.isBlank()
+        ) {
+
+            message =
+                    "Invalid method arguments - Validation failed.";
+
+        }
+
+
+        ErrorResponse errorResponse =
+                new ErrorResponse(
+                        HttpStatus.PRECONDITION_FAILED.value(),
+                        "Invalid values entered - Validation failed.",
+                        LocalDateTime.now()
+                );
+
+
+        return ResponseEntity
+                .status(HttpStatus.PRECONDITION_FAILED)
+                .body(errorResponse);
+
+    }
 
     @ExceptionHandler(FileSizeExceededException.class)
     public ResponseEntity<ErrorResponse> handleFileSizeExceeded(

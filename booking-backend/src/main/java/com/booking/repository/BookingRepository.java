@@ -32,6 +32,11 @@ public interface BookingRepository extends MongoRepository<Booking, String> {
 
     List<Booking> findByServiceId(String serviceId);
 
+    List<Booking> findByServiceIdAndEventDate(
+            String serviceId,
+            LocalDate eventDate
+    );
+
     List<Booking> findByCustomerIdOrderByCreatedTsDesc(
             String customerId
     );
@@ -96,6 +101,13 @@ public interface BookingRepository extends MongoRepository<Booking, String> {
     })
     List<AdminRevenueTrendProjection> findMonthlyRevenueTrend(
             LocalDateTime startDate
+    );
+
+    long countByServiceIdAndSlotIdAndEventDateAndStatusIn(
+            String serviceId,
+            String slotId,
+            LocalDate eventDate,
+            List<BookingStatus> statuses
     );
 
 

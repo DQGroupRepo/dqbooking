@@ -12,6 +12,9 @@ import type { CartItem } from "../../types/CartItem";
 import CartService from "../../services/CartService";
 import VendorDetailService from "../../services/VendorDetailService";
 
+import BookingAvailabilityService from "../../services/BookingAvailabilityService";
+import type { SlotAvailability } from "../../types/SlotAvailability";
+
 import "./VendorBookingCard.css";
 
 
@@ -24,6 +27,10 @@ interface Props {
     bundles?: Bundle[];
 
     selectedPackage?: ServicePackage | null;
+
+    onEventDateChange?: (
+        date: string
+    ) => void;
 }
 
 
@@ -46,7 +53,8 @@ const BookingCard = ({
     vendor,
     serviceId,
     bundles = [],
-    selectedPackage
+    selectedPackage,
+    onEventDateChange
 }: Props) => {
 
     const navigate =
@@ -82,6 +90,32 @@ const BookingCard = ({
 
     const [guests, setGuests] =
         useState<number | string>("");
+
+
+    /*
+     * =========================================
+     * BOOKING SLOT
+     * =========================================
+     */
+
+    const [slots, setSlots] =
+        useState<SlotAvailability[]>([]);
+
+
+    const [selectedSlot, setSelectedSlot] =
+        useState<SlotAvailability | null>(null);
+
+
+    const [slotsLoading, setSlotsLoading] =
+        useState(false);
+
+
+    const [slotError, setSlotError] =
+        useState<string | null>(null);
+
+
+    const [holdingSlot, setHoldingSlot] =
+        useState(false);
 
 
     /*
@@ -144,9 +178,6 @@ const BookingCard = ({
      * =========================================
      * LOAD BUNDLE SERVICE DETAILS
      * =========================================
-     *
-     * We load the names/images of services
-     * displayed inside the bundle popup.
      */
 
     useEffect(() => {
@@ -260,6 +291,92 @@ const BookingCard = ({
 
     /*
      * =========================================
+     * LOAD SLOT AVAILABILITY
+     * =========================================
+     */
+
+    const loadSlotAvailability = async (
+        date: string
+    ) => {
+
+        if (!serviceId || !date) {
+
+            setSlots([]);
+
+            setSelectedSlot(null);
+
+            return;
+        }
+
+
+        try {
+
+            setSlotsLoading(true);
+
+            setSlotError(null);
+
+            /*
+             * A slot from another date must never
+             * remain selected.
+             */
+            setSelectedSlot(null);
+
+
+            console.log(
+                "Loading slot availability:",
+                {
+                    serviceId,
+                    date
+                }
+            );
+
+
+            const data =
+                await BookingAvailabilityService
+                    .getSlotAvailability(
+                        serviceId,
+                        date
+                    );
+
+
+            console.log(
+                "Slot availability loaded:",
+                data
+            );
+
+
+            setSlots(
+                data ?? []
+            );
+
+        } catch (error) {
+
+            console.error(
+                "Failed to load slot availability:",
+                error
+            );
+
+
+            setSlots([]);
+
+            setSelectedSlot(null);
+
+
+            setSlotError(
+                "Unable to load booking slots. Please try again."
+            );
+
+        } finally {
+
+            setSlotsLoading(false);
+
+        }
+
+    };
+
+
+    /*
+     * =========================================
      * VALIDATE BOOKING DETAILS
      * =========================================
      */
@@ -289,6 +406,28 @@ const BookingCard = ({
             }
 
 
+            if (!selectedSlot) {
+
+                alert(
+                    "Please select an available time slot."
+                );
+
+                return false;
+
+            }
+
+
+            if (!selectedSlot.available) {
+
+                alert(
+                    "The selected slot is no longer available. Please select another slot."
+                );
+
+                return false;
+
+            }
+
+
             if (
                 !guests ||
                 Number(guests) < 1
@@ -307,6 +446,13 @@ const BookingCard = ({
 
         };
 
+
+    /*
+     * =========================================
+     * GET VENDOR IMAGE
+     * =========================================
+     */
+
     const getVendorImage =
         (
             service: VendorDetail
@@ -315,159 +461,347 @@ const BookingCard = ({
             return service.imageUrls?.[0];
 
         };
+
+
     /*
      * =========================================
      * ADD CURRENT SERVICE TO CART
      * =========================================
+     *
+     * Important:
+     *
+     * The temporary hold is created BEFORE the
+     * cart item is stored.
+     *
+     * This prevents two customers from adding
+     * the last available unit simultaneously.
      */
 
     const addCurrentServiceToCart =
-        (bundle?: Bundle) => {
+        async (
+            bundle?: Bundle
+        ) => {
 
             if (!serviceId) {
-                return;
+                return false;
             }
 
 
-            const cartItem: CartItem = {
+            if (!eventDate) {
 
-                serviceId,
+                alert(
+                    "Please select an event date."
+                );
 
-                vendorId:
-                    vendor.vendorId,
+                return false;
 
-                vendorName:
-                    vendor.businessName,
+            }
 
-                serviceName:
-                    vendor.serviceName,
 
-                category:
-                    vendor.category,
+            if (!selectedSlot) {
 
-                price:
-                    selectedPackage
-                        ? Number(
-                            selectedPackage.price
-                        )
-                        : Number(
-                            vendor.startingPrice
+                alert(
+                    "Please select an available time slot."
+                );
+
+                return false;
+
+            }
+
+
+            if (!selectedSlot.available) {
+
+                alert(
+                    "This slot is no longer available. Please select another slot."
+                );
+
+                return false;
+
+            }
+
+
+            /*
+             * One cart item consumes one booking
+             * availability unit.
+             *
+             * Guest count is NOT treated as multiple
+             * slot bookings.
+             */
+            const quantity = 1;
+
+
+            /*
+             * =========================================
+             * CREATE TEMPORARY HOLD
+             * =========================================
+             */
+
+            try {
+
+                setHoldingSlot(true);
+
+
+                console.log(
+                    "Creating booking hold:",
+                    {
+                        serviceId,
+                        slotId:
+                            selectedSlot.slotId,
+                        eventDate,
+                        quantity
+                    }
+                );
+
+
+                const hold =
+                    await BookingAvailabilityService
+                        .holdSlot({
+                            serviceId,
+                            slotId:
+                                selectedSlot.slotId,
+                            eventDate,
+                            quantity
+                        });
+
+
+                console.log(
+                    "Booking hold created:",
+                    hold
+                );
+
+
+                /*
+                 * =========================================
+                 * CREATE CART ITEM
+                 * =========================================
+                 */
+
+                const cartItem: CartItem = {
+
+                    serviceId,
+
+                    vendorId:
+                        vendor.vendorId,
+
+                    vendorName:
+                        vendor.businessName,
+
+                    serviceName:
+                        vendor.serviceName,
+
+                    category:
+                        vendor.category,
+
+                    price:
+                        selectedPackage
+                            ? Number(
+                                selectedPackage.price
+                            )
+                            : Number(
+                                vendor.startingPrice
+                            ),
+
+                    quantity,
+
+                    image:
+                        getVendorImage(
+                            vendor
                         ),
 
-                quantity: 1,
+                    eventDate,
 
-                image:
-                    getVendorImage(
-                        vendor
-                    ),
+                    guestCount:
+                        Number(guests),
 
-                eventDate,
 
-                guestCount:
-                    Number(guests),
+                    /*
+                     * =========================================
+                     * SLOT SNAPSHOT
+                     * =========================================
+                     */
+
+                    slotId:
+                        selectedSlot.slotId,
+
+                    slotName:
+                        selectedSlot.slotName,
+
+                    slotStartTime:
+                        selectedSlot.startTime,
+
+                    slotEndTime:
+                        selectedSlot.endTime,
+
+
+                    /*
+                     * =========================================
+                     * HOLD
+                     * =========================================
+                     */
+
+                    holdId:
+                        hold.holdId,
+
+                    holdExpiresAt:
+                        hold.expiresAt,
+
+
+                    /*
+                     * =========================================
+                     * PACKAGE
+                     * =========================================
+                     */
+
+                    packageId:
+                        selectedPackage?.id,
+
+                    packageType:
+                        selectedPackage?.name?.toUpperCase() === "SILVER"
+                            ? "SILVER"
+                            : selectedPackage?.name?.toUpperCase() === "GOLD"
+                                ? "GOLD"
+                                : selectedPackage?.name?.toUpperCase() === "PREMIUM"
+                                    ? "PREMIUM"
+                                    : undefined,
+
+                    packagePrice:
+                        selectedPackage
+                            ? Number(
+                                selectedPackage.price
+                            )
+                            : undefined,
+
+                    packageFeatures:
+                        selectedPackage?.features,
+
+
+                    /*
+                     * =========================================
+                     * BUNDLE
+                     * =========================================
+                     */
+
+                    bundleEnabled:
+                        !!bundle,
+
+                    bundleId:
+                        bundle?.id,
+
+                    bundleName:
+                        bundle?.name,
+
+                    bundleDescription:
+                        bundle?.description,
+
+                    bundleServiceIds:
+                        bundle?.serviceIds,
+
+                    bundleDiscountType:
+                        bundle?.discountType,
+
+                    bundleDiscountValue:
+                        bundle?.discountValue
+
+                };
+
+
+                CartService.addItem(
+                    cartItem
+                );
+
+
+                return true;
+
+            } catch (error: any) {
+
+                console.error(
+                    "Failed to hold booking slot:",
+                    error
+                );
+
+
+                const message =
+                    error?.response?.data?.message
+                    ||
+                    "This slot has just been taken by another customer. Please check again in a few minutes.";
+
+
+                alert(message);
+
 
                 /*
-                 * =========================================
-                 * PACKAGE
-                 * =========================================
+                 * Refresh availability because
+                 * another customer may have taken
+                 * the last available unit.
                  */
 
-                packageId:
-                    selectedPackage?.id,
+                await loadSlotAvailability(
+                    eventDate
+                );
 
-                packageType:
-                    selectedPackage?.name?.toUpperCase() === "SILVER"
-                        ? "SILVER"
-                        : selectedPackage?.name?.toUpperCase() === "GOLD"
-                            ? "GOLD"
-                            : selectedPackage?.name?.toUpperCase() === "PREMIUM"
-                                ? "PREMIUM"
-                                : undefined,
 
-                packagePrice:
-                    selectedPackage
-                        ? Number(
-                            selectedPackage.price
-                        )
-                        : undefined,
+                return false;
 
-                packageFeatures:
-                    selectedPackage?.features,
+            } finally {
 
-                /*
-                 * =========================================
-                 * BUNDLE INFORMATION
-                 * =========================================
-                 */
+                setHoldingSlot(false);
 
-                bundleEnabled:
-                    !!bundle,
-                bundleId:
-                    bundle?.id,
+            }
 
-                bundleName:
-                    bundle?.name,
+        };
 
-                bundleDescription:
-                    bundle?.description,
 
-                bundleServiceIds:
-                    bundle?.serviceIds,
+    /*
+     * =========================================
+     * GET CURRENT BUNDLE
+     * =========================================
+     */
 
-                bundleDiscountType:
-                    bundle?.discountType,
+    const getCurrentBundle =
+        (): Bundle | undefined => {
 
-                bundleDiscountValue:
-                    bundle?.discountValue
+            if (
+                !fromBundle ||
+                !bundleState?.bundleId
+            ) {
+                return undefined;
+            }
+
+
+            return {
+
+                id:
+                    bundleState.bundleId,
+
+                vendorId:
+                    "",
+
+                name:
+                    bundleState.bundleName ||
+                    "Selected Bundle",
+
+                description:
+                    bundleState.bundleDescription,
+
+                serviceIds:
+                    bundleState.bundleServiceIds ||
+                    [],
+
+                discountType:
+                    bundleState.bundleDiscountType ||
+                    "PERCENTAGE",
+
+                discountValue:
+                    bundleState.bundleDiscountValue ||
+                    0,
+
+                active: true
 
             };
 
-
-            CartService.addItem(
-                cartItem
-            );
-
         };
 
-    const getCurrentBundle = (): Bundle | undefined => {
 
-        if (!fromBundle || !bundleState?.bundleId) {
-            return undefined;
-        }
-
-
-        return {
-
-            id:
-                bundleState.bundleId,
-
-            vendorId:
-                "",
-
-            name:
-                bundleState.bundleName ||
-                "Selected Bundle",
-
-            description:
-                bundleState.bundleDescription,
-
-            serviceIds:
-                bundleState.bundleServiceIds ||
-                [],
-
-            discountType:
-                bundleState.bundleDiscountType ||
-                "PERCENTAGE",
-
-            discountValue:
-                bundleState.bundleDiscountValue ||
-                0,
-
-            active: true
-
-        };
-
-    };
     /*
      * =========================================
      * NORMAL BOOKING
@@ -475,7 +809,7 @@ const BookingCard = ({
      */
 
     const handleNormalBooking =
-        () => {
+        async () => {
 
             if (!validateBooking()) {
                 return;
@@ -484,10 +818,7 @@ const BookingCard = ({
 
             /*
              * If we are travelling through a bundle,
-             * add this service to the SAME bundle.
-             *
-             * This is important for the second,
-             * third, etc. services.
+             * add this service to the same bundle.
              */
 
             if (fromBundle) {
@@ -496,9 +827,15 @@ const BookingCard = ({
                     getCurrentBundle();
 
 
-                addCurrentServiceToCart(
-                    currentBundle
-                );
+                const added =
+                    await addCurrentServiceToCart(
+                        currentBundle
+                    );
+
+
+                if (!added) {
+                    return;
+                }
 
 
                 navigateToBundleSelection();
@@ -512,7 +849,13 @@ const BookingCard = ({
              * Normal service booking.
              */
 
-            addCurrentServiceToCart();
+            const added =
+                await addCurrentServiceToCart();
+
+
+            if (!added) {
+                return;
+            }
 
 
             navigate(
@@ -565,6 +908,11 @@ const BookingCard = ({
     const handleBooking =
         () => {
 
+            if (!selectedPackage) {
+                return;
+            }
+
+
             if (!validateBooking()) {
                 return;
             }
@@ -573,9 +921,6 @@ const BookingCard = ({
             /*
              * If we came from the bundle page,
              * do NOT show the bundle popup again.
-             *
-             * Simply add the current service and
-             * return to the bundle page.
              */
 
             if (fromBundle) {
@@ -621,92 +966,65 @@ const BookingCard = ({
      * =========================================
      */
 
-    const handleAcceptBundle = (
-        bundle: Bundle
-    ) => {
+    const handleAcceptBundle =
+        async (
+            bundle: Bundle
+        ) => {
 
-        if (!serviceId) {
-            return;
-        }
-
-
-        /*
-            * =========================================
-            * ADD CURRENT SERVICE TO CART
-            * =========================================
-            *
-            * IMPORTANT:
-            *
-            * This is the FIRST service selected from
-            * the bundle.
-            *
-            * We MUST pass the selected bundle here so
-            * that the cart item receives:
-            *
-            * bundleId
-            * bundleName
-            * bundleServiceIds
-            * bundleDiscountType
-            * bundleDiscountValue
-            *
-            * Previously this was:
-            *
-            *     addCurrentServiceToCart();
-            *
-            * which caused bundle to be undefined.
-            */
-        addCurrentServiceToCart(bundle);
-
-
-        /*
-         * Close the bundle popup.
-         */
-        setShowBundlePopup(false);
-
-
-        /*
-         * IMPORTANT:
-         *
-         * Do NOT navigate directly to the
-         * next service.
-         *
-         * First go to the bundle details page.
-         * The customer will choose the next
-         * service from there.
-         */
-        navigate(
-            `/bundles/available/${serviceId}`,
-            {
-                state: {
-
-                    fromBundle: true,
-
-                    bundleRootServiceId:
-                        serviceId,
-
-                    bundleId:
-                        bundle.id,
-
-                    bundleName:
-                        bundle.name,
-
-                    bundleDescription:
-                        bundle.description,
-
-                    bundleServiceIds:
-                        bundle.serviceIds,
-
-                    bundleDiscountType:
-                        bundle.discountType,
-
-                    bundleDiscountValue:
-                        bundle.discountValue
-
-                }
+            if (!serviceId) {
+                return;
             }
-        );
 
-    };
+
+            const added =
+                await addCurrentServiceToCart(
+                    bundle
+                );
+
+
+            if (!added) {
+                return;
+            }
+
+
+            setShowBundlePopup(
+                false
+            );
+
+
+            navigate(
+                `/bundles/available/${serviceId}`,
+                {
+                    state: {
+
+                        fromBundle: true,
+
+                        bundleRootServiceId:
+                            serviceId,
+
+                        bundleId:
+                            bundle.id,
+
+                        bundleName:
+                            bundle.name,
+
+                        bundleDescription:
+                            bundle.description,
+
+                        bundleServiceIds:
+                            bundle.serviceIds,
+
+                        bundleDiscountType:
+                            bundle.discountType,
+
+                        bundleDiscountValue:
+                            bundle.discountValue
+
+                    }
+                }
+            );
+
+        };
 
 
     /*
@@ -716,14 +1034,20 @@ const BookingCard = ({
      */
 
     const handleDeclineBundle =
-        () => {
+        async () => {
+
+            const added =
+                await addCurrentServiceToCart();
+
+
+            if (!added) {
+                return;
+            }
+
 
             setShowBundlePopup(
                 false
             );
-
-
-            addCurrentServiceToCart();
 
 
             navigate(
@@ -796,13 +1120,20 @@ const BookingCard = ({
                     ).toLocaleString("en-IN")}
                 </h2>
 
-                <p>
+
+                <p className="selected-package-name">
                     {
                         selectedPackage
                             ? selectedPackage.name
                             : "Starting Price"
                     }
                 </p>
+
+
+                <p className="pricing-hint">
+                    Select the event date to get the exact price.
+                </p>
+
 
                 <label>
                     Event Date
@@ -813,12 +1144,273 @@ const BookingCard = ({
                     type="date"
                     value={eventDate}
                     min={getTomorrowDate()}
-                    onChange={(e) =>
+                    onChange={async (e) => {
+
+                        const date =
+                            e.target.value;
+
+
                         setEventDate(
-                            e.target.value
-                        )
-                    }
+                            date
+                        );
+
+
+                        /*
+                         * A slot selected for another
+                         * date must never remain selected.
+                         */
+
+                        setSelectedSlot(
+                            null
+                        );
+
+
+                        setSlots(
+                            []
+                        );
+
+
+                        setSlotError(
+                            null
+                        );
+
+
+                        onEventDateChange?.(
+                            date
+                        );
+
+
+                        if (date) {
+
+                            await loadSlotAvailability(
+                                date
+                            );
+
+                        }
+
+                    }}
                 />
+
+
+                {
+                    eventDate && (
+                        <>
+
+                            <label className="slot-section-label">
+                                Time Slot
+                            </label>
+
+
+                            {
+                                slotsLoading ? (
+
+                                    <div className="slot-loading">
+                                        <span className="slot-loading-dot" />
+                                        Loading booking slots...
+                                    </div>
+
+                                ) : slotError ? (
+
+                                    <div className="slot-error">
+                                        {slotError}
+                                    </div>
+
+                                ) : slots.length === 0 ? (
+
+                                    <div className="slot-empty">
+                                        No booking slots are configured for this service.
+                                    </div>
+
+                                ) : (
+
+                                    /*
+                                     * IMPORTANT:
+                                     *
+                                     * Every slot is rendered independently.
+                                     *
+                                     * We do NOT group by Morning / Evening
+                                     * because a vendor can configure:
+                                     *
+                                     * Morning 09:00 - 10:00
+                                     * Morning 10:00 - 11:00
+                                     * Morning 11:00 - 12:00
+                                     *
+                                     * or any other combination.
+                                     */
+
+                                    <div className="booking-slots">
+
+                                        {
+                                            slots.map(
+                                                slot => {
+
+                                                    const isSelected =
+                                                        selectedSlot?.slotId ===
+                                                        slot.slotId;
+
+
+                                                    const unavailable =
+                                                        !slot.available;
+
+
+                                                    return (
+
+                                                        <button
+                                                            key={
+                                                                slot.slotId
+                                                            }
+                                                            type="button"
+                                                            className={
+                                                                `booking-slot-card ${
+                                                                    isSelected
+                                                                        ? "selected"
+                                                                        : ""
+                                                                } ${
+                                                                    unavailable
+                                                                        ? "unavailable"
+                                                                        : ""
+                                                                }`
+                                                            }
+                                                            disabled={
+                                                                unavailable ||
+                                                                holdingSlot
+                                                            }
+                                                            onClick={() => {
+
+                                                                if (
+                                                                    unavailable ||
+                                                                    holdingSlot
+                                                                ) {
+                                                                    return;
+                                                                }
+
+
+                                                                setSelectedSlot(
+                                                                    slot
+                                                                );
+
+                                                            }}
+                                                        >
+
+                                                            <div className="booking-slot-info">
+
+                                                                <span className="booking-slot-name">
+                                                                    {
+                                                                        slot.slotName
+                                                                    }
+                                                                </span>
+
+
+                                                                <span className="booking-slot-time">
+
+                                                                    {
+                                                                        slot.startTime
+                                                                    }
+
+                                                                    {" - "}
+
+                                                                    {
+                                                                        slot.endTime
+                                                                    }
+
+                                                                </span>
+
+                                                            </div>
+
+
+                                                            <div className="booking-slot-status">
+
+                                                                {
+                                                                    unavailable ? (
+
+                                                                        <span className="booking-slot-unavailable-text">
+                                                                            Not Available
+                                                                        </span>
+
+                                                                    ) : (
+
+                                                                        <span className="booking-slot-availability">
+                                                                            {
+                                                                                slot.remainingCapacity
+                                                                            }
+
+                                                                            {" "}
+
+                                                                            {
+                                                                                Number(
+                                                                                    slot.remainingCapacity
+                                                                                ) === 1
+                                                                                    ? "available"
+                                                                                    : "available"
+                                                                            }
+                                                                        </span>
+
+                                                                    )
+                                                                }
+
+
+                                                                <span
+                                                                    className="booking-slot-radio"
+                                                                    aria-hidden="true"
+                                                                >
+                                                                    {
+                                                                        isSelected
+                                                                            ? "✓"
+                                                                            : ""
+                                                                    }
+                                                                </span>
+
+                                                            </div>
+
+                                                        </button>
+
+                                                    );
+
+                                                }
+                                            )
+                                        }
+
+                                    </div>
+
+                                )
+                            }
+
+
+                            {
+                                selectedSlot && (
+                                    <div className="selected-slot-summary">
+
+                                        <span>
+                                            Selected slot
+                                        </span>
+
+
+                                        <strong>
+                                            {
+                                                selectedSlot.slotName
+                                            }
+                                        </strong>
+
+
+                                        <span>
+                                            {
+                                                selectedSlot.startTime
+                                            }
+
+                                            {" - "}
+
+                                            {
+                                                selectedSlot.endTime
+                                            }
+                                        </span>
+
+                                    </div>
+                                )
+                            }
+
+                        </>
+                    )
+                }
 
 
                 <label>
@@ -842,11 +1434,20 @@ const BookingCard = ({
                 <button
                     className="book-button"
                     type="button"
-                    onClick={
-                        handleBooking
+                    onClick={handleBooking}
+                    disabled={
+                        !selectedPackage ||
+                        !selectedSlot ||
+                        !selectedSlot.available ||
+                        holdingSlot ||
+                        slotsLoading
                     }
                 >
-                    Add to Cart
+                    {
+                        holdingSlot
+                            ? "Reserving..."
+                            : "Add to Cart"
+                    }
                 </button>
 
 

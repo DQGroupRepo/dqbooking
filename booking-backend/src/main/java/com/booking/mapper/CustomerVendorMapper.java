@@ -4,6 +4,7 @@ import com.booking.dto.customer.VendorDetailResponse;
 import com.booking.dto.customer.VendorListingResponse;
 import com.booking.model.User;
 import com.booking.model.VendorService;
+import com.booking.model.VendorServicePricing;
 
 public interface CustomerVendorMapper {
 
@@ -14,7 +15,8 @@ public interface CustomerVendorMapper {
 
     VendorDetailResponse toDetail(
             User vendor,
-            VendorService service
+            VendorService service,
+            VendorServicePricing pricing
     );
 
 }

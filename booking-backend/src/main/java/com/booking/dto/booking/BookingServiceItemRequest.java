@@ -16,6 +16,23 @@ public class BookingServiceItemRequest {
     @NotBlank
     private String serviceId;
 
+    /*
+     * =========================================
+     * BOOKING SLOT
+     * =========================================
+     *
+     * The customer selects a slot for the
+     * selected event date.
+     *
+     * Example:
+     *
+     * slotId = "morning-slot"
+     *
+     * The slot itself may have capacity > 1.
+     */
+    @NotBlank
+    private String slotId;
+
     private String packageId;
 
     @NotNull

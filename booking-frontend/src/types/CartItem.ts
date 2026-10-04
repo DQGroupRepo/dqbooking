@@ -1,49 +1,73 @@
 export interface CartItem {
-  serviceId: string;
+    serviceId: string;
 
-  vendorId: string;
+    vendorId: string;
 
-  vendorName: string;
+    vendorName: string;
 
-  serviceName: string;
+    serviceName: string;
 
-  category?: string;
+    category?: string;
 
-  price: number;
+    price: number;
 
-  quantity?: number;
+    quantity?: number;
 
-  image?: string;
+    image?: string;
 
-  eventDate?: string;
+    eventDate?: string;
 
-  guestCount?: number;
+    guestCount?: number;
 
-  /*
-   * =========================================
-   * BUNDLE INFORMATION
-   * =========================================
-   */
+    /*
+     * =========================================
+     * BOOKING SLOT
+     * =========================================
+     */
 
-  bundleEnabled?: boolean;
+    slotId?: string;
 
-  bundleId?: string;
+    slotName?: string;
 
-  bundleName?: string;
+    slotStartTime?: string;
 
-  bundleDescription?: string;
+    slotEndTime?: string;
 
-  bundleServiceIds?: string[];
+    /*
+     * Temporary backend hold.
+     *
+     * The hold belongs to this cart item.
+     */
 
-  bundleDiscountType?: "PERCENTAGE" | "FIXED";
+    holdId?: string;
 
-  bundleDiscountValue?: number;
+    holdExpiresAt?: string;
 
-  packageId?: string;
+    /*
+     * =========================================
+     * BUNDLE INFORMATION
+     * =========================================
+     */
 
-  packageType?: "SILVER" | "GOLD" | "PREMIUM";
+    bundleEnabled?: boolean;
 
-  packagePrice?: number;
+    bundleId?: string;
 
-  packageFeatures?: string[];
+    bundleName?: string;
+
+    bundleDescription?: string;
+
+    bundleServiceIds?: string[];
+
+    bundleDiscountType?: "PERCENTAGE" | "FIXED";
+
+    bundleDiscountValue?: number;
+
+    packageId?: string;
+
+    packageType?: "SILVER" | "GOLD" | "PREMIUM";
+
+    packagePrice?: number;
+
+    packageFeatures?: string[];
 }

@@ -8,16 +8,24 @@ import com.booking.model.Review;
 import com.booking.model.User;
 import com.booking.model.VendorService;
 import com.booking.model.VendorServicePricing;
+import com.booking.model.embedded.ServicePackage;
 import com.booking.repository.ReviewRepository;
 import com.booking.repository.VendorServicePricingRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDate;
 import java.util.Collections;
 import java.util.List;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+
 
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class CustomerVendorMapperImpl
         implements CustomerVendorMapper {
 
@@ -118,7 +126,8 @@ public class CustomerVendorMapperImpl
     @Override
     public VendorDetailResponse toDetail(
             User vendor,
-            VendorService service
+            VendorService service,
+            VendorServicePricing pricing
     ) {
 
         List<Review> reviews =
@@ -134,16 +143,8 @@ public class CustomerVendorMapperImpl
         int reviewCount =
                 reviews.size();
 
-        /*
-         * Packages now belong to VendorServicePricing.
-         *
-         * For the customer service-detail view, retrieve
-         * the latest/current pricing version.
-         */
-        List<com.booking.model.embedded.ServicePackage> packages =
-                getCurrentPackages(
-                        service.getId()
-                );
+        List<ServicePackage> packages =
+                getPackages(pricing);
 
         return VendorDetailResponse.builder()
 
@@ -217,30 +218,10 @@ public class CustomerVendorMapperImpl
                 .location(
                         service.getLocation()
                 )
-
-                .packages(
-                        packages
-                )
+                .packages(packages)
 
                 .build();
     }
-
-
-    private List<com.booking.model.embedded.ServicePackage>
-    getCurrentPackages(
-            String serviceId
-    ) {
-
-        return vendorServicePricingRepository
-                .findByServiceIdOrderByVersionDesc(
-                        serviceId
-                )
-                .stream()
-                .findFirst()
-                .map(VendorServicePricing::getPackages)
-                .orElse(Collections.emptyList());
-    }
-
 
     private List<Review> getVendorReviews(
             String vendorId
@@ -271,5 +252,18 @@ public class CustomerVendorMapperImpl
                 )
                 .average()
                 .orElse(0.0);
+    }
+
+    private List<ServicePackage> getPackages(
+            VendorServicePricing pricing
+    ) {
+
+        if (pricing == null ||
+                pricing.getPackages() == null) {
+
+            return Collections.emptyList();
+        }
+
+        return pricing.getPackages();
     }
 }

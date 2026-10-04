@@ -2,13 +2,16 @@ package com.booking.service.impl;
 
 import com.booking.dto.customer.VendorDetailResponse;
 import com.booking.dto.customer.VendorListingResponse;
+import com.booking.dto.customer.VendorPricingForDateResponse;
 import com.booking.exception.ServiceNotFoundException;
 import com.booking.exception.VendorNotFoundException;
 import com.booking.mapper.CustomerVendorMapper;
 import com.booking.model.User;
 import com.booking.model.VendorService;
+import com.booking.model.VendorServicePricing;
 import com.booking.model.enums.*;
 import com.booking.repository.UserRepository;
+import com.booking.repository.VendorServicePricingRepository;
 import com.booking.repository.VendorServiceRepository;
 import com.booking.service.CustomerService;
 import lombok.RequiredArgsConstructor;
@@ -16,6 +19,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 
@@ -32,6 +38,9 @@ public class CustomerServiceImpl
     private final UserRepository vendorRepository;
 
     private final CustomerVendorMapper customerVendorMapper;
+
+    private final VendorServicePricingRepository
+            vendorServicePricingRepository;
 
     @Override
     public VendorDetailResponse getServiceById(
@@ -116,7 +125,7 @@ public class CustomerServiceImpl
 
         return customerVendorMapper.toDetail(
                 vendor,
-                service
+                service, null
         );
     }
 
@@ -405,4 +414,79 @@ public class CustomerServiceImpl
                 service
         );
     }
+
+    public VendorPricingForDateResponse getPricingForEventDate(
+            String serviceId,
+            LocalDate eventDate
+    ) {
+
+        List<VendorServicePricing> pricingVersions =
+                vendorServicePricingRepository
+                        .findApplicablePricing(
+                                serviceId,
+                                eventDate
+                        );
+
+        VendorServicePricing pricing =
+                pricingVersions.stream()
+                        .sorted(
+                                Comparator
+                                        .comparing(
+                                                VendorServicePricing::getVersion,
+                                                Comparator.nullsLast(
+                                                        Comparator.reverseOrder()
+                                                )
+                                        )
+                                        .thenComparing(
+                                                VendorServicePricing::getLastUpdateTs,
+                                                Comparator.nullsLast(
+                                                        Comparator.reverseOrder()
+                                                )
+                                        )
+                        )
+                        .findFirst()
+                        .orElse(null);
+
+        if (pricing == null) {
+            return VendorPricingForDateResponse.builder()
+                    .eventDate(eventDate)
+                    .packages(Collections.emptyList())
+                    .build();
+        }
+
+        return VendorPricingForDateResponse.builder()
+
+                .pricingId(
+                        pricing.getId()
+                )
+
+                .version(
+                        pricing.getVersion()
+                )
+
+                .effectiveFrom(
+                        pricing.getEffectiveFrom()
+                )
+
+                .effectiveUntil(
+                        pricing.getEffectiveUntil()
+                )
+
+                .baseAmount(
+                        pricing.getBaseAmount()
+                )
+
+                .eventDate(
+                        eventDate
+                )
+
+                .packages(
+                        pricing.getPackages() == null
+                                ? Collections.emptyList()
+                                : pricing.getPackages()
+                )
+
+                .build();
+    }
+
 }

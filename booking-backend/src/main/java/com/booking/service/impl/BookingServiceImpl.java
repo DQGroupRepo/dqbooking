@@ -71,6 +71,8 @@ public class BookingServiceImpl implements BookingService
 
     private final BundleRepository bundleRepository;
 
+    private final BookingSlotRepository bookingSlotRepository;
+
     @Override
     public BookingGroupResponse createBooking(
             CreateBookingRequest request
@@ -853,6 +855,34 @@ public class BookingServiceImpl implements BookingService
             booking.setPackageType(
                     selectedPackage != null
                             ? selectedPackage.getName()
+                            : null
+            );
+
+            BookingSlot slot = bookingSlotRepository
+                    .findById(item.getSlotId())
+                    .orElseThrow(() ->
+                            new IllegalArgumentException(
+                                    "Booking slot not found: " + item.getSlotId()
+                            )
+                    );
+
+            if (!slot.getServiceId().equals(item.getServiceId())) {
+                throw new IllegalArgumentException(
+                        "Booking slot does not belong to the selected service"
+                );
+            }
+
+            booking.setSlotId(slot.getId());
+            booking.setSlotName(slot.getSlotName());
+            booking.setSlotStartTime(
+                    slot.getStartTime() != null
+                            ? slot.getStartTime().toString()
+                            : null
+            );
+
+            booking.setSlotEndTime(
+                    slot.getEndTime() != null
+                            ? slot.getEndTime().toString()
                             : null
             );
 

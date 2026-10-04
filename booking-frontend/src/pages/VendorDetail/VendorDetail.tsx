@@ -76,6 +76,14 @@ const VendorDetail = () => {
         useState<Bundle[]>([]);
 
 
+    const [pricingPackages, setPricingPackages] =
+        useState<ServicePackage[]>([]);
+
+    const [pricingLoading, setPricingLoading] =
+        useState(false);
+
+    const [selectedEventDate, setSelectedEventDate] =
+        useState("");
     /*
      * =========================================
      * LOAD DATA
@@ -93,6 +101,56 @@ const VendorDetail = () => {
         }
 
     }, [serviceId]);
+
+    const handleEventDateChange = async (
+        date: string
+    ) => {
+
+        // A package selected for a previous date
+        // must never remain selected.
+        setSelectedPackage(null);
+
+        setSelectedEventDate(date);
+
+        if (!serviceId || !date) {
+            setPricingPackages([]);
+            return;
+        }
+
+        try {
+
+            setPricingLoading(true);
+
+            const data =
+                await VendorDetailService.getPricingForDate(
+                    serviceId,
+                    date
+                );
+
+            console.log(
+                "Pricing loaded for event date:",
+                data
+            );
+
+            setPricingPackages(
+                data.packages ?? []
+            );
+
+        } catch (error) {
+
+            console.error(
+                "Failed to load pricing for event date:",
+                error
+            );
+
+            setPricingPackages([]);
+
+        } finally {
+
+            setPricingLoading(false);
+
+        }
+    };
 
 
     /*
@@ -350,17 +408,77 @@ const VendorDetail = () => {
                         />
 
 
-                        <VendorPackages
-                            packages={vendor.packages ?? []}
-                            selectedPackageId={
-                                selectedPackage
-                                    ? selectedPackage.id
-                                    : undefined
-                            }
-                            onSelectPackage={
-                                handlePackageSelect
-                            }
-                        />
+                        {!selectedEventDate ? (
+
+                            <div className="pricing-date-message">
+
+                                <div className="pricing-date-icon">
+                                    📅
+                                </div>
+
+                                <h3>
+                                    Packages & Pricing
+                                </h3>
+
+                                <p>
+                                    Select your event date to get the exact price
+                                    and available packages.
+                                </p>
+
+                                <span>
+                                    Pricing may vary depending on the date and season.
+                                </span>
+
+                            </div>
+
+                        ) : pricingLoading ? (
+
+                            <div className="pricing-loading">
+                                Loading pricing...
+                            </div>
+
+                        ) : pricingPackages.length === 0 ? (
+
+                            <div className="pricing-unavailable">
+
+                                <div className="pricing-unavailable-icon">
+                                    📅
+                                </div>
+
+                                <h3>
+                                    Pricing Not Available
+                                </h3>
+
+                                <p>
+                                    No packages or pricing are available for
+                                    <strong>
+                                        {" "}
+                                        {selectedEventDate}
+                                    </strong>.
+                                </p>
+
+                                <span>
+                                    Please select another event date to check
+                                    available pricing.
+                                </span>
+
+                            </div>
+
+                        ) : (
+
+                            <VendorPackages
+                                packages={pricingPackages}
+                                selectedPackageId={
+                                    selectedPackage
+                                        ? selectedPackage.id
+                                        : undefined
+                                }
+                                onSelectPackage={
+                                    handlePackageSelect
+                                }
+                            />
+
+                        )}
 
 
                         <VendorReviews />
@@ -370,17 +488,10 @@ const VendorDetail = () => {
 
                     <BookingCard
                         vendor={vendor}
-
-                        serviceId={
-                            serviceId
-                        }
-
-                        bundles={
-                            bundles
-                        }
-
-                       selectedPackage={selectedPackage}
-
+                        serviceId={serviceId}
+                        bundles={bundles}
+                        selectedPackage={selectedPackage}
+                        onEventDateChange={handleEventDateChange}
                     />
 
                 </div>

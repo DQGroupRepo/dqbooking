@@ -10,6 +10,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 
 @Getter
 @Setter
@@ -66,6 +67,28 @@ public class Booking extends BaseEntity {
      */
 
     private LocalDate eventDate;
+
+    /*
+     * =========================================
+     * BOOKING SLOT SNAPSHOT
+     * =========================================
+     *
+     * The selected slot is stored as a snapshot
+     * at booking time.
+     *
+     * slotId identifies the original slot.
+     * slotName/time values preserve what the
+     * customer actually booked even if the vendor
+     * later modifies the slot configuration.
+     */
+
+    private String slotId;
+
+    private String slotName;
+
+    private String slotStartTime;
+
+    private String slotEndTime;
 
     private Integer guestCount;
 

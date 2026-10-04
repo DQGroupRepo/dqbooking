@@ -2,10 +2,12 @@ package com.booking.controller;
 
 import com.booking.dto.customer.VendorDetailResponse;
 import com.booking.dto.customer.VendorListingResponse;
+import com.booking.dto.customer.VendorPricingForDateResponse;
 import com.booking.service.CustomerService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -108,6 +110,19 @@ public class CustomerController {
 
         return customerService.getWeddingVideography();
 
+    }
+
+    @GetMapping("/services/{serviceId}/pricing")
+    public VendorPricingForDateResponse getPricingForDate(
+            @PathVariable String serviceId,
+            @RequestParam LocalDate eventDate
+    ) {
+
+        return customerService
+                .getPricingForEventDate(
+                        serviceId,
+                        eventDate
+                );
     }
 
 }
