@@ -137,15 +137,17 @@
  */
 
 .booking-slots {
-    display: flex;
-
-    flex-direction: column;
-
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 10px;
 
-    width: 100%;
+    max-height: 310px;
+    overflow-y: auto;
 
-    margin: 0 0 12px;
+    padding: 4px;
+    margin: 8px 0 12px;
+
+    scrollbar-width: thin;
 }
 
 
@@ -154,41 +156,30 @@
 ========================================= */
 
 .booking-slot-card {
-    width: 100%;
+    min-width: 0;
+    min-height: 108px;
 
-    min-height: 72px;
+    padding: 14px 10px;
 
-    box-sizing: border-box;
-
-    display: flex;
-
-    align-items: center;
-
-    justify-content: space-between;
-
-    gap: 14px;
-
-    padding: 13px 14px;
-
-    border: 1px solid #e2e6eb;
-
+    border: 1px solid #eadfce;
     border-radius: 12px;
 
-    background: #ffffff;
-
-    text-align: left;
+    background: #fffaf4;
 
     cursor: pointer;
 
-    appearance: none;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
 
-    -webkit-appearance: none;
+    text-align: center;
 
     transition:
-        border-color 0.18s ease,
-        background-color 0.18s ease,
-        box-shadow 0.18s ease,
-        transform 0.18s ease;
+        transform 0.2s ease,
+        box-shadow 0.2s ease,
+        border-color 0.2s ease,
+        background 0.2s ease;
 }
 
 
@@ -209,17 +200,16 @@
 ========================================= */
 
 .booking-slot-card.selected {
-    border-color: #d89a5a;
+    border: 2px solid #e3a76f;
+    background: linear-gradient(
+        180deg,
+        #e8ad74 0%,
+        #dda064 100%
+    );
 
-    background:
-        linear-gradient(
-            135deg,
-            #fffaf4 0%,
-            #fff4e7 100%
-        );
+    box-shadow: 0 6px 16px rgba(218, 157, 96, 0.25);
 
-    box-shadow:
-        0 5px 16px rgba(216, 154, 90, 0.15);
+    transform: translateY(-1px);
 }
 
 
@@ -228,13 +218,11 @@
 ========================================= */
 
 .booking-slot-card.unavailable {
-    background: #f7f8fa;
-
-    border-color: #e5e7eb;
-
+    background: #f5f5f5;
+    border-color: #e1e1e1;
+    color: #999;
     cursor: not-allowed;
-
-    opacity: 0.72;
+    opacity: 0.75;
 }
 
 
@@ -1094,4 +1082,11 @@ span {
         flex-direction: column;
     }
 
+}
+
+@media (max-width: 480px) {
+    .booking-slots {
+        grid-template-columns: 1fr;
+        max-height: 360px;
+    }
 }

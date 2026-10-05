@@ -1,4 +1,6 @@
 export interface BookingHoldRequest {
+
+    cartId: string;
     serviceId: string;
 
     slotId: string;

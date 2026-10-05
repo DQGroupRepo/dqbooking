@@ -1,8 +1,6 @@
 import { useEffect, useState } from "react";
-import {
-    useLocation,
-    useNavigate
-} from "react-router-dom";
+import toast from "react-hot-toast";
+import { useLocation, useNavigate } from "react-router-dom";
 
 import type { VendorDetail } from "../../types/VendorDetail";
 import type { Bundle } from "../../types/Bundle";
@@ -47,7 +45,6 @@ function getTomorrowDate(): string {
         .split("T")[0];
 
 }
-
 
 const BookingCard = ({
     vendor,
@@ -528,7 +525,8 @@ const BookingCard = ({
              * slot bookings.
              */
             const quantity = 1;
-
+            const cartId =
+                CartService.getOrCreateCartId();
 
             /*
              * =========================================
@@ -544,6 +542,7 @@ const BookingCard = ({
                 console.log(
                     "Creating booking hold:",
                     {
+                        cartId,
                         serviceId,
                         slotId:
                             selectedSlot.slotId,
@@ -556,6 +555,7 @@ const BookingCard = ({
                 const hold =
                     await BookingAvailabilityService
                         .holdSlot({
+                            cartId,
                             serviceId,
                             slotId:
                                 selectedSlot.slotId,
@@ -719,14 +719,20 @@ const BookingCard = ({
                     error
                 );
 
+                if (error?.response?.status === 401) {
 
-                const message =
-                    error?.response?.data?.message
-                    ||
-                    "This slot has just been taken by another customer. Please check again in a few minutes.";
+                    toast.error(
+                        "Please login to continue booking"
+                    );
 
+                } else {
 
-                alert(message);
+                    toast.error(
+                        error?.response?.data?.message ||
+                        "Failed to reserve the selected slot."
+                    );
+
+                }
 
 
                 /*

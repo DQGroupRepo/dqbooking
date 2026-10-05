@@ -468,11 +468,7 @@ const VendorDetail = () => {
 
                             <VendorPackages
                                 packages={pricingPackages}
-                                selectedPackageId={
-                                    selectedPackage
-                                        ? selectedPackage.id
-                                        : undefined
-                                }
+                                selectedPackage={selectedPackage}
                                 onSelectPackage={
                                     handlePackageSelect
                                 }

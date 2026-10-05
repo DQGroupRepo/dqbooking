@@ -1,6 +1,7 @@
 import type { CartItem } from "../types/CartItem";
 
 const CART_STORAGE_KEY = "eventnest_cart";
+const CART_ID_STORAGE_KEY = "eventnest_cart_id";
 
 class CartService {
 
@@ -45,6 +46,46 @@ class CartService {
 
         }
 
+    }
+
+    /*
+     * =========================================
+     * GET / CREATE CART ID
+     * =========================================
+     *
+     * One cart ID is shared by all items currently
+     * belonging to the customer's cart.
+     *
+     * This ID is also sent to the backend when
+     * creating temporary booking holds.
+     */
+    getOrCreateCartId(): string {
+
+        let cartId =
+            localStorage.getItem(
+                CART_ID_STORAGE_KEY
+            );
+
+        if (
+            !cartId
+        ) {
+
+            cartId =
+                crypto.randomUUID();
+
+            localStorage.setItem(
+                CART_ID_STORAGE_KEY,
+                cartId
+            );
+
+            console.log(
+                "Created new cartId:",
+                cartId
+            );
+
+        }
+
+        return cartId;
     }
 
 

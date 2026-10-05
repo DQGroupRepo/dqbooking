@@ -4,7 +4,7 @@ import type { ServicePackage } from "../../types/ServicePackage";
 
 interface Props {
     packages?: ServicePackage[];
-    selectedPackageId?: string;
+    selectedPackage?: ServicePackage | null;
     onSelectPackage: (pkg: ServicePackage) => void;
 }
 
@@ -12,15 +12,17 @@ const VISIBLE_PACKAGES = 3;
 
 const VendorPackages = ({
     packages = [],
-    selectedPackageId,
+    selectedPackage,
     onSelectPackage
 }: Props) => {
 
-    const activePackages = packages.filter(
-        pkg => pkg.active !== false
-    );
+    const activePackages =
+        packages.filter(
+            pkg => pkg.active !== false
+        );
 
-    const [currentIndex, setCurrentIndex] = useState(0);
+    const [currentIndex, setCurrentIndex] =
+        useState(0);
 
 
     if (activePackages.length === 0) {
@@ -28,46 +30,77 @@ const VendorPackages = ({
     }
 
 
-    const totalPackages = activePackages.length;
+    const totalPackages =
+        activePackages.length;
 
-    /*
-     * When there are 3 or fewer packages,
-     * everything is visible and arrows are unnecessary.
-     */
 
     const showNavigation =
         totalPackages > VISIBLE_PACKAGES;
 
 
+    const maxIndex =
+        Math.max(
+            0,
+            totalPackages - VISIBLE_PACKAGES
+        );
+
+
+    const safeCurrentIndex =
+        Math.min(
+            currentIndex,
+            maxIndex
+        );
+
+
+    const visiblePackages =
+        showNavigation
+            ? activePackages.slice(
+                safeCurrentIndex,
+                safeCurrentIndex + VISIBLE_PACKAGES
+            )
+            : activePackages;
+
+
     /*
-     * Maximum starting position.
+     * =========================================
+     * PACKAGE SELECTION
+     * =========================================
      *
-     * Example:
-     * 4 packages / 3 visible
+     * Prefer the package ID when available.
      *
-     * indexes:
-     * 0 → 1,2,3
-     * 1 → 2,3,4
+     * If the backend does not provide an ID,
+     * fall back to object reference comparison.
+     *
+     * This makes the selection work reliably
+     * with both persisted and temporary packages.
      */
+    const isPackageSelected =
+        (pkg: ServicePackage): boolean => {
 
-    const maxIndex = Math.max(
-        0,
-        totalPackages - VISIBLE_PACKAGES
-    );
-
-
-    const safeCurrentIndex = Math.min(
-        currentIndex,
-        maxIndex
-    );
+            if (!selectedPackage) {
+                return false;
+            }
 
 
-    const visiblePackages = showNavigation
-        ? activePackages.slice(
-            safeCurrentIndex,
-            safeCurrentIndex + VISIBLE_PACKAGES
-        )
-        : activePackages;
+            if (
+                pkg.id &&
+                selectedPackage.id
+            ) {
+
+                return (
+                    pkg.id ===
+                    selectedPackage.id
+                );
+
+            }
+
+
+            return (
+                pkg ===
+                selectedPackage
+            );
+
+        };
 
 
     const goPrevious = () => {
@@ -100,65 +133,79 @@ const VendorPackages = ({
 
         <section className="vendor-packages">
 
+            {/* =========================================
+                HEADER
+            ========================================= */}
+
             <div className="packages-heading">
 
-                <h2>
-                    Packages
-                </h2>
+                <div>
 
-                {
-                    showNavigation && (
+                    <h2>
+                        Packages
+                    </h2>
 
-                        <div className="packages-navigation">
-
-                            <button
-                                type="button"
-                                className="package-nav-button"
-                                onClick={goPrevious}
-                                disabled={
-                                    safeCurrentIndex === 0
-                                }
-                                aria-label="Previous packages"
-                            >
-                                ‹
-                            </button>
+                </div>
 
 
-                            <span className="package-page-count">
+                {showNavigation && (
 
-                                {safeCurrentIndex + 1}
+                    <div className="packages-navigation">
 
-                                {" / "}
+                        <button
+                            type="button"
+                            className="package-nav-button"
+                            onClick={goPrevious}
+                            disabled={
+                                safeCurrentIndex === 0
+                            }
+                            aria-label="Previous packages"
+                        >
+                            ‹
+                        </button>
 
-                                {maxIndex + 1}
 
-                            </span>
+                        <span className="package-page-count">
+
+                            {safeCurrentIndex + 1}
+
+                            {" / "}
+
+                            {maxIndex + 1}
+
+                        </span>
 
 
-                            <button
-                                type="button"
-                                className="package-nav-button"
-                                onClick={goNext}
-                                disabled={
-                                    safeCurrentIndex >= maxIndex
-                                }
-                                aria-label="Next packages"
-                            >
-                                ›
-                            </button>
+                        <button
+                            type="button"
+                            className="package-nav-button"
+                            onClick={goNext}
+                            disabled={
+                                safeCurrentIndex >= maxIndex
+                            }
+                            aria-label="Next packages"
+                        >
+                            ›
+                        </button>
 
-                        </div>
+                    </div>
 
-                    )
-                }
+                )}
 
             </div>
 
 
             <p className="package-selection-help">
-                Choose a package that best suits your requirements.
+
+                Choose a package that best suits
+                your requirements.
+
             </p>
 
+
+            {/* =========================================
+                PACKAGE CARDS
+            ========================================= */}
 
             <div className="package-carousel">
 
@@ -170,58 +217,74 @@ const VendorPackages = ({
                     }
                 >
 
-                    {
-                        visiblePackages.map(
-                            (
-                                pkg,
-                                index
-                            ) => {
+                    {visiblePackages.map(
+                        (
+                            pkg,
+                            index
+                        ) => {
 
-                                const packageKey =
-                                    pkg.id ??
-                                    `${pkg.name}-${safeCurrentIndex}-${index}`;
-
-
-                                const isSelected =
-                                    selectedPackageId ===
-                                    packageKey;
+                            const packageKey =
+                                pkg.id ??
+                                `${pkg.name}-${pkg.price}-${safeCurrentIndex}-${index}`;
 
 
-                                return (
-
-                                    <div
-                                        key={packageKey}
-                                        className={
-                                            isSelected
-                                                ? "package-card selected"
-                                                : "package-card"
-                                        }
-                                    >
-
-                                        <div className="package-card-content">
-
-                                            <h3>
-                                                {pkg.name}
-                                            </h3>
+                            const isSelected =
+                                isPackageSelected(
+                                    pkg
+                                );
 
 
-                                            <h4>
-                                                ₹
-                                                {
-                                                    Number(
-                                                        pkg.price
-                                                    ).toLocaleString(
-                                                        "en-IN"
-                                                    )
-                                                }
-                                            </h4>
+                            return (
+
+                                <div
+                                    key={packageKey}
+                                    className={
+                                        isSelected
+                                            ? "package-card selected"
+                                            : "package-card"
+                                    }
+                                >
+
+                                    {/* =================================
+                                        SELECTED BADGE
+                                    ================================= */}
+
+                                    {isSelected && (
+
+                                        <div className="package-selected-badge">
+
+                                            ✓ Selected
+
+                                        </div>
+
+                                    )}
 
 
-                                            <div className="package-feature-area">
+                                    <div className="package-card-content">
 
-                                                {
-                                                    pkg.features &&
-                                                    pkg.features.length > 0 ? (
+                                        <h3>
+                                            {pkg.name}
+                                        </h3>
+
+
+                                        <h4>
+
+                                            ₹
+                                            {Number(
+                                                pkg.price
+                                            ).toLocaleString(
+                                                "en-IN"
+                                            )}
+
+                                        </h4>
+
+
+                                        <div className="package-feature-area">
+
+                                            {
+                                                pkg.features &&
+                                                pkg.features.length > 0
+                                                    ? (
 
                                                         <ul className="package-features">
 
@@ -246,75 +309,99 @@ const VendorPackages = ({
 
                                                         </ul>
 
-                                                    ) : (
+                                                    )
+                                                    : (
 
                                                         <div className="package-no-features">
+
                                                             No additional features
+
                                                         </div>
 
                                                     )
-                                                }
-
-                                            </div>
+                                            }
 
                                         </div>
 
-
-                                        <button
-                                            type="button"
-                                            onClick={() =>
-                                                onSelectPackage(
-                                                    pkg
-                                                )
-                                            }
-                                        >
-                                            {
-                                                isSelected
-                                                    ? "Selected"
-                                                    : "Select"
-                                            }
-                                        </button>
-
                                     </div>
 
-                                );
 
-                            }
-                        )
-                    }
+                                    {/* =================================
+                                        SELECT BUTTON
+                                    ================================= */}
+
+                                    <button
+                                        type="button"
+                                        className={
+                                            isSelected
+                                                ? "package-select-button selected"
+                                                : "package-select-button"
+                                        }
+                                        onClick={() =>
+                                            onSelectPackage(
+                                                pkg
+                                            )
+                                        }
+                                    >
+
+                                        {isSelected
+                                            ? "✓ Selected"
+                                            : "Select"
+                                        }
+
+                                    </button>
+
+                                </div>
+
+                            );
+
+                        }
+                    )}
 
                 </div>
 
             </div>
 
 
-            {
-                showNavigation && (
+            {/* =========================================
+                FOOTER
+            ========================================= */}
 
-                    <div className="package-carousel-footer">
+            {showNavigation && (
 
-                        <span>
-                            Showing{" "}
-                            {safeCurrentIndex + 1}
-                            {" - "}
-                            {Math.min(
-                                safeCurrentIndex +
-                                VISIBLE_PACKAGES,
-                                totalPackages
-                            )}
-                            {" of "}
-                            {totalPackages}
-                            {" packages"}
-                        </span>
+                <div className="package-carousel-footer">
 
-                    </div>
+                    <span>
 
-                )
-            }
+                        Showing{" "}
+
+                        {safeCurrentIndex + 1}
+
+                        {" - "}
+
+                        {Math.min(
+                            safeCurrentIndex +
+                            VISIBLE_PACKAGES,
+                            totalPackages
+                        )}
+
+                        {" of "}
+
+                        {totalPackages}
+
+                        {" packages"}
+
+                    </span>
+
+                </div>
+
+            )}
 
         </section>
 
     );
+
 };
+
 
 export default VendorPackages;
