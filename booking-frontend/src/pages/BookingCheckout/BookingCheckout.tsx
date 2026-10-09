@@ -1,13 +1,6 @@
-import {
-    useEffect,
-    useMemo,
-    useState
-} from "react";
+import { useEffect, useMemo, useState } from "react";
 
-import {
-    useLocation,
-    useNavigate
-} from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 
 import toast from "react-hot-toast";
 
@@ -41,7 +34,11 @@ interface BookingLocationState {
 
     serviceId?: string;
 
+    slotId?: string;
+
     packageId?: string;
+
+    selectedCateringDishes?: BookingSelectedCateringDishRequest[];
 
     eventDate?: string;
 
@@ -163,16 +160,34 @@ interface BookingBundleItemRequest {
 
 }
 
+interface BookingSelectedCateringDishRequest {
+
+    dishId?: string;
+
+    menuItemId?: string;
+
+    name: string;
+
+    category: string;
+
+    foodType: string;
+
+    custom: boolean;
+}
+
 
 interface BookingServiceItemRequest {
 
     serviceId: string;
+
+    slotId: string;
 
     packageId?: string;
 
     eventDate: string;
 
     guestCount: number;
+    selectedCateringDishes?: BookingSelectedCateringDishRequest[];
 
 }
 
@@ -1738,6 +1753,9 @@ const BookingCheckout = () => {
                                     serviceId:
                                         item.serviceId,
 
+                                    slotId:
+                                        item.slotId || "",
+
                                     packageId:
                                         item.packageId,
 
@@ -1747,8 +1765,17 @@ const BookingCheckout = () => {
                                     guestCount:
                                         Number(
                                             item.guestCount
-                                        )
+                                        ),
 
+                                    selectedCateringDishes:
+                                        item.selectedCateringDishes?.map(dish => ({
+                                            dishId: dish.dishId ?? dish.id,
+                                            menuItemId: dish.menuItemId,
+                                            name: dish.name,
+                                            category: dish.category,
+                                            foodType: dish.foodType,
+                                            custom: dish.custom
+                                        }))
                                 });
 
 
@@ -1768,6 +1795,9 @@ const BookingCheckout = () => {
                                 serviceId:
                                     item.serviceId,
 
+                                slotId:
+                                    item.slotId || "",
+
                                 packageId:
                                     item.packageId,
 
@@ -1777,8 +1807,17 @@ const BookingCheckout = () => {
                                 guestCount:
                                     Number(
                                         item.guestCount
-                                    )
+                                    ),
 
+                                selectedCateringDishes:
+                                    item.selectedCateringDishes?.map(dish => ({
+                                        dishId: dish.dishId ?? dish.id,
+                                        menuItemId: dish.menuItemId,
+                                        name: dish.name,
+                                        category: dish.category,
+                                        foodType: dish.foodType,
+                                        custom: dish.custom
+                                    }))
                             });
 
                         }
@@ -1928,14 +1967,127 @@ const BookingCheckout = () => {
                     );
 
 
-                    const message =
-                        err?.response?.data?.message ||
-                        "Unable to submit booking request. Please try again.";
+                    const responseData =
+                        err?.response?.data;
 
+                    const isExpiredHold =
+                        responseData?.code ===
+                        "BOOKING_HOLD_EXPIRED";
 
-                    toast.error(
-                        message
-                    );
+                    if (isExpiredHold) {
+
+                        const expiredServiceId =
+                            responseData?.serviceId;
+
+                        const expiredSlotId =
+                            responseData?.slotId;
+
+                        const expiredEventDate =
+                            responseData?.eventDate;
+
+                        console.warn(
+                            "Expired booking hold detected:",
+                            {
+                                serviceId:
+                                    expiredServiceId,
+
+                                slotId:
+                                    expiredSlotId,
+
+                                eventDate:
+                                    expiredEventDate
+                            }
+                        );
+
+                        /*
+                         * Remove ONLY the expired item.
+                         *
+                         * Other cart items remain untouched.
+                         */
+                        const expiredItem =
+                            displayCart.find(
+                                item =>
+                                    item.serviceId ===
+                                    expiredServiceId
+                                    &&
+                                    item.slotId ===
+                                    expiredSlotId
+                                    &&
+                                    item.eventDate ===
+                                    expiredEventDate
+                            );
+
+                        if (expiredItem) {
+
+                            let updatedCart: CartItem[];
+
+                            /*
+                             * Preserve the existing bundle
+                             * behavior.
+                             */
+                            if (
+                                expiredItem.bundleId
+                            ) {
+
+                                updatedCart =
+                                    CartService.removeItemFromBundle(
+                                        expiredItem.serviceId,
+                                        expiredItem.bundleId
+                                    );
+
+                            }
+                            else {
+
+                                updatedCart =
+                                    CartService.removeItem(
+                                        expiredItem.serviceId
+                                    );
+
+                            }
+
+                            setCurrentCart(
+                                updatedCart
+                            );
+
+                            toast.error(
+                                "Your selected time slot has expired. " +
+                                "That item was removed from your cart. " +
+                                "Please select the slot again."
+                            );
+
+                        }
+                        else {
+
+                            /*
+                             * Defensive fallback.
+                             *
+                             * We received an expired hold from
+                             * the backend but could not match it
+                             * to the current local cart.
+                             */
+                            console.warn(
+                                "Expired hold could not be matched to cart item.",
+                                responseData
+                            );
+
+                            toast.error(
+                                "Your selected time slot has expired. " +
+                                "Please return to the cart and select the slot again."
+                            );
+
+                        }
+
+                    }
+                    else {
+
+                        const message =
+                            responseData?.message ||
+                            "Unable to submit booking request. Please try again.";
+
+                        toast.error(
+                            message
+                        );
+                    }
 
                 }
                 finally {
@@ -1975,6 +2127,8 @@ const BookingCheckout = () => {
                         {
 
                             serviceId,
+                            slotId:
+                               state?.slotId ?? "",
 
                             packageId,
 
@@ -1983,8 +2137,10 @@ const BookingCheckout = () => {
                             guestCount:
                                 Number(
                                     guests
-                                )
+                                ),
 
+                            selectedCateringDishes:
+                                state?.selectedCateringDishes
                         }
 
                     ],
@@ -2070,14 +2226,127 @@ const BookingCheckout = () => {
                 );
 
 
-                const message =
-                    err?.response?.data?.message ||
-                    "Unable to submit booking request. Please try again.";
+                const responseData =
+                    err?.response?.data;
 
+                const isExpiredHold =
+                    responseData?.code ===
+                    "BOOKING_HOLD_EXPIRED";
 
-                toast.error(
-                    message
-                );
+                if (isExpiredHold) {
+
+                    const expiredServiceId =
+                        responseData?.serviceId;
+
+                    const expiredSlotId =
+                        responseData?.slotId;
+
+                    const expiredEventDate =
+                        responseData?.eventDate;
+
+                    console.warn(
+                        "Expired booking hold detected:",
+                        {
+                            serviceId:
+                                expiredServiceId,
+
+                            slotId:
+                                expiredSlotId,
+
+                            eventDate:
+                                expiredEventDate
+                        }
+                    );
+
+                    /*
+                     * Remove ONLY the expired item.
+                     *
+                     * Other cart items remain untouched.
+                     */
+                    const expiredItem =
+                        displayCart.find(
+                            item =>
+                                item.serviceId ===
+                                expiredServiceId
+                                &&
+                                item.slotId ===
+                                expiredSlotId
+                                &&
+                                item.eventDate ===
+                                expiredEventDate
+                        );
+
+                    if (expiredItem) {
+
+                        let updatedCart: CartItem[];
+
+                        /*
+                         * Preserve the existing bundle
+                         * behavior.
+                         */
+                        if (
+                            expiredItem.bundleId
+                        ) {
+
+                            updatedCart =
+                                CartService.removeItemFromBundle(
+                                    expiredItem.serviceId,
+                                    expiredItem.bundleId
+                                );
+
+                        }
+                        else {
+
+                            updatedCart =
+                                CartService.removeItem(
+                                    expiredItem.serviceId
+                                );
+
+                        }
+
+                        setCurrentCart(
+                            updatedCart
+                        );
+
+                        toast.error(
+                            "Your selected time slot has expired. " +
+                            "That item was removed from your cart. " +
+                            "Please select the slot again."
+                        );
+
+                    }
+                    else {
+
+                        /*
+                         * Defensive fallback.
+                         *
+                         * We received an expired hold from
+                         * the backend but could not match it
+                         * to the current local cart.
+                         */
+                        console.warn(
+                            "Expired hold could not be matched to cart item.",
+                            responseData
+                        );
+
+                        toast.error(
+                            "Your selected time slot has expired. " +
+                            "Please return to the cart and select the slot again."
+                        );
+
+                    }
+
+                }
+                else {
+
+                    const message =
+                        responseData?.message ||
+                        "Unable to submit booking request. Please try again.";
+
+                    toast.error(
+                        message
+                    );
+                }
 
             }
             finally {

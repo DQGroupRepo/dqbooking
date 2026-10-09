@@ -11,6 +11,7 @@ import com.booking.repository.AvailabilityOverrideRepository;
 import com.booking.repository.BookingHoldRepository;
 import com.booking.repository.BookingRepository;
 import com.booking.repository.BookingSlotRepository;
+import com.booking.service.AuthenticatedUserService;
 import com.booking.service.BookingAvailabilityService;
 import com.booking.dto.availability.BookingHoldResponse;
 import com.booking.dto.availability.CreateBookingHoldRequest;
@@ -41,6 +42,7 @@ public class BookingAvailabilityServiceImpl
     private final BookingRepository bookingRepository;
 
     private final BookingHoldRepository bookingHoldRepository;
+    private final AuthenticatedUserService authenticatedUserService;
 
 
     /*
@@ -282,6 +284,16 @@ public class BookingAvailabilityServiceImpl
             );
         }
 
+        var customer = authenticatedUserService.getCurrentUser();
+
+        String customerId = customer.getId();
+
+        if (customerId == null || customerId.isBlank()) {
+            throw new IllegalStateException(
+                    "Unable to identify the authenticated customer."
+            );
+        }
+
 
         /*
          * =========================================
@@ -326,7 +338,7 @@ public class BookingAvailabilityServiceImpl
         hold.setExpiresAt(
                 now.plusMinutes(5)
         );
-
+        hold.setCustomerId(customerId);
 
         BookingHold savedHold =
                 bookingHoldRepository.save(hold);
@@ -340,7 +352,8 @@ public class BookingAvailabilityServiceImpl
                 savedHold.getSlotId(),
                 savedHold.getEventDate(),
                 savedHold.getQuantity(),
-                savedHold.getExpiresAt()
+                savedHold.getExpiresAt(),
+                savedHold.getCustomerId()
         );
 
 

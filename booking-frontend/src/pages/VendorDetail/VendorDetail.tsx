@@ -17,6 +17,7 @@ import VendorServiceDetails
 import VendorDetailService from "../../services/VendorDetailService";
 import BundleService from "../../services/BundleService";
 import type { ServicePackage } from "../../types/ServicePackage";
+import type { CartSelectedCateringDish } from "../../types/CartItem";
 
 import type { VendorDetail as VendorDetailType } from "../../types/VendorDetail";
 
@@ -56,6 +57,9 @@ const VendorDetail = () => {
         selectedPackage,
         setSelectedPackage
     ] = useState<ServicePackage | null>(null);
+
+    const [selectedCateringDishes, setSelectedCateringDishes] =
+        useState<CartSelectedCateringDish[]>([]);
     /*
      * =========================================
      * VENDOR
@@ -109,6 +113,7 @@ const VendorDetail = () => {
         // A package selected for a previous date
         // must never remain selected.
         setSelectedPackage(null);
+        setSelectedCateringDishes([]);
 
         setSelectedEventDate(date);
 
@@ -190,6 +195,7 @@ const VendorDetail = () => {
         setSelectedPackage(
             pkg
         );
+        setSelectedCateringDishes([]);
 
     };
 
@@ -472,6 +478,9 @@ const VendorDetail = () => {
                                 onSelectPackage={
                                     handlePackageSelect
                                 }
+                                onSelectedCateringDishesChange={
+                                    setSelectedCateringDishes
+                                }
                             />
 
                         )}
@@ -487,6 +496,7 @@ const VendorDetail = () => {
                         serviceId={serviceId}
                         bundles={bundles}
                         selectedPackage={selectedPackage}
+                        selectedCateringDishes={selectedCateringDishes}
                         onEventDateChange={handleEventDateChange}
                     />
 

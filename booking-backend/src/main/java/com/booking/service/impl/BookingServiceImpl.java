@@ -7,11 +7,13 @@ import com.booking.dto.bundle.BundleCalculationResponse;
 import com.booking.dto.bundle.BundleDiscountItem;
 import com.booking.dto.pricing.PricingCalculationResult;
 import com.booking.exception.BookingNotFoundException;
+import com.booking.exception.ExpiredBookingHoldException;
 import com.booking.exception.ResourceNotFoundException;
 import com.booking.helper.BookingHelper;
 import com.booking.mapper.BookingMapper;
 import com.booking.model.*;
 import com.booking.model.embedded.*;
+import com.booking.model.enums.BookingHoldStatus;
 import com.booking.model.enums.BookingStatus;
 import com.booking.model.enums.DiscountType;
 import com.booking.model.enums.NotificationType;
@@ -30,6 +32,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -71,7 +74,12 @@ public class BookingServiceImpl implements BookingService
 
     private final BundleRepository bundleRepository;
 
-    private final BookingSlotRepository bookingSlotRepository;
+    /*
+     * Booking holds are validated again at final booking creation.
+     * This prevents a customer from continuing with a cart item
+     * whose temporary hold has already expired.
+     */
+    private final BookingHoldRepository bookingHoldRepository;
 
     @Override
     public BookingGroupResponse createBooking(
@@ -312,6 +320,36 @@ public class BookingServiceImpl implements BookingService
         log.debug("Prepared booking items bookingGroupId={} distinctServiceItems={}",
                 bookingGroupId,
                 serviceItems.size());
+
+
+        /*
+         * =========================================
+         * 4A. VALIDATE BOOKING HOLDS
+         * =========================================
+         *
+         * A cart can remain open for longer than the
+         * five-minute temporary hold. Therefore the
+         * hold must be checked again on the server when
+         * the customer actually creates the booking.
+         *
+         * IMPORTANT:
+         *
+         * This validation happens for ALL cart items
+         * before any Booking document is created.
+         * That prevents a partially-created booking group
+         * if one item has an expired/missing hold.
+         *
+         * We validate each service item independently.
+         * One expired hold does not invalidate the other
+         * items in the cart conceptually; the checkout layer
+         * should remove/flag that individual item. This
+         * final check is the last server-side safety net.
+         */
+
+        validateActiveBookingHolds(
+                serviceItems,
+                customer.getId()
+        );
 
 
         /*
@@ -852,37 +890,13 @@ public class BookingServiceImpl implements BookingService
                             : null
             );
 
+            booking.setSelectedCateringDishes(
+                    toBookingSelectedCateringDishes(item)
+            );
+
             booking.setPackageType(
                     selectedPackage != null
                             ? selectedPackage.getName()
-                            : null
-            );
-
-            BookingSlot slot = bookingSlotRepository
-                    .findById(item.getSlotId())
-                    .orElseThrow(() ->
-                            new IllegalArgumentException(
-                                    "Booking slot not found: " + item.getSlotId()
-                            )
-                    );
-
-            if (!slot.getServiceId().equals(item.getServiceId())) {
-                throw new IllegalArgumentException(
-                        "Booking slot does not belong to the selected service"
-                );
-            }
-
-            booking.setSlotId(slot.getId());
-            booking.setSlotName(slot.getSlotName());
-            booking.setSlotStartTime(
-                    slot.getStartTime() != null
-                            ? slot.getStartTime().toString()
-                            : null
-            );
-
-            booking.setSlotEndTime(
-                    slot.getEndTime() != null
-                            ? slot.getEndTime().toString()
                             : null
             );
 
@@ -1338,6 +1352,74 @@ public class BookingServiceImpl implements BookingService
                 bookings
         );
     }
+
+    /*
+     * =========================================
+     * VALIDATE ACTIVE BOOKING HOLDS
+     * =========================================
+     *
+     * A hold is valid only when:
+     *
+     * 1. It belongs to the current customer.
+     * 2. It belongs to the requested service, slot and date.
+     * 3. Its status is ACTIVE.
+     * 4. Its expiry time is still in the future.
+     *
+     * Expired holds are intentionally not changed here.
+     * The availability query already treats them as no
+     * longer consuming capacity because it filters by
+     * expiresAt > now. The purpose of this method is to
+     * stop a stale cart item from reaching final booking.
+     */
+    private void validateActiveBookingHolds(
+            List<BookingServiceItemRequest> serviceItems,
+            String customerId
+    ) {
+
+        LocalDateTime now =
+                LocalDateTime.now();
+
+        for (BookingServiceItemRequest item : serviceItems) {
+
+            List<BookingHold> activeHolds =
+                    bookingHoldRepository
+                            .findByServiceIdAndSlotIdAndEventDateAndStatusAndExpiresAtAfter(
+                                    item.getServiceId(),
+                                    item.getSlotId(),
+                                    item.getEventDate(),
+                                    BookingHoldStatus.ACTIVE,
+                                    now
+                            );
+
+            boolean validHold =
+                    activeHolds
+                            .stream()
+                            .anyMatch(hold ->
+                                    customerId.equals(
+                                            hold.getCustomerId()
+                                    )
+                            );
+
+            if (!validHold) {
+
+                log.warn(
+                        "Booking rejected because active hold is missing or expired " +
+                                "customerId={} serviceId={} slotId={} eventDate={}",
+                        customerId,
+                        item.getServiceId(),
+                        item.getSlotId(),
+                        item.getEventDate()
+                );
+
+                throw new ExpiredBookingHoldException(
+                        item.getServiceId(),
+                        item.getSlotId(),
+                        item.getEventDate().toString()
+                );
+            }
+        }
+    }
+
 
     private ServicePackage resolvePackage(
             VendorService service,
@@ -2389,6 +2471,47 @@ public class BookingServiceImpl implements BookingService
                     "You are not authorized to view this booking group."
             );
         }
+    }
+
+    private List<BookingSelectedCateringDish>
+    toBookingSelectedCateringDishes(
+            BookingServiceItemRequest item
+    ) {
+
+        if (
+                item.getSelectedCateringDishes() == null ||
+                        item.getSelectedCateringDishes().isEmpty()
+        ) {
+            return new ArrayList<>();
+        }
+
+        return item.getSelectedCateringDishes()
+                .stream()
+                .map(selected -> {
+
+                    BookingSelectedCateringDish dish =
+                            new BookingSelectedCateringDish();
+
+                    dish.setDishId(
+                            selected.getDishId()
+                    );
+
+                    dish.setName(
+                            selected.getName()
+                    );
+
+                    dish.setCategory(
+                            selected.getCategory()
+                    );
+
+                    dish.setFoodType(
+                            selected.getFoodType()
+                    );
+
+                    return dish;
+
+                })
+                .toList();
     }
 
 

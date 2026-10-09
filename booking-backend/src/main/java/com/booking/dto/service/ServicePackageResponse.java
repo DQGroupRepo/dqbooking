@@ -20,4 +20,8 @@ public class ServicePackageResponse {
 
     private boolean active;
 
+    /*
+     * Catering-only configuration.
+     */
+    private CateringPackageMenuResponse cateringMenu;
 }

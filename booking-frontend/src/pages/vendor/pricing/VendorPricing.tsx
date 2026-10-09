@@ -1,29 +1,26 @@
-import {
-    useEffect,
-    useState
-} from "react";
+import { useEffect, useState } from "react";
 
-import {
-    useNavigate,
-    useParams
-} from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 
-import type {
-    ServicePackage
-} from "../../../types/ServicePackage";
+import type { ServicePackage} from "../../../types/ServicePackage";
 
-import VendorPricingService
-    from "../../../services/VendorPricingService";
+import VendorPricingService from "../../../services/VendorPricingService";
 
-import toast
-    from "react-hot-toast";
+import toast from "react-hot-toast";
 
-import type {
-    VendorServicePricing,
-    VendorPricingHead,
-    VendorDiscount,
-    RefundRule
-} from "../../../types/VendorPricing";
+import type { VendorServicePricing, VendorPricingHead, VendorDiscount,
+    RefundRule } from "../../../types/VendorPricing";
+
+import CateringPackageMenuModal
+    from "../../../components/vendor/pricing/CateringPackageMenuModal";
+
+import type { CateringPackageMenu } from "../../../types/CateringPackageMenu";
+
+import VendorCateringMenuService from "../../../services/VendorCateringMenuService";
+
+import VendorServiceService from "../../../services/VendorServiceService";
+
+import type { CateringMenuItem} from "../../../types/CateringMenuItem";
 
 import "./VendorPricing.css";
 
@@ -143,28 +140,21 @@ const VendorPricing = () => {
             emptyPricing
         );
 
+    const [ packages, setPackages
+    ] = useState<ServicePackage[]>([]);
 
-    const [
-        packages,
-        setPackages
-    ] =
-        useState<ServicePackage[]>([]);
+    const [ pricingVersions, setPricingVersions
+    ] = useState<VendorServicePricingVersion[]>([]);
 
+    const [ selectedPricingId, setSelectedPricingId ] =  useState<string | null>(null);
 
-    const [
-        pricingVersions,
-        setPricingVersions
-    ] =
-        useState<VendorServicePricingVersion[]>([]);
+    const [isCateringService, setIsCateringService] = useState(false);
 
+    const [cateringMenuItems, setCateringMenuItems] =
+        useState<CateringMenuItem[]>([]);
 
-    const [
-        selectedPricingId,
-        setSelectedPricingId
-    ] =
-        useState<string | null>(null);
-
-
+    const [menuPackageIndex, setMenuPackageIndex] =
+        useState<number | null>(null);
     /*
      * =========================================================
      * LOAD PRICING + PACKAGES
@@ -186,7 +176,62 @@ const VendorPricing = () => {
         serviceId
     ]);
 
+    useEffect(() => {
+        if (!serviceId) return;
 
+        let cancelled = false;
+
+        async function loadCateringData() {
+            try {
+                const service =
+                    await VendorServiceService.getServiceById(serviceId!);
+
+                if (cancelled) return;
+
+                const isCatering =
+                    service.category?.toLowerCase().trim() === "catering";
+
+                setIsCateringService(isCatering);
+
+                if (isCatering) {
+                    const response =
+                        await VendorCateringMenuService.getMenu(serviceId!);
+
+                    if (!cancelled) {
+                        setCateringMenuItems(response.items ?? []);
+                    }
+                } else {
+                    setCateringMenuItems([]);
+                }
+            } catch (error) {
+                if (!cancelled) {
+                    console.error("Failed to load catering menu:", error);
+                    toast.error("Unable to load the catering menu.");
+                }
+            }
+        }
+
+        void loadCateringData();
+
+        return () => {
+            cancelled = true;
+        };
+    }, [serviceId]);
+
+    function updatePackageCateringMenu(
+        packageIndex: number,
+        menu: CateringPackageMenu
+    ) {
+        setPackages(previous =>
+            previous.map((pkg, index) =>
+                index === packageIndex
+                    ? { ...pkg, cateringPackageMenu: menu }
+                    : pkg
+            )
+        );
+
+        setMenuPackageIndex(null);
+    }
     /*
      * =========================================================
      * LOAD PRICING
@@ -1560,6 +1605,28 @@ const VendorPricing = () => {
                                                         </div>
                                                     </div>
 
+                                                    {isCateringService && (
+                                                        <div className="package-catering-config">
+                                                            <div className="package-catering-config-info">
+                                                                <strong>Catering Menu</strong>
+
+                                                                <p>
+                                                                    {pkg.cateringPackageMenu
+                                                                        ? "Package menu configured"
+                                                                        : "Choose dishes and customer selection limits"}
+                                                                </p>
+                                                            </div>
+
+                                                            <button
+                                                                type="button"
+                                                                className="configure-catering-menu-btn"
+                                                                onClick={() => setMenuPackageIndex(packageIndex)}
+                                                            >
+                                                                🍽 Configure Catering Menu
+                                                            </button>
+                                                        </div>
+                                                    )}
+
                                                     <div className="package-features-section">
                                                         <div className="package-features-header">
                                                             <h5>Features</h5>
@@ -1651,6 +1718,20 @@ const VendorPricing = () => {
 
                             </div>
 
+                        )}
+
+                        {isCateringService && menuPackageIndex !== null && (
+                            <CateringPackageMenuModal
+                                packageName={packages[menuPackageIndex]?.name ?? ""}
+                                menuItems={cateringMenuItems}
+                                initialMenu={
+                                    packages[menuPackageIndex]?.cateringPackageMenu
+                                }
+                                onSave={menu =>
+                                    updatePackageCateringMenu(menuPackageIndex, menu)
+                                }
+                                onClose={() => setMenuPackageIndex(null)}
+                            />
                         )}
 
                         <div className="package-info-banner">

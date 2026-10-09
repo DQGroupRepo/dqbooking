@@ -1,5 +1,6 @@
 package com.booking.dto.booking;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -8,6 +9,8 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 @Getter
 @Setter
@@ -20,16 +23,8 @@ public class BookingServiceItemRequest {
      * =========================================
      * BOOKING SLOT
      * =========================================
-     *
-     * The customer selects a slot for the
-     * selected event date.
-     *
-     * Example:
-     *
-     * slotId = "morning-slot"
-     *
-     * The slot itself may have capacity > 1.
      */
+
     @NotBlank
     private String slotId;
 
@@ -42,4 +37,18 @@ public class BookingServiceItemRequest {
     @NotNull
     @Min(1)
     private Integer guestCount;
+
+    /*
+     * =========================================
+     * CATERING PACKAGE DISHES
+     * =========================================
+     *
+     * Only populated when the selected package
+     * belongs to a catering service.
+     *
+     * Empty for all other services.
+     */
+    @Valid
+    private List<BookingSelectedCateringDishRequest>
+            selectedCateringDishes = new ArrayList<>();
 }

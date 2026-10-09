@@ -5,7 +5,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import type { VendorDetail } from "../../types/VendorDetail";
 import type { Bundle } from "../../types/Bundle";
 import type { ServicePackage } from "../../types/ServicePackage";
-import type { CartItem } from "../../types/CartItem";
+import type { CartItem, CartSelectedCateringDish } from "../../types/CartItem";
 
 import CartService from "../../services/CartService";
 import VendorDetailService from "../../services/VendorDetailService";
@@ -25,6 +25,8 @@ interface Props {
     bundles?: Bundle[];
 
     selectedPackage?: ServicePackage | null;
+
+    selectedCateringDishes?: CartSelectedCateringDish[];
 
     onEventDateChange?: (
         date: string
@@ -51,6 +53,7 @@ const BookingCard = ({
     serviceId,
     bundles = [],
     selectedPackage,
+    selectedCateringDishes = [],
     onEventDateChange
 }: Props) => {
 
@@ -674,6 +677,9 @@ const BookingCard = ({
                     packageFeatures:
                         selectedPackage?.features,
 
+                    selectedCateringDishes:
+                        selectedCateringDishes,
+
 
                     /*
                      * =========================================
@@ -716,7 +722,12 @@ const BookingCard = ({
 
                 console.error(
                     "Failed to hold booking slot:",
-                    error
+                    {
+                        status: error?.response?.status,
+                        response: error?.response?.data,
+                        request: { serviceId, slotId: selectedSlot?.slotId, eventDate, quantity },
+                        error
+                    }
                 );
 
                 if (error?.response?.status === 401) {

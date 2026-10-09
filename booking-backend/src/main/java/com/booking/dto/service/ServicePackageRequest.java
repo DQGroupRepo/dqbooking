@@ -1,5 +1,6 @@
 package com.booking.dto.service;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
@@ -24,4 +25,10 @@ public class ServicePackageRequest {
     private List<String> features = new ArrayList<>();
 
     private boolean active;
+
+    /*
+     * Catering-only configuration.
+     */
+    @Valid
+    private CateringPackageMenuRequest cateringPackageMenu;
 }

@@ -1,3 +1,13 @@
+export interface CartSelectedCateringDish {
+    dishId?: string;
+    menuItemId?: string;
+    id?: string;
+    name: string;
+    category: string;
+    foodType: string;
+    custom: boolean;
+}
+
 export interface CartItem {
     serviceId: string;
 
@@ -70,4 +80,6 @@ export interface CartItem {
     packagePrice?: number;
 
     packageFeatures?: string[];
+
+    selectedCateringDishes?: CartSelectedCateringDish[];
 }

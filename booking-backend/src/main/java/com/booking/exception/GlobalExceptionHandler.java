@@ -12,6 +12,8 @@ import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.time.LocalDateTime;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -247,5 +249,60 @@ public class GlobalExceptionHandler {
                         "An unexpected error occurred",
                         LocalDateTime.now()
                 ));
+    }
+
+    @ExceptionHandler(ExpiredBookingHoldException.class)
+    public ResponseEntity<Map<String, Object>> handleExpiredBookingHold(
+            ExpiredBookingHoldException ex
+    ) {
+
+        log.warn(
+                "Expired booking hold detected serviceId={} slotId={} eventDate={}",
+                ex.getServiceId(),
+                ex.getSlotId(),
+                ex.getEventDate()
+        );
+
+        Map<String, Object> response =
+                new LinkedHashMap<>();
+
+        response.put(
+                "status",
+                412
+        );
+
+        response.put(
+                "message",
+                ex.getMessage()
+        );
+
+        response.put(
+                "code",
+                "BOOKING_HOLD_EXPIRED"
+        );
+
+        response.put(
+                "serviceId",
+                ex.getServiceId()
+        );
+
+        response.put(
+                "slotId",
+                ex.getSlotId()
+        );
+
+        response.put(
+                "eventDate",
+                ex.getEventDate()
+        );
+
+        response.put(
+                "timestamp",
+                LocalDateTime.now()
+        );
+
+        return ResponseEntity
+                .status(HttpStatus.PRECONDITION_FAILED)
+                .body(response);
     }
 }

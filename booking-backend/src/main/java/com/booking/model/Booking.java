@@ -1,6 +1,7 @@
 package com.booking.model;
 
 import com.booking.model.embedded.BookingPricingSnapshot;
+import com.booking.model.embedded.BookingSelectedCateringDish;
 import com.booking.model.enums.BookingStatus;
 import com.booking.model.enums.PaymentStatus;
 import lombok.Getter;
@@ -11,6 +12,8 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Getter
 @Setter
@@ -192,5 +195,23 @@ public class Booking extends BaseEntity {
     private String packageId;
 
     private String packageType;
+
+    /*
+     * =========================================
+     * SELECTED CATERING DISHES
+     * =========================================
+     *
+     * Catering-only booking snapshot.
+     *
+     * Stores the exact dishes selected by the
+     * customer from the selected catering package.
+     *
+     * These are snapshots and must not depend on
+     * the vendor's current catering menu/package.
+     *
+     * Empty for non-catering bookings.
+     */
+    private List<BookingSelectedCateringDish>
+            selectedCateringDishes = new ArrayList<>();
 
 }

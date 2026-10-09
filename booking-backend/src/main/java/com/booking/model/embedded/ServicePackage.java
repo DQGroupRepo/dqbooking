@@ -21,4 +21,19 @@ public class ServicePackage {
 
     private boolean active;
 
+    /*
+     * =========================================
+     * CATERING PACKAGE MENU
+     * =========================================
+     *
+     * Used only when this package belongs to
+     * a catering service.
+     *
+     * Example:
+     *
+     * Vendor has 5 vegetarian dishes available
+     * and customer can select any 3.
+     */
+    private CateringPackageMenu cateringMenu;
+
 }

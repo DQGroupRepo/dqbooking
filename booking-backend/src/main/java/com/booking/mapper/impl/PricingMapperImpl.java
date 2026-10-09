@@ -2,11 +2,19 @@ package com.booking.mapper.impl;
 
 import com.booking.dto.pricing.*;
 import com.booking.dto.service.ServicePackageRequest;
+import com.booking.dto.service.ServicePackageResponse;
 import com.booking.mapper.CancellationPolicyMapper;
 import com.booking.mapper.PricingMapper;
 import com.booking.model.*;
 import com.booking.model.embedded.ServicePackage;
 import org.springframework.stereotype.Component;
+
+import com.booking.dto.service.CateringPackageDishRequest;
+import com.booking.dto.service.CateringPackageDishResponse;
+import com.booking.dto.service.CateringPackageMenuRequest;
+import com.booking.dto.service.CateringPackageMenuResponse;
+import com.booking.model.embedded.CateringPackageDish;
+import com.booking.model.embedded.CateringPackageMenu;
 
 import java.util.Collections;
 
@@ -192,7 +200,75 @@ public class PricingMapperImpl implements PricingMapper {
                 request.isActive()
         );
 
+        servicePackage.setCateringMenu(
+                toCateringPackageMenu(
+                        request.getCateringPackageMenu()
+                )
+        );
+
         return servicePackage;
+    }
+
+    private CateringPackageMenu toCateringPackageMenu(
+            CateringPackageMenuRequest request
+    ) {
+
+        if (request == null) {
+            return null;
+        }
+
+        CateringPackageMenu menu =
+                new CateringPackageMenu();
+
+        menu.setVegetarianSelectionLimit(
+                request.getVegetarianSelectionLimit()
+        );
+
+        menu.setNonVegetarianSelectionLimit(
+                request.getNonVegetarianSelectionLimit()
+        );
+
+        menu.setVegetarianDishes(
+                request.getVegetarianDishes() == null
+                        ? new java.util.ArrayList<>()
+                        : request.getVegetarianDishes()
+                        .stream()
+                        .map(this::toCateringPackageDish)
+                        .toList()
+        );
+
+        menu.setNonVegetarianDishes(
+                request.getNonVegetarianDishes() == null
+                        ? new java.util.ArrayList<>()
+                        : request.getNonVegetarianDishes()
+                        .stream()
+                        .map(this::toCateringPackageDish)
+                        .toList()
+        );
+
+        return menu;
+    }
+
+    private CateringPackageDish toCateringPackageDish(
+            CateringPackageDishRequest request
+    ) {
+
+        CateringPackageDish dish =
+                new CateringPackageDish();
+
+        dish.setMenuItemId(
+                request.getMenuItemId()
+        );
+
+        dish.setDishId(
+                request.getDishId()
+        );
+
+        dish.setName(
+                request.getName()
+        );
+
+        return dish;
     }
 
     private PaymentConfiguration toPaymentConfiguration(
@@ -329,26 +405,7 @@ public class PricingMapperImpl implements PricingMapper {
                                 ? Collections.emptyList()
                                 : pricing.getPackages()
                                 .stream()
-                                .map(servicePackage ->
-                                        ServicePackageResponse
-                                                .builder()
-                                                .id(
-                                                        servicePackage.getId()
-                                                )
-                                                .name(
-                                                        servicePackage.getName()
-                                                )
-                                                .price(
-                                                        servicePackage.getPrice()
-                                                )
-                                                .features(
-                                                        servicePackage.getFeatures()
-                                                )
-                                                .active(
-                                                        servicePackage.isActive()
-                                                )
-                                                .build()
-                                )
+                                .map(this::toServicePackageResponse)
                                 .toList()
                 )
 
@@ -365,6 +422,106 @@ public class PricingMapperImpl implements PricingMapper {
                 )
 
                 .build();
+    }
+
+    private ServicePackageResponse toServicePackageResponse(
+            ServicePackage servicePackage
+    ) {
+
+        ServicePackageResponse response =
+                new ServicePackageResponse();
+
+        response.setId(
+                servicePackage.getId()
+        );
+
+        response.setName(
+                servicePackage.getName()
+        );
+
+        response.setPrice(
+                servicePackage.getPrice()
+        );
+
+        response.setFeatures(
+                servicePackage.getFeatures()
+        );
+
+        response.setActive(
+                servicePackage.isActive()
+        );
+
+        response.setCateringMenu(
+                toCateringPackageMenuResponse(
+                        servicePackage.getCateringMenu()
+                )
+        );
+
+        return response;
+    }
+
+    private CateringPackageMenuResponse
+    toCateringPackageMenuResponse(
+            CateringPackageMenu menu
+    ) {
+
+        if (menu == null) {
+            return null;
+        }
+
+        CateringPackageMenuResponse response =
+                new CateringPackageMenuResponse();
+
+        response.setVegetarianSelectionLimit(
+                menu.getVegetarianSelectionLimit()
+        );
+
+        response.setNonVegetarianSelectionLimit(
+                menu.getNonVegetarianSelectionLimit()
+        );
+
+        response.setVegetarianDishes(
+                menu.getVegetarianDishes() == null
+                        ? Collections.emptyList()
+                        : menu.getVegetarianDishes()
+                        .stream()
+                        .map(this::toCateringPackageDishResponse)
+                        .toList()
+        );
+
+        response.setNonVegetarianDishes(
+                menu.getNonVegetarianDishes() == null
+                        ? Collections.emptyList()
+                        : menu.getNonVegetarianDishes()
+                        .stream()
+                        .map(this::toCateringPackageDishResponse)
+                        .toList()
+        );
+
+        return response;
+    }
+
+    private CateringPackageDishResponse
+    toCateringPackageDishResponse(
+            CateringPackageDish dish
+    ) {
+
+        CateringPackageDishResponse response =
+                new CateringPackageDishResponse();
+
+        response.setMenuItemId(
+                dish.getMenuItemId()
+        );
+
+        response.setDishId(
+                dish.getDishId()
+        );
+
+        response.setName(
+                dish.getName()
+        );
+
+        return response;
     }
 
     private PaymentConfigurationResponse
