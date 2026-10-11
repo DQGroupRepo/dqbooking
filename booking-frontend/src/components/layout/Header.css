@@ -2225,3 +2225,204 @@
     }
 
 }
+
+/* DQBooking.com Option 1 — append to the end of Header.css */
+.dq-brand {
+    flex: 0 0 270px;
+    width: 270px;
+    min-width: 0;
+    height: 112px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    overflow: visible;
+    text-decoration: none;
+    line-height: 1;
+}
+
+.dq-brand-logo {
+    display: block;
+    width: 112px;
+    height: 62px;
+    max-width: 100%;
+    object-fit: contain;
+    object-position: center;
+}
+
+.dq-brand-name {
+    display: block;
+    color: #f5c65a;
+    font-size: 20px;
+    font-weight: 800;
+    letter-spacing: 3.2px;
+    white-space: nowrap;
+}
+
+.dq-brand-tagline {
+    display: block;
+    color: rgba(255, 255, 255, 0.86);
+    font-size: 9px;
+    font-weight: 500;
+    letter-spacing: 1.15px;
+    white-space: nowrap;
+}
+
+/* Keep the search and account controls within the available header width. */
+.main-header-container {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    min-width: 0;
+}
+
+.header-search {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.header-main-actions {
+    flex: 0 1 auto;
+    min-width: 0;
+    gap: 10px;
+}
+
+@media (max-width: 1500px) {
+    .dq-brand {
+        flex-basis: 220px;
+        width: 220px;
+        height: 104px;
+    }
+
+    .dq-brand-logo {
+        width: 94px;
+        height: 53px;
+    }
+
+    .dq-brand-name {
+        font-size: 16px;
+        letter-spacing: 2.5px;
+    }
+
+    .dq-brand-tagline {
+        font-size: 8px;
+        letter-spacing: 0.9px;
+    }
+
+    .main-header-container {
+        gap: 12px;
+    }
+
+    .header-main-actions {
+        gap: 7px;
+    }
+
+    .header-search .search-keyword {
+        min-width: 100px;
+    }
+
+    .header-search .search-keyword input {
+        min-width: 0;
+        width: 100%;
+    }
+}
+
+@media (max-width: 1200px) {
+    .dq-brand {
+        flex-basis: 178px;
+        width: 178px;
+        height: 96px;
+    }
+
+    .dq-brand-logo {
+        width: 80px;
+        height: 45px;
+    }
+
+    .dq-brand-name {
+        font-size: 13px;
+        letter-spacing: 1.9px;
+    }
+
+    .dq-brand-tagline {
+        font-size: 7px;
+        letter-spacing: 0.65px;
+    }
+
+    .main-header-container {
+        gap: 9px;
+    }
+
+    .header-main-actions {
+        gap: 5px;
+    }
+
+    .header-search .search-location,
+    .header-search .search-date {
+        padding-left: 8px;
+        padding-right: 8px;
+    }
+}
+
+@media (max-width: 900px) {
+    .main-header-container {
+        flex-wrap: wrap;
+        justify-content: space-between;
+        padding-top: 8px;
+        padding-bottom: 10px;
+    }
+
+    .dq-brand {
+        flex: 0 0 160px;
+        width: 160px;
+        height: 82px;
+    }
+
+    .dq-brand-logo {
+        width: 68px;
+        height: 38px;
+    }
+
+    .dq-brand-name {
+        font-size: 12px;
+        letter-spacing: 1.6px;
+    }
+
+    .header-main-actions {
+        max-width: calc(100% - 170px);
+    }
+
+    .header-search {
+        order: 3;
+        flex: 1 0 100%;
+        width: 100%;
+    }
+}
+
+@media (max-width: 600px) {
+    .dq-brand {
+        flex-basis: 140px;
+        width: 140px;
+        height: 72px;
+    }
+
+    .dq-brand-logo {
+        width: 58px;
+        height: 32px;
+    }
+
+    .dq-brand-name {
+        font-size: 10px;
+        letter-spacing: 1.2px;
+    }
+
+    .dq-brand-tagline {
+        font-size: 6px;
+        letter-spacing: 0.45px;
+    }
+
+    .header-main-actions {
+        max-width: calc(100% - 145px);
+    }
+}

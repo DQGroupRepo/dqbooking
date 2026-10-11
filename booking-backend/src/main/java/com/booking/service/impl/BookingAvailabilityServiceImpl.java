@@ -19,6 +19,8 @@ import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -371,6 +373,58 @@ public class BookingAvailabilityServiceImpl
                 .quantity(savedHold.getQuantity())
                 .expiresAt(savedHold.getExpiresAt())
                 .build();
+    }
+
+
+    /*
+     * =========================================
+     * RELEASE TEMPORARY HOLD
+     * =========================================
+     *
+     * Idempotent for already released/expired/converted
+     * holds. A customer may release only their own hold.
+     */
+
+    @Override
+    public void releaseHold(
+            String serviceId,
+            String holdId
+    ) {
+
+        BookingHold hold = bookingHoldRepository.findById(holdId)
+                .orElse(null);
+
+        // Treat a missing hold as already released.
+        if (hold == null) {
+            return;
+        }
+
+        var customer = authenticatedUserService.getCurrentUser();
+        String customerId = customer == null ? null : customer.getId();
+
+        if (!serviceId.equals(hold.getServiceId())
+                || customerId == null
+                || !customerId.equals(hold.getCustomerId())) {
+            throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN,
+                    "You are not allowed to release this booking hold."
+            );
+        }
+
+        if (hold.getStatus() != BookingHoldStatus.ACTIVE) {
+            return;
+        }
+
+        hold.setStatus(BookingHoldStatus.RELEASED);
+        hold.setReleasedAt(LocalDateTime.now());
+        bookingHoldRepository.save(hold);
+
+        log.info(
+                "Booking hold released holdId={} serviceId={} customerId={}",
+                holdId,
+                serviceId,
+                customerId
+        );
     }
 
 

@@ -863,25 +863,17 @@ const Header = () => {
 
                     <Link
                         to="/"
-                        className="eventnest-brand"
+                        className="eventnest-brand dq-brand"
+                        aria-label="DQBooking.com home"
                     >
-
-                        <div className="brand-icon">
-                            🎉
-                        </div>
-
-                        <div className="brand-content">
-
-                            <span className="brand-name">
-                                EventNest
-                            </span>
-
-                            <span className="brand-tagline">
-                                Plan&nbsp; | &nbsp;Book&nbsp; | &nbsp;Celebrate
-                            </span>
-
-                        </div>
-
+                        <img
+                            className="dq-brand-logo"
+                            src="/images/dq-logo.png"
+                            alt=""
+                            aria-hidden="true"
+                        />
+                        <span className="dq-brand-name">DQBOOKING.COM</span>
+                        <span className="dq-brand-tagline">PLAN | BOOK | CELEBRATE</span>
                     </Link>
 
 
@@ -1617,3 +1609,4 @@ const Header = () => {
 
 
 export default Header;
+

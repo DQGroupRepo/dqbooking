@@ -109,7 +109,7 @@ export default function SupportSettings(){
 
             <div className="app-version">
 
-                EventNest Vendor Portal
+                DQBooking.com Vendor Portal
 
                 <br/>
 

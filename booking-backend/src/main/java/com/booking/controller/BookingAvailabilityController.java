@@ -91,4 +91,16 @@ public class BookingAvailabilityController {
     ) {
         return bookingAvailabilityService.holdSlot(request);
     }
+
+    /*
+     * Release a customer's active temporary hold.
+     * The service verifies ownership before changing it.
+     */
+    @DeleteMapping("/hold/{holdId}")
+    public void releaseHold(
+            @PathVariable String serviceId,
+            @PathVariable String holdId
+    ) {
+        bookingAvailabilityService.releaseHold(serviceId, holdId);
+    }
 }

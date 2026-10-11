@@ -149,7 +149,7 @@ const AdminDashboard = () => {
                     </h1>
 
                     <p>
-                        Overview of your EventNest platform.
+                        Overview of your DQBooking platform.
                     </p>
 
                 </div>
@@ -266,7 +266,7 @@ const AdminDashboard = () => {
                             </h2>
 
                             <p>
-                                Current booking status across EventNest.
+                                Current booking status across DQBoking.
                             </p>
 
                         </div>

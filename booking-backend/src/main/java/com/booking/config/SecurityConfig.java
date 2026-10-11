@@ -125,7 +125,12 @@ public class SecurityConfig {
                                 HttpMethod.POST,
                                 "/api/bookings"
                         )
-                        .hasRole("CUSTOMER")
+                        .hasAnyRole(
+                                "CUSTOMER",
+                                "VENDOR_ADMIN",
+                                "VENDOR_USER",
+                                "ADMIN"
+                        )
 
 
                         .requestMatchers(

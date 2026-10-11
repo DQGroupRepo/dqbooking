@@ -11,7 +11,7 @@ const Footer = () => {
         <div>
 
           <h3>
-            EventNest
+            DQBooking.com
           </h3>
 
           <p>

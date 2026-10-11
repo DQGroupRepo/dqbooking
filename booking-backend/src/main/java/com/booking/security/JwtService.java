@@ -34,12 +34,21 @@ public class JwtService {
             String userId,
             String role
     ) {
+        return generateToken(userId, role, null);
+    }
+
+    public String generateToken(
+            String userId,
+            String role,
+            String sessionId
+    ) {
 
         return Jwts.builder()
 
                 .subject(userId)
 
                 .claim("role", role)
+                .claim("sid", sessionId)
 
                 .issuedAt(new Date())
 
@@ -79,6 +88,10 @@ public class JwtService {
 
     }
 
+
+    public String extractSessionId(String token) {
+        return extractClaims(token).get("sid", String.class);
+    }
 
     public String extractRole(String token) {
 

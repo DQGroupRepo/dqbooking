@@ -216,7 +216,7 @@ const AdminBookings = () => {
                     </h1>
 
                     <p>
-                        Monitor all bookings across the EventNest platform.
+                        Monitor all bookings across the DQBooking platform.
                     </p>
 
                 </div>

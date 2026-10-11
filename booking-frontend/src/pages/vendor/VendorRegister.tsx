@@ -262,7 +262,7 @@ const VendorRegister = () => {
                     </h1>
 
                     <p>
-                        Join EventNest and connect
+                        Join DQBooking and connect
                         with customers looking for
                         trusted event professionals.
                     </p>
@@ -280,7 +280,7 @@ const VendorRegister = () => {
 
 
                     <h2>
-                        Become an EventNest Vendor
+                        Become an DQBooking.com Vendor
                     </h2>
 
 

@@ -1567,7 +1567,7 @@ const AdminVendorVerification = () => {
                                         <p>
                                             Approve services and choose
                                             where approved services appear
-                                            on the EventNest homepage.
+                                            on the DQBooking homepage.
                                         </p>
 
                                     </div>
@@ -1691,7 +1691,7 @@ const AdminVendorVerification = () => {
                                                                 <div>
 
                                                                     <h5>
-                                                                        Show on EventNest
+                                                                        Show on DQBooking
                                                                     </h5>
 
 

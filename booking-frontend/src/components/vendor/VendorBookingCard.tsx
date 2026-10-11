@@ -91,6 +91,10 @@ const BookingCard = ({
     const [guests, setGuests] =
         useState<number | string>("");
 
+    // Guest count is required only for catering services.
+    const isCatering =
+        String(vendor.category ?? "").trim().toUpperCase() === "CATERING";
+
 
     /*
      * =========================================
@@ -377,6 +381,33 @@ const BookingCard = ({
 
     /*
      * =========================================
+     * EXISTING CART HOLD HELPERS
+     * =========================================
+     */
+
+    const getExistingCartItem = () =>
+        serviceId
+            ? CartService.getCart().find(item => item.serviceId === serviceId)
+            : undefined;
+
+    const hasReusableExistingHold = (
+        slotId?: string,
+        date?: string
+    ): boolean => {
+        const existing = getExistingCartItem();
+
+        return Boolean(
+            existing?.holdId &&
+            existing.slotId === (slotId ?? selectedSlot?.slotId) &&
+            existing.eventDate === (date ?? eventDate) &&
+            existing.holdExpiresAt &&
+            Date.parse(existing.holdExpiresAt) > Date.now()
+        );
+    };
+
+
+    /*
+     * =========================================
      * VALIDATE BOOKING DETAILS
      * =========================================
      */
@@ -417,7 +448,10 @@ const BookingCard = ({
             }
 
 
-            if (!selectedSlot.available) {
+            if (
+                !selectedSlot.available &&
+                !hasReusableExistingHold(selectedSlot.slotId, eventDate)
+            ) {
 
                 alert(
                     "The selected slot is no longer available. Please select another slot."
@@ -429,12 +463,15 @@ const BookingCard = ({
 
 
             if (
-                !guests ||
-                Number(guests) < 1
+                isCatering &&
+                (
+                    guests === "" ||
+                    Number(guests) < 1
+                )
             ) {
 
                 alert(
-                    "Please enter a valid guest count."
+                    "Please enter a valid guest count for catering."
                 );
 
                 return false;
@@ -509,7 +546,10 @@ const BookingCard = ({
             }
 
 
-            if (!selectedSlot.available) {
+            if (
+                !selectedSlot.available &&
+                !hasReusableExistingHold(selectedSlot.slotId, eventDate)
+            ) {
 
                 alert(
                     "This slot is no longer available. Please select another slot."
@@ -517,6 +557,23 @@ const BookingCard = ({
 
                 return false;
 
+            }
+
+
+            const existingCartItem = getExistingCartItem();
+
+            if (existingCartItem) {
+                const confirmed = window.confirm(
+                    `“${vendor.serviceName}” is already in your cart. Continuing will replace its current booking details.` +
+                    (existingCartItem.bundleId && existingCartItem.bundleId !== bundle?.id
+                        ? " The previous bundle will be broken into individual services."
+                        : "") +
+                    "\n\nDo you want to continue?"
+                );
+
+                if (!confirmed) {
+                    return false;
+                }
             }
 
 
@@ -537,38 +594,40 @@ const BookingCard = ({
              * =========================================
              */
 
+            let newHoldId: string | undefined;
+
             try {
 
                 setHoldingSlot(true);
 
+                const canReuseHold =
+                    hasReusableExistingHold(
+                        selectedSlot.slotId,
+                        eventDate
+                    ) &&
+                    Boolean(existingCartItem?.holdId);
 
-                console.log(
-                    "Creating booking hold:",
-                    {
+                const hold = canReuseHold
+                    ? {
+                        holdId: existingCartItem!.holdId!,
+                        expiresAt: existingCartItem!.holdExpiresAt!
+                    }
+                    : await BookingAvailabilityService.holdSlot({
                         cartId,
                         serviceId,
-                        slotId:
-                            selectedSlot.slotId,
+                        slotId: selectedSlot.slotId,
                         eventDate,
                         quantity
-                    }
-                );
+                    });
 
-
-                const hold =
-                    await BookingAvailabilityService
-                        .holdSlot({
-                            cartId,
-                            serviceId,
-                            slotId:
-                                selectedSlot.slotId,
-                            eventDate,
-                            quantity
-                        });
-
+                if (!canReuseHold) {
+                    newHoldId = hold.holdId;
+                }
 
                 console.log(
-                    "Booking hold created:",
+                    canReuseHold
+                        ? "Reusing the existing booking hold:"
+                        : "Booking hold created:",
                     hold
                 );
 
@@ -614,7 +673,9 @@ const BookingCard = ({
                     eventDate,
 
                     guestCount:
-                        Number(guests),
+                        isCatering && guests !== ""
+                            ? Number(guests)
+                            : undefined,
 
 
                     /*
@@ -711,7 +772,7 @@ const BookingCard = ({
                 };
 
 
-                CartService.addItem(
+                await CartService.replaceItem(
                     cartItem
                 );
 
@@ -719,6 +780,19 @@ const BookingCard = ({
                 return true;
 
             } catch (error: any) {
+
+                // If cart persistence failed after a new hold was created,
+                // release that unassociated hold. The old cart item remains.
+                if (newHoldId) {
+                    await BookingAvailabilityService
+                        .releaseHold(serviceId, newHoldId)
+                        .catch(releaseError =>
+                            console.warn(
+                                "Could not release the unassociated replacement hold:",
+                                releaseError
+                            )
+                        );
+                }
 
                 console.error(
                     "Failed to hold booking slot:",
@@ -1267,7 +1341,11 @@ const BookingCard = ({
 
 
                                                     const unavailable =
-                                                        !slot.available;
+                                                        !slot.available &&
+                                                        !hasReusableExistingHold(
+                                                            slot.slotId,
+                                                            eventDate
+                                                        );
 
 
                                                     return (
@@ -1430,22 +1508,23 @@ const BookingCard = ({
                 }
 
 
-                <label>
-                    Guests
-                </label>
+                {isCatering && (
+                    <>
+                        <label>
+                            Guests
+                        </label>
 
-
-                <input
-                    type="number"
-                    min="1"
-                    value={guests}
-                    onChange={(e) =>
-                        setGuests(
-                            e.target.value
-                        )
-                    }
-                    placeholder="Enter number of guests"
-                />
+                        <input
+                            type="number"
+                            min="1"
+                            value={guests}
+                            onChange={(e) =>
+                                setGuests(e.target.value)
+                            }
+                            placeholder="Enter number of guests"
+                        />
+                    </>
+                )}
 
 
                 <button
@@ -1455,7 +1534,13 @@ const BookingCard = ({
                     disabled={
                         !selectedPackage ||
                         !selectedSlot ||
-                        !selectedSlot.available ||
+                        (
+                            !selectedSlot.available &&
+                            !hasReusableExistingHold(
+                                selectedSlot.slotId,
+                                eventDate
+                            )
+                        ) ||
                         holdingSlot ||
                         slotsLoading
                     }

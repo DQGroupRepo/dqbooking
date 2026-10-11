@@ -187,12 +187,6 @@ export default function VendorBookingDetails() {
 
                 </button>
 
-                <button className={styles.cancelButton}>
-
-                    Cancel Booking
-
-                </button>
-
             </div>
 
         </div>

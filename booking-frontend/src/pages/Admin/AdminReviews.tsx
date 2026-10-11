@@ -276,7 +276,7 @@ const AdminReviews = () => {
 
                     <p>
                         Monitor customer feedback
-                        across the EventNest platform.
+                        across the DQBooking platform.
                     </p>
 
                 </div>

@@ -245,6 +245,9 @@ interface CartItemPricing {
 }
 
 
+const EMPTY_CART: CartItem[] = [];
+
+
 const BookingCheckout = () => {
 
     const location =
@@ -266,8 +269,18 @@ const BookingCheckout = () => {
      * =========================================
      */
 
-    const cart =
-        state?.cart ?? [];
+    // Keep the normalized cart reference stable between renders. Returning a
+    // new [] on every render can retrigger pricing effects indefinitely.
+    // Router state is runtime data, so validate it before using array methods.
+    const cart: CartItem[] = useMemo(() => {
+        if (Array.isArray(state?.cart)) {
+            return state.cart;
+        }
+
+        return state?.cart != null
+            ? CartService.getCart()
+            : EMPTY_CART;
+    }, [state?.cart]);
 
 
     const isCartCheckout =
@@ -851,7 +864,7 @@ const BookingCheckout = () => {
         setCurrentCart
     ] =
         useState<CartItem[]>(
-            cart
+            Array.isArray(cart) ? cart : []
         );
 
 
@@ -863,7 +876,7 @@ const BookingCheckout = () => {
     useEffect(() => {
 
         setCurrentCart(
-            cart
+            Array.isArray(cart) ? cart : []
         );
 
     }, [
@@ -882,8 +895,13 @@ const BookingCheckout = () => {
      * below through displayCart.
      */
 
-    const displayCart =
-        currentCart;
+    // Keep render paths safe even if stale state or an unexpected caller
+    // ever supplies a non-array value. CartService.getCart() also validates
+    // persisted cart data, so use it as a recovery source when appropriate.
+    const displayCart: CartItem[] =
+        Array.isArray(currentCart)
+            ? currentCart
+            : (isCartCheckout ? CartService.getCart() : []);
 
 
     const isDisplayCartCheckout =
@@ -1587,23 +1605,40 @@ const BookingCheckout = () => {
 
         return (
 
-            <section className="checkout-section">
+            <section className="checkout-section" style={{ padding: "56px 16px 72px", minHeight: "52vh", background: "#f7f9fc" }}>
 
-                <div className="container">
+                <div className="container" style={{ maxWidth: 760, margin: "0 auto" }}>
 
-                    <h2>
-                        Your cart is empty.
-                    </h2>
+                    <div style={{ background: "#fff", border: "1px solid #e5eaf1", borderRadius: 18, padding: "clamp(24px, 5vw, 42px)", textAlign: "center", boxShadow: "0 12px 32px rgba(20, 43, 74, 0.07)" }}>
 
+                        <div aria-hidden="true" style={{ width: 64, height: 64, margin: "0 auto 18px", borderRadius: "50%", display: "grid", placeItems: "center", background: "#fff4e5", color: "#a85d00", fontSize: 30 }}>!</div>
 
-                    <button
-                        className="cancel-button"
-                        onClick={() =>
-                            navigate("/cart")
-                        }
-                    >
-                        ← Back To Cart
-                    </button>
+                        <h2 style={{ margin: "0 0 12px", color: "#142b4a", fontSize: "clamp(22px, 3vw, 30px)" }}>
+                            Your booking hold has expired
+                        </h2>
+
+                        <p style={{ margin: "0 auto 12px", maxWidth: 560, color: "#526176", lineHeight: 1.65 }}>
+                            The time slot you selected was held temporarily, and your hold is no longer valid. Another customer may have reserved it.
+                        </p>
+
+                        <p style={{ margin: "0 auto 26px", maxWidth: 560, color: "#526176", lineHeight: 1.65 }}>
+                            Please return to your cart, choose the service, date and time again, and add it to your cart to continue. Other available services can be selected again as needed.
+                        </p>
+
+                        <button
+                            type="button"
+                            className="cancel-button"
+                            onClick={() => navigate("/cart", { replace: true })}
+                            style={{ display: "inline-flex", justifyContent: "center", alignItems: "center", minHeight: 48, minWidth: 190, padding: "12px 24px", border: 0, borderRadius: 10, background: "#f4b323", color: "#142b4a", fontWeight: 700, cursor: "pointer" }}
+                        >
+                            ← Return to Cart
+                        </button>
+
+                        <p style={{ margin: "18px 0 0", color: "#7b8797", fontSize: 13 }}>
+                            No booking has been submitted for the expired hold.
+                        </p>
+
+                    </div>
 
                 </div>
 

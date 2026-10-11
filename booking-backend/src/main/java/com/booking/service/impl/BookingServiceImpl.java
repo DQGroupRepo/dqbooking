@@ -94,7 +94,7 @@ public class BookingServiceImpl implements BookingService
 
         User customer =
                 authenticatedUserService
-                        .getCurrentCustomer();
+                        .getCurrentUser();
 
         log.info("Creating booking group customerId={} serviceCount={} bundleCount={}",
                 customer.getId(),

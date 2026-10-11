@@ -1,4 +1,4 @@
-import api from "../api/axiosConfig";
+import api from "../api/axios";
 
 import type {
     SlotAvailability
@@ -55,6 +55,25 @@ class BookingAvailabilityService {
             );
 
         return response.data;
+    }
+
+
+    /*
+     * =========================================
+     * RELEASE TEMPORARY HOLD
+     * =========================================
+     */
+
+    async releaseHold(
+        serviceId: string,
+        holdId: string,
+        authToken?: string | null
+    ): Promise<void> {
+
+        await api.delete(
+            `/services/${serviceId}/availability/hold/${holdId}`,
+            authToken ? { headers: { Authorization: `Bearer ${authToken}` } } : undefined
+        );
     }
 
 }

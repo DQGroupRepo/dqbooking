@@ -31,4 +31,9 @@ public interface BookingAvailabilityService {
     BookingHoldResponse holdSlot(
             CreateBookingHoldRequest request
     );
+
+    void releaseHold(
+            String serviceId,
+            String holdId
+    );
 }

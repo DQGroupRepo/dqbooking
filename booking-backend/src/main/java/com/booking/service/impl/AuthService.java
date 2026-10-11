@@ -42,114 +42,71 @@ public class AuthService {
      * =========================================
      */
 
-    public LoginResponse login(
-            LoginRequest request
-    ) {
+    public LoginResponse login(LoginRequest request) {
+        log.info("Login attempt email={}", request.getEmail());
 
-        log.info(
-                "Login attempt email={}",
-                request.getEmail()
-        );
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> {
+                    log.warn("Login failed - user not found email={}", request.getEmail());
+                    return new InvalidCredentialsException();
+                });
 
-        User user =
-                userRepository
-                        .findByEmail(
-                                request.getEmail()
-                        )
-                        .orElseThrow(() -> {
-
-                            log.warn(
-                                    "Login failed - user not found email={}",
-                                    request.getEmail()
-                            );
-
-                            return new InvalidCredentialsException();
-                        });
-
-
-        if (!passwordEncoder.matches(
-                request.getPassword(),
-                user.getPassword()
-        )) {
-
-            log.warn(
-                    "Login failed - invalid credentials userId={}",
-                    user.getId()
-            );
-
+        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+            log.warn("Login failed - invalid credentials userId={}", user.getId());
             throw new InvalidCredentialsException();
         }
 
+        java.time.LocalDateTime now = java.time.LocalDateTime.now();
+        boolean sessionActive = user.getActiveSessionId() != null
+                && user.getActiveSessionExpiresAt() != null
+                && user.getActiveSessionExpiresAt().isAfter(now);
 
-        /*
-         * =========================================
-         * DISPLAY NAME
-         * =========================================
-         */
-
-        String name;
-
-        if (user.getRole() == Role.VENDOR_ADMIN ||
-                user.getRole() == Role.VENDOR_USER) {
-
-            if (user.getBusinessName() != null &&
-                    !user.getBusinessName().isBlank()) {
-
-                name =
-                        user.getBusinessName();
-
-            } else {
-
-                name =
-                        user.getFullName();
-            }
-
-        } else {
-
-            name =
-                    user.getFullName();
+        if (sessionActive && !request.isReplaceExistingSession()) {
+            return LoginResponse.builder()
+                    .requiresConfirmation(true)
+                    .message("This account is already signed in on another session. Continue to sign out the other session and sign in here?")
+                    .build();
         }
 
+        String name;
+        if (user.getRole() == Role.VENDOR_ADMIN || user.getRole() == Role.VENDOR_USER) {
+            name = user.getBusinessName() != null && !user.getBusinessName().isBlank()
+                    ? user.getBusinessName() : user.getFullName();
+        } else {
+            name = user.getFullName();
+        }
 
-        /*
-         * =========================================
-         * GENERATE JWT
-         * =========================================
-         */
+        String sessionId = java.util.UUID.randomUUID().toString();
+        String token = jwtService.generateToken(user.getId(), user.getRole().name(), sessionId);
+        user.setActiveSessionId(sessionId);
+        // JwtService uses jwt.expiration in milliseconds.
+        user.setActiveSessionExpiresAt(now.plusNanos(
+                java.util.concurrent.TimeUnit.MILLISECONDS.toNanos(
+                        // Keep expiry aligned with the JWT by deriving it from the issued token.
+                        Math.max(1L, jwtService.extractClaims(token).getExpiration().getTime() - System.currentTimeMillis())
+                )));
+        user.setLastLogin(now);
+        userRepository.save(user);
 
-        String token =
-                jwtService.generateToken(
-                        user.getId(),
-                        user.getRole().name()
-                );
-
-
-        log.info(
-                "Login successful userId={} role={}",
-                user.getId(),
-                user.getRole().name()
-        );
-
-
+        log.info("Login successful userId={} role={}", user.getId(), user.getRole().name());
         return LoginResponse.builder()
-
-                .token(
-                        token
-                )
-
-                .userId(
-                        user.getId()
-                )
-
-                .role(
-                        user.getRole().name()
-                )
-
-                .name(
-                        name
-                )
-
+                .token(token)
+                .userId(user.getId())
+                .role(user.getRole().name())
+                .name(name)
+                .requiresConfirmation(false)
                 .build();
+    }
+
+    public void logout(String userId, String sessionId) {
+        if (userId == null || sessionId == null) return;
+        userRepository.findById(userId).ifPresent(user -> {
+            if (sessionId.equals(user.getActiveSessionId())) {
+                user.setActiveSessionId(null);
+                user.setActiveSessionExpiresAt(null);
+                userRepository.save(user);
+            }
+        });
     }
 
 

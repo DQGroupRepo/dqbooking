@@ -13,7 +13,7 @@ const AdminTopBar = () => {
                 </h1>
 
                 <p>
-                    Manage and monitor EventNest
+                    Manage and monitor DQBooking.com
                 </p>
 
             </div>

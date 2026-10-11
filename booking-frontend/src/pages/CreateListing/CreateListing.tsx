@@ -37,7 +37,7 @@ export default function CreateListing() {
                 <h1>Create New Listing</h1>
 
                 <p>
-                    Select the type of business you'd like to register on EventNest.
+                    Select the type of business you'd like to register on DQBooking.
                 </p>
 
             </div>
