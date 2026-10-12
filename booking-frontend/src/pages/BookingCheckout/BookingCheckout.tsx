@@ -814,7 +814,7 @@ const BookingCheckout = () => {
      * the remaining bundle services.
      */
 
-    const handleRemoveService = (
+    const handleRemoveService = async (
         item: CartItem
     ) => {
 
@@ -826,7 +826,7 @@ const BookingCheckout = () => {
         ) {
 
             updatedCart =
-                CartService.removeItemFromBundle(
+                await CartService.removeItemFromBundle(
                     item.serviceId,
                     item.bundleId
                 );
@@ -834,7 +834,7 @@ const BookingCheckout = () => {
         } else {
 
             updatedCart =
-                CartService.removeItem(
+                await CartService.removeItem(
                     item.serviceId
                 );
 
@@ -2065,7 +2065,7 @@ const BookingCheckout = () => {
                             ) {
 
                                 updatedCart =
-                                    CartService.removeItemFromBundle(
+                                    await CartService.removeItemFromBundle(
                                         expiredItem.serviceId,
                                         expiredItem.bundleId
                                     );
@@ -2074,7 +2074,7 @@ const BookingCheckout = () => {
                             else {
 
                                 updatedCart =
-                                    CartService.removeItem(
+                                    await CartService.removeItem(
                                         expiredItem.serviceId
                                     );
 
@@ -2324,7 +2324,7 @@ const BookingCheckout = () => {
                         ) {
 
                             updatedCart =
-                                CartService.removeItemFromBundle(
+                                await CartService.removeItemFromBundle(
                                     expiredItem.serviceId,
                                     expiredItem.bundleId
                                 );
@@ -2333,7 +2333,7 @@ const BookingCheckout = () => {
                         else {
 
                             updatedCart =
-                                CartService.removeItem(
+                                await CartService.removeItem(
                                     expiredItem.serviceId
                                 );
 

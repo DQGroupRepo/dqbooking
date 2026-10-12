@@ -1,36 +1,21 @@
-import type {
-    CateringPackageMenu
-} from "./CateringPackageMenu";
+import type { CateringPackageMenu } from "./CateringPackageMenu";
 
-export interface CateringPackageDish {
-    id?: string;
-    menuItemId?: string;
-    dishId?: string;
-    name: string;
-    category?: string;
-    foodType?: string;
-    custom?: boolean;
-}
+// Re-export the canonical catering menu types for any existing imports that
+// still consume them through ServicePackage.ts. There must be only one source
+// of truth for these interfaces.
+export type { CateringPackageDish, CateringPackageMenu } from "./CateringPackageMenu";
 
-export interface CateringPackageMenu {
-    vegetarianSelectionLimit: number;
-    nonVegetarianSelectionLimit: number;
-    soupSelectionLimit: number;
-    dessertSelectionLimit: number;
-    vegetarianDishes: CateringPackageDish[];
-    nonVegetarianDishes: CateringPackageDish[];
-    soupDishes: CateringPackageDish[];
-    dessertDishes: CateringPackageDish[];
-}
+// Package names are vendor-defined; do not constrain them to fixed tiers.
+export type ServicePackageType = string;
 
 export interface ServicePackage {
     id?: string;
+    // Retained for compatibility with older API payloads.
+    type?: string;
     name: string;
     price: number;
     features: string[];
     active: boolean;
-
-    // Support both the current backend and frontend property names.
     cateringPackageMenu?: CateringPackageMenu | null;
     cateringMenu?: CateringPackageMenu | null;
 }

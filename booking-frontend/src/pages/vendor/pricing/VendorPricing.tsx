@@ -266,7 +266,12 @@ const VendorPricing = () => {
 
 
             setPricingVersions(
-                versions ?? []
+                (versions ?? []).map(version => ({
+                    ...version,
+                    baseAmount: Number(version.baseAmount),
+                    createdAt: version.createdAt ?? "",
+                    createdBy: version.createdBy ?? ""
+                }))
             );
 
 

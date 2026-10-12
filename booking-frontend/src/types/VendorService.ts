@@ -18,23 +18,14 @@ import type {
     CateringDetailsForm
 } from "./CateringDetailsForm";
 
+import type {
+    ServicePackage
+} from "./ServicePackage";
+
 export type ModerationStatus =
     | "PENDING"
     | "APPROVED"
     | "REJECTED";
-
-export interface ServicePackage {
-
-    id: string;
-
-    price: number;
-
-    features: string[];
-
-    active: boolean;
-
-}
-
 
 export interface VendorService {
 
@@ -72,6 +63,9 @@ export interface VendorService {
     imageUrls?: string[];
 
     amenities: string[];
+
+    // Pricing-version packages returned with service details.
+    packages?: ServicePackage[];
 
 
     /* =====================================

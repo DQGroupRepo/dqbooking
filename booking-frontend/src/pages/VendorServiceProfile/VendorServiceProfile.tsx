@@ -991,7 +991,7 @@ export default function VendorServiceProfile() {
                                         {
 
                                             service.packages.map(
-                                                pkg => (
+                                                (pkg, index) => (
 
                                                     <div
 
@@ -1013,7 +1013,7 @@ export default function VendorServiceProfile() {
 
 
                                                             {
-                                                                pkg.type
+                                                                pkg.name || pkg.type || "Package"
                                                             }
 
 
