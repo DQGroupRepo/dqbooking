@@ -11,23 +11,23 @@ export interface CartSelectedCateringDish {
 export interface CartItem {
     serviceId: string;
 
-    vendorId: string;
+  vendorName: string;
 
-    vendorName: string;
+  serviceName: string;
 
-    serviceName: string;
+  category?: string;
 
-    category?: string;
+  price: number;
 
-    price: number;
+  quantity?: number;
 
     quantity?: number;
 
     image?: string;
 
-    eventDate?: string;
+  eventDate?: string;
 
-    guestCount?: number;
+  guestCount?: number;
 
     /*
      * =========================================
@@ -59,27 +59,25 @@ export interface CartItem {
      * =========================================
      */
 
-    bundleEnabled?: boolean;
+  bundleEnabled?: boolean;
 
-    bundleId?: string;
+  bundleId?: string;
 
-    bundleName?: string;
+  bundleName?: string;
 
-    bundleDescription?: string;
+  bundleDescription?: string;
 
-    bundleServiceIds?: string[];
+  bundleServiceIds?: string[];
 
     bundleDiscountType?: "PERCENTAGE" | "FIXED";
 
-    bundleDiscountValue?: number;
+  bundleDiscountValue?: number;
 
-    packageId?: string;
+  packageId?: string;
 
     packageType?: "SILVER" | "GOLD" | "PREMIUM";
 
-    packagePrice?: number;
-
-    packageFeatures?: string[];
+  packagePrice?: number;
 
     selectedCateringDishes?: CartSelectedCateringDish[];
 }
