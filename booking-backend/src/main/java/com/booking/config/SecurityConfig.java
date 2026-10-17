@@ -354,7 +354,8 @@ public class SecurityConfig {
                         "http://localhost:5174",
 
                         "https://venues-aaa-booking-frontend.vercel.app",
-                        "https://venues-aaa-booking-frontend-em3u2oocb-venues-aaa.vercel.app"
+                        "https://venues-aaa-booking-frontend-em3u2oocb-venues-aaa.vercel.app",
+                        "https://www.dqbooking.com"
 
                 )
 
