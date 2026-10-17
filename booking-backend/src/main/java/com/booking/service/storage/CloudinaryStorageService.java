@@ -2,29 +2,30 @@ package com.booking.service.storage;
 
 import com.cloudinary.*;
 import com.cloudinary.utils.ObjectUtils;
-//import io.github.cdimascio.dotenv.Dotenv;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
 @Service
 @Profile("prod")
 @RequiredArgsConstructor
-public class CloudinaryStorageService
-        implements StorageService {
+public class CloudinaryStorageService implements StorageService {
 
     private final Cloudinary cloudinary;
     private static final Logger log =
             LoggerFactory.getLogger(CloudinaryStorageService.class);
+
+    @Value("${app.upload.path}")
+    private String uploadPath;
 
     @Override
     public List<String> upload(
@@ -37,7 +38,7 @@ public class CloudinaryStorageService
         // Set your Cloudinary credentials
 
         //  Dotenv dotenv = Dotenv.load();
-        Cloudinary cloudinary = new Cloudinary(/*dotenv.get("CLOUDINARY_URL")*/"cloudinary://242688165783559:S7a4OdWt00o-zGCCsH54er05-7Y@zuedzhrj");
+        Cloudinary cloudinary = new Cloudinary(uploadPath);
         System.out.println(cloudinary.config.cloudName);
 
         for (MultipartFile file : files) {

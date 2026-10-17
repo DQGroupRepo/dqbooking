@@ -1,0 +1,15 @@
+
+spring:
+  data:
+    mongodb:
+      uri: ${MONGODB_URI}
+
+jwt:
+  expiration: 3600000
+  secret: ${JWT_SECRET}
+
+app:
+  upload:
+    path: ${UPLOAD_PATH}
+    image-max-size-mb: 5
+    video-max-size-mb: 50
