@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
     useLocation,
     useNavigate,
@@ -87,6 +87,28 @@ const VendorDetail = () => {
 
     const [selectedSlotId, setSelectedSlotId] =
         useState<string | null>(null);
+
+    // Anchor for bringing date-specific package choices into view.
+    const packagesSectionRef = useRef<HTMLDivElement>(null);
+
+    const scrollToPackages = () => {
+        packagesSectionRef.current?.scrollIntoView({
+            behavior: "smooth",
+            block: "start"
+        });
+    };
+
+    const scrollToPackagesIfNeeded = () => {
+        const section = packagesSectionRef.current;
+        if (!section) return;
+
+        const rect = section.getBoundingClientRect();
+        const headingIsVisible = rect.top >= 0 && rect.top < window.innerHeight;
+
+        if (!headingIsVisible) {
+            scrollToPackages();
+        }
+    };
     /*
      * =========================================
      * LOAD DATA
@@ -165,6 +187,11 @@ const VendorDetail = () => {
         } finally {
 
             setPricingLoading(false);
+
+            // Wait for React to render the newly loaded packages before scrolling.
+            window.requestAnimationFrame(() => {
+                window.requestAnimationFrame(scrollToPackages);
+            });
 
         }
     };
@@ -432,6 +459,10 @@ const VendorDetail = () => {
                         />
 
 
+                        <div
+                            ref={packagesSectionRef}
+                            className="vendor-packages-anchor"
+                        >
                         {!selectedEventDate ? (
 
                             <div className="pricing-date-message">
@@ -498,6 +529,7 @@ const VendorDetail = () => {
                             />
 
                         )}
+                        </div>
 
 
                         <VendorReviews />
@@ -512,7 +544,15 @@ const VendorDetail = () => {
                         selectedPackage={selectedPackage}
                         onEventDateChange={handleEventDateChange}
                         onClearSelectedPackage={() => setSelectedPackage(null)}
-                        onSelectedSlotChange={setSelectedSlotId}
+                        onSelectedSlotChange={(slotId) => {
+                            setSelectedSlotId(slotId);
+
+                            // Slot changes should not interrupt the user if the
+                            // package heading is already visible.
+                            if (slotId) {
+                                scrollToPackagesIfNeeded();
+                            }
+                        }}
                     />
 
                 </div>

@@ -109,7 +109,7 @@ const BookingCard = ({
      */
 
     const [eventDate, setEventDate] =
-        useState("");
+        useState(() => (location.state as any)?.vendorCalendarEventDate || "");
 
 
     const [guests, setGuests] =
@@ -423,6 +423,17 @@ const BookingCard = ({
         }
 
     };
+
+
+    // A vendor can enter this page from the bookings calendar. Load the
+    // availability for the prepopulated date using the existing availability
+    // path; no booking hold is created until the normal booking action runs.
+    useEffect(() => {
+        const calendarDate = (location.state as any)?.vendorCalendarEventDate;
+        if (calendarDate && calendarDate === eventDate && serviceId) {
+            void loadSlotAvailability(calendarDate);
+        }
+    }, [serviceId]);
 
 
     /*
