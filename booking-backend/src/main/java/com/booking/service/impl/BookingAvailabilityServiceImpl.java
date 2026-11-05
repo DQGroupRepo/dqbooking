@@ -5,12 +5,18 @@ import com.booking.model.AvailabilityOverride;
 import com.booking.model.Booking;
 import com.booking.model.BookingHold;
 import com.booking.model.BookingSlot;
+import com.booking.model.VendorService;
+import com.booking.model.VendorServicePricing;
+import com.booking.model.embedded.ServicePackage;
+import com.booking.model.enums.ServiceCategory;
 import com.booking.model.enums.BookingHoldStatus;
 import com.booking.model.enums.BookingStatus;
 import com.booking.repository.AvailabilityOverrideRepository;
 import com.booking.repository.BookingHoldRepository;
 import com.booking.repository.BookingRepository;
 import com.booking.repository.BookingSlotRepository;
+import com.booking.repository.VendorServiceRepository;
+import com.booking.repository.VendorServicePricingRepository;
 import com.booking.service.AuthenticatedUserService;
 import com.booking.service.BookingAvailabilityService;
 import com.booking.dto.availability.BookingHoldResponse;
@@ -37,6 +43,8 @@ public class BookingAvailabilityServiceImpl
             );
 
     private final BookingSlotRepository bookingSlotRepository;
+    private final VendorServiceRepository vendorServiceRepository;
+    private final VendorServicePricingRepository vendorServicePricingRepository;
 
     private final AvailabilityOverrideRepository
             availabilityOverrideRepository;
@@ -45,6 +53,7 @@ public class BookingAvailabilityServiceImpl
 
     private final BookingHoldRepository bookingHoldRepository;
     private final AuthenticatedUserService authenticatedUserService;
+
 
 
     /*
@@ -153,228 +162,130 @@ public class BookingAvailabilityServiceImpl
     }
 
     @Override
-    public BookingHoldResponse holdSlot(
-            CreateBookingHoldRequest request
-    ) {
+    public BookingHoldResponse holdSlot(CreateBookingHoldRequest request) {
+        if (request == null) throw new IllegalArgumentException("Booking hold request is required.");
+        if (request.getBookingFrom() == null || request.getBookingTo() == null
+                || !request.getBookingTo().isAfter(request.getBookingFrom())) {
+            throw new IllegalArgumentException("Booking end must be after booking start; both date-times are required.");
+        }
+        if (request.getServiceId() == null || request.getServiceId().isBlank()) {
+            throw new IllegalArgumentException("Service is required.");
+        }
+        int quantity = request.getQuantity() == null ? 1 : request.getQuantity();
+        if (quantity < 1) throw new IllegalArgumentException("Hold quantity must be at least 1.");
 
-        log.info(
-                "Creating booking hold serviceId={} slotId={} eventDate={} quantity={} cartId={}",
-                request.getServiceId(),
-                request.getSlotId(),
-                request.getEventDate(),
-                request.getQuantity(),
-                request.getCartId()
-        );
+        String bookingType = request.getBookingType() == null
+                ? "STANDARD_SLOT" : request.getBookingType().trim().toUpperCase(java.util.Locale.ROOT);
+        VendorService service = vendorServiceRepository.findById(request.getServiceId())
+                .orElseThrow(() -> new IllegalArgumentException("Vendor Service not found."));
+        boolean isStay = service.getCategory() == ServiceCategory.STAY;
 
-        /*
-         * =========================================
-         * VALIDATE QUANTITY
-         * =========================================
-         */
-
-        int quantity =
-                request.getQuantity() == null
-                        ? 1
-                        : request.getQuantity();
-
-        if (quantity < 1) {
-
-            log.warn(
-                    "Booking hold rejected due to invalid quantity={} serviceId={} slotId={}",
-                    quantity,
-                    request.getServiceId(),
-                    request.getSlotId()
-            );
-
-            throw new IllegalArgumentException(
-                    "Hold quantity must be at least 1."
-            );
+        ServicePackage selectedPackage = null;
+        if (request.getPackageId() != null && !request.getPackageId().isBlank()) {
+            selectedPackage = resolvePackageForHold(request.getServiceId(), request.getPackageId(), request.getBookingFrom().toLocalDate());
         }
 
-
-        /*
-         * =========================================
-         * VALIDATE SLOT
-         * =========================================
-         */
-
-        BookingSlot slot =
-                bookingSlotRepository
-                        .findById(request.getSlotId())
-                        .orElseThrow(() -> {
-
-                            log.warn(
-                                    "Booking hold rejected. Slot not found slotId={}",
-                                    request.getSlotId()
-                            );
-
-                            return new IllegalArgumentException(
-                                    "Booking Slot not found."
-                            );
-                        });
-
-
-        if (!request.getServiceId().equals(
-                slot.getServiceId()
-        )) {
-
-            log.warn(
-                    "Booking hold rejected. Slot does not belong to service " +
-                            "serviceId={} slotId={} actualServiceId={}",
-                    request.getServiceId(),
-                    request.getSlotId(),
-                    slot.getServiceId()
-            );
-
-            throw new IllegalArgumentException(
-                    "Booking Slot does not belong to this service."
-            );
+        boolean requiresSlot = isStay || selectedPackage == null
+                || !Boolean.FALSE.equals(selectedPackage.getRequiresSlot());
+        if (!requiresSlot && !isStay) {
+            throw new IllegalArgumentException("Slot-free packages are supported only for STAY services.");
+        }
+        if (requiresSlot && (request.getSlotId() == null || request.getSlotId().isBlank())) {
+            throw new IllegalArgumentException("Booking slot is required for this package.");
         }
 
+        BookingSlot slot = null;
+        if (request.getSlotId() != null && !request.getSlotId().isBlank()) {
+            slot = bookingSlotRepository.findById(request.getSlotId())
+                    .orElseThrow(() -> new IllegalArgumentException("Booking Slot not found."));
+            if (!request.getServiceId().equals(slot.getServiceId())) {
+                throw new IllegalArgumentException("Booking Slot does not belong to this service.");
+            }
+            if (selectedPackage != null && selectedPackage.getSlotIds() != null
+                    && !selectedPackage.getSlotIds().isEmpty()
+                    && !selectedPackage.getSlotIds().contains(slot.getId())) {
+                throw new IllegalArgumentException("The selected booking slot is not available for this package.");
+            }
+        }
 
-        /*
-         * =========================================
-         * CHECK CURRENT AVAILABILITY
-         * =========================================
-         *
-         * IMPORTANT:
-         *
-         * We calculate availability immediately before
-         * creating the hold.
-         *
-         * This includes:
-         *
-         *     effective capacity
-         *     - existing bookings
-         *     - active holds
-         */
-
-        LocalDateTime now = LocalDateTime.now();
-
-        SlotAvailabilityResponse availability =
-                calculateAvailability(
-                        request.getServiceId(),
-                        slot,
-                        request.getEventDate(),
-                        now
-                );
-
-
-        int remainingCapacity =
-                availability.getRemainingCapacity() == null
-                        ? 0
-                        : availability.getRemainingCapacity();
-
-
-        if (remainingCapacity < quantity) {
-
-            log.info(
-                    "Booking hold rejected. Insufficient availability " +
-                            "serviceId={} slotId={} eventDate={} " +
-                            "requested={} remaining={}",
-                    request.getServiceId(),
-                    request.getSlotId(),
-                    request.getEventDate(),
-                    quantity,
-                    remainingCapacity
-            );
-
-            throw new IllegalStateException(
-                    "This slot is no longer available for the requested quantity. " +
-                            "Someone else may have already reserved it. " +
-                            "Please check the availability again."
-            );
+        if (selectedPackage != null && !selectedPackage.isActive()) {
+            throw new IllegalArgumentException("Selected package is not active.");
+        }
+        if (isStay && selectedPackage != null
+                && (selectedPackage.getSlotIds() == null || selectedPackage.getSlotIds().isEmpty())) {
+            throw new IllegalArgumentException("The selected STAY package must be assigned to at least one booking slot.");
         }
 
         var customer = authenticatedUserService.getCurrentUser();
-
-        String customerId = customer.getId();
-
+        String customerId = customer == null ? null : customer.getId();
         if (customerId == null || customerId.isBlank()) {
-            throw new IllegalStateException(
-                    "Unable to identify the authenticated customer."
-            );
+            throw new IllegalStateException("Unable to identify the authenticated customer.");
         }
 
+        int roomQuantity = request.getRoomQuantity() == null ? 1 : request.getRoomQuantity();
+        if (isStay) {
+            if (selectedPackage == null) throw new IllegalArgumentException("A package is required for STAY bookings.");
+            if (selectedPackage.getMaxGuestsPerRoom() == null || selectedPackage.getMaxGuestsPerRoom() < 1) {
+                throw new IllegalArgumentException("The selected STAY package has no valid guest capacity per room.");
+            }
+            if (roomQuantity < 1) throw new IllegalArgumentException("At least one room must be selected.");
+            // One requested room consumes one unit of the selected slot's capacity.
+            quantity = roomQuantity;
+            bookingType = "ROOM_STAY";
+        } else if (!"STANDARD_SLOT".equals(bookingType) && !"DAY_PACKAGE".equals(bookingType)) {
+            throw new IllegalArgumentException("Unsupported booking type: " + bookingType);
+        }
 
-        /*
-         * =========================================
-         * CREATE TEMPORARY HOLD
-         * =========================================
-         *
-         * Holds are valid for 5 minutes.
-         *
-         * BookingHold is deliberately separate from
-         * AvailabilityOverride.
-         *
-         * AvailabilityOverride = vendor control
-         * BookingHold          = customer cart hold
-         */
+        LocalDateTime now = LocalDateTime.now();
+        if (slot != null) {
+            validateSlotCapacityForInterval(request.getServiceId(), slot,
+                    request.getBookingFrom(), request.getBookingTo(), quantity, now);
+        } else {
+            throw new IllegalArgumentException("A valid booking slot is required.");
+        }
 
         BookingHold hold = new BookingHold();
-
-        hold.setServiceId(
-                request.getServiceId()
-        );
-
-        hold.setSlotId(
-                request.getSlotId()
-        );
-
-        hold.setEventDate(
-                request.getEventDate()
-        );
-
-        hold.setCartId(
-                request.getCartId()
-        );
-
-        hold.setQuantity(
-                quantity
-        );
-
-        hold.setStatus(
-                BookingHoldStatus.ACTIVE
-        );
-
-        hold.setExpiresAt(
-                now.plusMinutes(5)
-        );
+        hold.setServiceId(request.getServiceId());
+        hold.setSlotId(slot == null ? null : slot.getId());
+        hold.setPackageId(selectedPackage == null ? request.getPackageId() : selectedPackage.getId());
+        hold.setBookingFrom(request.getBookingFrom());
+        hold.setBookingTo(request.getBookingTo());
+        hold.setBookingType(bookingType);
+        hold.setRoomQuantity(isStay ? roomQuantity : request.getRoomQuantity());
+        hold.setCartId(request.getCartId());
+        hold.setQuantity(quantity);
+        hold.setStatus(BookingHoldStatus.ACTIVE);
+        hold.setExpiresAt(now.plusMinutes(5));
         hold.setCustomerId(customerId);
 
-        BookingHold savedHold =
-                bookingHoldRepository.save(hold);
-
-
-        log.info(
-                "Booking hold created holdId={} serviceId={} slotId={} " +
-                        "eventDate={} quantity={} expiresAt={}",
-                savedHold.getId(),
-                savedHold.getServiceId(),
-                savedHold.getSlotId(),
-                savedHold.getEventDate(),
-                savedHold.getQuantity(),
-                savedHold.getExpiresAt(),
-                savedHold.getCustomerId()
-        );
-
-
-        /*
-         * =========================================
-         * RESPONSE
-         * =========================================
-         */
+        BookingHold savedHold = bookingHoldRepository.save(hold);
+        log.info("Booking hold created holdId={} serviceId={} slotId={} packageId={} bookingFrom={} bookingTo={} expiresAt={}",
+                savedHold.getId(), savedHold.getServiceId(), savedHold.getSlotId(), savedHold.getPackageId(),
+                savedHold.getBookingFrom(), savedHold.getBookingTo(), savedHold.getExpiresAt());
 
         return BookingHoldResponse.builder()
                 .holdId(savedHold.getId())
                 .serviceId(savedHold.getServiceId())
                 .slotId(savedHold.getSlotId())
-                .eventDate(savedHold.getEventDate())
+                .packageId(savedHold.getPackageId())
+                .bookingFrom(savedHold.getBookingFrom())
+                .bookingTo(savedHold.getBookingTo())
                 .quantity(savedHold.getQuantity())
                 .expiresAt(savedHold.getExpiresAt())
                 .build();
     }
 
+    private ServicePackage resolvePackageForHold(String serviceId, String packageId, LocalDate bookingDate) {
+        VendorServicePricing pricing = vendorServicePricingRepository.findByServiceIdOrderByVersionDesc(serviceId)
+                .stream()
+                .filter(candidate -> candidate.getEffectiveFrom() == null || !bookingDate.isBefore(candidate.getEffectiveFrom()))
+                .filter(candidate -> candidate.getEffectiveUntil() == null || !bookingDate.isAfter(candidate.getEffectiveUntil()))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("No applicable pricing found for service."));
+        return (pricing.getPackages() == null ? java.util.Collections.<ServicePackage>emptyList() : pricing.getPackages())
+                .stream().filter(pkg -> packageId.equals(pkg.getId())).findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("Selected package not found for this service."));
+    }
 
     /*
      * =========================================
@@ -619,29 +530,114 @@ public class BookingAvailabilityServiceImpl
      * do not consume current availability.
      */
 
-    private int getBookedCount(
+    /**
+     * Check slot capacity on every calendar date whose slot interval overlaps
+     * the requested interval. Intervals are half-open [from, to), so a booking
+     * ending exactly when a slot begins does not consume that slot.
+     */
+    private void validateSlotCapacityForInterval(
             String serviceId,
-            String slotId,
-            LocalDate date
+            BookingSlot slot,
+            LocalDateTime bookingFrom,
+            LocalDateTime bookingTo,
+            int quantity,
+            LocalDateTime now
     ) {
-
-        List<Booking> bookings =
-                bookingRepository
-                        .findByServiceIdAndEventDate(
-                                serviceId,
-                                date
-                        );
-
-        return (int) bookings.stream()
-                .filter(booking ->
-                        slotId.equals(
-                                booking.getSlotId()
-                        )
-                )
-                .filter(this::countsAgainstAvailability)
-                .count();
+        boolean isStay = vendorServiceRepository.findById(serviceId)
+                .map(service -> service.getCategory() == ServiceCategory.STAY)
+                .orElse(false);
+        LocalDate date = bookingFrom.toLocalDate();
+        LocalDate lastDate = bookingTo.toLocalDate();
+        // A STAY booking consumes room inventory for each night beginning on
+        // check-in, but not for a new night on the checkout date.
+        while (isStay ? date.isBefore(lastDate) : !date.isAfter(lastDate)) {
+            boolean overlaps;
+            if (isStay) {
+                // STAY capacity is evaluated over a hotel-night window; the
+                // slot's clock time is not the occupancy interval.
+                overlaps = true;
+            } else {
+                LocalDateTime slotFrom = slotStart(date, slot);
+                LocalDateTime slotTo = slotEnd(date, slot);
+                overlaps = bookingFrom.isBefore(slotTo) && bookingTo.isAfter(slotFrom);
+            }
+            if (overlaps) {
+                SlotAvailabilityResponse availability =
+                        calculateAvailability(serviceId, slot, date, now);
+                int remaining = availability.getRemainingCapacity() == null
+                        ? 0 : availability.getRemainingCapacity();
+                if (remaining < quantity) {
+                    log.info("Booking hold rejected due to insufficient interval capacity serviceId={} slotId={} date={} requested={} remaining={}",
+                            serviceId, slot.getId(), date, quantity, remaining);
+                    throw new IllegalStateException(
+                            "Not enough rooms are available for the entire requested stay. " +
+                                    "Please reduce the room count or choose different dates/slot.");
+                }
+            }
+            date = date.plusDays(1);
+        }
     }
 
+    private LocalDateTime slotStart(LocalDate date, BookingSlot slot) {
+        return date.atTime(slot.getStartTime());
+    }
+
+    private LocalDateTime slotEnd(LocalDate date, BookingSlot slot) {
+        LocalDateTime start = date.atTime(slot.getStartTime());
+        LocalDateTime end = date.atTime(slot.getEndTime());
+        // A slot ending at or before its start crosses midnight.
+        return !end.isAfter(start) ? end.plusDays(1) : end;
+    }
+
+    private int getBookedCount(String serviceId, String slotId, LocalDate date) {
+        BookingSlot slot = bookingSlotRepository.findById(slotId).orElse(null);
+        if (slot == null || slot.getStartTime() == null || slot.getEndTime() == null) return 0;
+
+        boolean isStay = vendorServiceRepository.findById(serviceId)
+                .map(service -> service.getCategory() == ServiceCategory.STAY)
+                .orElse(false);
+
+        LocalDateTime requestedFrom = isStay ? date.atTime(14, 0) : slotStart(date, slot);
+        LocalDateTime requestedTo = isStay ? date.plusDays(1).atTime(14, 0) : slotEnd(date, slot);
+
+        // For ordinary slot-based services, overlapping slots share capacity
+        // only when they are assigned to at least one common package.
+        // A booking against the exact same slot always consumes that slot.
+        List<String> packageIdsForRequestedSlot = isStay
+                ? List.of()
+                : getPackageIdsForSlot(serviceId, slotId, date);
+
+        return (int) bookingRepository.findByServiceId(serviceId).stream()
+                .filter(this::countsAgainstAvailability)
+                .filter(b -> b.getBookingFrom() != null && b.getBookingTo() != null)
+                .filter(b -> b.getBookingFrom().isBefore(requestedTo) && b.getBookingTo().isAfter(requestedFrom))
+                .filter(b -> {
+                    if (isStay) {
+                        // STAY inventory remains tied to the selected slot;
+                        // do not apply clock-time overlap across room slots.
+                        return b.getSlotId() == null || slotId.equals(b.getSlotId());
+                    }
+                    if (slotId.equals(b.getSlotId())) {
+                        return true;
+                    }
+                    if (!intervalsOverlap(b.getBookingFrom(), b.getBookingTo(), requestedFrom, requestedTo)) {
+                        return false;
+                    }
+                    // Legacy bookings without packageId, or services whose
+                    // packages have no explicit slot mapping, retain the
+                    // conservative interval-overlap fallback.
+                    return b.getPackageId() == null
+                            || packageIdsForRequestedSlot.isEmpty()
+                            || packageIdsForRequestedSlot.contains(b.getPackageId());
+                })
+                .mapToInt(b -> b.getRoomQuantity() != null ? b.getRoomQuantity() : 1)
+                .sum();
+    }
+
+    private boolean intervalsOverlap(LocalDateTime aFrom, LocalDateTime aTo,
+                                     LocalDateTime bFrom, LocalDateTime bTo) {
+        return aFrom != null && aTo != null && aFrom.isBefore(bTo) && aTo.isAfter(bFrom);
+    }
 
     private boolean countsAgainstAvailability(
             Booking booking
@@ -672,34 +668,70 @@ public class BookingAvailabilityServiceImpl
      * background cleanup job.
      */
 
-    private int getHeldCount(
-            String serviceId,
-            String slotId,
-            LocalDate date,
-            LocalDateTime now
-    ) {
+    private int getHeldCount(String serviceId, String slotId, LocalDate date, LocalDateTime now) {
+        BookingSlot slot = bookingSlotRepository.findById(slotId).orElse(null);
+        if (slot == null || slot.getStartTime() == null || slot.getEndTime() == null) return 0;
 
-        List<BookingHold> holds =
-                bookingHoldRepository
-                        .findByServiceIdAndSlotIdAndEventDateAndStatusAndExpiresAtAfter(
-                                serviceId,
-                                slotId,
-                                date,
-                                BookingHoldStatus.ACTIVE,
-                                now
-                        );
+        boolean isStay = vendorServiceRepository.findById(serviceId)
+                .map(service -> service.getCategory() == ServiceCategory.STAY)
+                .orElse(false);
 
-        return holds.stream()
-                .mapToInt(hold ->
-                        hold.getQuantity() == null
-                                ? 0
-                                : Math.max(
-                                0,
-                                hold.getQuantity()
-                        )
-                )
+        LocalDateTime requestedFrom = isStay ? date.atTime(14, 0) : slotStart(date, slot);
+        LocalDateTime requestedTo = isStay ? date.plusDays(1).atTime(14, 0) : slotEnd(date, slot);
+        List<String> packageIdsForRequestedSlot = isStay
+                ? List.of()
+                : getPackageIdsForSlot(serviceId, slotId, date);
+
+        return bookingHoldRepository.findByServiceIdAndStatusAndExpiresAtAfter(
+                        serviceId, BookingHoldStatus.ACTIVE, now).stream()
+                .filter(h -> h.getBookingFrom() != null && h.getBookingTo() != null)
+                .filter(h -> h.getBookingFrom().isBefore(requestedTo) && h.getBookingTo().isAfter(requestedFrom))
+                .filter(h -> {
+                    if (isStay) {
+                        return h.getSlotId() == null || slotId.equals(h.getSlotId());
+                    }
+                    if (slotId.equals(h.getSlotId())) {
+                        return true;
+                    }
+                    if (!intervalsOverlap(h.getBookingFrom(), h.getBookingTo(), requestedFrom, requestedTo)) {
+                        return false;
+                    }
+                    return h.getPackageId() == null
+                            || packageIdsForRequestedSlot.isEmpty()
+                            || packageIdsForRequestedSlot.contains(h.getPackageId());
+                })
+                .mapToInt(h -> h.getQuantity() == null ? 0 : Math.max(0, h.getQuantity()))
                 .sum();
     }
 
+    /**
+     * Returns package IDs that own the requested slot in the pricing version
+     * effective on the booking date. A package with no slotIds retains the
+     * legacy meaning of being available for all service slots.
+     */
+    private List<String> getPackageIdsForSlot(String serviceId, String slotId, LocalDate date) {
+        VendorServicePricing pricing = vendorServicePricingRepository
+                .findByServiceIdOrderByVersionDesc(serviceId)
+                .stream()
+                .filter(candidate -> candidate.getEffectiveFrom() == null
+                        || !date.isBefore(candidate.getEffectiveFrom()))
+                .filter(candidate -> candidate.getEffectiveUntil() == null
+                        || !date.isAfter(candidate.getEffectiveUntil()))
+                .findFirst()
+                .orElse(null);
+
+        if (pricing == null || pricing.getPackages() == null) {
+            return List.of();
+        }
+
+        return pricing.getPackages().stream()
+                .filter(ServicePackage::isActive)
+                .filter(pkg -> pkg.getSlotIds() == null || pkg.getSlotIds().isEmpty()
+                        || pkg.getSlotIds().contains(slotId))
+                .map(ServicePackage::getId)
+                .filter(id -> id != null && !id.isBlank())
+                .distinct()
+                .toList();
+    }
 
 }

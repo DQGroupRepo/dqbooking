@@ -173,31 +173,35 @@ export default function BookingCalendar({
                 > = {};
 
 
-            bookings.forEach(
-                booking => {
+            bookings.forEach(booking => {
+                const isStay =
+                    String(booking.serviceCategory ?? "").toUpperCase() === "STAY" ||
+                    String(booking.serviceCategory ?? "").toUpperCase() === "STAYS" ||
+                    String(booking.bookingType ?? "").toUpperCase() === "ROOM_STAY";
 
-                    const key =
-                        toDateKey(
-                            booking.eventDate
-                        );
+                const fromKey = toDateKey(booking.bookingFrom ?? "");
+                const toKey = toDateKey(booking.bookingTo ?? "");
 
-
-                    if (!key) {
-                        return;
+                // STAY occupies calendar display dates inclusively, including
+                // checkout. Inventory validation separately excludes checkout.
+                if (isStay && fromKey && toKey) {
+                    const [fy, fm, fd] = fromKey.split("-").map(Number);
+                    const [ty, tm, td] = toKey.split("-").map(Number);
+                    const cursor = new Date(fy, fm - 1, fd);
+                    const last = new Date(ty, tm - 1, td);
+                    while (cursor <= last) {
+                        const key = getDateKey(cursor);
+                        (grouped[key] ??= []).push(booking);
+                        cursor.setDate(cursor.getDate() + 1);
                     }
-
-
-                    if (!grouped[key]) {
-                        grouped[key] = [];
-                    }
-
-
-                    grouped[key].push(
-                        booking
-                    );
-
+                    return;
                 }
-            );
+
+                // Preserve the existing eventDate grouping for all other
+                // categories; bookingFrom is only a compatibility fallback.
+                const key = toDateKey(booking.eventDate || booking.bookingFrom || "");
+                if (key) (grouped[key] ??= []).push(booking);
+            });
 
 
             return grouped;

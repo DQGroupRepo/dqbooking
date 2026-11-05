@@ -4,7 +4,6 @@ import com.booking.model.BookingHold;
 import com.booking.model.enums.BookingHoldStatus;
 import org.springframework.data.mongodb.repository.MongoRepository;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -12,17 +11,8 @@ import java.util.Optional;
 public interface BookingHoldRepository
         extends MongoRepository<BookingHold, String> {
 
-    List<BookingHold> findByServiceIdAndSlotIdAndEventDateAndStatus(
+    List<BookingHold> findByServiceIdAndStatusAndExpiresAtAfter(
             String serviceId,
-            String slotId,
-            LocalDate eventDate,
-            BookingHoldStatus status
-    );
-
-    List<BookingHold> findByServiceIdAndSlotIdAndEventDateAndStatusAndExpiresAtAfter(
-            String serviceId,
-            String slotId,
-            LocalDate eventDate,
             BookingHoldStatus status,
             LocalDateTime expiresAt
     );

@@ -3,6 +3,7 @@ package com.booking.service.impl;
 import com.booking.dto.customer.EventPricingResponse;
 import com.booking.dto.customer.VendorPricingForDateResponse;
 import com.booking.dto.pricing.VendorServicePricingRequest;
+import com.booking.dto.service.ServicePackageRequest;
 import com.booking.dto.pricing.VendorServicePricingResponse;
 import com.booking.dto.pricing.VendorServicePricingVersionResponse;
 import com.booking.exception.ResourceNotFoundException;
@@ -10,7 +11,10 @@ import com.booking.exception.VendorServiceNotFoundException;
 import com.booking.mapper.PricingMapper;
 import com.booking.model.VendorService;
 import com.booking.model.VendorServicePricing;
+import com.booking.model.enums.ServiceCategory;
 import com.booking.repository.VendorServicePricingRepository;
+import com.booking.repository.BookingSlotRepository;
+import com.booking.model.BookingSlot;
 import com.booking.repository.VendorServiceRepository;
 import com.booking.service.VendorAccessService;
 import com.booking.service.VendorServicePricingService;
@@ -40,6 +44,8 @@ public class VendorServicePricingServiceImpl
     private final VendorServiceRepository
             vendorServiceRepository;
 
+    private final BookingSlotRepository bookingSlotRepository;
+
     private final PricingMapper pricingMapper;
 
     private final VendorAccessService
@@ -64,6 +70,8 @@ public class VendorServicePricingServiceImpl
         validateVendorOwnership(
                 service
         );
+
+        validatePackageReferences(service, request.getPackages());
 
         VendorServicePricing pricing =
                 pricingMapper.toEntity(
@@ -369,6 +377,43 @@ public class VendorServicePricingServiceImpl
         );
     }
 
+
+    private void validatePackageReferences(
+            VendorService service,
+            List<ServicePackageRequest> packages
+    ) {
+        if (packages == null || packages.isEmpty()) return;
+        boolean isStay = service.getCategory() == ServiceCategory.STAY;
+
+        for (ServicePackageRequest pkg : packages) {
+            if (pkg == null || !pkg.isActive()) continue;
+            if (pkg.getSlotIds() != null) {
+                for (String slotId : pkg.getSlotIds()) {
+                    if (slotId == null || slotId.isBlank()) continue;
+                    BookingSlot slot = bookingSlotRepository.findById(slotId)
+                            .filter(s -> service.getId().equals(s.getServiceId()))
+                            .orElseThrow(() -> new IllegalArgumentException(
+                                    "A selected slot does not belong to this service."));
+                    if (Boolean.FALSE.equals(slot.getActive())) {
+                        throw new IllegalArgumentException("Inactive slots cannot be assigned to active packages.");
+                    }
+                }
+            }
+            if (isStay) {
+                // STAY inventory is managed by slot capacity; Room Type is not part of this flow.
+                if (pkg.getMaxGuestsPerRoom() == null || pkg.getMaxGuestsPerRoom() < 1) {
+                    throw new IllegalArgumentException(
+                            "Every active STAY package must define at least one guest per room.");
+                }
+                if (pkg.getSlotIds() == null || pkg.getSlotIds().isEmpty()) {
+                    throw new IllegalArgumentException(
+                            "Every active STAY package must be assigned to at least one booking slot.");
+                }
+                // STAY bookings always consume capacity from a selected booking slot.
+                pkg.setRequiresSlot(true);
+            }
+        }
+    }
 
     private VendorService getService(
             String serviceId

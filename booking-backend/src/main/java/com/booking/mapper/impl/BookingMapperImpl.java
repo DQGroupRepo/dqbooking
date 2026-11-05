@@ -149,9 +149,15 @@ public class BookingMapperImpl
                 .totalAmount(
                         booking.getTotalAmount()
                 )
-
+                .bookingFrom(booking.getBookingFrom())
+                .bookingTo(
+                        booking.getBookingTo()
+                )
                 .eventDate(
-                        booking.getEventDate()
+                        booking.getBookingFrom() == null ? null : booking.getBookingFrom().toLocalDate()
+                )
+                .bookingType(
+                        booking.getBookingType()
                 )
 
                 .guestCount(

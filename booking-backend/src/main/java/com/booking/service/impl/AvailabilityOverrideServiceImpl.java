@@ -61,55 +61,31 @@ public class AvailabilityOverrideServiceImpl
                     );
                 });
 
-        BookingSlot slot = bookingSlotRepository.findById(
-                        request.getSlotId())
-                .orElseThrow(() -> {
-                    log.warn(
-                            "Cannot create availability override. Booking slot not found slotId={}",
-                            request.getSlotId()
-                    );
-
-                    return new ResourceNotFoundException(
-                            "Booking Slot not found."
-                    );
-                });
-
-        if (!slot.getServiceId().equals(serviceId)) {
-
-            log.warn(
-                    "Booking slot does not belong to service serviceId={} slotId={}",
-                    serviceId,
-                    request.getSlotId()
-            );
-
+        boolean hasSlot = request.getSlotId() != null && !request.getSlotId().isBlank();
+        boolean hasRoomType = request.getRoomTypeId() != null && !request.getRoomTypeId().isBlank();
+        if (!hasSlot || hasRoomType) {
             throw new IllegalArgumentException(
-                    "Booking Slot does not belong to this service."
-            );
+                    "Availability overrides must target a booking slot. Room-type overrides are no longer supported.");
+        }
+
+        BookingSlot slot = bookingSlotRepository.findById(request.getSlotId())
+                .orElseThrow(() -> new ResourceNotFoundException("Booking Slot not found."));
+        if (!serviceId.equals(slot.getServiceId())) {
+            throw new IllegalArgumentException("Booking Slot does not belong to this service.");
+        }
+        if (repository.existsByServiceIdAndSlotIdAndDate(serviceId, request.getSlotId(), request.getDate())) {
+            throw new ResourceAlreadyExistsException("Availability override already exists.");
         }
 
         validateOverride(request.getCapacityOverride());
-
-        if (repository.existsByServiceIdAndSlotIdAndDate(
-                serviceId,
-                request.getSlotId(),
-                request.getDate())) {
-
-            log.warn(
-                    "Availability override already exists serviceId={} slotId={} date={}",
-                    serviceId,
-                    request.getSlotId(),
-                    request.getDate()
-            );
-
-            throw new ResourceAlreadyExistsException(
-                    "Availability override already exists."
-            );
-        }
 
         AvailabilityOverride override =
                 mapper.toEntity(request);
 
         override.setServiceId(service.getId());
+        // Slot capacity is the only supported inventory scope, including STAY.
+        override.setRoomTypeId(null);
+        override.setSlotId(request.getSlotId());
 
         override = repository.save(override);
 

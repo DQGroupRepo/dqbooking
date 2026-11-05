@@ -1,6 +1,6 @@
 
 import { useEffect, useState } from "react";
-import type { CateringPackageMenu } from "../../../types/CateringPackageMenu";
+import type { CateringPackageDish, CateringPackageMenu } from "../../../types/CateringPackageMenu";
 import type { CateringMenuItem } from "../../../types/CateringMenuItem";
 import "./CateringPackageMenuModal.css";
 
@@ -79,13 +79,29 @@ function getDishId(item: CateringMenuItem): string {
         : item.dishId ?? item.id ?? "";
 }
 
-function toPackageDish(item: CateringMenuItem) {
+function toPackageDish(item: CateringMenuItem): CateringPackageDish {
+    const dishId = getDishId(item);
     return {
-        dishId: getDishId(item),
+        id: item.id ?? dishId,
+        dishId,
+        menuItemId: item.custom ? item.id : undefined,
         name: item.name,
         category: item.category ?? "",
         foodType: item.foodType ?? "",
         custom: Boolean(item.custom),
+    };
+}
+
+function normalizeMenu(menu?: CateringPackageMenu | null): CateringPackageMenu {
+    return {
+        vegetarianSelectionLimit: menu?.vegetarianSelectionLimit ?? 0,
+        nonVegetarianSelectionLimit: menu?.nonVegetarianSelectionLimit ?? 0,
+        soupSelectionLimit: menu?.soupSelectionLimit ?? 0,
+        dessertSelectionLimit: menu?.dessertSelectionLimit ?? 0,
+        vegetarianDishes: menu?.vegetarianDishes ?? [],
+        nonVegetarianDishes: menu?.nonVegetarianDishes ?? [],
+        soupDishes: menu?.soupDishes ?? [],
+        dessertDishes: menu?.dessertDishes ?? [],
     };
 }
 
@@ -97,12 +113,12 @@ export default function CateringPackageMenuModal({
     onClose,
 }: Props) {
     const [menu, setMenu] = useState<CateringPackageMenu>(
-        initialMenu ?? emptyMenu
+        normalizeMenu(initialMenu)
     );
     const [error, setError] = useState("");
 
     useEffect(() => {
-        setMenu(initialMenu ?? emptyMenu);
+        setMenu(normalizeMenu(initialMenu));
         setError("");
     }, [initialMenu]);
 

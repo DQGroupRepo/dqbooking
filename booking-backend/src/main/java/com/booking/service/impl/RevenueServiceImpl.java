@@ -16,6 +16,7 @@ import com.booking.model.enums.VendorPage;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.Month;
 import java.time.format.TextStyle;
 import java.util.List;
@@ -71,9 +72,11 @@ public class RevenueServiceImpl implements RevenueService {
             pendingPayments =
                     pendingPayments.add(total.subtract(paid));
 
-            if (booking.getEventDate() != null
-                    && booking.getEventDate().getMonth() == today.getMonth()
-                    && booking.getEventDate().getYear() == today.getYear()) {
+            LocalDateTime bookingFrom = booking.getBookingFrom();
+
+            if (bookingFrom != null
+                    && bookingFrom.getMonth() == today.getMonth()
+                    && bookingFrom.getYear() == today.getYear()) {
 
                 thisMonth = thisMonth.add(total);
             }
@@ -121,8 +124,9 @@ public class RevenueServiceImpl implements RevenueService {
                         .map(month -> {
 
                             BigDecimal revenue = bookings.stream()
-                                    .filter(b -> b.getEventDate() != null)
-                                    .filter(b -> b.getEventDate().getMonth() == month)
+                                    .filter(b -> b.getBookingFrom() != null)
+                                    .filter(b -> b.getBookingFrom().getMonth() == month)
+                                    .filter(b -> b.getBookingFrom().getYear() == LocalDate.now().getYear())
                                     .map(b -> b.getTotalAmount() == null
                                             ? BigDecimal.ZERO
                                             : b.getTotalAmount())
@@ -176,7 +180,8 @@ public class RevenueServiceImpl implements RevenueService {
                 .totalAmount(booking.getTotalAmount())
                 .paidAmount(booking.getPaidAmount())
                 .paymentStatus(booking.getPaymentStatus())
-                .eventDate(booking.getEventDate())
+                .bookingFrom(booking.getBookingFrom())
+                .bookingTo(booking.getBookingTo())
                 .build();
     }
 

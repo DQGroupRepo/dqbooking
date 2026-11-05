@@ -4,7 +4,7 @@ import lombok.Builder;
 import lombok.Data;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Builder
 @Data
@@ -16,7 +16,9 @@ public class RecentBookingDto {
 
     private String serviceName;
 
-    private LocalDate eventDate;
+    private LocalDateTime bookingFrom;
+
+    private LocalDateTime bookingTo;
 
     private String status;
 

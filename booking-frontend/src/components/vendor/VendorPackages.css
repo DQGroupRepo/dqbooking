@@ -942,3 +942,14 @@
         max-height: 275px;
     }
 }
+
+
+/* A package incompatible with the currently selected slot stays clickable
+   so the customer can switch to it; the slot selection is cleared upstream. */
+.package-card.incompatible {
+    opacity: 0.48;
+    border-style: dashed;
+}
+.package-card.incompatible:hover {
+    opacity: 0.82;
+}

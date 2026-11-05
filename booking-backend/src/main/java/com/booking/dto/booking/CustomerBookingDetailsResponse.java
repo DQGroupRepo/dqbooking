@@ -1,7 +1,5 @@
 package com.booking.dto.booking;
 
-import com.booking.dto.pricing.DiscountSnapshot;
-import com.booking.dto.pricing.PricingHeadSnapshot;
 import com.booking.model.embedded.BookingDiscountSnapshot;
 import com.booking.model.embedded.BookingPricingHeadSnapshot;
 import com.booking.model.enums.BookingStatus;
@@ -36,7 +34,9 @@ public class CustomerBookingDetailsResponse {
 
     private LocalDate bookingDate;
 
-    private LocalDate eventDate;
+    private LocalDateTime bookingFrom;
+
+    private LocalDateTime bookingTo;
 
     private Integer guestCount;
 

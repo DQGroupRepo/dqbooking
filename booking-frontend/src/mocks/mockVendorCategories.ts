@@ -45,4 +45,13 @@ export const mockVendorCategories: VendorCategory[] = [
     icon: "🍽️",
     fields: ["menu", "serviceType"],
   },
+
+  {
+    id: 6,
+    name: "Stays",
+    slug: "stay",
+    description: "Hotels, resorts, homestays, rooms and day-use packages.",
+    icon: "🛏️",
+    fields: ["amenities", "dayPackages"],
+  },
 ];

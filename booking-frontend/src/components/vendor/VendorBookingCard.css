@@ -1090,3 +1090,12 @@ span {
         max-height: 360px;
     }
 }
+
+/* Slots excluded by the selected package remain selectable to switch slots. */
+.booking-slot-card.incompatible {
+    opacity: 0.48;
+    border-style: dashed;
+}
+.booking-slot-card.incompatible:hover:not(:disabled) {
+    opacity: 0.82;
+}

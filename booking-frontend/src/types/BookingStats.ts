@@ -16,6 +16,12 @@ export interface BookingStats {
 
     eventDate: string;
 
+    /** Actual interval; used for STAY calendar ranges. */
+    bookingFrom?: string;
+    bookingTo?: string;
+    serviceCategory?: string;
+    bookingType?: string;
+
     guestCount: number;
 
     amount: number;

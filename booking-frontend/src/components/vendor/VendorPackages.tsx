@@ -47,6 +47,7 @@ type SelectedCateringDish = {
 interface Props {
     packages?: ServicePackage[];
     selectedPackage?: ServicePackage | null;
+    selectedSlotId?: string | null;
     onSelectPackage: (pkg: ServicePackage) => void;
     onSelectedCateringDishesChange?: (dishes: SelectedCateringDish[]) => void;
 }
@@ -56,6 +57,7 @@ const VISIBLE_PACKAGES = 3;
 const VendorPackages = ({
     packages = [],
     selectedPackage,
+    selectedSlotId,
     onSelectPackage,
     onSelectedCateringDishesChange
 }: Props) => {
@@ -127,32 +129,21 @@ const VendorPackages = ({
      * This makes the selection work reliably
      * with both persisted and temporary packages.
      */
+    const getPersistedPackageId = (pkg: ServicePackage): string | undefined => {
+        const candidate = pkg as ServicePackage & { packageId?: string; _id?: string };
+        const value = candidate.id ?? candidate.packageId ?? candidate._id;
+        return value == null || String(value).trim() === "" ? undefined : String(value);
+    };
+
     const isPackageSelected =
         (pkg: ServicePackage): boolean => {
+            if (!selectedPackage) return false;
 
-            if (!selectedPackage) {
-                return false;
-            }
+            const packageId = getPersistedPackageId(pkg);
+            const selectedId = getPersistedPackageId(selectedPackage);
+            if (packageId && selectedId) return packageId === selectedId;
 
-
-            if (
-                pkg.id &&
-                selectedPackage.id
-            ) {
-
-                return (
-                    pkg.id ===
-                    selectedPackage.id
-                );
-
-            }
-
-
-            return (
-                pkg ===
-                selectedPackage
-            );
-
+            return pkg === selectedPackage;
         };
 
 
@@ -371,6 +362,10 @@ const VendorPackages = ({
                                 isPackageSelected(
                                     pkg
                                 );
+                            const incompatibleWithSlot = Boolean(
+                                selectedSlotId && pkg.slotIds?.length &&
+                                !pkg.slotIds.includes(selectedSlotId)
+                            );
 
 
                             return (
@@ -378,9 +373,7 @@ const VendorPackages = ({
                                 <div
                                     key={packageKey}
                                     className={
-                                        isSelected
-                                            ? "package-card selected"
-                                            : "package-card"
+                                        `package-card ${isSelected ? "selected" : ""} ${incompatibleWithSlot ? "incompatible" : ""}`
                                     }
                                 >
 
@@ -491,11 +484,12 @@ const VendorPackages = ({
                                                 ? "package-select-button selected"
                                                 : "package-select-button"
                                         }
-                                        onClick={() =>
-                                            onSelectPackage(
-                                                pkg
-                                            )
-                                        }
+                                        disabled={!getPersistedPackageId(pkg)}
+                                        title={!getPersistedPackageId(pkg) ? "Package ID is missing from the pricing response" : undefined}
+                                        onClick={() => onSelectPackage({
+                                            ...pkg,
+                                            id: getPersistedPackageId(pkg)
+                                        })}
                                     >
 
                                         {isSelected

@@ -833,7 +833,7 @@ const CustomerBookingGroupDetails = () => {
 
                                                                     {
                                                                         formatDate(
-                                                                            booking.eventDate
+                                                                            booking.bookingFrom
                                                                         )
                                                                     }
 
@@ -1070,7 +1070,7 @@ const CustomerBookingGroupDetails = () => {
                                                                                             {
                                                                                                 formatDate(
                                                                                                     details?.eventDate ||
-                                                                                                    booking.eventDate
+                                                                                                    booking.bookingFrom
                                                                                                 )
                                                                                             }
 

@@ -1,10 +1,11 @@
 package com.booking.dto.bundle;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Getter
 @Setter
@@ -13,8 +14,11 @@ public class BundleCalculationItemRequest {
     @NotBlank
     private String serviceId;
 
-    private LocalDate eventDate;
+    @NotNull
+    private LocalDateTime bookingFrom;
+
+    @NotNull
+    private LocalDateTime bookingTo;
 
     private String packageId;
-
 }

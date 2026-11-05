@@ -57,7 +57,8 @@ public class BookingHoldCleanupScheduler {
                     hold.getId(),
                     hold.getServiceId(),
                     hold.getSlotId(),
-                    hold.getEventDate(),
+                    hold.getBookingFrom(),
+                    hold.getBookingTo(),
                     hold.getQuantity(),
                     hold.getExpiresAt()
             );

@@ -27,4 +27,5 @@ public interface AvailabilityOverrideRepository
             String slotId,
             LocalDate date
     );
+
 }

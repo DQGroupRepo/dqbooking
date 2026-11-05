@@ -125,7 +125,7 @@ public class BundleCalculationServiceImpl
                                     resolvePackage(
                                             service,
                                             item.getPackageId(),
-                                            item.getEventDate()
+                                            item.getBookingFrom().toLocalDate()
                                     );
 
                             return new BundleCalculationLine(

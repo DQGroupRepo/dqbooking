@@ -11,23 +11,30 @@ export interface CartSelectedCateringDish {
 export interface CartItem {
     serviceId: string;
 
-  vendorName: string;
+    vendorId: string;
 
-  serviceName: string;
+    vendorName: string;
 
-  category?: string;
+    serviceName: string;
 
-  price: number;
+    category?: string;
 
-  quantity?: number;
+    price: number;
 
     quantity?: number;
 
     image?: string;
 
-  eventDate?: string;
+    eventDate?: string;
 
-  guestCount?: number;
+    // STAY bookings use the explicit interval; eventDate remains for
+    // backward compatibility with all existing non-STAY categories.
+    bookingFrom?: string;
+    bookingTo?: string;
+    bookingType?: "ROOM_STAY" | "STANDARD_SLOT" | "DAY_PACKAGE";
+    roomQuantity?: number;
+
+    guestCount?: number;
 
     /*
      * =========================================
@@ -59,25 +66,27 @@ export interface CartItem {
      * =========================================
      */
 
-  bundleEnabled?: boolean;
+    bundleEnabled?: boolean;
 
-  bundleId?: string;
+    bundleId?: string;
 
-  bundleName?: string;
+    bundleName?: string;
 
-  bundleDescription?: string;
+    bundleDescription?: string;
 
-  bundleServiceIds?: string[];
+    bundleServiceIds?: string[];
 
     bundleDiscountType?: "PERCENTAGE" | "FIXED";
 
-  bundleDiscountValue?: number;
+    bundleDiscountValue?: number;
 
-  packageId?: string;
+    packageId?: string;
 
     packageType?: "SILVER" | "GOLD" | "PREMIUM";
 
-  packagePrice?: number;
+    packagePrice?: number;
+
+    packageFeatures?: string[];
 
     selectedCateringDishes?: CartSelectedCateringDish[];
 }

@@ -26,6 +26,21 @@ public class ServicePackageRequest {
 
     private boolean active;
 
+    /** Required for capacity-limited DAY_PACKAGE inventory. */
+    private Integer capacity;
+
+    /** DAY_PACKAGE or ordinary service package. */
+    private String packageType;
+
+    /** Defaults to true to preserve existing slot-based package behavior. */
+    private boolean requiresSlot = true;
+
+    /** Optional slot allow-list; empty means all active slots for compatibility. */
+    private List<String> slotIds = new ArrayList<>();
+
+    /** Maximum guests allowed per room for STAY packages. Required for active STAY packages. */
+    private Integer maxGuestsPerRoom;
+
     /*
      * Catering-only configuration.
      */

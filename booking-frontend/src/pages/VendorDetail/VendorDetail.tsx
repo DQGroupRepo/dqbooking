@@ -17,7 +17,6 @@ import VendorServiceDetails
 import VendorDetailService from "../../services/VendorDetailService";
 import BundleService from "../../services/BundleService";
 import type { ServicePackage } from "../../types/ServicePackage";
-import type { CartSelectedCateringDish } from "../../types/CartItem";
 
 import type { VendorDetail as VendorDetailType } from "../../types/VendorDetail";
 
@@ -57,9 +56,6 @@ const VendorDetail = () => {
         selectedPackage,
         setSelectedPackage
     ] = useState<ServicePackage | null>(null);
-
-    const [selectedCateringDishes, setSelectedCateringDishes] =
-        useState<CartSelectedCateringDish[]>([]);
     /*
      * =========================================
      * VENDOR
@@ -88,6 +84,9 @@ const VendorDetail = () => {
 
     const [selectedEventDate, setSelectedEventDate] =
         useState("");
+
+    const [selectedSlotId, setSelectedSlotId] =
+        useState<string | null>(null);
     /*
      * =========================================
      * LOAD DATA
@@ -113,7 +112,6 @@ const VendorDetail = () => {
         // A package selected for a previous date
         // must never remain selected.
         setSelectedPackage(null);
-        setSelectedCateringDishes([]);
 
         setSelectedEventDate(date);
 
@@ -137,9 +135,23 @@ const VendorDetail = () => {
                 data
             );
 
-            setPricingPackages(
-                data.packages ?? []
-            );
+            const packages = (data.packages ?? []).map((pkg) => ({
+                ...pkg,
+                // Only use a backend-provided persisted ID. Never invent one in the browser.
+                id: typeof pkg.id === "string" && pkg.id.trim()
+                    ? pkg.id.trim()
+                    : undefined
+            }));
+
+            const packagesWithoutIds = packages.filter((pkg) => !pkg.id);
+            if (packagesWithoutIds.length > 0) {
+                console.error(
+                    "Pricing API returned packages without persisted IDs. Check PricingMapperImpl.java.",
+                    packagesWithoutIds
+                );
+            }
+
+            setPricingPackages(packages);
 
         } catch (error) {
 
@@ -191,12 +203,18 @@ const VendorDetail = () => {
     const handlePackageSelect = (
         pkg: ServicePackage
     ) => {
+        if (!pkg.id || !pkg.id.trim()) {
+            console.error(
+                "Cannot select this package because the pricing API did not return its persisted ID.",
+                pkg
+            );
+            return;
+        }
 
-        setSelectedPackage(
-            pkg
-        );
-        setSelectedCateringDishes([]);
-
+        setSelectedPackage({
+            ...pkg,
+            id: pkg.id.trim()
+        });
     };
 
 
@@ -475,12 +493,8 @@ const VendorDetail = () => {
                             <VendorPackages
                                 packages={pricingPackages}
                                 selectedPackage={selectedPackage}
-                                onSelectPackage={
-                                    handlePackageSelect
-                                }
-                                onSelectedCateringDishesChange={
-                                    setSelectedCateringDishes
-                                }
+                                selectedSlotId={selectedSlotId}
+                                onSelectPackage={handlePackageSelect}
                             />
 
                         )}
@@ -496,8 +510,9 @@ const VendorDetail = () => {
                         serviceId={serviceId}
                         bundles={bundles}
                         selectedPackage={selectedPackage}
-                        selectedCateringDishes={selectedCateringDishes}
                         onEventDateChange={handleEventDateChange}
+                        onClearSelectedPackage={() => setSelectedPackage(null)}
+                        onSelectedSlotChange={setSelectedSlotId}
                     />
 
                 </div>

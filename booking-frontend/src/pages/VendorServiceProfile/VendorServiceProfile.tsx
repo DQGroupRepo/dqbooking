@@ -1013,7 +1013,7 @@ export default function VendorServiceProfile() {
 
 
                                                             {
-                                                                pkg.name || pkg.type || "Package"
+                                                                pkg.name || "Package"
                                                             }
 
 
@@ -1233,6 +1233,18 @@ export default function VendorServiceProfile() {
 
 
                     <div className="service-actions">
+
+                        {
+                            ["STAY", "STAYS"].includes(
+                                String(service.category ?? "").trim().toUpperCase()
+                            ) && (
+                                <Button
+                                    onClick={() => navigate(`/vendor/services/${serviceId}/room-types`)}
+                                >
+                                    Manage Room Types
+                                </Button>
+                            )
+                        }
 
 
                         <Button

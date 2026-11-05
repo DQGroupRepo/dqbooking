@@ -36,6 +36,21 @@ interface BookingLocationState {
 
     slotId?: string;
 
+    slotStartTime?: string;
+
+    slotEndTime?: string;
+
+    bookingFrom?: string;
+
+    bookingTo?: string;
+
+    bookingType?: "STANDARD_SLOT" | "ROOM_STAY" | "DAY_PACKAGE";
+
+
+    roomQuantity?: number;
+
+    holdId?: string;
+
     packageId?: string;
 
     selectedCateringDishes?: BookingSelectedCateringDishRequest[];
@@ -180,13 +195,17 @@ interface BookingServiceItemRequest {
 
     serviceId: string;
 
-    slotId: string;
+    slotId?: string;
+
+    holdId?: string;
 
     packageId?: string;
 
-    eventDate: string;
-
-    guestCount: number;
+    bookingFrom: string;
+    bookingTo: string;
+    bookingType?: "STANDARD_SLOT" | "ROOM_STAY" | "DAY_PACKAGE";
+    roomQuantity?: number;
+    guestCount?: number;
     selectedCateringDishes?: BookingSelectedCateringDishRequest[];
 
 }
@@ -247,6 +266,37 @@ interface CartItemPricing {
 
 const EMPTY_CART: CartItem[] = [];
 
+
+function addCalendarDay(date: string): string {
+    const [year, month, day] = date.split("-").map(Number);
+    const value = new Date(year, month - 1, day);
+    value.setDate(value.getDate() + 1);
+    return `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, "0")}-${String(value.getDate()).padStart(2, "0")}`;
+}
+
+function localDateTime(date: string, time: string): string {
+    return `${date}T${time.length === 5 ? `${time}:00` : time}`;
+}
+
+function resolveBookingInterval(item: {
+    bookingFrom?: string;
+    bookingTo?: string;
+    eventDate?: string;
+    slotStartTime?: string;
+    slotEndTime?: string;
+}): { bookingFrom: string; bookingTo: string } {
+    if (item.bookingFrom && item.bookingTo) {
+        return { bookingFrom: item.bookingFrom, bookingTo: item.bookingTo };
+    }
+    if (!item.eventDate || !item.slotStartTime || !item.slotEndTime) {
+        throw new Error("The selected cart item is missing its booking date or slot times. Please select the slot again.");
+    }
+    const overnight = item.slotEndTime <= item.slotStartTime;
+    return {
+        bookingFrom: localDateTime(item.eventDate, item.slotStartTime),
+        bookingTo: localDateTime(overnight ? addCalendarDay(item.eventDate) : item.eventDate, item.slotEndTime)
+    };
+}
 
 const BookingCheckout = () => {
 
@@ -1789,18 +1839,22 @@ const BookingCheckout = () => {
                                         item.serviceId,
 
                                     slotId:
-                                        item.slotId || "",
+                                        item.slotId,
+
+                                    holdId:
+                                        item.holdId,
 
                                     packageId:
                                         item.packageId,
 
-                                    eventDate:
-                                        item.eventDate || "",
+                                    ...resolveBookingInterval(item),
+                                    bookingType: item.bookingType || "STANDARD_SLOT",
+                                    roomQuantity: item.roomQuantity,
 
                                     guestCount:
-                                        Number(
-                                            item.guestCount
-                                        ),
+                                        String(item.category ?? "").toUpperCase() === "STAY"
+                                            ? undefined
+                                            : Number(item.guestCount ?? 1),
 
                                     selectedCateringDishes:
                                         item.selectedCateringDishes?.map(dish => ({
@@ -1831,18 +1885,22 @@ const BookingCheckout = () => {
                                     item.serviceId,
 
                                 slotId:
-                                    item.slotId || "",
+                                    item.slotId,
+
+                                holdId:
+                                    item.holdId,
 
                                 packageId:
                                     item.packageId,
 
-                                eventDate:
-                                    item.eventDate || "",
+                                ...resolveBookingInterval(item),
+                                bookingType: item.bookingType || "STANDARD_SLOT",
+                                roomQuantity: item.roomQuantity,
 
                                 guestCount:
-                                    Number(
-                                        item.guestCount
-                                    ),
+                                    String(item.category ?? "").toUpperCase() === "STAY"
+                                        ? undefined
+                                        : Number(item.guestCount ?? 1),
 
                                 selectedCateringDishes:
                                     item.selectedCateringDishes?.map(dish => ({
@@ -2039,18 +2097,57 @@ const BookingCheckout = () => {
                          *
                          * Other cart items remain untouched.
                          */
-                        const expiredItem =
-                            displayCart.find(
-                                item =>
-                                    item.serviceId ===
-                                    expiredServiceId
-                                    &&
-                                    item.slotId ===
-                                    expiredSlotId
-                                    &&
-                                    item.eventDate ===
-                                    expiredEventDate
-                            );
+                        const expiredPackageId = responseData?.packageId;
+                        const expiredBookingFrom = responseData?.bookingFrom;
+                        const expiredBookingTo = responseData?.bookingTo;
+                        const expiredHoldId = responseData?.holdId;
+
+                        const expiredItem = displayCart.find((item) => {
+                            if (item.serviceId !== expiredServiceId) {
+                                return false;
+                            }
+
+                            // Preserve strict matching for ordinary slot bookings.
+                            if (expiredSlotId != null && expiredSlotId !== "") {
+                                return (
+                                    item.slotId === expiredSlotId &&
+                                    (!expiredEventDate || item.eventDate === expiredEventDate) &&
+                                    (!expiredHoldId || item.holdId === expiredHoldId)
+                                );
+                            }
+
+                            // Compatibility path for legacy cart items that do not carry a slot ID.
+                            if (item.slotId) {
+                                return false;
+                            }
+
+                            const cartItem = item as CartItem & {
+                                bookingFrom?: string;
+                                bookingTo?: string;
+                            };
+
+                            if (expiredHoldId && item.holdId && item.holdId !== expiredHoldId) {
+                                return false;
+                            }
+
+                            if (expiredPackageId && item.packageId !== expiredPackageId) {
+                                return false;
+                            }
+
+                            if (expiredEventDate && item.eventDate && item.eventDate !== expiredEventDate) {
+                                return false;
+                            }
+
+                            if (expiredBookingFrom && cartItem.bookingFrom && cartItem.bookingFrom !== expiredBookingFrom) {
+                                return false;
+                            }
+
+                            if (expiredBookingTo && cartItem.bookingTo && cartItem.bookingTo !== expiredBookingTo) {
+                                return false;
+                            }
+
+                            return true;
+                        });
 
                         if (expiredItem) {
 
@@ -2165,14 +2262,25 @@ const BookingCheckout = () => {
                             slotId:
                                state?.slotId ?? "",
 
+                            holdId:
+                               state?.holdId,
+
                             packageId,
 
-                            eventDate,
+                            ...resolveBookingInterval({
+                                bookingFrom: state?.bookingFrom,
+                                bookingTo: state?.bookingTo,
+                                eventDate,
+                                slotStartTime: state?.slotStartTime ?? displayCart.find(item => item.serviceId === serviceId && item.slotId === state?.slotId)?.slotStartTime,
+                                slotEndTime: state?.slotEndTime ?? displayCart.find(item => item.serviceId === serviceId && item.slotId === state?.slotId)?.slotEndTime
+                            }),
+                            bookingType: state?.bookingType || "STANDARD_SLOT",
+                            roomQuantity: state?.roomQuantity,
 
                             guestCount:
-                                Number(
-                                    guests
-                                ),
+                                state?.bookingType === "ROOM_STAY"
+                                    ? undefined
+                                    : Number(guests),
 
                             selectedCateringDishes:
                                 state?.selectedCateringDishes
@@ -2298,18 +2406,57 @@ const BookingCheckout = () => {
                      *
                      * Other cart items remain untouched.
                      */
-                    const expiredItem =
-                        displayCart.find(
-                            item =>
-                                item.serviceId ===
-                                expiredServiceId
-                                &&
-                                item.slotId ===
-                                expiredSlotId
-                                &&
-                                item.eventDate ===
-                                expiredEventDate
-                        );
+                    const expiredPackageId = responseData?.packageId;
+                        const expiredBookingFrom = responseData?.bookingFrom;
+                        const expiredBookingTo = responseData?.bookingTo;
+                        const expiredHoldId = responseData?.holdId;
+
+                        const expiredItem = displayCart.find((item) => {
+                            if (item.serviceId !== expiredServiceId) {
+                                return false;
+                            }
+
+                            // Preserve strict matching for ordinary slot bookings.
+                            if (expiredSlotId != null && expiredSlotId !== "") {
+                                return (
+                                    item.slotId === expiredSlotId &&
+                                    (!expiredEventDate || item.eventDate === expiredEventDate) &&
+                                    (!expiredHoldId || item.holdId === expiredHoldId)
+                                );
+                            }
+
+                            // Compatibility path for legacy cart items that do not carry a slot ID.
+                            if (item.slotId) {
+                                return false;
+                            }
+
+                            const cartItem = item as CartItem & {
+                                bookingFrom?: string;
+                                bookingTo?: string;
+                            };
+
+                            if (expiredHoldId && item.holdId && item.holdId !== expiredHoldId) {
+                                return false;
+                            }
+
+                            if (expiredPackageId && item.packageId !== expiredPackageId) {
+                                return false;
+                            }
+
+                            if (expiredEventDate && item.eventDate && item.eventDate !== expiredEventDate) {
+                                return false;
+                            }
+
+                            if (expiredBookingFrom && cartItem.bookingFrom && cartItem.bookingFrom !== expiredBookingFrom) {
+                                return false;
+                            }
+
+                            if (expiredBookingTo && cartItem.bookingTo && cartItem.bookingTo !== expiredBookingTo) {
+                                return false;
+                            }
+
+                            return true;
+                        });
 
                     if (expiredItem) {
 

@@ -1501,6 +1501,19 @@ const Header = () => {
                         Venues
                     </Link>
 
+                    {/* =================================
+                        STAY
+                    ================================= */}
+
+                    <Link
+                        to="/categories?category=STAY"
+                        className={`navigation-link ${
+                            isCategoryActive("STAY") ? "active" : ""
+                        }`}
+                    >
+                        Stay
+                    </Link>
+
 
                     {/* =================================
                         PHOTOGRAPHY
@@ -1528,7 +1541,7 @@ const Header = () => {
                             : ""
                             }`}
                     >
-                        Makeup
+                        Beauty & Makeup
                     </Link>
 
 
@@ -1558,7 +1571,7 @@ const Header = () => {
                             : ""
                             }`}
                     >
-                        Decor
+                        Decor & Styling
                     </Link>
 
 

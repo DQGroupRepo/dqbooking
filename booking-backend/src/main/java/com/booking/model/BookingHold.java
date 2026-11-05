@@ -19,12 +19,18 @@ public class BookingHold extends BaseEntity {
     private String slotId;
 
     private LocalDate eventDate;
-
+    private String packageId;
     private String customerId;
 
     private String cartId;
 
     private Integer quantity;
+
+    // Booking interval snapshot used by interval-based availability checks.
+    private LocalDateTime bookingFrom;
+    private LocalDateTime bookingTo;
+    private String bookingType;
+    private Integer roomQuantity;
 
     private BookingHoldStatus status = BookingHoldStatus.ACTIVE;
 

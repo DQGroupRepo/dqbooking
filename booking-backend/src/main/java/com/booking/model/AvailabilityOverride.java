@@ -15,7 +15,11 @@ public class AvailabilityOverride extends BaseEntity {
 
     private String serviceId;
 
+    /** Booking slot whose inventory is overridden. */
     private String slotId;
+
+    /** Deprecated legacy field; new overrides always leave this null. */
+    private String roomTypeId;
 
     private LocalDate date;
 
@@ -25,8 +29,8 @@ public class AvailabilityOverride extends BaseEntity {
     private Boolean blocked;
 
     /**
-     * Optional capacity override.
-     * Null = use BookingSlot.maxBookings
+     * Optional capacity override that caps BookingSlot.maxBookings.
+     * Null = use the normal capacity.
      */
     private Integer capacityOverride;
 

@@ -27,7 +27,11 @@ interface BookingResponse {
 
     venue: string;
 
-    eventDate: string;
+    eventDate?: string;
+    bookingFrom?: string;
+    bookingTo?: string;
+    serviceCategory?: string;
+    bookingType?: string;
 
     guestCount: number;
 
@@ -75,6 +79,10 @@ interface BookingDetailsResponse {
     bookingDate: string;
 
     eventDate: string;
+    bookingFrom?: string;
+    bookingTo?: string;
+    serviceCategory?: string;
+    bookingType?: string;
 
     guestCount: number;
 
@@ -225,7 +233,12 @@ class BookingStatsService {
                 booking.venue,
 
             eventDate:
-                booking.eventDate,
+                booking.eventDate ?? booking.bookingFrom?.slice(0, 10) ?? "",
+
+            bookingFrom: booking.bookingFrom,
+            bookingTo: booking.bookingTo,
+            serviceCategory: booking.serviceCategory,
+            bookingType: booking.bookingType,
 
             guestCount:
                 booking.guestCount,
@@ -303,7 +316,12 @@ class BookingStatsService {
 
 
             eventDate:
-                booking.eventDate,
+                booking.eventDate ?? booking.bookingFrom?.slice(0, 10) ?? "",
+
+            bookingFrom: booking.bookingFrom,
+            bookingTo: booking.bookingTo,
+            serviceCategory: booking.serviceCategory,
+            bookingType: booking.bookingType,
 
             guestCount:
                 booking.guestCount,

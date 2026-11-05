@@ -284,16 +284,13 @@ public class SlotAvailabilityServiceImpl
          */
 
         long bookedCount =
-                bookingRepository
-                        .countByServiceIdAndSlotIdAndEventDateAndStatusIn(
-                                slot.getServiceId(),
-                                slot.getId(),
-                                date,
-                                List.of(
-                                        BookingStatus.PENDING,
-                                        BookingStatus.CONFIRMED
-                                )
-                        );
+                bookingRepository.findByServiceId(slot.getServiceId()).stream()
+                        .filter(b -> slot.getId().equals(b.getSlotId()))
+                        .filter(b -> b.getStatus() == BookingStatus.PENDING || b.getStatus() == BookingStatus.CONFIRMED)
+                        .filter(b -> b.getBookingFrom() != null && b.getBookingTo() != null)
+                        .filter(b -> b.getBookingFrom().isBefore(date.atTime(slot.getEndTime()))
+                                && b.getBookingTo().isAfter(date.atTime(slot.getStartTime())))
+                        .count();
 
 
         /*

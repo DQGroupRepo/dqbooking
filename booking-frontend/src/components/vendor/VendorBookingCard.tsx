@@ -31,6 +31,10 @@ interface Props {
     onEventDateChange?: (
         date: string
     ) => void;
+
+    onClearSelectedPackage?: () => void;
+
+    onSelectedSlotChange?: (slotId: string | null) => void;
 }
 
 
@@ -48,13 +52,33 @@ function getTomorrowDate(): string {
 
 }
 
+function addOneDay(date: string): string {
+    const [year, month, day] = date.split("-").map(Number);
+    const value = new Date(year, month - 1, day);
+    value.setDate(value.getDate() + 1);
+    return `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, "0")}-${String(value.getDate()).padStart(2, "0")}`;
+}
+
+function toLocalDateTime(date: string, time: string): string {
+    const normalizedTime = time.length === 5 ? `${time}:00` : time;
+    return `${date}T${normalizedTime}`;
+}
+
+function normalizeDateTimeLocal(value: string): string {
+    // datetime-local is already a local wall-clock value. Do not convert through
+    // toISOString(), which would shift the booking time to UTC.
+    return value.length === 16 ? `${value}:00` : value;
+}
+
 const BookingCard = ({
     vendor,
     serviceId,
     bundles = [],
     selectedPackage,
     selectedCateringDishes = [],
-    onEventDateChange
+    onEventDateChange,
+    onClearSelectedPackage,
+    onSelectedSlotChange
 }: Props) => {
 
     const navigate =
@@ -105,9 +129,19 @@ const BookingCard = ({
     const [slots, setSlots] =
         useState<SlotAvailability[]>([]);
 
+    // Keep every slot visible. Incompatible options remain clickable so the
+    // customer can switch selections without being trapped by a filter.
+    const eligibleSlots = slots;
+
 
     const [selectedSlot, setSelectedSlot] =
         useState<SlotAvailability | null>(null);
+
+    const isStay = ["STAY", "STAYS"].includes(String(vendor.category ?? "").trim().toUpperCase());
+    const requiresSlot = isStay || selectedPackage?.requiresSlot !== false;
+    const [roomQuantity, setRoomQuantity] = useState(1);
+    const [customBookingFrom, setCustomBookingFrom] = useState("");
+    const [customBookingTo, setCustomBookingTo] = useState("");
 
 
     const [slotsLoading, setSlotsLoading] =
@@ -293,6 +327,18 @@ const BookingCard = ({
     ]);
 
 
+    useEffect(() => {
+        if (!requiresSlot) {
+            setSelectedSlot(null);
+            return;
+        }
+        if (selectedSlot && selectedPackage?.slotIds?.length
+            && !selectedPackage.slotIds.includes(selectedSlot.slotId)) {
+            setSelectedSlot(null);
+            onSelectedSlotChange?.(null);
+        }
+    }, [requiresSlot, selectedPackage?.id, (selectedPackage?.slotIds ?? []).join("|"), selectedSlot?.slotId]);
+
     /*
      * =========================================
      * LOAD SLOT AVAILABILITY
@@ -426,39 +472,33 @@ const BookingCard = ({
             }
 
 
-            if (!eventDate) {
-
-                alert(
-                    "Please select an event date."
-                );
-
+            if (isStay) {
+                if (!customBookingFrom || !customBookingTo || customBookingTo < customBookingFrom) {
+                    alert("Please select a check-in date and a check-out date on or after check-in.");
+                    return false;
+                }
+            } else if (!eventDate) {
+                alert("Please select an event date.");
                 return false;
-
             }
 
 
-            if (!selectedSlot) {
-
-                alert(
-                    "Please select an available time slot."
-                );
-
+            if (requiresSlot && !selectedSlot) {
+                alert("Please select an available time slot.");
                 return false;
-
             }
-
-
-            if (
-                !selectedSlot.available &&
-                !hasReusableExistingHold(selectedSlot.slotId, eventDate)
-            ) {
-
-                alert(
-                    "The selected slot is no longer available. Please select another slot."
-                );
-
+            if (requiresSlot && selectedSlot && !selectedSlot.available
+                && !hasReusableExistingHold(selectedSlot.slotId, eventDate)) {
+                alert("The selected slot is no longer available. Please select another slot.");
                 return false;
-
+            }
+            if (isStay && (!selectedPackage?.maxGuestsPerRoom || selectedPackage.maxGuestsPerRoom < 1)) {
+                alert("The selected stay package has no valid maximum guests per room configured.");
+                return false;
+            }
+            if (isStay && roomQuantity < 1) {
+                alert("Please select at least one room.");
+                return false;
             }
 
 
@@ -524,39 +564,33 @@ const BookingCard = ({
             }
 
 
-            if (!eventDate) {
-
-                alert(
-                    "Please select an event date."
-                );
-
+            if (isStay) {
+                if (!customBookingFrom || !customBookingTo || customBookingTo < customBookingFrom) {
+                    alert("Please select a check-in date and a check-out date on or after check-in.");
+                    return false;
+                }
+            } else if (!eventDate) {
+                alert("Please select an event date.");
                 return false;
-
             }
 
 
-            if (!selectedSlot) {
-
-                alert(
-                    "Please select an available time slot."
-                );
-
+            if (requiresSlot && !selectedSlot) {
+                alert("Please select an available time slot.");
                 return false;
-
             }
-
-
-            if (
-                !selectedSlot.available &&
-                !hasReusableExistingHold(selectedSlot.slotId, eventDate)
-            ) {
-
-                alert(
-                    "This slot is no longer available. Please select another slot."
-                );
-
+            if (requiresSlot && selectedSlot && !selectedSlot.available
+                && !hasReusableExistingHold(selectedSlot.slotId, eventDate)) {
+                alert("This slot is no longer available. Please select another slot.");
                 return false;
-
+            }
+            if (isStay && (!selectedPackage?.maxGuestsPerRoom || selectedPackage.maxGuestsPerRoom < 1)) {
+                alert("The selected stay package has no valid maximum guests per room configured.");
+                return false;
+            }
+            if (isStay && roomQuantity < 1) {
+                alert("Please select at least one room.");
+                return false;
             }
 
 
@@ -578,13 +612,10 @@ const BookingCard = ({
 
 
             /*
-             * One cart item consumes one booking
-             * availability unit.
-             *
-             * Guest count is NOT treated as multiple
-             * slot bookings.
+             * For STAY, each requested room consumes one unit of the selected
+             * slot capacity. Other categories keep the existing one-item quantity.
              */
-            const quantity = 1;
+            const quantity = isStay ? roomQuantity : 1;
             const cartId =
                 CartService.getOrCreateCartId();
 
@@ -600,23 +631,44 @@ const BookingCard = ({
 
                 setHoldingSlot(true);
 
-                const canReuseHold =
-                    hasReusableExistingHold(
-                        selectedSlot.slotId,
-                        eventDate
-                    ) &&
-                    Boolean(existingCartItem?.holdId);
+                const sameDayStay = isStay && customBookingFrom === customBookingTo;
+                const bookingFrom = isStay
+                    ? (sameDayStay
+                        ? toLocalDateTime(customBookingFrom, selectedSlot!.startTime)
+                        : `${customBookingFrom}T14:00:00`)
+                    : (requiresSlot && selectedSlot
+                        ? toLocalDateTime(eventDate, selectedSlot.startTime)
+                        : normalizeDateTimeLocal(customBookingFrom));
+                const bookingTo = isStay
+                    ? (sameDayStay
+                        ? toLocalDateTime(
+                            selectedSlot!.endTime <= selectedSlot!.startTime ? addOneDay(customBookingFrom) : customBookingFrom,
+                            selectedSlot!.endTime
+                        )
+                        : `${customBookingTo}T11:00:00`)
+                    : (requiresSlot && selectedSlot
+                        ? toLocalDateTime(selectedSlot.endTime <= selectedSlot.startTime ? addOneDay(eventDate) : eventDate, selectedSlot.endTime)
+                        : normalizeDateTimeLocal(customBookingTo));
+                const holdSlotId = selectedSlot?.slotId;
+                const canReuseHold = Boolean(existingCartItem?.holdId &&
+                    existingCartItem.slotId === holdSlotId &&
+                    existingCartItem.packageId === selectedPackage?.id &&
+                    existingCartItem.bookingFrom === bookingFrom &&
+                    existingCartItem.bookingTo === bookingTo &&
+                    (existingCartItem.roomQuantity ?? 1) === (isStay ? roomQuantity : 1) &&
+                    existingCartItem.holdExpiresAt && Date.parse(existingCartItem.holdExpiresAt) > Date.now());
 
                 const hold = canReuseHold
-                    ? {
-                        holdId: existingCartItem!.holdId!,
-                        expiresAt: existingCartItem!.holdExpiresAt!
-                    }
+                    ? { holdId: existingCartItem!.holdId!, expiresAt: existingCartItem!.holdExpiresAt! }
                     : await BookingAvailabilityService.holdSlot({
                         cartId,
                         serviceId,
-                        slotId: selectedSlot.slotId,
-                        eventDate,
+                        slotId: holdSlotId,
+                        packageId: selectedPackage?.id,
+                        bookingFrom,
+                        bookingTo,
+                        bookingType: isStay ? "ROOM_STAY" : "STANDARD_SLOT",
+                        roomQuantity: isStay ? roomQuantity : undefined,
                         quantity
                     });
 
@@ -670,7 +722,11 @@ const BookingCard = ({
                             vendor
                         ),
 
-                    eventDate,
+                    eventDate: isStay ? undefined : (eventDate || bookingFrom.slice(0, 10)),
+                    bookingFrom,
+                    bookingTo,
+                    bookingType: isStay ? "ROOM_STAY" : "STANDARD_SLOT",
+                    roomQuantity: isStay ? roomQuantity : undefined,
 
                     guestCount:
                         isCatering && guests !== ""
@@ -684,17 +740,10 @@ const BookingCard = ({
                      * =========================================
                      */
 
-                    slotId:
-                        selectedSlot.slotId,
-
-                    slotName:
-                        selectedSlot.slotName,
-
-                    slotStartTime:
-                        selectedSlot.startTime,
-
-                    slotEndTime:
-                        selectedSlot.endTime,
+                    slotId: holdSlotId,
+                    slotName: selectedSlot?.slotName,
+                    slotStartTime: selectedSlot?.startTime,
+                    slotEndTime: selectedSlot?.endTime,
 
 
                     /*
@@ -799,7 +848,7 @@ const BookingCard = ({
                     {
                         status: error?.response?.status,
                         response: error?.response?.data,
-                        request: { serviceId, slotId: selectedSlot?.slotId, eventDate, quantity },
+                        request: { serviceId, slotId: requiresSlot ? selectedSlot?.slotId : undefined, packageId: selectedPackage?.id, eventDate, bookingFrom: customBookingFrom, bookingTo: customBookingTo, quantity },
                         error
                     }
                 );
@@ -826,9 +875,9 @@ const BookingCard = ({
                  * the last available unit.
                  */
 
-                await loadSlotAvailability(
-                    eventDate
-                );
+                if (requiresSlot) {
+                    await loadSlotAvailability(eventDate);
+                }
 
 
                 return false;
@@ -1226,65 +1275,61 @@ const BookingCard = ({
                 </p>
 
 
-                <label>
-                    Event Date
-                </label>
-
-
-                <input
-                    type="date"
-                    value={eventDate}
-                    min={getTomorrowDate()}
-                    onChange={async (e) => {
-
-                        const date =
-                            e.target.value;
-
-
-                        setEventDate(
-                            date
-                        );
-
-
-                        /*
-                         * A slot selected for another
-                         * date must never remain selected.
-                         */
-
-                        setSelectedSlot(
-                            null
-                        );
-
-
-                        setSlots(
-                            []
-                        );
-
-
-                        setSlotError(
-                            null
-                        );
-
-
-                        onEventDateChange?.(
-                            date
-                        );
-
-
-                        if (date) {
-
-                            await loadSlotAvailability(
-                                date
-                            );
-
-                        }
-
-                    }}
-                />
-
+                {isStay ? (
+                    <div className="stay-flexible-booking-fields">
+                        <label htmlFor="stay-booking-from">From Date (Check-in)</label>
+                        <input
+                            id="stay-booking-from"
+                            type="date"
+                            min={getTomorrowDate()}
+                            value={customBookingFrom}
+                            onChange={async e => {
+                                const from = e.target.value;
+                                setCustomBookingFrom(from);
+                                setEventDate(from);
+                                // Default checkout to the check-in date. Same-day STAY bookings
+                                // are valid; the customer can still choose a later checkout.
+                                setCustomBookingTo(current => current && current >= from ? current : from);
+                                setSelectedSlot(null);
+                                onSelectedSlotChange?.(null);
+                                setSlots([]);
+                                setSlotError(null);
+                                onEventDateChange?.(from);
+                                if (from) await loadSlotAvailability(from);
+                            }}
+                        />
+                        <label htmlFor="stay-booking-to">To Date (Check-out)</label>
+                        <input
+                            id="stay-booking-to"
+                            type="date"
+                            min={customBookingFrom || getTomorrowDate()}
+                            value={customBookingTo}
+                            onChange={e => setCustomBookingTo(e.target.value)}
+                        />
+                    </div>
+                ) : (
+                    <>
+                        <label>Event Date</label>
+                        <input
+                            type="date"
+                            value={eventDate}
+                            min={getTomorrowDate()}
+                            onChange={async (e) => {
+                                const date = e.target.value;
+                                setEventDate(date);
+                                setSelectedSlot(null);
+                                onSelectedSlotChange?.(null);
+                                setSlots([]);
+                                setSlotError(null);
+                                onEventDateChange?.(date);
+                                if (date) await loadSlotAvailability(date);
+                            }}
+                        />
+                    </>
+                )}
 
                 {
-                    eventDate && (
+                    eventDate && requiresSlot && (
                         <>
 
                             <label className="slot-section-label">
@@ -1306,7 +1351,7 @@ const BookingCard = ({
                                         {slotError}
                                     </div>
 
-                                ) : slots.length === 0 ? (
+                                ) : eligibleSlots.length === 0 ? (
 
                                     <div className="slot-empty">
                                         No booking slots are configured for this service.
@@ -1332,8 +1377,12 @@ const BookingCard = ({
                                     <div className="booking-slots">
 
                                         {
-                                            slots.map(
+                                            eligibleSlots.map(
                                                 slot => {
+                                                    const incompatibleWithPackage = Boolean(
+                                                        selectedPackage?.slotIds?.length &&
+                                                        !selectedPackage.slotIds.includes(slot.slotId)
+                                                    );
 
                                                     const isSelected =
                                                         selectedSlot?.slotId ===
@@ -1364,6 +1413,10 @@ const BookingCard = ({
                                                                     unavailable
                                                                         ? "unavailable"
                                                                         : ""
+                                                                } ${
+                                                                    incompatibleWithPackage
+                                                                        ? "incompatible"
+                                                                        : ""
                                                                 }`
                                                             }
                                                             disabled={
@@ -1380,9 +1433,11 @@ const BookingCard = ({
                                                                 }
 
 
-                                                                setSelectedSlot(
-                                                                    slot
-                                                                );
+                                                                if (incompatibleWithPackage) {
+                                                                    onClearSelectedPackage?.();
+                                                                }
+                                                                setSelectedSlot(slot);
+                                                                onSelectedSlotChange?.(slot.slotId);
 
                                                             }}
                                                         >
@@ -1507,6 +1562,28 @@ const BookingCard = ({
                     )
                 }
 
+                {isStay && (
+                    <div className="stay-flexible-booking-fields">
+                        <label htmlFor="stay-room-quantity">Number of rooms</label>
+                        <input
+                            id="stay-room-quantity"
+                            type="number"
+                            min="1"
+                            value={roomQuantity}
+                            onChange={e => setRoomQuantity(Math.max(1, Math.floor(Number(e.target.value) || 1)))}
+                        />
+                        <p className="package-eligibility-help">
+                            {selectedPackage?.maxGuestsPerRoom
+                                ? `This package allows up to ${selectedPackage.maxGuestsPerRoom} guests per room.`
+                                : "The vendor has not configured the maximum guests per room for this package."}
+                        </p>
+                        {selectedSlot && (
+                            <p className="package-eligibility-help">
+                                {selectedSlot.remainingCapacity ?? 0} room(s) currently available for this slot on the check-in date. Availability is rechecked for every date of the stay.
+                            </p>
+                        )}
+                    </div>
+                )}
 
                 {isCatering && (
                     <>
@@ -1533,16 +1610,11 @@ const BookingCard = ({
                     onClick={handleBooking}
                     disabled={
                         !selectedPackage ||
-                        !selectedSlot ||
-                        (
-                            !selectedSlot.available &&
-                            !hasReusableExistingHold(
-                                selectedSlot.slotId,
-                                eventDate
-                            )
-                        ) ||
+                        (requiresSlot && !selectedSlot) ||
+                        (requiresSlot && selectedSlot && !selectedSlot.available && !hasReusableExistingHold(selectedSlot.slotId, eventDate)) ||
+                        (isStay && (!customBookingFrom || !customBookingTo || customBookingTo < customBookingFrom)) ||
                         holdingSlot ||
-                        slotsLoading
+                        (requiresSlot && slotsLoading)
                     }
                 >
                     {

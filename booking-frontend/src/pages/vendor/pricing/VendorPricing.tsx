@@ -19,6 +19,8 @@ import type { CateringPackageMenu } from "../../../types/CateringPackageMenu";
 import VendorCateringMenuService from "../../../services/VendorCateringMenuService";
 
 import VendorServiceService from "../../../services/VendorServiceService";
+import BookingSlotService from "../../../services/BookingSlotService";
+import type { BookingSlot } from "../../../types/BookingSlot";
 
 import type { CateringMenuItem} from "../../../types/CateringMenuItem";
 
@@ -149,6 +151,8 @@ const VendorPricing = () => {
     const [ selectedPricingId, setSelectedPricingId ] =  useState<string | null>(null);
 
     const [isCateringService, setIsCateringService] = useState(false);
+    const [isStayService, setIsStayService] = useState(false);
+    const [bookingSlots, setBookingSlots] = useState<BookingSlot[]>([]);
 
     const [cateringMenuItems, setCateringMenuItems] =
         useState<CateringMenuItem[]>([]);
@@ -188,10 +192,16 @@ const VendorPricing = () => {
 
                 if (cancelled) return;
 
-                const isCatering =
-                    service.category?.toLowerCase().trim() === "catering";
+                const category = service.category?.toLowerCase().trim();
+                const isCatering = category === "catering";
+                const isStay = category === "stay" || category === "stays";
 
                 setIsCateringService(isCatering);
+                setIsStayService(isStay);
+
+                // Package eligibility and STAY inventory are managed by booking slots.
+                const slotResults = await BookingSlotService.getSlots(serviceId!);
+                if (!cancelled) setBookingSlots(slotResults.filter(slot => slot.active));
 
                 if (isCatering) {
                     const response =
@@ -206,7 +216,7 @@ const VendorPricing = () => {
             } catch (error) {
                 if (!cancelled) {
                     console.error("Failed to load catering menu:", error);
-                    toast.error("Unable to load the catering menu.");
+                    toast.error("Unable to load package or catering configuration.");
                 }
             }
         }
@@ -672,6 +682,27 @@ const VendorPricing = () => {
              * There is no separate package API call.
              */
 
+            if (!isStayService && packages.some(pkg => pkg.active && pkg.requiresSlot === false)) {
+                toast.error("Packages without predefined slots are supported only for Stays services.");
+                setSaving(false);
+                return;
+            }
+
+            if (isStayService) {
+                const invalidStayPackage = packages.find(pkg => pkg.active && (!Number.isInteger(Number(pkg.maxGuestsPerRoom)) || Number(pkg.maxGuestsPerRoom) < 1));
+                if (invalidStayPackage) {
+                    toast.error(`Enter a maximum of at least one guest per room for package "${invalidStayPackage.name || "Untitled"}".`);
+                    setSaving(false);
+                    return;
+                }
+                const unassignedStayPackage = packages.find(pkg => pkg.active && !(pkg.slotIds ?? []).length);
+                if (unassignedStayPackage) {
+                    toast.error(`Assign at least one booking slot to package "${unassignedStayPackage.name || "Untitled"}".`);
+                    setSaving(false);
+                    return;
+                }
+            }
+
             await VendorPricingService.savePricing(
                 serviceId,
                 pricing,
@@ -938,7 +969,11 @@ const VendorPricing = () => {
             name: "",
             price: 0,
             features: [],
-            active: true
+            active: true,
+            requiresSlot: true,
+            slotIds: [],
+            maxGuestsPerRoom: isStayService ? 2 : undefined,
+            packageType: "STANDARD"
 
         };
 
@@ -987,6 +1022,21 @@ const VendorPricing = () => {
 
     }
 
+
+    function togglePackageId(
+        packageIndex: number,
+        field: "slotIds",
+        id: string
+    ) {
+        setPackages(previous => previous.map((pkg, index) => {
+            if (index !== packageIndex) return pkg;
+            const current = pkg[field] ?? [];
+            const next = current.includes(id)
+                ? current.filter(value => value !== id)
+                : [...current, id];
+            return { ...pkg, [field]: next };
+        }));
+    }
 
     function removePackage(
         packageIndex: number
@@ -1610,6 +1660,53 @@ const VendorPricing = () => {
                                                         </div>
                                                     </div>
 
+                                                    <div className="package-eligibility-config">
+                                                        <div className="package-features-header">
+                                                            <h5>{isStayService ? "Booking Slots & Room Capacity" : "Booking Time Configuration"}</h5>
+                                                        </div>
+                                                        <p className="package-eligibility-help">
+                                                            {isStayService
+                                                                ? "Assign this STAY package to one or more active booking slots. Each slot's maximum bookings value is the number of rooms available."
+                                                                : "Select which slots customers may use with this package. Leave all unchecked to allow all active slots."}
+                                                        </p>
+                                                        {bookingSlots.length === 0 ? (
+                                                            <p className="package-eligibility-help">No active booking slots configured yet.</p>
+                                                        ) : bookingSlots.map(slot => (
+                                                            <label className="package-eligibility-option" key={slot.id}>
+                                                                <input
+                                                                    type="checkbox"
+                                                                    checked={(pkg.slotIds ?? []).includes(slot.id)}
+                                                                    onChange={() => togglePackageId(packageIndex, "slotIds", slot.id)}
+                                                                />
+                                                                <span>{isStayService
+                                                                    ? `${slot.slotName} · ${slot.maxBookings} room(s) available`
+                                                                    : `${slot.slotName} (${slot.startTime}–${slot.endTime})`}</span>
+                                                            </label>
+                                                        ))}
+                                                    </div>
+
+                                                    {isStayService && (
+                                                        <div className="package-eligibility-config stay-package-capacity-config">
+                                                            <div className="package-features-header">
+                                                                <h5>Guests Per Room</h5>
+                                                            </div>
+                                                            <p className="package-eligibility-help">
+                                                                Set the maximum guests allowed in each room. Customers select the number of rooms; availability is checked across the full stay.
+                                                            </p>
+                                                            <label className="stay-max-guests-field">
+                                                                <span className="stay-max-guests-label">Maximum guests per room</span>
+                                                                <input
+                                                                    className="stay-max-guests-input"
+                                                                    type="number"
+                                                                    min="1"
+                                                                    step="1"
+                                                                    value={pkg.maxGuestsPerRoom ?? ""}
+                                                                    onChange={e => setPackages(previous => previous.map((current, index) => index === packageIndex ? { ...current, maxGuestsPerRoom: e.target.value === "" ? undefined : Math.max(1, Math.floor(Number(e.target.value) || 1)) } : current))}
+                                                                />
+                                                            </label>
+                                                        </div>
+                                                    )}
+
                                                     {isCateringService && (
                                                         <div className="package-catering-config">
                                                             <div className="package-catering-config-info">
@@ -1650,6 +1747,7 @@ const VendorPricing = () => {
                                                                     key={featureIndex}
                                                                     className="package-feature-item"
                                                                 >
+                                                                    <span className="package-feature-bullet" aria-hidden="true">•</span>
                                                                     <input
                                                                         type="text"
                                                                         value={feature}

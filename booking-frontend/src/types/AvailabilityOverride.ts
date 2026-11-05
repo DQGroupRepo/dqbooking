@@ -4,7 +4,8 @@ export interface AvailabilityOverride {
 
     serviceId: string;
 
-    slotId: string;
+    slotId?: string | null;
+
 
     date: string;
 

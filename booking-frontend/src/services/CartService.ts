@@ -120,7 +120,7 @@ class CartService {
      * its five-minute lifetime.
      */
 
-    private async releaseHold(item: CartItem, authToken?: string | null): Promise<void> {
+    private async releaseHold(item: CartItem): Promise<void> {
 
         if (!item.holdId) {
             return;
@@ -129,8 +129,7 @@ class CartService {
         try {
             await BookingAvailabilityService.releaseHold(
                 item.serviceId,
-                item.holdId,
-                authToken
+                item.holdId
             );
         } catch (error) {
             console.warn(
@@ -141,8 +140,8 @@ class CartService {
     }
 
 
-    private async releaseHolds(items: CartItem[], authToken?: string | null): Promise<void> {
-        await Promise.all(items.map(item => this.releaseHold(item, authToken)));
+    private async releaseHolds(items: CartItem[]): Promise<void> {
+        await Promise.all(items.map(item => this.releaseHold(item)));
     }
 
 
@@ -343,7 +342,10 @@ class CartService {
         localStorage.removeItem(CART_ID_STORAGE_KEY);
         window.dispatchEvent(new Event("cartUpdated"));
 
-        await this.releaseHolds(cart, authToken);
+        // Authentication is supplied by the shared Axios request interceptor.
+        // Retain the optional argument for compatibility with existing callers.
+        void authToken;
+        await this.releaseHolds(cart);
     }
 
 

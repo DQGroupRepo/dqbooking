@@ -1,267 +1,212 @@
-.booking-slot-card{
-
-    background:#fff;
-
-    border-radius:12px;
-
-    padding:20px;
-
-    box-shadow:0 2px 10px rgba(0,0,0,.08);
-
-    display:flex;
-
-    flex-direction:column;
-
-    gap:18px;
-
+.booking-slot-card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    min-width: 0;
 }
 
-.slot-header{
-
-    display:flex;
-
-    justify-content:space-between;
-
-    align-items:center;
-
+.slot-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
-.slot-header h3{
-
-    margin:0;
-
-    font-size:20px;
-
+.slot-header h3 {
+    margin: 0;
+    font-size: 20px;
+    overflow-wrap: anywhere;
 }
 
-.active-badge{
-
-    display:inline-block;
-
-    margin-top:6px;
-
-    padding:4px 10px;
-
-    background:#e8f8ef;
-
-    color:#2e7d32;
-
-    border-radius:20px;
-
-    font-size:12px;
-
-    font-weight:600;
-
+.active-badge,
+.inactive-badge {
+    display: inline-block;
+    margin-top: 6px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
 }
 
-.inactive-badge{
-
-    display:inline-block;
-
-    margin-top:6px;
-
-    padding:4px 10px;
-
-    background:#fdeaea;
-
-    color:#c62828;
-
-    border-radius:20px;
-
-    font-size:12px;
-
-    font-weight:600;
-
+.active-badge {
+    background: #e8f8ef;
+    color: #2e7d32;
 }
 
-.slot-details{
-
-    display:flex;
-
-    flex-direction:column;
-
-    gap:10px;
-
+.inactive-badge {
+    background: #fdeaea;
+    color: #c62828;
 }
 
-.slot-details p{
-
-    margin:0;
-
-    display:flex;
-
-    align-items:center;
-
-    gap:10px;
-
-    color:#555;
-
+.slot-details {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-width: 0;
 }
 
-.slot-actions{
-
-    display:flex;
-
-    justify-content:flex-end;
-
-    gap:10px;
-
+.slot-details p {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #555;
 }
 
-.slot-actions button{
-
-    border:none;
-
-    padding:10px 16px;
-
-    border-radius:8px;
-
-    cursor:pointer;
-
-    font-weight:600;
-
+.slot-time-range {
+    flex-wrap: wrap;
 }
 
-.edit-btn{
-
-    background:#003580;
-
-    color:white;
-
+.slot-next-day {
+    display: inline-block;
+    margin-left: 4px;
+    color: #8a5700;
+    font-size: 12px;
+    font-weight: 600;
 }
 
-.delete-btn{
-
-    background:#d32f2f;
-
-    color:white;
-
+.slot-duration-summary {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 11px 13px;
+    border-radius: 9px;
+    background: #f5f8fc;
+    color: #003580;
 }
 
-.enable-btn{
-
-    background:#2e7d32;
-
-    color:white;
-
+.slot-duration-summary > span {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
 }
 
-.disable-btn{
-
-    background:#ed6c02;
-
-    color:white;
-
+.slot-duration-summary strong {
+    font-size: 17px;
+    line-height: 1.25;
 }
 
-.capacity-box{
-
-    display:flex;
-
-    align-items:center;
-
-    gap:14px;
-
-    background:#f5f8fc;
-
-    padding:14px;
-
-    border-radius:10px;
-
+.slot-duration-summary small {
+    color: #667085;
+    font-size: 12px;
 }
 
-.capacity-box span{
-
-    font-size:13px;
-
-    color:#666;
-
+.slot-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    flex-wrap: wrap;
 }
 
-.capacity-box h4{
+.slot-actions button {
+    border: none;
+    padding: 10px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+}
 
-    margin:4px 0 0;
+.edit-btn {
+    background: #003580;
+    color: white;
+}
 
-    font-size:24px;
+.delete-btn {
+    background: #d32f2f;
+    color: white;
+}
 
-    color:#003580;
+.enable-btn {
+    background: #2e7d32;
+    color: white;
+}
 
+.disable-btn {
+    background: #ed6c02;
+    color: white;
+}
+
+.capacity-box {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: #f5f8fc;
+    padding: 14px;
+    border-radius: 10px;
+}
+
+.capacity-box span {
+    font-size: 13px;
+    color: #666;
+}
+
+.capacity-box h4 {
+    margin: 4px 0 0;
+    font-size: 24px;
+    color: #003580;
 }
 
 .booking-slot-card.disabled {
-
     opacity: 0.65;
-
     background: #fafafa;
-
     border: 1px solid #d9d9d9;
-
 }
 
 .slot-status {
-
     display: inline-block;
-
     margin-top: 8px;
-
     padding: 4px 10px;
-
     border-radius: 20px;
-
     font-size: 12px;
-
     font-weight: 600;
-
 }
 
 .slot-status.active {
-
     background: #e8f7ee;
-
     color: #157347;
-
 }
 
 .slot-status.inactive {
-
     background: #fdecec;
-
     color: #c62828;
-
 }
 
 .overlap-box {
-
     margin-top: 16px;
-
     padding: 12px;
-
     border: 1px solid #ececec;
-
     border-radius: 8px;
-
     background: #fcfcfc;
-
 }
 
 .overlap-box span {
-
     display: block;
-
     font-size: 12px;
-
     color: #777;
-
     margin-bottom: 4px;
-
 }
 
 .overlap-box h4 {
-
     margin: 0;
-
     font-size: 15px;
-
     font-weight: 600;
+}
 
+@media (max-width: 480px) {
+    .booking-slot-card {
+        padding: 16px;
+        gap: 14px;
+    }
+
+    .slot-actions {
+        justify-content: stretch;
+    }
+
+    .slot-actions button {
+        flex: 1 1 90px;
+        padding: 10px 12px;
+    }
 }

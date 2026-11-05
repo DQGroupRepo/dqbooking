@@ -237,7 +237,7 @@ public class BookingServiceImpl implements BookingService
                     String key =
                             item.getServiceId()
                                     + "_"
-                                    + item.getEventDate();
+                                    + item.getBookingFrom().toLocalDate();
 
 
                     /*
@@ -287,6 +287,17 @@ public class BookingServiceImpl implements BookingService
          * identifies a booking item.
          */
 
+        for (BookingServiceItemRequest item : allServiceItems) {
+            if (item.getBookingFrom() == null || item.getBookingTo() == null
+                    || !item.getBookingFrom().isBefore(item.getBookingTo())) {
+                throw new IllegalArgumentException("Booking end must be after booking start.");
+            }
+            if ("ROOM_STAY".equals(item.getBookingType())
+                    && (item.getRoomQuantity() == null || item.getRoomQuantity() < 1)) {
+                throw new IllegalArgumentException("At least one room must be selected.");
+            }
+        }
+
         List<BookingServiceItemRequest> serviceItems =
                 allServiceItems
                         .stream()
@@ -295,7 +306,7 @@ public class BookingServiceImpl implements BookingService
                                         item ->
                                                 item.getServiceId()
                                                         + "_"
-                                                        + item.getEventDate(),
+                                                        + item.getBookingFrom().toLocalDate(),
 
                                         item -> item,
 
@@ -350,7 +361,6 @@ public class BookingServiceImpl implements BookingService
                 serviceItems,
                 customer.getId()
         );
-
 
         /*
          * =========================================
@@ -562,8 +572,11 @@ public class BookingServiceImpl implements BookingService
                                         item.getPackageId()
                                 );
 
-                                calculationItem.setEventDate(
-                                        item.getEventDate()
+                                calculationItem.setBookingFrom(
+                                        item.getBookingFrom()
+                                );
+                                calculationItem.setBookingTo(
+                                        item.getBookingTo()
                                 );
 
                                 return calculationItem;
@@ -639,21 +652,19 @@ public class BookingServiceImpl implements BookingService
                         String discountKey =
                                 matchingItem.getServiceId()
                                         + "_"
-                                        + matchingItem.getEventDate()
+                                        + matchingItem.getBookingFrom()
                                         + "_"
-                                        + (
-                                        matchingItem.getPackageId() != null
-                                                ? matchingItem.getPackageId()
-                                                : ""
-                                );
-
+                                        + matchingItem.getBookingTo()
+                                        + "_"
+                                        + (matchingItem.getPackageId() != null
+                                        ? matchingItem.getPackageId()
+                                        : "");
 
                         bundleDiscountMap.merge(
                                 discountKey,
                                 discount,
                                 BigDecimal::add
                         );
-
                     }
 
                     bundleApplied = true;
@@ -728,7 +739,7 @@ public class BookingServiceImpl implements BookingService
             PricingCalculationResult pricingResult =
                     pricingCalculationService.calculatePrice(
                             vendorService.getId(),
-                            item.getEventDate(),
+                            item.getBookingFrom().toLocalDate(),
                             item.getPackageId()
                     );
 
@@ -736,9 +747,19 @@ public class BookingServiceImpl implements BookingService
                     resolvePackage(
                             vendorService,
                             item.getPackageId(),
-                            item.getEventDate()
+                            item.getBookingFrom().toLocalDate()
                     );
 
+            validatePackageSlot(vendorService, selectedPackage, item);
+            if (vendorService.getCategory() == com.booking.model.enums.ServiceCategory.STAY) {
+                int rooms = item.getRoomQuantity() == null ? 1 : item.getRoomQuantity();
+                int guestsPerRoom = selectedPackage.getMaxGuestsPerRoom();
+                int maxGuests = rooms * guestsPerRoom;
+                if (item.getGuestCount() != null && item.getGuestCount() > maxGuests) {
+                    throw new IllegalArgumentException(
+                            "Guest count exceeds the selected package capacity of " + maxGuests + " guests for " + rooms + " room(s).");
+                }
+            }
 
             BigDecimal serviceTotal =
                     safe(
@@ -769,7 +790,7 @@ public class BookingServiceImpl implements BookingService
             String serviceItemKey =
                     item.getServiceId()
                             + "_"
-                            + item.getEventDate();
+                            + item.getBookingFrom().toLocalDate();
 
 
             String bundleId =
@@ -787,7 +808,7 @@ public class BookingServiceImpl implements BookingService
             String discountKey =
                     item.getServiceId()
                             + "_"
-                            + item.getEventDate()
+                            + item.getBookingFrom().toLocalDate()
                             + "_"
                             + (
                             item.getPackageId() != null
@@ -843,9 +864,16 @@ public class BookingServiceImpl implements BookingService
             );
 
 
-            booking.setEventDate(
-                    item.getEventDate()
-            );
+            booking.setBookingFrom(item.getBookingFrom());
+            booking.setBookingTo(item.getBookingTo());
+            // Persist the exact slot selected in the cart/checkout request.
+            // Availability uses this field to charge capacity to only that slot.
+            booking.setSlotId(item.getSlotId());
+            boolean stayBooking = vendorService.getCategory() == com.booking.model.enums.ServiceCategory.STAY;
+            booking.setBookingType(stayBooking ? "ROOM_STAY"
+                    : (item.getBookingType() == null ? "STANDARD_SLOT" : item.getBookingType()));
+            booking.setRoomTypeId(null);
+            booking.setRoomQuantity(item.getRoomQuantity() == null ? 1 : item.getRoomQuantity());
 
 
             booking.setGuestCount(
@@ -1070,7 +1098,7 @@ public class BookingServiceImpl implements BookingService
                     customer.getId(),
                     booking.getVendorId(),
                     booking.getServiceId(),
-                    booking.getEventDate(),
+                    booking.getBookingFrom().toLocalDate(),
                     booking.getBundleId());
 
 
@@ -1142,6 +1170,9 @@ public class BookingServiceImpl implements BookingService
          * 10. RETURN BOOKING GROUP
          * =========================================
          */
+
+        // Convert exact holds only after all booking documents have been saved.
+        convertBookingHolds(serviceItems, customer.getId(), bookingGroupId);
 
         log.info("Booking group created bookingGroupId={} customerId={} bookingCount={} originalTotal={} totalDiscount={} finalTotal={} bundleApplied={}",
                 bookingGroupId,
@@ -1376,50 +1407,162 @@ public class BookingServiceImpl implements BookingService
             String customerId
     ) {
 
-        LocalDateTime now =
-                LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now();
 
         for (BookingServiceItemRequest item : serviceItems) {
+            if (item.getHoldId() != null && !item.getHoldId().isBlank()) {
+                BookingHold hold = bookingHoldRepository.findById(item.getHoldId())
+                        .orElseThrow(() -> new ExpiredBookingHoldException(
+                                item.getServiceId(), item.getSlotId(),
+                                item.getBookingFrom() == null ? null : item.getBookingFrom().toString()));
+
+                boolean validExactHold =
+                        customerId.equals(hold.getCustomerId())
+                                && item.getServiceId().equals(hold.getServiceId())
+                                && hold.getStatus() == BookingHoldStatus.ACTIVE
+                                && hold.getExpiresAt() != null
+                                && hold.getExpiresAt().isAfter(now)
+                                && Objects.equals(hold.getSlotId(), item.getSlotId())
+                                && Objects.equals(hold.getPackageId(), item.getPackageId())
+                                && Objects.equals(hold.getBookingType() == null ? "STANDARD_SLOT" : hold.getBookingType(),
+                                item.getBookingType() == null ? "STANDARD_SLOT" : item.getBookingType())
+                                && hold.getBookingFrom() != null
+                                && hold.getBookingTo() != null
+                                && Objects.equals(hold.getBookingFrom(), item.getBookingFrom())
+                                && Objects.equals(hold.getBookingTo(), item.getBookingTo())
+                                && (!"ROOM_STAY".equalsIgnoreCase(item.getBookingType())
+                                || Objects.equals(
+                                hold.getRoomQuantity() == null ? 1 : hold.getRoomQuantity(),
+                                item.getRoomQuantity() == null ? 1 : item.getRoomQuantity()));
+
+                if (!validExactHold) {
+                    log.warn("Exact booking hold rejected customerId={} serviceId={} holdId={}",
+                            customerId, item.getServiceId(), item.getHoldId());
+                    throw new ExpiredBookingHoldException(
+                            item.getServiceId(), item.getSlotId(),
+                            item.getBookingFrom() == null ? null : item.getBookingFrom().toString());
+                }
+                continue;
+            }
+
+            /*
+             * Compatibility path for older direct-booking callers that do not
+             * yet send holdId. New cart/checkout callers should always send it.
+             * Keep the existing flow working while the direct-entry point is
+             * migrated to pass the exact hold ID.
+             */
+            log.warn("Legacy booking request has no holdId; using compatibility validation serviceId={} customerId={}",
+                    item.getServiceId(), customerId);
 
             List<BookingHold> activeHolds =
-                    bookingHoldRepository
-                            .findByServiceIdAndSlotIdAndEventDateAndStatusAndExpiresAtAfter(
-                                    item.getServiceId(),
-                                    item.getSlotId(),
-                                    item.getEventDate(),
-                                    BookingHoldStatus.ACTIVE,
-                                    now
-                            );
+                    bookingHoldRepository.findByServiceIdAndStatusAndExpiresAtAfter(
+                            item.getServiceId(), BookingHoldStatus.ACTIVE, now);
 
-            boolean validHold =
-                    activeHolds
-                            .stream()
-                            .anyMatch(hold ->
-                                    customerId.equals(
-                                            hold.getCustomerId()
-                                    )
-                            );
+            boolean validHold = activeHolds.stream().anyMatch(hold ->
+                    customerId.equals(hold.getCustomerId())
+                            && hold.getBookingFrom() != null
+                            && hold.getBookingTo() != null
+                            && Objects.equals(hold.getBookingFrom(), item.getBookingFrom())
+                            && Objects.equals(hold.getBookingTo(), item.getBookingTo())
+                            && Objects.equals(hold.getBookingType() == null ? "STANDARD_SLOT" : hold.getBookingType(),
+                            item.getBookingType() == null ? "STANDARD_SLOT" : item.getBookingType())
+                            && Objects.equals(hold.getSlotId(), item.getSlotId())
+                            && Objects.equals(hold.getPackageId(), item.getPackageId()));
 
             if (!validHold) {
-
-                log.warn(
-                        "Booking rejected because active hold is missing or expired " +
-                                "customerId={} serviceId={} slotId={} eventDate={}",
-                        customerId,
-                        item.getServiceId(),
-                        item.getSlotId(),
-                        item.getEventDate()
-                );
-
+                log.warn("Booking rejected because active hold is missing or expired customerId={} serviceId={} slotId={} bookingFrom={}",
+                        customerId, item.getServiceId(), item.getSlotId(), item.getBookingFrom());
                 throw new ExpiredBookingHoldException(
-                        item.getServiceId(),
-                        item.getSlotId(),
-                        item.getEventDate().toString()
-                );
+                        item.getServiceId(), item.getSlotId(),
+                        item.getBookingFrom() == null ? null : item.getBookingFrom().toString());
             }
         }
     }
 
+    /** Mark only the exact validated holds as converted after bookings are saved. */
+    private void convertBookingHolds(
+            List<BookingServiceItemRequest> serviceItems,
+            String customerId,
+            String bookingGroupId
+    ) {
+        LocalDateTime now = LocalDateTime.now();
+        for (BookingServiceItemRequest item : serviceItems) {
+            if (item.getHoldId() == null || item.getHoldId().isBlank()) {
+                continue;
+            }
+            BookingHold hold = bookingHoldRepository.findById(item.getHoldId())
+                    .orElseThrow(() -> new ExpiredBookingHoldException(
+                            item.getServiceId(), item.getSlotId(),
+                            item.getBookingFrom() == null ? null : item.getBookingFrom().toString()));
+            if (!customerId.equals(hold.getCustomerId())
+                    || !item.getServiceId().equals(hold.getServiceId())
+                    || hold.getStatus() != BookingHoldStatus.ACTIVE
+                    || hold.getExpiresAt() == null
+                    || !hold.getExpiresAt().isAfter(now)
+                    || !Objects.equals(hold.getSlotId(), item.getSlotId())
+                    || !Objects.equals(hold.getPackageId(), item.getPackageId())
+                    || !Objects.equals(hold.getBookingFrom(), item.getBookingFrom())
+                    || !Objects.equals(hold.getBookingTo(), item.getBookingTo())
+                    || ("ROOM_STAY".equalsIgnoreCase(item.getBookingType())
+                    && !Objects.equals(hold.getRoomQuantity() == null ? 1 : hold.getRoomQuantity(),
+                    item.getRoomQuantity() == null ? 1 : item.getRoomQuantity()))
+                    || !Objects.equals(hold.getBookingType() == null ? "STANDARD_SLOT" : hold.getBookingType(),
+                    item.getBookingType() == null ? "STANDARD_SLOT" : item.getBookingType())) {
+                throw new ExpiredBookingHoldException(
+                        item.getServiceId(), item.getSlotId(),
+                        item.getBookingFrom() == null ? null : item.getBookingFrom().toString());
+            }
+            hold.setStatus(BookingHoldStatus.CONVERTED);
+            hold.setBookingGroupId(bookingGroupId);
+            bookingHoldRepository.save(hold);
+        }
+    }
+
+
+    private void validatePackageSlot(
+            VendorService service,
+            ServicePackage selectedPackage,
+            BookingServiceItemRequest item
+    ) {
+        boolean isStay = service.getCategory() == com.booking.model.enums.ServiceCategory.STAY;
+        if (selectedPackage == null) {
+            if (isStay) {
+                throw new IllegalArgumentException("A package is required for STAY bookings.");
+            }
+            if (item.getSlotId() == null || item.getSlotId().isBlank()) {
+                throw new IllegalArgumentException("A booking slot or an explicitly configured slot-free package is required.");
+            }
+            return;
+        }
+
+        boolean requiresSlot = isStay || !Boolean.FALSE.equals(selectedPackage.getRequiresSlot());
+        String slotId = item.getSlotId();
+
+        if (!requiresSlot && !isStay) {
+            throw new IllegalArgumentException("Slot-free packages are supported only for STAY services.");
+        }
+        if (requiresSlot && (slotId == null || slotId.isBlank())) {
+            throw new IllegalArgumentException("Select a booking slot for this package.");
+        }
+
+        List<String> allowedSlots = selectedPackage.getSlotIds();
+        if (isStay && (allowedSlots == null || allowedSlots.isEmpty())) {
+            throw new IllegalArgumentException("The selected STAY package must be assigned to at least one booking slot.");
+        }
+        if (requiresSlot && allowedSlots != null && !allowedSlots.isEmpty()
+                && !allowedSlots.contains(slotId)) {
+            throw new IllegalArgumentException("The selected booking slot is not available for this package.");
+        }
+
+        if (isStay) {
+            if (selectedPackage.getMaxGuestsPerRoom() == null || selectedPackage.getMaxGuestsPerRoom() < 1) {
+                throw new IllegalArgumentException("Configure the maximum guests per room for this STAY package.");
+            }
+            if (item.getRoomQuantity() == null || item.getRoomQuantity() < 1) {
+                throw new IllegalArgumentException("At least one room must be selected for this STAY package.");
+            }
+        }
+    }
 
     private ServicePackage resolvePackage(
             VendorService service,
@@ -2074,9 +2217,8 @@ public class BookingServiceImpl implements BookingService
                                 .toLocalDate()
                 )
 
-                .eventDate(
-                        booking.getEventDate()
-                )
+                .bookingFrom(booking.getBookingFrom())
+                .bookingTo(booking.getBookingTo())
 
                 .guestCount(
                         booking.getGuestCount()
@@ -2199,9 +2341,8 @@ public class BookingServiceImpl implements BookingService
                         booking.getBookingNumber()
                 )
 
-                .eventDate(
-                        booking.getEventDate()
-                )
+                .bookingFrom(booking.getBookingFrom())
+                .bookingTo(booking.getBookingTo())
 
                 .totalAmount(
                         booking.getTotalAmount()
@@ -2262,7 +2403,7 @@ public class BookingServiceImpl implements BookingService
 
                         LocalDate.now(),
 
-                        booking.getEventDate()
+                        booking.getBookingFrom().toLocalDate()
 
                 );
 
@@ -2381,7 +2522,7 @@ public class BookingServiceImpl implements BookingService
 
         }
 
-        if (booking.getEventDate().isBefore(LocalDate.now())) {
+        if (booking.getBookingFrom().toLocalDate().isBefore(LocalDate.now())) {
 
             throw new IllegalStateException(
                     "Past bookings cannot be cancelled."

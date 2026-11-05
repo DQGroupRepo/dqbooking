@@ -1,4 +1,4 @@
-import api from "../api/axios";
+import api from "../api/axiosConfig";
 
 import type {
     SlotAvailability
@@ -66,13 +66,11 @@ class BookingAvailabilityService {
 
     async releaseHold(
         serviceId: string,
-        holdId: string,
-        authToken?: string | null
+        holdId: string
     ): Promise<void> {
 
         await api.delete(
-            `/services/${serviceId}/availability/hold/${holdId}`,
-            authToken ? { headers: { Authorization: `Bearer ${authToken}` } } : undefined
+            `/services/${serviceId}/availability/hold/${holdId}`
         );
     }
 

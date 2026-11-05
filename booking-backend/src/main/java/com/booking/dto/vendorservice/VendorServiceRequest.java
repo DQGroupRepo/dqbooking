@@ -32,6 +32,15 @@ public class VendorServiceRequest {
 
     private Integer durationHours;
 
+    /** STAY configuration: default check-in time, e.g. 15:00. */
+    private java.time.LocalTime checkInTime;
+
+    /** STAY configuration: default check-out time, e.g. 10:00. */
+    private java.time.LocalTime checkOutTime;
+
+    /** Total room inventory managed by this service (if applicable). */
+    private Integer totalRoomCapacity;
+
     @Valid
     private ContactInfoDto contactInfo;
 

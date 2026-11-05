@@ -9,9 +9,7 @@ import lombok.Setter;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -69,7 +67,20 @@ public class Booking extends BaseEntity {
      * =========================================
      */
 
-    private LocalDate eventDate;
+    /** Inclusive start of the requested service interval (property-local time). */
+    private LocalDateTime bookingFrom;
+
+    /** Exclusive end of the requested service interval (property-local time). */
+    private LocalDateTime bookingTo;
+
+    /** STANDARD_SLOT, ROOM_STAY or DAY_PACKAGE. */
+    private String bookingType = "STANDARD_SLOT";
+
+    /** Deprecated legacy snapshot field; new STAY bookings leave this null. */
+    private String roomTypeId;
+
+    /** Number of rooms requested for ROOM_STAY bookings; consumes slot capacity. */
+    private Integer roomQuantity;
 
     /*
      * =========================================

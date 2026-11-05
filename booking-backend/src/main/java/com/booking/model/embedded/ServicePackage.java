@@ -21,6 +21,21 @@ public class ServicePackage {
 
     private boolean active;
 
+    /** Capacity available for overlapping day-package bookings. */
+    private Integer capacity;
+
+    /** DAY_PACKAGE or ordinary service package. */
+    private String packageType;
+
+    /**
+     * Optional allow-list of slot IDs for this package.
+     * Empty/null preserves legacy behavior (all active service slots).
+     */
+    private List<String> slotIds = new ArrayList<>();
+
+    /** Maximum guests allowed in each room for STAY packages. Null for other categories. */
+    private Integer maxGuestsPerRoom;
+
     /*
      * =========================================
      * CATERING PACKAGE MENU
@@ -35,5 +50,11 @@ public class ServicePackage {
      * and customer can select any 3.
      */
     private CateringPackageMenu cateringMenu;
+
+    /**
+     * Whether a predefined booking slot is required.
+     * Defaults to true to preserve existing booking behavior.
+     */
+    private Boolean requiresSlot = true;
 
 }

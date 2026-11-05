@@ -8,6 +8,7 @@ import com.booking.mapper.PricingMapper;
 import com.booking.model.*;
 import com.booking.model.embedded.ServicePackage;
 import org.springframework.stereotype.Component;
+import org.bson.types.ObjectId;
 
 import com.booking.dto.service.CateringPackageDishRequest;
 import com.booking.dto.service.CateringPackageDishResponse;
@@ -180,9 +181,13 @@ public class PricingMapperImpl implements PricingMapper {
         ServicePackage servicePackage =
                 new ServicePackage();
 
-        servicePackage.setId(
-                request.getId()
-        );
+        // Package IDs are required by the booking/hold API.
+        // Preserve an existing ID; assign one only for a new package.
+        String packageId = request.getId();
+        if (packageId == null || packageId.isBlank()) {
+            packageId = new ObjectId().toHexString();
+        }
+        servicePackage.setId(packageId);
 
         servicePackage.setName(
                 request.getName()
@@ -199,6 +204,12 @@ public class PricingMapperImpl implements PricingMapper {
         servicePackage.setActive(
                 request.isActive()
         );
+        servicePackage.setCapacity(request.getCapacity());
+        servicePackage.setPackageType(request.getPackageType());
+        servicePackage.setRequiresSlot(request.isRequiresSlot());
+        servicePackage.setSlotIds(request.getSlotIds() == null
+                ? new java.util.ArrayList<>() : new java.util.ArrayList<>(request.getSlotIds()));
+        servicePackage.setMaxGuestsPerRoom(request.getMaxGuestsPerRoom());
 
         servicePackage.setCateringMenu(
                 toCateringPackageMenu(
@@ -450,6 +461,12 @@ public class PricingMapperImpl implements PricingMapper {
         response.setActive(
                 servicePackage.isActive()
         );
+        response.setCapacity(servicePackage.getCapacity());
+        response.setPackageType(servicePackage.getPackageType());
+        response.setRequiresSlot(servicePackage.getRequiresSlot());
+        response.setSlotIds(servicePackage.getSlotIds() == null
+                ? java.util.Collections.emptyList() : servicePackage.getSlotIds());
+        response.setMaxGuestsPerRoom(servicePackage.getMaxGuestsPerRoom());
 
         response.setCateringMenu(
                 toCateringPackageMenuResponse(

@@ -53,6 +53,25 @@ const VendorLayout = () => {
 
   const location = useLocation();
 
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+
+  // Close the mobile navigation after route changes.
+  useEffect(() => {
+    setMobileSidebarOpen(false);
+  }, [location.pathname]);
+
+  // Allow the drawer to be dismissed with Escape.
+  useEffect(() => {
+    if (!mobileSidebarOpen) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setMobileSidebarOpen(false);
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [mobileSidebarOpen]);
+
 
   const [
     supportChecking,
@@ -395,12 +414,36 @@ const VendorLayout = () => {
 
       <div className="vendor-layout">
 
+        {mobileSidebarOpen && (
+          <button
+            type="button"
+            className="vendor-sidebar-backdrop"
+            aria-label="Close navigation menu"
+            onClick={() => setMobileSidebarOpen(false)}
+          />
+        )}
+
         <VendorSidebar
           viewPages={permissions.viewPages}
           supportActive={false}
+          mobileOpen={mobileSidebarOpen}
+          onClose={() => setMobileSidebarOpen(false)}
         />
 
         <div className="vendor-main">
+
+          <div className="vendor-mobile-menu-row">
+            <button
+              type="button"
+              className="vendor-mobile-menu-button"
+              aria-label="Open navigation menu"
+              aria-expanded={mobileSidebarOpen}
+              onClick={() => setMobileSidebarOpen(true)}
+            >
+              <span aria-hidden="true">☰</span>
+            </button>
+            <span className="vendor-mobile-brand">EventNest</span>
+          </div>
 
           <VendorTopBar />
 
@@ -434,12 +477,36 @@ const VendorLayout = () => {
 
       <div className="vendor-layout">
 
+        {mobileSidebarOpen && (
+          <button
+            type="button"
+            className="vendor-sidebar-backdrop"
+            aria-label="Close navigation menu"
+            onClick={() => setMobileSidebarOpen(false)}
+          />
+        )}
+
         <VendorSidebar
           viewPages={permissions.viewPages}
           supportActive={supportActive}
+          mobileOpen={mobileSidebarOpen}
+          onClose={() => setMobileSidebarOpen(false)}
         />
 
         <div className="vendor-main">
+
+          <div className="vendor-mobile-menu-row">
+            <button
+              type="button"
+              className="vendor-mobile-menu-button"
+              aria-label="Open navigation menu"
+              aria-expanded={mobileSidebarOpen}
+              onClick={() => setMobileSidebarOpen(true)}
+            >
+              <span aria-hidden="true">☰</span>
+            </button>
+            <span className="vendor-mobile-brand">EventNest</span>
+          </div>
 
           <VendorTopBar />
 

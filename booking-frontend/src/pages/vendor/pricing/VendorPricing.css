@@ -2569,3 +2569,233 @@
 .configure-catering-menu-btn:hover {
     background: #eff6ff;
 }
+
+/* Package eligibility controls: additive styles, leaving existing pricing layout intact. */
+.package-eligibility-config {
+    margin-top: 1rem;
+    padding: 1rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    background: #fafbfc;
+}
+.package-eligibility-help {
+    margin: .35rem 0 .75rem;
+    color: #64748b;
+    font-size: .875rem;
+    line-height: 1.45;
+}
+.package-eligibility-option {
+    display: flex;
+    align-items: center;
+    gap: .65rem;
+    padding: .45rem 0;
+    cursor: pointer;
+    color: #334155;
+}
+.package-eligibility-option input {
+    flex: 0 0 auto;
+    width: 16px;
+    height: 16px;
+}
+
+
+/* =========================================================
+   PACKAGE EDITOR UX IMPROVEMENTS
+   Scoped to the vendor pricing package editor.
+   Feature values remain strings in the existing features[] array.
+   ========================================================= */
+
+/* Let cards grow naturally when vendors add more feature rows. */
+.service-package-card {
+    height: auto;
+    min-height: 0;
+    max-height: none;
+    overflow: hidden;
+}
+
+.package-features-section {
+    flex: 0 0 auto;
+    min-width: 0;
+    padding: 14px 16px 18px;
+}
+
+.package-features-header {
+    margin-bottom: 12px;
+}
+
+.package-features-header h5 {
+    font-size: 13px;
+}
+
+.add-feature-btn {
+    flex-shrink: 0;
+    min-height: 32px;
+    padding: 6px 9px;
+    border: 1px solid #dbeafe;
+    border-radius: 7px;
+    background: #eff6ff;
+    font-size: 12px;
+}
+
+.add-feature-btn:hover {
+    background: #dbeafe;
+    text-decoration: none;
+}
+
+.package-feature-list {
+    gap: 9px;
+}
+
+.package-feature-item {
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+
+.package-feature-bullet {
+    flex: 0 0 20px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #2563eb;
+    font-size: 22px;
+    line-height: 1;
+}
+
+.package-feature-item input {
+    box-sizing: border-box;
+    width: 100%;
+    min-width: 0;
+    min-height: 42px;
+    padding: 10px 12px;
+    font-size: 14px;
+    line-height: 1.4;
+}
+
+.remove-feature-btn {
+    flex: 0 0 34px;
+    width: 34px;
+    height: 34px;
+    min-height: 34px;
+    font-size: 20px;
+}
+
+.no-features {
+    padding: 14px 12px;
+    border: 1px dashed #cbd5e1;
+    border-radius: 8px;
+    background: #f8fafc;
+    font-size: 12px;
+}
+
+/* Keep the STAY guest count input usable at all viewport widths. */
+.stay-package-capacity-config {
+    min-width: 0;
+}
+
+.stay-max-guests-field {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    width: 100%;
+    padding: 0;
+    cursor: default;
+}
+
+.stay-max-guests-label {
+    color: #334155;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.stay-max-guests-input {
+    display: block;
+    width: 100%;
+    max-width: 240px;
+    min-width: 0;
+    min-height: 44px;
+    box-sizing: border-box;
+    padding: 10px 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    background: #fff;
+    color: #0f172a;
+    font-size: 16px;
+    line-height: 1.4;
+}
+
+.stay-max-guests-input:focus {
+    border-color: #2563eb;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+@media (max-width: 700px) {
+    .package-card-section {
+        padding: 16px;
+    }
+
+    .package-section-header {
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    .service-package-card {
+        width: 100%;
+    }
+
+    .package-card-header {
+        padding: 14px;
+    }
+
+    .package-price-field {
+        padding: 14px 14px 8px;
+    }
+
+    .package-eligibility-config {
+        margin: 12px 14px 0;
+        padding: 13px;
+    }
+
+    .package-features-section {
+        padding: 14px;
+    }
+
+    .package-feature-item input {
+        min-height: 44px;
+        font-size: 16px;
+    }
+
+    .stay-max-guests-input {
+        max-width: none;
+    }
+
+    .package-card-footer {
+        padding: 12px 14px;
+    }
+}
+
+@media (max-width: 380px) {
+    .package-card-section {
+        padding: 12px;
+    }
+
+    .package-features-header {
+        align-items: flex-start;
+        flex-wrap: wrap;
+    }
+
+    .package-feature-bullet {
+        flex-basis: 14px;
+    }
+
+    .package-feature-item {
+        gap: 6px;
+    }
+
+    .remove-feature-btn {
+        flex-basis: 32px;
+        width: 32px;
+    }
+}

@@ -6,6 +6,7 @@ public enum ServiceCategory {
     CATERING,
     PHOTOGRAPHY,
     DECORATION,
-    MAKEUP
+    MAKEUP,
+    STAY
 
 }

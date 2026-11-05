@@ -272,7 +272,10 @@ public class BookingSlotServiceImpl
             java.time.LocalTime start,
             java.time.LocalTime end) {
 
-        if (!end.isAfter(start)) {
+        // A slot whose end time is earlier than its start time represents an
+        // overnight interval (for example 11:00 -> 10:00 next day). Equal
+        // times are rejected because they would otherwise be ambiguous.
+        if (start == null || end == null || start.equals(end)) {
 
             log.warn(
                     "Invalid booking slot time range startTime={} endTime={}",
@@ -281,7 +284,7 @@ public class BookingSlotServiceImpl
             );
 
             throw new IllegalArgumentException(
-                    "End time must be after start time."
+                    "Start and end times must be present and must not be equal."
             );
         }
     }

@@ -17,7 +17,10 @@ export interface Booking {
 
   totalAmount: number;
 
-  eventDate: string;
+  bookingFrom: string;
+  bookingTo: string;
+  bookingType?: "STANDARD_SLOT" | "ROOM_STAY" | "DAY_PACKAGE";
+  roomQuantity?: number;
 
   guestCount: number;
 

@@ -1,4 +1,4 @@
-package com.booking.controller.customer;
+package com.booking.controller;
 
 import com.booking.dto.customer.VendorListingResponse;
 import com.booking.service.CustomerVendorService;

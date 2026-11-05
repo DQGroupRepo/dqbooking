@@ -20,6 +20,16 @@ public class ServicePackageResponse {
 
     private boolean active;
 
+    private Integer capacity;
+
+    private String packageType;
+
+    private boolean requiresSlot = true;
+
+    private List<String> slotIds;
+
+    private Integer maxGuestsPerRoom;
+
     /*
      * Catering-only configuration.
      */
