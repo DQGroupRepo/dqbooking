@@ -1,0 +1,105 @@
+.tag-selector {
+    margin: 14px 0;
+}
+
+.tag-selector > label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.tag-selector input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #d5d9df;
+    border-radius: 8px;
+}
+
+.tag-selected,
+.tag-suggestions,
+.tag-district-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 8px 0;
+}
+
+.tag-pill {
+    border: 1px solid #d5d9df;
+    background: #fff;
+    border-radius: 18px;
+    padding: 6px 11px;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.tag-pill:hover {
+    border-color: #8eacd4;
+    background: #f7faff;
+}
+
+.tag-pill.selected {
+    background: #eef5ff;
+    border-color: #9dbce9;
+}
+
+.tag-pill.custom {
+    border-style: dashed;
+}
+
+.tag-selector-hint {
+    margin: 3px 0 7px;
+    color: #68798a;
+    font-size: 12px;
+    cursor: help;
+}
+
+.tag-selector-hint-icon {
+    display: inline-flex;
+    margin-right: 5px;
+    color: #4779ad;
+    font-weight: 700;
+}
+
+.tag-district-list {
+    margin-top: 7px;
+    margin-bottom: 12px;
+}
+
+.district-pill {
+    background: #f8fafc;
+}
+
+.district-pill.selected {
+    background: #e8f1ff;
+    border-color: #6798d3;
+    color: #174f8a;
+    font-weight: 600;
+}
+
+.tag-selected-district {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin: 4px 0 8px;
+    color: #34495e;
+    font-size: 13px;
+}
+
+.tag-selected-district button {
+    margin-left: 7px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: #1765a5;
+    font-size: 12px;
+    cursor: pointer;
+    text-decoration: underline;
+}
+
+.tag-selector-status {
+    color: #718096;
+    font-size: 12px;
+    padding: 5px 0;
+}

@@ -4,6 +4,7 @@ import com.booking.dto.service.ServiceDetailSectionResponse;
 import com.booking.dto.service.ServicePackageResponse;
 import com.booking.model.enums.DiscountType;
 import com.booking.model.enums.ServiceModerationStatus;
+import com.booking.model.embedded.ServiceTag;
 import com.booking.dto.service.CateringDetailsResponse;
 import jakarta.validation.Valid;
 import lombok.Getter;
@@ -57,6 +58,8 @@ public class VendorServiceResponse {
             new ArrayList<>();
 
     private String location;
+
+    private List<ServiceTag> tags = new ArrayList<>();
 
     private String address;
 

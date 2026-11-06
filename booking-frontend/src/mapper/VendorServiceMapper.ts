@@ -19,6 +19,10 @@ export default class VendorServiceMapper {
 
       location: service.location,
 
+      categoryTags: (service.tags ?? []).filter(t => t.type === "CATEGORY").map(t => t.value),
+
+      locationTags: (service.tags ?? []).filter(t => t.type === "LOCATION").map(t => t.value),
+
       capacity: service.capacity?.toString() ?? "",
 
       durationHours: service.durationHours?.toString() ?? "",
@@ -107,6 +111,11 @@ export default class VendorServiceMapper {
       category: form.category.toUpperCase(),
 
       location: form.location,
+
+      tags: [
+        ...form.categoryTags.map(value => ({ type: "CATEGORY" as const, value, normalizedName: value.trim().toLowerCase(), aliases: [] })),
+        ...form.locationTags.map(value => ({ type: "LOCATION" as const, value, normalizedName: value.trim().toLowerCase(), aliases: [] })),
+      ],
 
       description: form.description,
 

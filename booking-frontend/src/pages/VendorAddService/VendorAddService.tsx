@@ -1702,6 +1702,10 @@ const AddService = () => {
                                         handleChange
                                     }
 
+                                    onCategoryTagsChange={(values) => setFormData(previous => ({ ...previous, categoryTags: values }))}
+
+                                    onLocationTagsChange={(values) => setFormData(previous => ({ ...previous, locationTags: values }))}
+
                                 />
 
                             </section>

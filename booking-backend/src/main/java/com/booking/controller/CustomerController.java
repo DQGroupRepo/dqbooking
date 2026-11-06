@@ -32,14 +32,16 @@ public class CustomerController {
 
     @GetMapping("/services")
     public List<VendorListingResponse> getServices(
-            @RequestParam(required = false)
-            String category
+            @RequestParam(required = false) String category,
+            @RequestParam(required = false) String categoryTag,
+            @RequestParam(required = false) String location,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size
     ) throws Exception {
-
-        return customerService.getVendorListings(
-                category
-        );
-
+        if ((categoryTag != null && !categoryTag.isBlank()) || (location != null && !location.isBlank())) {
+            return customerService.searchListings(categoryTag, location, page, size);
+        }
+        return customerService.getVendorListings(category);
     }
 
 

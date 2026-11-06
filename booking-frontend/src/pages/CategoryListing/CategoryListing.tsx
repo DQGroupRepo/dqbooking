@@ -54,10 +54,9 @@ const CategoryListing = () => {
         useSearchParams();
 
 
-    const category =
-        searchParams.get(
-            "category"
-        ) ?? "";
+    const category = searchParams.get("category") ?? "";
+    const categoryTag = searchParams.get("categoryTag") ?? "";
+    const location = searchParams.get("location") ?? "";
 
 
     /*
@@ -71,9 +70,9 @@ const CategoryListing = () => {
         loadListings();
 
     }, [
-
-        category
-
+        category,
+        categoryTag,
+        location
     ]);
 
 
@@ -84,7 +83,9 @@ const CategoryListing = () => {
             const response =
                 await VendorListingService
                     .getListings(
-                        category
+                        category,
+                        location,
+                        categoryTag
                     );
 
 

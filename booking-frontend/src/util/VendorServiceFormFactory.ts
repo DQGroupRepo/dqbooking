@@ -25,6 +25,10 @@ export default class VendorServiceFormFactory {
 
             location: "",
 
+            categoryTags: [],
+
+            locationTags: [],
+
             address: "",
 
             capacity: "",

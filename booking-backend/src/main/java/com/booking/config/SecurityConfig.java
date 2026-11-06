@@ -82,6 +82,9 @@ public class SecurityConfig {
                                 "/api/auth/vendor/register",
                                 "/api/customer/services",
                                 "/api/customer/services/**",
+                                "/api/tag-directory/categories",
+                                "/api/tag-directory/category-suggestions",
+                                "/api/tag-directory/locations",
                                 "/uploads/**",
                                 "/api/pricing/**"
                         )

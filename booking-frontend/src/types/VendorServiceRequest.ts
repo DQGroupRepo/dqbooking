@@ -1,3 +1,4 @@
+import type { ServiceTag } from "./ServiceTag";
 import type { ContactInfo } from "./ContactInfo";
 
 import type { Availability } from "./Availability";
@@ -26,6 +27,8 @@ export interface VendorServiceRequest {
   category: string;
 
   location: string;
+
+  tags: ServiceTag[];
 
   description: string;
 

@@ -103,6 +103,9 @@ public class VendorService extends BaseEntity {
 
     private Set<ServiceDiscoveryTag> discoveryTags;
 
+    /** Vendor-selected search tags. Search uses these tags only. */
+    private List<ServiceTag> tags = new ArrayList<>();
+
     private CateringDetails cateringDetails;
 
 }

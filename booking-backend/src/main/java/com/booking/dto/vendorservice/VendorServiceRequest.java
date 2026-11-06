@@ -6,6 +6,7 @@ import com.booking.dto.service.ServicePackageRequest;
 import com.booking.dto.service.CateringDetailsRequest;
 import com.booking.model.enums.DiscountType;
 import com.booking.model.enums.ServiceCategory;
+import com.booking.model.embedded.ServiceTag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -56,6 +57,8 @@ public class VendorServiceRequest {
             new ArrayList<>();
 
     private String location;
+
+    private List<ServiceTag> tags = new ArrayList<>();
 
     private String address;
 

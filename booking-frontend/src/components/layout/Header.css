@@ -268,7 +268,10 @@
 
     border-radius: 15px;
 
-    overflow: hidden;
+    overflow: visible;
+
+    position: relative;
+    z-index: 80;
 
     box-shadow:
         0 5px 18px rgba(7, 54, 84, 0.08);
@@ -321,9 +324,9 @@
 
 
 .search-location {
-    width: 155px;
-
-    padding: 0 15px;
+    width: 190px;
+    flex: 0 0 190px;
+    padding: 0 12px;
 }
 
 
@@ -2424,5 +2427,396 @@
 
     .header-main-actions {
         max-width: calc(100% - 145px);
+    }
+}
+
+
+/* =========================================================
+   DQBOOKING SEARCH WIRING
+   Keep the existing header layout; style the location select
+   as an inline field matching the original location label.
+========================================================= */
+
+.header-search .search-location {
+    position: relative;
+    min-width: 0;
+}
+
+.header-search .search-location select {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    flex: 1 1 auto;
+    width: 100%;
+    min-width: 0;
+    height: 100%;
+    padding: 0 18px 0 0;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    color: #173b55;
+    font: inherit;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.header-search .search-location select:disabled {
+    cursor: wait;
+    opacity: 0.7;
+}
+
+.header-search .search-location select option {
+    color: #173b55;
+    background: #ffffff;
+}
+
+.header-search .search-location .search-chevron {
+    position: absolute;
+    right: 12px;
+    pointer-events: none;
+}
+
+.header-search .search-keyword input {
+    min-width: 0;
+}
+
+.header-search-button {
+    cursor: pointer;
+}
+
+@media (max-width: 1200px) {
+    .header-search .search-location {
+        flex: 0 1 120px;
+        min-width: 100px;
+    }
+
+    .header-search .search-location select {
+        font-size: 12px;
+    }
+}
+
+@media (max-width: 700px) {
+    .header-search .search-location {
+        flex: 0 1 115px;
+        min-width: 90px;
+        padding-left: 8px;
+        padding-right: 8px;
+    }
+
+    .header-search .search-location .search-chevron {
+        right: 7px;
+    }
+}
+
+
+/* Category autocomplete dropdown */
+.header-search .search-keyword {
+    position: relative;
+}
+
+.header-category-suggestions {
+    position: absolute;
+    top: calc(100% + 13px);
+    left: 0;
+    width: min(390px, calc(100vw - 32px));
+    max-height: 340px;
+    overflow-y: auto;
+    padding: 7px;
+    background: #ffffff;
+    border: 1px solid #dce5eb;
+    border-radius: 12px;
+    box-shadow: 0 16px 38px rgba(7, 54, 84, 0.18);
+    z-index: 4000;
+}
+
+.header-category-suggestions-heading {
+    padding: 8px 11px 7px;
+    color: #8495a2;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.7px;
+    text-transform: uppercase;
+}
+
+.header-category-suggestion {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 11px;
+    border: 0;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #173b55;
+    text-align: left;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.header-category-suggestion svg {
+    flex: 0 0 auto;
+    color: #8193a1;
+    font-size: 11px;
+}
+
+.header-category-suggestion:hover,
+.header-category-suggestion.active {
+    background: #f0f5f9;
+    color: #073654;
+}
+
+@media (max-width: 700px) {
+    .header-category-suggestions {
+        width: min(340px, calc(100vw - 28px));
+    }
+}
+
+
+/* =========================================================
+   SEARCH AUTOCOMPLETE + DISTRICT / LOCALITY PICKER
+   Keep popovers outside the rounded search bar clipping area.
+========================================================= */
+
+.header-search .search-keyword {
+    position: relative;
+    z-index: 3;
+}
+
+.header-search .search-location {
+    position: relative;
+    z-index: 2;
+    padding: 0;
+}
+
+.header-search .search-location-trigger {
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 0 13px;
+    border: 0;
+    background: transparent;
+    color: #173b55;
+    font: inherit;
+    cursor: pointer;
+    text-align: left;
+}
+
+.header-search .search-location-trigger > span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 13px;
+}
+
+.header-search .search-location-trigger:disabled {
+    cursor: wait;
+    opacity: .65;
+}
+
+.header-location-menu {
+    position: absolute;
+    top: calc(100% + 12px);
+    left: 0;
+    width: 490px;
+    max-width: min(490px, calc(100vw - 28px));
+    padding: 12px;
+    background: #fff;
+    border: 1px solid #dce5eb;
+    border-radius: 14px;
+    box-shadow: 0 18px 44px rgba(7, 54, 84, .2);
+    color: #173b55;
+    z-index: 5000;
+}
+
+.header-location-menu-heading {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 5px 7px 11px;
+}
+
+.header-location-menu-heading strong {
+    font-size: 14px;
+    font-weight: 800;
+    color: #073654;
+}
+
+.header-location-menu-heading span {
+    font-size: 11px;
+    color: #81919d;
+}
+
+.header-location-all {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 10px 11px;
+    border: 1px solid #e3eaf0;
+    border-radius: 9px;
+    background: #f7fafc;
+    color: #173b55;
+    text-align: left;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.header-location-all:hover,
+.header-location-all.selected {
+    border-color: #e7b43d;
+    background: #fff8e8;
+}
+
+.header-location-menu-body {
+    display: grid;
+    grid-template-columns: 44% 56%;
+    height: min(300px, calc(100vh - 250px));
+    min-height: 220px;
+    margin-top: 10px;
+    overflow: hidden;
+    border: 1px solid #e7edf1;
+    border-radius: 10px;
+}
+
+.header-location-districts {
+    min-height: 0;
+    overflow-y: scroll;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    scrollbar-color: #aebdca #edf2f6;
+    padding: 6px;
+    background: #f5f8fb;
+    border-right: 1px solid #e7edf1;
+}
+
+/* Keep the district scrollbar visible and consistent across browsers. */
+.header-location-districts::-webkit-scrollbar,
+.header-location-areas::-webkit-scrollbar {
+    width: 7px;
+}
+
+.header-location-districts::-webkit-scrollbar-track,
+.header-location-areas::-webkit-scrollbar-track {
+    background: #edf2f6;
+    border-radius: 8px;
+}
+
+.header-location-districts::-webkit-scrollbar-thumb,
+.header-location-areas::-webkit-scrollbar-thumb {
+    background: #aebdca;
+    border-radius: 8px;
+}
+
+.header-location-districts::-webkit-scrollbar-thumb:hover,
+.header-location-areas::-webkit-scrollbar-thumb:hover {
+    background: #8296a6;
+}
+
+.header-location-district,
+.header-location-area {
+    width: 100%;
+    min-height: 37px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 8px 9px;
+    border: 0;
+    border-radius: 7px;
+    background: transparent;
+    color: #405969;
+    text-align: left;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.header-location-district svg {
+    flex: 0 0 auto;
+    color: #91a0aa;
+    font-size: 9px;
+}
+
+.header-location-district:hover {
+    background: #eaf1f6;
+}
+
+.header-location-district.active {
+    background: #073654;
+    color: #fff;
+    font-weight: 700;
+}
+
+.header-location-district.active svg {
+    color: #f4b928;
+}
+
+.header-location-areas {
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    scrollbar-color: #aebdca #fff;
+    padding: 8px;
+    background: #fff;
+}
+
+.header-location-areas-title {
+    padding: 4px 8px 8px;
+    color: #073654;
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.header-location-area {
+    min-height: 34px;
+    color: #405969;
+}
+
+.header-location-area:hover,
+.header-location-area.selected {
+    background: #fff7e5;
+    color: #073654;
+}
+
+.location-selected-mark {
+    flex: 0 0 auto;
+    color: #a97808;
+    font-size: 10px;
+    font-weight: 700;
+}
+
+.header-location-empty {
+    padding: 12px 8px;
+    color: #81919d;
+    font-size: 11px;
+    line-height: 1.5;
+}
+
+.header-category-suggestions {
+    top: calc(100% + 9px);
+    z-index: 5100;
+}
+
+@media (max-width: 700px) {
+    .header-location-menu {
+        left: auto;
+        right: -45px;
+        width: min(460px, calc(100vw - 24px));
+    }
+
+    .header-location-menu-body {
+        grid-template-columns: 43% 57%;
+        height: min(270px, calc(100vh - 220px));
+        min-height: 200px;
+    }
+
+    .header-location-district,
+    .header-location-area {
+        font-size: 11px;
     }
 }

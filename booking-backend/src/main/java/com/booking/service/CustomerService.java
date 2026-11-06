@@ -15,6 +15,8 @@ public interface CustomerService {
 
     List<VendorListingResponse> getVendorListings(String category);
 
+    List<VendorListingResponse> searchListings(String categoryTag, String locationTag, int page, int size);
+
     List<VendorListingResponse> getFeaturedServices();
 
     List<VendorListingResponse> getPopularHalls();

@@ -1,3 +1,4 @@
+import type { ServiceTag } from "./ServiceTag";
 import type {
     ContactInfo
 } from "./ContactInfo";
@@ -77,6 +78,8 @@ export interface VendorService {
     cateringDetails?: CateringDetailsForm;
 
     location: string;
+
+    tags?: ServiceTag[];
 
 
     /* =====================================

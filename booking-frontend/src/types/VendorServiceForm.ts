@@ -1,3 +1,4 @@
+import type { ServiceTag } from "./ServiceTag";
 import type {
     ServiceDetailSection
 } from "./ServiceDetailSection";
@@ -17,6 +18,10 @@ export interface VendorServiceForm {
     serviceName: string;
 
     location: string;
+
+    categoryTags: string[];
+
+    locationTags: string[];
 
     address: string;
 

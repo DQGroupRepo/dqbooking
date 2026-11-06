@@ -5,6 +5,11 @@ import com.booking.dto.vendorservice.VendorServiceResponse;
 import com.booking.mapper.*;
 import com.booking.model.User;
 import com.booking.model.VendorService;
+import com.booking.model.embedded.ServiceTag;
+import java.text.Normalizer;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -72,6 +77,7 @@ public class VendorServiceMapperImpl implements VendorServiceMapper {
         service.setLocation(
                 request.getLocation()
         );
+        service.setTags(normalizeTags(request.getTags(), request.getCategory(), request.getLocation()));
 
         /*
          * =========================================
@@ -172,6 +178,7 @@ public class VendorServiceMapperImpl implements VendorServiceMapper {
         response.setLocation(
                 service.getLocation()
         );
+        response.setTags(service.getTags() == null ? new ArrayList<>() : service.getTags());
 
         /*
          * Pricing and packages are no longer mapped here.
@@ -255,6 +262,7 @@ public class VendorServiceMapperImpl implements VendorServiceMapper {
         entity.setLocation(
                 request.getLocation()
         );
+        entity.setTags(normalizeTags(request.getTags(), request.getCategory(), request.getLocation()));
 
         /*
          * =========================================
@@ -273,5 +281,39 @@ public class VendorServiceMapperImpl implements VendorServiceMapper {
         entity.setBundleDiscountValue(
                 request.getBundleDiscountValue()
         );
+    }
+
+    private List<ServiceTag> normalizeTags(List<ServiceTag> supplied,
+                                           com.booking.model.enums.ServiceCategory category,
+                                           String location) {
+        List<ServiceTag> source = supplied == null ? new ArrayList<>() : supplied;
+        List<ServiceTag> result = new ArrayList<>();
+        for (ServiceTag tag : source) {
+            if (tag == null || tag.getType() == null || tag.getValue() == null || tag.getValue().isBlank()) continue;
+            String type = tag.getType().trim().toUpperCase(Locale.ROOT);
+            if (!type.equals("CATEGORY") && !type.equals("LOCATION")) continue;
+            String value = tag.getValue().trim().replaceAll("\\s+", " ");
+            String normalized = normalize(value);
+            if (result.stream().noneMatch(t -> t.getType().equals(type) && t.getNormalizedName().equals(normalized))) {
+                List<String> aliases = tag.getAliases() == null ? new ArrayList<>() : tag.getAliases().stream()
+                        .filter(a -> a != null && !a.isBlank()).map(this::normalize).distinct().toList();
+                result.add(new ServiceTag(type, value, normalized, new ArrayList<>(aliases)));
+            }
+        }
+        // If a tag type has no vendor-selected tags, use its primary field as the default.
+        if (result.stream().noneMatch(t -> t.getType().equals("CATEGORY")) && category != null) {
+            String value = category.name().replace('_', ' ');
+            result.add(new ServiceTag("CATEGORY", value, normalize(value), new ArrayList<>()));
+        }
+        if (result.stream().noneMatch(t -> t.getType().equals("LOCATION")) && location != null && !location.isBlank()) {
+            String value = location.trim().replaceAll("\\s+", " ");
+            result.add(new ServiceTag("LOCATION", value, normalize(value), new ArrayList<>()));
+        }
+        return result;
+    }
+
+    private String normalize(String value) {
+        return Normalizer.normalize(value, Normalizer.Form.NFD)
+                .replaceAll("\\p{M}", "").toLowerCase(Locale.ROOT).trim().replaceAll("\\s+", " ");
     }
 }
