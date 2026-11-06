@@ -97,6 +97,7 @@ public class SecurityConfig {
 
                         .requestMatchers(
                                 HttpMethod.GET,
+                                "/api/service-attribute-directory",
                                 "/api/vendor/listings/**",
                                 "/api/services/*/availability",
                                 "/api/services/*/availability/*"
@@ -118,6 +119,13 @@ public class SecurityConfig {
                                 "VENDOR_USER",
                                 "ADMIN"
                         )
+
+
+                        .requestMatchers(
+                                HttpMethod.POST,
+                                "/api/service-attribute-directory"
+                        )
+                        .hasAnyRole("VENDOR_ADMIN", "VENDOR_USER", "ADMIN")
 
 
                         // --------------------------------

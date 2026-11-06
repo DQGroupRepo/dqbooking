@@ -65,6 +65,8 @@ export interface VendorServiceForm {
        COMMON COLLECTIONS
     ===================================== */
 
+    facilities: string[];
+
     amenities: string[];
 
     imageUrls: string[];

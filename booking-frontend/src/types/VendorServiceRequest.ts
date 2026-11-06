@@ -48,6 +48,8 @@ export interface VendorServiceRequest {
 
   imageUrls: string[];
 
+  facilities: string[];
+
   amenities: string[];
 
   /* =====================================

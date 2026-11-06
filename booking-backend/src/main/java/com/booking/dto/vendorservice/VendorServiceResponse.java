@@ -51,7 +51,9 @@ public class VendorServiceResponse {
 
     private List<String> imageUrls;
 
-    private List<String> amenities;
+    private List<String> facilities = new ArrayList<>();
+
+    private List<String> amenities = new ArrayList<>();
 
     @Valid
     private List<ServiceDetailSectionResponse> detailSections =

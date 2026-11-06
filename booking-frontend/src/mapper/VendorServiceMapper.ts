@@ -56,7 +56,9 @@ export default class VendorServiceMapper {
 
       imageUrls: service.imageUrls ?? [],
 
-      /* AMENITIES */
+      /* FACILITIES AND AMENITIES */
+
+      facilities: service.facilities ?? [],
 
       amenities: service.amenities ?? [],
 
@@ -155,7 +157,9 @@ export default class VendorServiceMapper {
 
       imageUrls: form.imageUrls,
 
-      /* AMENITIES */
+      /* FACILITIES AND AMENITIES */
+
+      facilities: form.facilities,
 
       amenities: form.amenities,
 

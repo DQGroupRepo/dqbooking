@@ -925,42 +925,6 @@ const AddService = () => {
 
     /*
      * =========================
-     * Amenities
-     * =========================
-     */
-
-    const handleAmenityChange = (
-        item: string
-    ) => {
-
-        setFormData(
-            previous => ({
-
-                ...previous,
-
-                amenities:
-                    previous.amenities.includes(
-                        item
-                    )
-
-                        ? previous.amenities.filter(
-                            amenity =>
-                                amenity !== item
-                        )
-
-                        : [
-                            ...previous.amenities,
-                            item
-                        ]
-
-            })
-        );
-
-    };
-
-
-    /*
-     * =========================
      * Validation
      * =========================
      */
@@ -1798,11 +1762,23 @@ const AddService = () => {
                                     onDetailChange={
                                         handleDetailChange
                                     }
+                                    facilities={
+                                        formData.facilities
+                                    }
+                                    onFacilitiesChange={
+                                        values => setFormData(previous => ({
+                                            ...previous,
+                                            facilities: values
+                                        }))
+                                    }
                                     amenities={
                                         formData.amenities
                                     }
-                                    handleAmenityChange={
-                                        handleAmenityChange
+                                    onAmenitiesChange={
+                                        values => setFormData(previous => ({
+                                            ...previous,
+                                            amenities: values
+                                        }))
                                     }
                                     onCateringDetailsChange={
                                         handleCateringDetailsChange

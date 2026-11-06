@@ -67,7 +67,9 @@ public class VendorService extends BaseEntity {
 
     private List<String> imageUrls;
 
-    private List<String> amenities;
+    private List<String> facilities = new ArrayList<>();
+
+    private List<String> amenities = new ArrayList<>();
 
     private List<ServiceDetailSection> detailSections =
             new ArrayList<>();

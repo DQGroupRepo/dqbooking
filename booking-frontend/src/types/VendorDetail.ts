@@ -61,6 +61,8 @@ export interface VendorDetail {
 
   imageUrls?: string[];
 
+  facilities?: string[];
+
   amenities?: string[];
 
   detailSections?: DetailSection[];

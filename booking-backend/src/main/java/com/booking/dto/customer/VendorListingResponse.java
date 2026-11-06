@@ -34,6 +34,8 @@ public class VendorListingResponse {
 
     private List<String> gallery;
 
+    private List<String> facilities;
+
     private List<String> amenities;
 
     private Boolean isActive;

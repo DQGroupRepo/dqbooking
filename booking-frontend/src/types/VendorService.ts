@@ -63,6 +63,8 @@ export interface VendorService {
 
     imageUrls?: string[];
 
+    facilities?: string[];
+
     amenities: string[];
 
     // Pricing-version packages returned with service details.

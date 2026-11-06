@@ -39,6 +39,8 @@ public class VendorDetailResponse {
 
     private List<String> imageUrls;
 
+    private List<String> facilities;
+
     private List<String> amenities;
 
     private List<ServiceDetailSectionResponse> detailSections;

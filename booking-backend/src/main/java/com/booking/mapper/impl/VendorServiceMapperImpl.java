@@ -60,7 +60,8 @@ public class VendorServiceMapperImpl implements VendorServiceMapper {
 
         service.setImageUrls(request.getImageUrls());
 
-        service.setAmenities(request.getAmenities());
+        service.setFacilities(normalizeAttributeValues(request.getFacilities()));
+        service.setAmenities(normalizeAttributeValues(request.getAmenities()));
 
         service.setDetailSections(
                 serviceDetailSectionMapper.toEntityList(
@@ -159,6 +160,8 @@ public class VendorServiceMapperImpl implements VendorServiceMapper {
                 service.getImageUrls()
         );
 
+        response.setFacilities(service.getFacilities() == null ? new ArrayList<>() : service.getFacilities());
+
         response.setAmenities(
                 service.getAmenities()
         );
@@ -243,9 +246,9 @@ public class VendorServiceMapperImpl implements VendorServiceMapper {
                 request.getImageUrls()
         );
 
-        entity.setAmenities(
-                request.getAmenities()
-        );
+        entity.setFacilities(normalizeAttributeValues(request.getFacilities()));
+
+        entity.setAmenities(normalizeAttributeValues(request.getAmenities()));
 
         entity.setDetailSections(
                 serviceDetailSectionMapper.toEntityList(
@@ -281,6 +284,27 @@ public class VendorServiceMapperImpl implements VendorServiceMapper {
         entity.setBundleDiscountValue(
                 request.getBundleDiscountValue()
         );
+    }
+
+
+    private List<String> normalizeAttributeValues(List<String> values) {
+        if (values == null || values.isEmpty()) {
+            return new ArrayList<>();
+        }
+        List<String> result = new ArrayList<>();
+        for (String value : values) {
+            if (value == null || value.isBlank()) {
+                continue;
+            }
+            String cleaned = value.trim().replaceAll("\\s+", " ");
+            String normalized = normalize(cleaned);
+            boolean duplicate = result.stream()
+                    .anyMatch(existing -> normalize(existing).equals(normalized));
+            if (!duplicate && cleaned.length() <= 80) {
+                result.add(cleaned);
+            }
+        }
+        return result;
     }
 
     private List<ServiceTag> normalizeTags(List<ServiceTag> supplied,

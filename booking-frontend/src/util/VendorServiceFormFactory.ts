@@ -71,6 +71,8 @@ export default class VendorServiceFormFactory {
                COMMON COLLECTIONS
             ===================================== */
 
+            facilities: [],
+
             amenities: [],
 
             imageUrls: [],

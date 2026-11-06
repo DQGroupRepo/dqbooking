@@ -111,6 +111,10 @@ public class CustomerVendorMapperImpl
                         service.getImageUrls()
                 )
 
+                .facilities(service.getFacilities() == null ? List.of() : service.getFacilities())
+
+                .facilities(service.getFacilities() == null ? List.of() : service.getFacilities())
+
                 .amenities(
                         service.getAmenities()
                 )
