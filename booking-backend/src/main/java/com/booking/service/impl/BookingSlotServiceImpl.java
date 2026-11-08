@@ -56,6 +56,7 @@ public class BookingSlotServiceImpl
                     );
                 });
 
+        validateResourceType(service, request.getResourceTypeId());
         validateSlot(request, serviceId);
 
         BookingSlot bookingSlot =
@@ -103,6 +104,9 @@ public class BookingSlotServiceImpl
                             );
                         });
 
+        VendorService service = vendorServiceRepository.findById(bookingSlot.getServiceId())
+                .orElseThrow(() -> new ResourceNotFoundException("Vendor Service not found."));
+        validateResourceType(service, request.getResourceTypeId());
         validateSlotForUpdate(
                 request,
                 bookingSlot
@@ -210,6 +214,13 @@ public class BookingSlotServiceImpl
     /* =======================================================
                     Validation Methods
        ======================================================= */
+
+    private void validateResourceType(VendorService service, String resourceTypeId) {
+        if (resourceTypeId == null || resourceTypeId.isBlank()) return;
+        boolean exists = service.getResourceTypes() != null && service.getResourceTypes().stream()
+                .anyMatch(type -> resourceTypeId.equals(type.getId()) && !Boolean.FALSE.equals(type.getActive()));
+        if (!exists) throw new IllegalArgumentException("Selected resource type is not active for this service.");
+    }
 
     private void validateSlot(
             CreateBookingSlotRequest request,

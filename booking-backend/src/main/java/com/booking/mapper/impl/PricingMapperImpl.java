@@ -188,6 +188,27 @@ public class PricingMapperImpl implements PricingMapper {
             packageId = new ObjectId().toHexString();
         }
         servicePackage.setId(packageId);
+        servicePackage.setResourceTypeId(request.getResourceTypeId());
+        servicePackage.setPricingBasis(request.getPricingBasis() == null ? "FIXED" : request.getPricingBasis());
+        servicePackage.setMinimumDuration(request.getMinimumDuration() == null ? 1 : request.getMinimumDuration());
+        servicePackage.setMaximumDuration(request.getMaximumDuration() == null ? 31 : request.getMaximumDuration());
+        servicePackage.setIncludedDuration(request.getIncludedDuration());
+        if ("FIXED_DURATION".equalsIgnoreCase(request.getPackageType())) {
+            if (request.getResourceTypeId() == null || request.getResourceTypeId().isBlank()) {
+                throw new IllegalArgumentException("A fixed-duration package must be assigned to a resource type.");
+            }
+            if (request.getIncludedDuration() == null || request.getIncludedDuration() < 1 || request.getIncludedDuration() > 31) {
+                throw new IllegalArgumentException("A fixed-duration package must have an included duration between 1 and 31.");
+            }
+            if (!"FIXED".equalsIgnoreCase(request.getPricingBasis())) {
+                throw new IllegalArgumentException("Fixed-duration packages must use fixed pricing.");
+            }
+        }
+        if (servicePackage.getMinimumDuration() < 1
+                || servicePackage.getMaximumDuration() < servicePackage.getMinimumDuration()
+                || servicePackage.getMaximumDuration() > 31) {
+            throw new IllegalArgumentException("Package duration must be between 1 and 31, and maximum must not be less than minimum.");
+        }
 
         servicePackage.setName(
                 request.getName()
@@ -445,6 +466,11 @@ public class PricingMapperImpl implements PricingMapper {
         response.setId(
                 servicePackage.getId()
         );
+        response.setResourceTypeId(servicePackage.getResourceTypeId());
+        response.setPricingBasis(servicePackage.getPricingBasis() == null ? "FIXED" : servicePackage.getPricingBasis());
+        response.setMinimumDuration(servicePackage.getMinimumDuration() == null ? 1 : servicePackage.getMinimumDuration());
+        response.setMaximumDuration(servicePackage.getMaximumDuration() == null ? 31 : servicePackage.getMaximumDuration());
+        response.setIncludedDuration(servicePackage.getIncludedDuration());
 
         response.setName(
                 servicePackage.getName()

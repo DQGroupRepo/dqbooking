@@ -13,6 +13,17 @@ public class ServicePackage {
 
     private String id;
 
+    /** Resource type whose physical inventory this package consumes. */
+    private String resourceTypeId;
+
+    /** PER_DAY, PER_NIGHT, or FIXED. */
+    private String pricingBasis = "FIXED";
+    private Integer minimumDuration = 1;
+    private Integer maximumDuration = 31;
+
+    /** Exact included duration for FIXED_DURATION packages (STAY uses nights). */
+    private Integer includedDuration;
+
     private String name;
 
     private BigDecimal price;

@@ -11,6 +11,7 @@ import VendorAmenities from "../../components/vendor/VendorAmenities";
 import VendorPackages from "../../components/vendor/VendorPackages";
 import VendorReviews from "../../components/vendor/VendorReviews";
 import BookingCard from "../../components/vendor/VendorBookingCard";
+import "./ResourceTypeSelector.css";
 import VendorServiceDetails
     from "../../components/vendor/VendorServiceDetails";
 
@@ -56,6 +57,8 @@ const VendorDetail = () => {
         selectedPackage,
         setSelectedPackage
     ] = useState<ServicePackage | null>(null);
+
+    const [selectedResourceTypeId, setSelectedResourceTypeId] = useState<string | null>(null);
     /*
      * =========================================
      * VENDOR
@@ -400,7 +403,7 @@ const VendorDetail = () => {
 
     if (!vendor) {
 
-        return (
+    return (
             <h2>Loading...</h2>
         );
 
@@ -412,6 +415,17 @@ const VendorDetail = () => {
      * UI
      * =========================================
      */
+
+    const activeResourceTypes = (vendor?.resourceTypes ?? []).filter(type => type.active !== false);
+    const fixedDurationPackages = pricingPackages.filter(pkg => pkg.packageType === "FIXED_DURATION");
+    const regularPricingPackages = pricingPackages.filter(pkg => pkg.packageType !== "FIXED_DURATION");
+    const visiblePricingPackages = activeResourceTypes.length > 1
+        ? (selectedResourceTypeId
+            ? regularPricingPackages.filter(pkg => pkg.resourceTypeId === selectedResourceTypeId)
+            : [])
+        : activeResourceTypes.length === 1
+            ? regularPricingPackages.filter(pkg => pkg.resourceTypeId === activeResourceTypes[0].id)
+            : regularPricingPackages;
 
     return (
 
@@ -492,7 +506,7 @@ const VendorDetail = () => {
                                 Loading pricing...
                             </div>
 
-                        ) : pricingPackages.length === 0 ? (
+                        ) : (pricingPackages.length === 0) ? (
 
                             <div className="pricing-unavailable">
 
@@ -521,13 +535,42 @@ const VendorDetail = () => {
 
                         ) : (
 
-                            <VendorPackages
-                                packages={pricingPackages}
-                                selectedPackage={selectedPackage}
-                                selectedSlotId={selectedSlotId}
-                                onSelectPackage={handlePackageSelect}
-                            />
-
+                            <>
+                            {activeResourceTypes.length > 1 && (
+                                <div className="resource-type-selector">
+                                    <h3>Select Resource Type</h3>
+                                    <div className="resource-type-options">
+                                        {activeResourceTypes.map(type => (
+                                            <button
+                                                type="button"
+                                                key={type.id}
+                                                className={selectedResourceTypeId === type.id ? "selected" : ""}
+                                                onClick={() => {
+                                                    setSelectedResourceTypeId(type.id);
+                                                    setSelectedPackage(null);
+                                                    setSelectedSlotId(null);
+                                                }}
+                                            >
+                                                <strong>{type.name}</strong>
+                                                <span>{type.quantity} available unit(s)</span>
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                            {visiblePricingPackages.length > 0 ? (
+                                <VendorPackages packages={visiblePricingPackages} selectedPackage={selectedPackage} selectedSlotId={selectedSlotId} onSelectPackage={handlePackageSelect} />
+                            ) : (
+                                <div className="pricing-unavailable"><h3>No packages available for this resource type</h3><p>Please choose another Resource Type.</p></div>
+                            )}
+                            {fixedDurationPackages.length > 0 && (
+                                <section className="fixed-duration-packages">
+                                    <h2>Fixed-Duration Packages</h2>
+                                    <p>Packages with a predefined duration and price.</p>
+                                    <VendorPackages packages={fixedDurationPackages} selectedPackage={selectedPackage} selectedSlotId={selectedSlotId} onSelectPackage={handlePackageSelect} />
+                                </section>
+                            )}
+                            </>
                         )}
                         </div>
 
@@ -542,6 +585,7 @@ const VendorDetail = () => {
                         serviceId={serviceId}
                         bundles={bundles}
                         selectedPackage={selectedPackage}
+                        selectedResourceTypeId={selectedResourceTypeId}
                         onEventDateChange={handleEventDateChange}
                         onClearSelectedPackage={() => setSelectedPackage(null)}
                         onSelectedSlotChange={(slotId) => {

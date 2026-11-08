@@ -12,6 +12,19 @@ public class ServicePackageResponse {
 
     private String id;
 
+    private String resourceTypeId;
+
+    /** PER_DAY, PER_NIGHT, or FIXED. */
+    private String pricingBasis = "FIXED";
+
+    /** Minimum customer-selected days/nights. */
+    private Integer minimumDuration = 1;
+
+    /** Maximum customer-selected days/nights. */
+    private Integer maximumDuration = 31;
+
+    private Integer includedDuration;
+
     private String name;
 
     private BigDecimal price;

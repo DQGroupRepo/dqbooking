@@ -2,6 +2,7 @@ package com.booking.model;
 
 import com.booking.model.embedded.BookingPricingSnapshot;
 import com.booking.model.embedded.BookingSelectedCateringDish;
+import com.booking.model.embedded.BookingTimeInterval;
 import com.booking.model.enums.BookingStatus;
 import com.booking.model.enums.PaymentStatus;
 import lombok.Getter;
@@ -73,6 +74,9 @@ public class Booking extends BaseEntity {
     /** Exclusive end of the requested service interval (property-local time). */
     private LocalDateTime bookingTo;
 
+    /** Exact occupied intervals for recurring multi-day bookings. */
+    private List<BookingTimeInterval> bookingIntervals = new ArrayList<>();
+
     /** STANDARD_SLOT, ROOM_STAY or DAY_PACKAGE. */
     private String bookingType = "STANDARD_SLOT";
 
@@ -97,6 +101,10 @@ public class Booking extends BaseEntity {
      */
 
     private String slotId;
+
+    /** Generic physical inventory allocation snapshot. */
+    private String resourceTypeId;
+    private List<String> resourceIds = new ArrayList<>();
 
     private String slotName;
 

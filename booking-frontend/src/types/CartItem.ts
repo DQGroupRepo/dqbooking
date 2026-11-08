@@ -31,6 +31,9 @@ export interface CartItem {
     // backward compatibility with all existing non-STAY categories.
     bookingFrom?: string;
     bookingTo?: string;
+    bookingIntervals?: { from: string; to: string }[];
+    bookingDuration?: number;
+    pricingBasis?: "PER_DAY" | "PER_NIGHT" | "FIXED";
     bookingType?: "ROOM_STAY" | "STANDARD_SLOT" | "DAY_PACKAGE";
     roomQuantity?: number;
 
@@ -82,7 +85,8 @@ export interface CartItem {
 
     packageId?: string;
 
-    packageType?: "SILVER" | "GOLD" | "PREMIUM";
+    packageType?: "SILVER" | "GOLD" | "PREMIUM" | "FIXED_DURATION";
+    includedDuration?: number;
 
     packagePrice?: number;
 

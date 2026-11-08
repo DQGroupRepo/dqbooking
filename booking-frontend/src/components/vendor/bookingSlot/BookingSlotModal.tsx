@@ -6,6 +6,8 @@ import Button from "../../common/ui/Button/Button";
 import Input from "../../common/ui/Input/Input";
 
 import BookingSlotService from "../../../services/BookingSlotService";
+import VendorServiceService from "../../../services/VendorServiceService";
+import type { ServiceResourceType } from "../../../types/VendorDetail";
 
 import type { BookingSlot } from "../../../types/BookingSlot";
 import type { CreateBookingSlotRequest } from "../../../types/CreateBookingSlotRequest";
@@ -58,12 +60,14 @@ export default function BookingSlotModal({
 }: Props) {
     const isEditMode = !!slot;
     const [saving, setSaving] = useState(false);
+    const [resourceTypes, setResourceTypes] = useState<ServiceResourceType[]>([]);
     const [formData, setFormData] = useState<CreateBookingSlotRequest>({
         slotName: "",
         startTime: "",
         endTime: "",
         maxBookings: 1,
-        displayOrder: 1
+        displayOrder: 1,
+        bookingPattern: "DAILY_RECURRING"
     });
 
     useEffect(() => {
@@ -73,7 +77,8 @@ export default function BookingSlotModal({
                 startTime: "",
                 endTime: "",
                 maxBookings: 1,
-                displayOrder: 1
+                displayOrder: 1,
+                bookingPattern: "DAILY_RECURRING"
             });
             return;
         }
@@ -83,7 +88,8 @@ export default function BookingSlotModal({
             startTime: slot.startTime,
             endTime: slot.endTime,
             maxBookings: slot.maxBookings,
-            displayOrder: slot.displayOrder
+            displayOrder: slot.displayOrder,
+            bookingPattern: slot.bookingPattern ?? "DAILY_RECURRING"
         });
     }, [slot, open]);
 
@@ -190,6 +196,39 @@ export default function BookingSlotModal({
                         Start and end times must be different. Equal times are not treated as a 24-hour slot.
                     </p>
                 )}
+
+                {resourceTypes.length > 0 && (
+                    <label className="slot-resource-type-field">
+                        Resource Type
+                        <select
+                            value={formData.resourceTypeId ?? ""}
+                            onChange={e => setFormData(previous => ({ ...previous, resourceTypeId: e.target.value || undefined }))}
+                        >
+                            <option value="">Use legacy slot capacity</option>
+                            {resourceTypes.filter(type => type.active !== false).map(type => (
+                                <option key={type.id} value={type.id}>{type.name} ({type.quantity} unit(s))</option>
+                            ))}
+                        </select>
+                    </label>
+                )}
+
+                <label className="slot-resource-type-field">
+                    Booking Pattern
+                    <select
+                        value={formData.bookingPattern ?? "DAILY_RECURRING"}
+                        onChange={e => setFormData(previous => ({
+                            ...previous,
+                            bookingPattern: e.target.value as "DAILY_RECURRING" | "CONTINUOUS"
+                        }))}
+                    >
+                        <option value="DAILY_RECURRING">Daily recurring (same time window each day)</option>
+                        <option value="CONTINUOUS">Continuous (reserve the entire interval)</option>
+                    </select>
+                    <small>
+                        Daily recurring keeps other time slots available between sessions.
+                        Continuous reserves the resource for the whole stay.
+                    </small>
+                </label>
 
                 <Input
                     name="maxBookings"

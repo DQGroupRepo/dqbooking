@@ -20,7 +20,8 @@ class BookingAvailabilityService {
 
     async getSlotAvailability(
         serviceId: string,
-        date: string
+        date: string,
+        resourceTypeId?: string | null
     ): Promise<SlotAvailability[]> {
 
         const response =
@@ -28,7 +29,8 @@ class BookingAvailabilityService {
                 `/services/${serviceId}/availability`,
                 {
                     params: {
-                        date
+                        date,
+                        ...(resourceTypeId ? { resourceTypeId } : {})
                     }
                 }
             );

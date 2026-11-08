@@ -19,6 +19,13 @@ public interface BookingAvailabilityService {
     );
 
 
+    List<SlotAvailabilityResponse> getSlotAvailability(
+            String serviceId,
+            LocalDate date,
+            String resourceTypeId
+    );
+
+
     /*
      * Get availability for one particular slot.
      */

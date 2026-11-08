@@ -11,6 +11,8 @@ public class BookingHoldResponse {
     private String serviceId;
     private String slotId;
     private String packageId;
+    private String resourceTypeId;
+    private java.util.List<String> resourceIds;
     private LocalDateTime bookingFrom;
     private LocalDateTime bookingTo;
     private Integer quantity;

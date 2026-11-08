@@ -3,6 +3,8 @@ package com.booking.dto.service;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.Max;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -15,6 +17,23 @@ import java.util.List;
 public class ServicePackageRequest {
 
     private String id;
+
+    private String resourceTypeId;
+
+    /** PER_DAY, PER_NIGHT, or FIXED. */
+    private String pricingBasis = "FIXED";
+
+    /** Minimum customer-selected days/nights. */
+    @Min(1) @Max(31)
+    private Integer minimumDuration = 1;
+
+    /** Maximum customer-selected days/nights. */
+    @Min(1) @Max(31)
+    private Integer maximumDuration = 31;
+
+    /** Exact included duration for FIXED_DURATION packages. */
+    @Min(1) @Max(31)
+    private Integer includedDuration;
 
     private String name;
 

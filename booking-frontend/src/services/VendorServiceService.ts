@@ -1,9 +1,21 @@
 import api from "../api/axiosConfig";
 import type { VendorService } from "../types/VendorService";
 import type { VendorServiceRequest } from "../types/VendorServiceRequest";
+import type { ServiceResourceType } from "../types/VendorDetail";
 
 class VendorServiceService {
 
+
+
+    async getResourceTypes(serviceId: string): Promise<ServiceResourceType[]> {
+        const response = await api.get<ServiceResourceType[]>(`/vendor/services/${serviceId}/resource-types`);
+        return response.data ?? [];
+    }
+
+    async saveResourceTypes(serviceId: string, resourceTypes: ServiceResourceType[]): Promise<ServiceResourceType[]> {
+        const response = await api.put<ServiceResourceType[]>(`/vendor/services/${serviceId}/resource-types`, { resourceTypes });
+        return response.data ?? [];
+    }
 
     async getServices(): Promise<VendorService[]> {
 

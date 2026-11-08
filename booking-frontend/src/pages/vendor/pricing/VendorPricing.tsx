@@ -21,6 +21,7 @@ import VendorCateringMenuService from "../../../services/VendorCateringMenuServi
 import VendorServiceService from "../../../services/VendorServiceService";
 import BookingSlotService from "../../../services/BookingSlotService";
 import type { BookingSlot } from "../../../types/BookingSlot";
+import type { ServiceResourceType } from "../../../types/VendorDetail";
 
 import type { CateringMenuItem} from "../../../types/CateringMenuItem";
 
@@ -153,6 +154,9 @@ const VendorPricing = () => {
     const [isCateringService, setIsCateringService] = useState(false);
     const [isStayService, setIsStayService] = useState(false);
     const [bookingSlots, setBookingSlots] = useState<BookingSlot[]>([]);
+    const [resourceTypes, setResourceTypes] = useState<ServiceResourceType[]>([]);
+    const [resourceTypeName, setResourceTypeName] = useState("");
+    const [resourceTypeQuantity, setResourceTypeQuantity] = useState(1);
 
     const [cateringMenuItems, setCateringMenuItems] =
         useState<CateringMenuItem[]>([]);
@@ -164,6 +168,50 @@ const VendorPricing = () => {
      * LOAD PRICING + PACKAGES
      * =========================================================
      */
+
+    const addResourceType = async () => {
+        if (!serviceId || !resourceTypeName.trim()) {
+            toast.error("Enter a resource type name.");
+            return;
+        }
+        try {
+            const next = [...resourceTypes, {
+                id: `resource-${Date.now()}`,
+                name: resourceTypeName.trim(),
+                quantity: Math.max(1, Math.min(100, Math.floor(resourceTypeQuantity || 1))),
+                active: true
+            }];
+            const saved = await VendorServiceService.saveResourceTypes(serviceId, next);
+            setResourceTypes(saved);
+            setResourceTypeName("");
+            setResourceTypeQuantity(1);
+            toast.success("Resource type saved.");
+        } catch (error) {
+            console.error("Failed to save resource types", error);
+            toast.error("Unable to save resource type.");
+        }
+    };
+
+    const removeResourceType = async (resourceTypeId: string) => {
+        if (!serviceId) return;
+        if (packages.some(pkg => pkg.resourceTypeId === resourceTypeId) ||
+            bookingSlots.some(slot => slot.resourceTypeId === resourceTypeId)) {
+            toast.error("Unassign this resource type from packages and booking slots before removing it.");
+            return;
+        }
+        try {
+            const next = resourceTypes.filter(type => type.id !== resourceTypeId);
+            const saved = await VendorServiceService.saveResourceTypes(serviceId, next);
+            setResourceTypes(saved);
+            setPackages(previous => previous.map(pkg =>
+                pkg.resourceTypeId === resourceTypeId ? { ...pkg, resourceTypeId: undefined } : pkg
+            ));
+            toast.success("Resource type removed.");
+        } catch (error) {
+            console.error("Failed to remove resource type", error);
+            toast.error("Unable to remove resource type.");
+        }
+    };
 
     useEffect(() => {
 
@@ -198,6 +246,8 @@ const VendorPricing = () => {
 
                 setIsCateringService(isCatering);
                 setIsStayService(isStay);
+                const savedResourceTypes = await VendorServiceService.getResourceTypes(serviceId!);
+                if (!cancelled) setResourceTypes(savedResourceTypes);
 
                 // Package eligibility and STAY inventory are managed by booking slots.
                 const slotResults = await BookingSlotService.getSlots(serviceId!);
@@ -703,6 +753,13 @@ const VendorPricing = () => {
                 }
             }
 
+            const invalidFixedDurationPackage = packages.find(pkg => pkg.active && pkg.packageType === "FIXED_DURATION" && (!pkg.resourceTypeId || !pkg.includedDuration || pkg.includedDuration < 1 || pkg.pricingBasis !== "FIXED"));
+            if (invalidFixedDurationPackage) {
+                toast.error(`Fixed-duration package "${invalidFixedDurationPackage.name || "Untitled"}" requires a Resource Type, an included duration, and fixed pricing.`);
+                setSaving(false);
+                return;
+            }
+
             await VendorPricingService.savePricing(
                 serviceId,
                 pricing,
@@ -961,7 +1018,7 @@ const VendorPricing = () => {
      * There are no predefined package names or package limits.
      */
 
-    function addPackage() {
+    function addPackage(packageType: string = "STANDARD") {
 
         const newPackage: ServicePackage = {
 
@@ -972,8 +1029,13 @@ const VendorPricing = () => {
             active: true,
             requiresSlot: true,
             slotIds: [],
+            pricingBasis: "FIXED",
+            minimumDuration: 1,
+            maximumDuration: 31,
+            includedDuration: packageType === "FIXED_DURATION" ? 3 : undefined,
+            resourceTypeId: undefined,
             maxGuestsPerRoom: isStayService ? 2 : undefined,
-            packageType: "STANDARD"
+            packageType
 
         };
 
@@ -1007,7 +1069,7 @@ const VendorPricing = () => {
     function updatePackage(
         packageIndex: number,
         field: keyof ServicePackage,
-        value: string | number | boolean
+        value: string | number | boolean | undefined
     ) {
 
         setPackages(
@@ -1548,6 +1610,33 @@ const VendorPricing = () => {
                     ================================================= */}
 
                     <section className="pricing-card package-card-section">
+                        <div className="package-section-header">
+                            <div>
+                                <h3>Resource Types</h3>
+                                <p>Configure separately reservable physical units for this service.</p>
+                            </div>
+                        </div>
+                        <div className="package-eligibility-config">
+                            <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "end" }}>
+                                <label style={{ flex: "1 1 220px" }}>Resource type name
+                                    <input value={resourceTypeName} onChange={e => setResourceTypeName(e.target.value)} placeholder="e.g. Big Hall, Small Hall" />
+                                </label>
+                                <label>Physical quantity
+                                    <input type="number" min={1} max={100} value={resourceTypeQuantity} onChange={e => setResourceTypeQuantity(Math.max(1, Number(e.target.value) || 1))} />
+                                </label>
+                                <button type="button" className="add-package-btn" onClick={addResourceType}>+ Add Resource Type</button>
+                            </div>
+                            {resourceTypes.map(type => (
+                                <div key={type.id} className="package-eligibility-option" style={{ justifyContent: "space-between" }}>
+                                    <span><strong>{type.name}</strong> · {type.quantity} physical unit(s)</span>
+                                    <button type="button" className="remove-feature-btn" onClick={() => removeResourceType(type.id)}>Remove</button>
+                                </div>
+                            ))}
+                            {resourceTypes.length === 0 && <p className="package-eligibility-help">No resource types configured. Existing slot-capacity behavior remains active.</p>}
+                        </div>
+                    </section>
+
+                    <section className="pricing-card package-card-section">
 
                         <div className="package-section-header">
 
@@ -1566,9 +1655,12 @@ const VendorPricing = () => {
                                 <button
                                     type="button"
                                     className="add-package-btn"
-                                    onClick={addPackage}
+                                    onClick={() => addPackage("STANDARD")}
                                 >
-                                    + Create Package
+                                    + Create Resource Type Package
+                                </button>
+                                <button type="button" className="add-package-btn" onClick={() => addPackage("FIXED_DURATION")}>
+                                    + Create Fixed-Duration Package
                                 </button>
                             </div>
 
@@ -1585,7 +1677,7 @@ const VendorPricing = () => {
                                 <button
                                     type="button"
                                     className="add-package-btn"
-                                    onClick={addPackage}
+                                    onClick={() => addPackage("STANDARD")}
                                 >
                                     + Create Package
                                 </button>
@@ -1660,6 +1752,61 @@ const VendorPricing = () => {
                                                         </div>
                                                     </div>
 
+                                                    {pkg.packageType === "FIXED_DURATION" ? (
+                                                        <div className="package-eligibility-config">
+                                                            <div className="package-features-header"><h5>Fixed-Duration Package</h5></div>
+                                                            <label>Included {isStayService ? "nights" : "days"}
+                                                                <input type="number" min="1" max="31" value={pkg.includedDuration ?? 3}
+                                                                    onChange={e => updatePackage(packageIndex, "includedDuration", Math.max(1, Math.min(31, Number(e.target.value) || 1)))} />
+                                                            </label>
+                                                            <p className="package-eligibility-help">Customers cannot change this duration. Checkout is calculated from the selected start date.</p>
+                                                        </div>
+                                                    ) : (
+                                                    <div className="package-eligibility-config">
+                                                        <div className="package-features-header"><h5>Duration & Pricing</h5></div>
+                                                        <label>
+                                                            Price calculation
+                                                            <select
+                                                                value={pkg.pricingBasis ?? "FIXED"}
+                                                                onChange={e => updatePackage(packageIndex, "pricingBasis", e.target.value)}
+                                                            >
+                                                                <option value="PER_DAY">Per day</option>
+                                                                <option value="PER_NIGHT">Per night</option>
+                                                                <option value="FIXED">Flat price per booking</option>
+                                                            </select>
+                                                        </label>
+                                                        <div className="package-duration-fields">
+                                                            <label>
+                                                                Minimum {pkg.pricingBasis === "PER_NIGHT" ? "nights" : "days"}
+                                                                <input type="number" min="1" max="31"
+                                                                    value={pkg.minimumDuration ?? 1}
+                                                                    onChange={e => updatePackage(packageIndex, "minimumDuration", Math.max(1, Math.min(31, Number(e.target.value) || 1)))}
+                                                                />
+                                                            </label>
+                                                            <label>
+                                                                Maximum {pkg.pricingBasis === "PER_NIGHT" ? "nights" : "days"}
+                                                                <input type="number" min={pkg.minimumDuration ?? 1} max="31"
+                                                                    value={pkg.maximumDuration ?? 31}
+                                                                    onChange={e => updatePackage(packageIndex, "maximumDuration", Math.max(pkg.minimumDuration ?? 1, Math.min(31, Number(e.target.value) || 1)))}
+                                                                />
+                                                            </label>
+                                                        </div>
+                                                        <p className="package-eligibility-help">
+                                                            Per-day and per-night prices are multiplied by the selected duration. Fixed pricing is charged once.
+                                                        </p>
+                                                    </div>
+                                                    )}
+
+                                                    {resourceTypes.length > 0 && (
+                                                        <div className="package-eligibility-config">
+                                                            <div className="package-features-header"><h5>Resource Type</h5></div>
+                                                            <p className="package-eligibility-help">Choose which physical inventory group this package uses.</p>
+                                                            <select value={pkg.resourceTypeId ?? ""} onChange={e => updatePackage(packageIndex, "resourceTypeId", e.target.value || undefined)}>
+                                                                <option value="">Select resource type</option>
+                                                                {resourceTypes.filter(type => type.active !== false).map(type => <option key={type.id} value={type.id}>{type.name} ({type.quantity} unit(s))</option>)}
+                                                            </select>
+                                                        </div>
+                                                    )}
                                                     <div className="package-eligibility-config">
                                                         <div className="package-features-header">
                                                             <h5>{isStayService ? "Booking Slots & Room Capacity" : "Booking Time Configuration"}</h5>

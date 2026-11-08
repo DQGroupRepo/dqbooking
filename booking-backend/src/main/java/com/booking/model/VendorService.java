@@ -110,4 +110,7 @@ public class VendorService extends BaseEntity {
 
     private CateringDetails cateringDetails;
 
+    /** Optional generic physical inventory. Empty preserves legacy availability. */
+    private List<ServiceResourceType> resourceTypes = new ArrayList<>();
+
 }

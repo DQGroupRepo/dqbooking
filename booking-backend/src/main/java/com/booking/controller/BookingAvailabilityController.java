@@ -42,13 +42,17 @@ public class BookingAvailabilityController {
             @RequestParam
             @NotNull
             @FutureOrPresent
-            LocalDate date
+            LocalDate date,
+
+            @RequestParam(required = false)
+            String resourceTypeId
     ) {
 
         return bookingAvailabilityService
                 .getSlotAvailability(
                         serviceId,
-                        date
+                        date,
+                        resourceTypeId
                 );
     }
 

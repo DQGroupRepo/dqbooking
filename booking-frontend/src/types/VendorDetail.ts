@@ -34,6 +34,19 @@ export interface BookingSettings {
   bundleOfferEnabled?: boolean;
 }
 
+export interface ServiceResourceUnit {
+  id: string;
+  name: string;
+  active?: boolean;
+}
+export interface ServiceResourceType {
+  id: string;
+  name: string;
+  quantity: number;
+  active?: boolean;
+  units?: ServiceResourceUnit[];
+}
+
 export interface VendorDetail {
   serviceId: string;
 
@@ -74,4 +87,6 @@ export interface VendorDetail {
   availability?: Availability;
 
   packages?: ServicePackage[];
+
+  resourceTypes?: ServiceResourceType[];
 }

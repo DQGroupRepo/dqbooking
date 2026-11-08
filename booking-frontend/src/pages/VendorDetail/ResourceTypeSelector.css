@@ -1,0 +1,8 @@
+.resource-type-selector { margin: 0 0 22px; }
+.resource-type-selector h3 { margin: 0 0 12px; font-size: 1.05rem; }
+.resource-type-options { display: flex; flex-wrap: wrap; gap: 12px; }
+.resource-type-options button { display: flex; flex-direction: column; gap: 5px; min-width: 170px; padding: 14px 18px; border: 1px solid #d9dee8; border-radius: 10px; background: #fff; color: #252b36; text-align: left; cursor: pointer; }
+.resource-type-options button.selected { border-color: #3457d5; box-shadow: 0 0 0 2px rgba(52,87,213,.12); }
+.resource-type-options button span { color: #687386; font-size: .85rem; }
+.slot-resource-type-field { display: flex; flex-direction: column; gap: 6px; margin: 12px 0; font-size: .9rem; }
+.slot-resource-type-field select { padding: 9px 10px; border: 1px solid #d4d9e2; border-radius: 6px; background: white; }

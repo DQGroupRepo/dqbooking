@@ -869,6 +869,19 @@ public class BookingServiceImpl implements BookingService
             // Persist the exact slot selected in the cart/checkout request.
             // Availability uses this field to charge capacity to only that slot.
             booking.setSlotId(item.getSlotId());
+            if (item.getHoldId() != null && !item.getHoldId().isBlank()) {
+                java.util.Optional<BookingHold> holdOptional =
+                        bookingHoldRepository.findById(item.getHoldId());
+                if (holdOptional.isPresent()) {
+                    BookingHold hold = holdOptional.get();
+                    booking.setResourceTypeId(hold.getResourceTypeId());
+                    booking.setResourceIds(hold.getResourceIds() == null
+                            ? new java.util.ArrayList<>() : new java.util.ArrayList<>(hold.getResourceIds()));
+                    booking.setBookingIntervals(hold.getBookingIntervals() == null
+                            ? new java.util.ArrayList<>()
+                            : new java.util.ArrayList<>(hold.getBookingIntervals()));
+                }
+            }
             boolean stayBooking = vendorService.getCategory() == com.booking.model.enums.ServiceCategory.STAY;
             booking.setBookingType(stayBooking ? "ROOM_STAY"
                     : (item.getBookingType() == null ? "STANDARD_SLOT" : item.getBookingType()));

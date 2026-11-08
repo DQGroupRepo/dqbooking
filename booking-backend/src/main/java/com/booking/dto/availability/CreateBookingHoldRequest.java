@@ -7,6 +7,8 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
+import java.util.List;
+import com.booking.model.embedded.BookingTimeInterval;
 
 @Getter
 @Setter
@@ -20,11 +22,16 @@ public class CreateBookingHoldRequest {
     /** Required for package-aware holds; omitted by legacy callers for compatibility. */
     private String packageId;
 
+    private String resourceTypeId;
+
     @NotNull
     private LocalDateTime bookingFrom;
 
     @NotNull
     private LocalDateTime bookingTo;
+
+    /** Exact occupied intervals; required for DAILY_RECURRING multi-day slots. */
+    private List<BookingTimeInterval> bookingIntervals;
 
     private String bookingType = "STANDARD_SLOT";
     @Min(1)

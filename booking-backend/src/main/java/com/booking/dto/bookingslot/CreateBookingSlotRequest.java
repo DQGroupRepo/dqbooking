@@ -16,6 +16,10 @@ public class CreateBookingSlotRequest {
     @NotBlank(message = "Slot name is required.")
     private String slotName;
 
+    private String resourceTypeId;
+
+    private String bookingPattern = "DAILY_RECURRING";
+
     @NotNull(message = "Start time is required.")
     private LocalTime startTime;
 

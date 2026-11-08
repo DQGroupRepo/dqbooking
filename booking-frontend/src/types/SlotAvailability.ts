@@ -5,6 +5,9 @@ export interface SlotAvailability {
 
     slotName: string;
 
+    resourceTypeId?: string | null;
+    bookingPattern?: "DAILY_RECURRING" | "CONTINUOUS";
+
     startTime: string;
 
     endTime: string;

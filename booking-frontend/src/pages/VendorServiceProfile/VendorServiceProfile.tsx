@@ -91,6 +91,9 @@ export default function VendorServiceProfile() {
     const [amenities, setAmenities] =
         useState<string[]>([]);
 
+    const [facilities, setFacilities] =
+        useState<string[]>([]);
+
 
     /*
      * =========================================
@@ -213,6 +216,10 @@ export default function VendorServiceProfile() {
 
             setAmenities(
                 response.amenities ?? []
+            );
+
+            setFacilities(
+                response.facilities ?? []
             );
 
 
@@ -1132,6 +1139,22 @@ export default function VendorServiceProfile() {
 
                 <div className="right-column">
 
+
+                    {/* FACILITIES */}
+
+                    <div className="card">
+                        <h2>Facilities</h2>
+                        {facilities.length > 0 ? (
+                            facilities.map(item => (
+                                <div key={item} className="amenity">
+                                    <FaCheckCircle />
+                                    {item}
+                                </div>
+                            ))
+                        ) : (
+                            <p>No facilities available.</p>
+                        )}
+                    </div>
 
                     {/* AMENITIES */}
 

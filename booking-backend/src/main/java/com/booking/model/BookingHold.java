@@ -1,6 +1,7 @@
 package com.booking.model;
 
 import com.booking.model.enums.BookingHoldStatus;
+import com.booking.model.embedded.BookingTimeInterval;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.data.mongodb.core.index.Indexed;
@@ -20,6 +21,9 @@ public class BookingHold extends BaseEntity {
 
     private LocalDate eventDate;
     private String packageId;
+
+    private String resourceTypeId;
+    private java.util.List<String> resourceIds = new java.util.ArrayList<>();
     private String customerId;
 
     private String cartId;
@@ -29,6 +33,7 @@ public class BookingHold extends BaseEntity {
     // Booking interval snapshot used by interval-based availability checks.
     private LocalDateTime bookingFrom;
     private LocalDateTime bookingTo;
+    private java.util.List<BookingTimeInterval> bookingIntervals = new java.util.ArrayList<>();
     private String bookingType;
     private Integer roomQuantity;
 

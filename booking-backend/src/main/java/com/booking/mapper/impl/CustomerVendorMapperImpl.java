@@ -111,12 +111,12 @@ public class CustomerVendorMapperImpl
                         service.getImageUrls()
                 )
 
-                .facilities(service.getFacilities() == null ? List.of() : service.getFacilities())
-
-                .facilities(service.getFacilities() == null ? List.of() : service.getFacilities())
+                .facilities(
+                        service.getFacilities() == null ? List.of() : service.getFacilities()
+                )
 
                 .amenities(
-                        service.getAmenities()
+                        service.getAmenities() == null ? List.of() : service.getAmenities()
                 )
 
                 .isActive(
@@ -200,8 +200,12 @@ public class CustomerVendorMapperImpl
                         service.getImageUrls()
                 )
 
+                .facilities(
+                        service.getFacilities() == null ? List.of() : service.getFacilities()
+                )
+
                 .amenities(
-                        service.getAmenities()
+                        service.getAmenities() == null ? List.of() : service.getAmenities()
                 )
 
                 .detailSections(
@@ -223,6 +227,7 @@ public class CustomerVendorMapperImpl
                         service.getLocation()
                 )
                 .packages(packages)
+                .resourceTypes(service.getResourceTypes())
 
                 .build();
     }

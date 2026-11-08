@@ -16,6 +16,10 @@ public class SlotAvailabilityResponse {
 
     private String slotName;
 
+    private String resourceTypeId;
+
+    private String bookingPattern;
+
     private LocalTime startTime;
 
     private LocalTime endTime;
