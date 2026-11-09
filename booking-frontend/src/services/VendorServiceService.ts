@@ -1,10 +1,21 @@
 import api from "../api/axiosConfig";
 import type { VendorService } from "../types/VendorService";
 import type { VendorServiceRequest } from "../types/VendorServiceRequest";
-import type { ServicePackage } from "../types/ServicePackage";
+import type { ServiceResourceType } from "../types/VendorDetail";
 
 class VendorServiceService {
 
+
+
+    async getResourceTypes(serviceId: string): Promise<ServiceResourceType[]> {
+        const response = await api.get<ServiceResourceType[]>(`/vendor/services/${serviceId}/resource-types`);
+        return response.data ?? [];
+    }
+
+    async saveResourceTypes(serviceId: string, resourceTypes: ServiceResourceType[]): Promise<ServiceResourceType[]> {
+        const response = await api.put<ServiceResourceType[]>(`/vendor/services/${serviceId}/resource-types`, { resourceTypes });
+        return response.data ?? [];
+    }
 
     async getServices(): Promise<VendorService[]> {
 
@@ -30,7 +41,6 @@ class VendorServiceService {
         return response.data;
 
     }
-
 
 
     async createService(
@@ -90,19 +100,6 @@ class VendorServiceService {
 
     }
 
-    async updatePackages(
-        serviceId: string,
-        packages: ServicePackage[]
-    ): Promise<VendorService> {
-
-        const response =
-            await api.put<VendorService>(
-                `/vendor/services/${serviceId}/packages`,
-                packages
-            );
-
-        return response.data;
-    }
 }
 
 

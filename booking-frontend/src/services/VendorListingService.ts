@@ -4,16 +4,18 @@ import type { VendorListing } from "../types/VendorListing";
 class VendorListingService {
 
     async getListings(
-        category?: string
+        category?: string,
+        location?: string,
+        categoryTag?: string
     ): Promise<VendorListing[]> {
 
         const response =
             await api.get<VendorListing[]>(
                 "/customer/services",
                 {
-                    params: category
-                        ? { category }
-                        : undefined
+                    params: (location || categoryTag)
+                        ? { location, categoryTag }
+                        : category ? { category } : undefined
                 }
             );
 

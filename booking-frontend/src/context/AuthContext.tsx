@@ -7,6 +7,7 @@ import {
 } from "react";
 
 import api from "../api/axios";
+import CartService from "../services/CartService";
 
 export type UserRole =
     | "CUSTOMER"
@@ -92,20 +93,27 @@ export const AuthProvider = ({
      */
 
     const logout = () => {
+        const currentToken = localStorage.getItem("eventnest_token");
 
-        localStorage.removeItem(
-            "eventnest_token"
-        );
+        // Run remote cleanup while the current JWT is still available. Both
+        // operations are best-effort; local logout must never be blocked.
+        if (currentToken) {
+            void api.post("/auth/logout", {}, {
+                headers: { Authorization: `Bearer ${currentToken}` }
+            }).catch((error) => {
+                console.warn("Server-side logout could not be completed.", error);
+            });
+        }
+        void CartService.clearCart(currentToken).catch((error) => {
+            console.warn("Cart cleanup could not be completed.", error);
+        });
 
-        localStorage.removeItem(
-            "eventnest_user"
-        );
-
-
+        localStorage.removeItem("eventnest_token");
+        localStorage.removeItem("eventnest_user");
+        delete api.defaults.headers.common["Authorization"];
         setToken(null);
-
         setUser(null);
-
+        window.dispatchEvent(new Event("eventnest-logged-out"));
     };
 
 

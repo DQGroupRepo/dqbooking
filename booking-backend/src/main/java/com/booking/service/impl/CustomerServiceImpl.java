@@ -2,13 +2,16 @@ package com.booking.service.impl;
 
 import com.booking.dto.customer.VendorDetailResponse;
 import com.booking.dto.customer.VendorListingResponse;
+import com.booking.dto.customer.VendorPricingForDateResponse;
 import com.booking.exception.ServiceNotFoundException;
 import com.booking.exception.VendorNotFoundException;
 import com.booking.mapper.CustomerVendorMapper;
 import com.booking.model.User;
 import com.booking.model.VendorService;
+import com.booking.model.VendorServicePricing;
 import com.booking.model.enums.*;
 import com.booking.repository.UserRepository;
+import com.booking.repository.VendorServicePricingRepository;
 import com.booking.repository.VendorServiceRepository;
 import com.booking.service.CustomerService;
 import lombok.RequiredArgsConstructor;
@@ -16,7 +19,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 @Service
@@ -32,6 +39,9 @@ public class CustomerServiceImpl
     private final UserRepository vendorRepository;
 
     private final CustomerVendorMapper customerVendorMapper;
+
+    private final VendorServicePricingRepository
+            vendorServicePricingRepository;
 
     @Override
     public VendorDetailResponse getServiceById(
@@ -116,7 +126,7 @@ public class CustomerServiceImpl
 
         return customerVendorMapper.toDetail(
                 vendor,
-                service
+                service, null
         );
     }
 
@@ -191,6 +201,61 @@ public class CustomerServiceImpl
         );
 
         return responses;
+    }
+
+    @Override
+    public List<VendorListingResponse> searchListings(String categoryTag, String locationTag, int page, int size) {
+        // Vocabulary is derived only from tags actually saved on services.
+        List<VendorService> all = vendorServiceRepository.findByActiveTrueAndDeletedFalse().stream()
+                .filter(s -> s.getModerationStatus() == ServiceModerationStatus.APPROVED).toList();
+        Map<String, Double> categoryMatches = new java.util.HashMap<>();
+        Map<String, Double> locationMatches = new java.util.HashMap<>();
+        if (categoryTag != null && !categoryTag.isBlank()) {
+            List<String> words = all.stream().filter(s -> s.getTags()!=null).flatMap(s -> s.getTags().stream())
+                    .filter(t -> "CATEGORY".equalsIgnoreCase(t.getType())).flatMap(t -> java.util.stream.Stream.concat(
+                            java.util.stream.Stream.of(t.getNormalizedName(), t.getValue()), t.getAliases()==null?java.util.stream.Stream.empty():t.getAliases().stream()))
+                    .filter(Objects::nonNull).flatMap(w -> java.util.stream.Stream.concat(java.util.stream.Stream.of(w), java.util.Arrays.stream(w.split("\\s+")))) .distinct().toList();
+            categoryMatches = TagSearchMatcher.vocabularyMatch(categoryTag, words);
+            if (categoryMatches.isEmpty()) return List.of();
+        }
+        if (locationTag != null && !locationTag.isBlank()) {
+            List<String> words = all.stream().filter(s -> s.getTags()!=null).flatMap(s -> s.getTags().stream())
+                    .filter(t -> "LOCATION".equalsIgnoreCase(t.getType())).flatMap(t -> java.util.stream.Stream.concat(
+                            java.util.stream.Stream.of(t.getNormalizedName(), t.getValue()), t.getAliases()==null?java.util.stream.Stream.empty():t.getAliases().stream()))
+                    .filter(Objects::nonNull).flatMap(w -> java.util.stream.Stream.concat(java.util.stream.Stream.of(w), java.util.Arrays.stream(w.split("\\s+")))) .distinct().toList();
+            locationMatches = TagSearchMatcher.vocabularyMatch(locationTag, words);
+            if (locationMatches.isEmpty()) return List.of();
+        }
+        final Map<String,Double> cm=categoryMatches, lm=locationMatches;
+        List<VendorListingResponse> results = all.stream().filter(service -> {
+                    if (service.getTags()==null) return false;
+                    boolean categoryOk = categoryTag==null || categoryTag.isBlank() || service.getTags().stream().filter(t -> "CATEGORY".equalsIgnoreCase(t.getType()))
+                            .anyMatch(t -> tagScore(t,cm)>0);
+                    boolean locationOk = locationTag==null || locationTag.isBlank() || service.getTags().stream().filter(t -> "LOCATION".equalsIgnoreCase(t.getType()))
+                            .anyMatch(t -> tagScore(t,lm)>0);
+                    return categoryOk && locationOk;
+                }).map(service -> {
+                    User vendor=vendorRepository.findById(service.getVendorId()).orElse(null);
+                    if(vendor==null || vendor.getVerificationStatus()!=VendorVerificationStatus.APPROVED) return null;
+                    VendorListingResponse dto=customerVendorMapper.toListing(vendor,service);
+                    double score=0;
+                    if(categoryTag!=null && !categoryTag.isBlank()) score+=service.getTags().stream().filter(t->"CATEGORY".equalsIgnoreCase(t.getType())).mapToDouble(t->tagScore(t,cm)).max().orElse(0);
+                    if(locationTag!=null && !locationTag.isBlank()) score+=service.getTags().stream().filter(t->"LOCATION".equalsIgnoreCase(t.getType())).mapToDouble(t->tagScore(t,lm)).max().orElse(0);
+                    return new java.util.AbstractMap.SimpleEntry<>(dto,score);
+                }).filter(Objects::nonNull).sorted((a,b)->Double.compare(b.getValue(),a.getValue()))
+                .skip((long)Math.max(0,page)*Math.max(1,Math.min(size,100))).limit(Math.max(1,Math.min(size,100)))
+                .map(java.util.Map.Entry::getKey).toList();
+        return results;
+    }
+
+    private double tagScore(com.booking.model.embedded.ServiceTag tag, Map<String,Double> matches) {
+        if(tag==null || matches==null || matches.isEmpty()) return 0;
+        double best=matches.getOrDefault(TagSearchMatcher.normalize(tag.getValue()),0.0);
+        best=Math.max(best,matches.getOrDefault(TagSearchMatcher.normalize(tag.getNormalizedName()==null?tag.getValue():tag.getNormalizedName()),0.0));
+        // Token equality allows "Hall" to match "Wedding Hall" without substring matching "apple" to "pineapple".
+        for (String token : TagSearchMatcher.normalize(tag.getValue()).split("\\s+")) best=Math.max(best,matches.getOrDefault(token,0.0));
+        if(tag.getAliases()!=null) for(String alias:tag.getAliases()) { best=Math.max(best,matches.getOrDefault(TagSearchMatcher.normalize(alias),0.0)); for(String token:TagSearchMatcher.normalize(alias).split("\\s+")) best=Math.max(best,matches.getOrDefault(token,0.0)); }
+        return best;
     }
 
     @Override
@@ -405,4 +470,79 @@ public class CustomerServiceImpl
                 service
         );
     }
+
+    public VendorPricingForDateResponse getPricingForEventDate(
+            String serviceId,
+            LocalDate eventDate
+    ) {
+
+        List<VendorServicePricing> pricingVersions =
+                vendorServicePricingRepository
+                        .findApplicablePricing(
+                                serviceId,
+                                eventDate
+                        );
+
+        VendorServicePricing pricing =
+                pricingVersions.stream()
+                        .sorted(
+                                Comparator
+                                        .comparing(
+                                                VendorServicePricing::getVersion,
+                                                Comparator.nullsLast(
+                                                        Comparator.reverseOrder()
+                                                )
+                                        )
+                                        .thenComparing(
+                                                VendorServicePricing::getLastUpdateTs,
+                                                Comparator.nullsLast(
+                                                        Comparator.reverseOrder()
+                                                )
+                                        )
+                        )
+                        .findFirst()
+                        .orElse(null);
+
+        if (pricing == null) {
+            return VendorPricingForDateResponse.builder()
+                    .eventDate(eventDate)
+                    .packages(Collections.emptyList())
+                    .build();
+        }
+
+        return VendorPricingForDateResponse.builder()
+
+                .pricingId(
+                        pricing.getId()
+                )
+
+                .version(
+                        pricing.getVersion()
+                )
+
+                .effectiveFrom(
+                        pricing.getEffectiveFrom()
+                )
+
+                .effectiveUntil(
+                        pricing.getEffectiveUntil()
+                )
+
+                .baseAmount(
+                        pricing.getBaseAmount()
+                )
+
+                .eventDate(
+                        eventDate
+                )
+
+                .packages(
+                        pricing.getPackages() == null
+                                ? Collections.emptyList()
+                                : pricing.getPackages()
+                )
+
+                .build();
+    }
+
 }

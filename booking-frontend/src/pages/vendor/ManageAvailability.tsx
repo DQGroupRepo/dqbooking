@@ -4,7 +4,6 @@ import AvailabilitySummary from "../../components/vendor/availability/Availabili
 import AvailabilitySlotList from "../../components/vendor/availability/AvailabilitySlotList/AvailabilitySlotList";
 import AvailabilityOverrideModal from "../../components/vendor/availability/AvailabilityOverrideModal/AvailabilityOverrideModal";
 import "react-calendar/dist/Calendar.css";
-import "./ManageAvailability.css";
 
 import AvailabilityOverrideService
     from "../../services/AvailabilityOverrideService";
@@ -33,6 +32,7 @@ export default function ManageAvailability() {
     const [slots, setSlots] =
         useState<BookingSlot[]>([]);
 
+
     const [loading, setLoading] =
         useState(true);
 
@@ -41,6 +41,7 @@ export default function ManageAvailability() {
 
     const [selectedSlot, setSelectedSlot] =
         useState<BookingSlot>();
+
 
     const [selectedOverride, setSelectedOverride] =
         useState<AvailabilityOverride>();
@@ -127,6 +128,7 @@ export default function ManageAvailability() {
 
             setSlots(response);
 
+
         }
 
         catch (error) {
@@ -202,6 +204,7 @@ export default function ManageAvailability() {
                 </div>
 
             </div>
+
             {
                 selectedSlot && (
 

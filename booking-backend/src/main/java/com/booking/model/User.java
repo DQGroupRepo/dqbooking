@@ -30,6 +30,12 @@ public class User extends BaseEntity {
 
     private LocalDateTime lastLogin;
 
+    /** Server-side active login session used to invalidate replaced JWTs. */
+    private String activeSessionId;
+
+    /** Expiry of the active JWT session; prevents stale sessions blocking login. */
+    private LocalDateTime activeSessionExpiresAt;
+
     /*
      * =========================================
      * VENDOR PROFILE

@@ -78,10 +78,10 @@ public class ReviewServiceImpl
             );
         }
 
-        if (booking.getEventDate().isAfter(LocalDate.now())) {
+        if (booking.getBookingTo().toLocalDate().isAfter(LocalDate.now())) {
 
             log.warn("Review creation rejected before event date bookingId={} eventDate={}",
-                    booking.getId(), booking.getEventDate());
+                    booking.getId(), booking.getBookingTo());
 
             throw new ReviewNotAllowedException(
                     "Review can be added only after the event."

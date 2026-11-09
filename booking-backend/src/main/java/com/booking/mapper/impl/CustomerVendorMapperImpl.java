@@ -7,14 +7,25 @@ import com.booking.mapper.ServiceDetailSectionMapper;
 import com.booking.model.Review;
 import com.booking.model.User;
 import com.booking.model.VendorService;
+import com.booking.model.VendorServicePricing;
+import com.booking.model.embedded.ServicePackage;
 import com.booking.repository.ReviewRepository;
+import com.booking.repository.VendorServicePricingRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDate;
+import java.util.Collections;
 import java.util.List;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+
 
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class CustomerVendorMapperImpl
         implements CustomerVendorMapper {
 
@@ -23,6 +34,9 @@ public class CustomerVendorMapperImpl
 
     private final ReviewRepository
             reviewRepository;
+
+    private final VendorServicePricingRepository
+            vendorServicePricingRepository;
 
 
     @Override
@@ -87,13 +101,9 @@ public class CustomerVendorMapperImpl
                 )
 
                 .imageUrl(
-
                         service.getImageUrls() != null
-                                &&
-                                !service.getImageUrls().isEmpty()
-
+                                && !service.getImageUrls().isEmpty()
                                 ? service.getImageUrls().get(0)
-
                                 : null
                 )
 
@@ -101,8 +111,12 @@ public class CustomerVendorMapperImpl
                         service.getImageUrls()
                 )
 
+                .facilities(
+                        service.getFacilities() == null ? List.of() : service.getFacilities()
+                )
+
                 .amenities(
-                        service.getAmenities()
+                        service.getAmenities() == null ? List.of() : service.getAmenities()
                 )
 
                 .isActive(
@@ -110,14 +124,14 @@ public class CustomerVendorMapperImpl
                 )
 
                 .build();
-
     }
 
 
     @Override
     public VendorDetailResponse toDetail(
             User vendor,
-            VendorService service
+            VendorService service,
+            VendorServicePricing pricing
     ) {
 
         List<Review> reviews =
@@ -132,6 +146,9 @@ public class CustomerVendorMapperImpl
 
         int reviewCount =
                 reviews.size();
+
+        List<ServicePackage> packages =
+                getPackages(pricing);
 
         return VendorDetailResponse.builder()
 
@@ -183,14 +200,14 @@ public class CustomerVendorMapperImpl
                         service.getImageUrls()
                 )
 
-                .amenities(
-                        service.getAmenities()
+                .facilities(
+                        service.getFacilities() == null ? List.of() : service.getFacilities()
                 )
 
-                /*
-                 * Convert entity sections
-                 * to API response sections.
-                 */
+                .amenities(
+                        service.getAmenities() == null ? List.of() : service.getAmenities()
+                )
+
                 .detailSections(
                         serviceDetailSectionMapper
                                 .toResponseList(
@@ -209,13 +226,10 @@ public class CustomerVendorMapperImpl
                 .location(
                         service.getLocation()
                 )
-
-                .packages(
-                        service.getPackages()
-                )
+                .packages(packages)
+                .resourceTypes(service.getResourceTypes())
 
                 .build();
-
     }
 
     private List<Review> getVendorReviews(
@@ -226,7 +240,6 @@ public class CustomerVendorMapperImpl
                 .findByVendorIdAndDeletedFalse(
                         vendorId
                 );
-
     }
 
 
@@ -235,26 +248,31 @@ public class CustomerVendorMapperImpl
     ) {
 
         if (reviews == null || reviews.isEmpty()) {
-
             return 0.0;
-
         }
 
         return reviews.stream()
-
                 .filter(
                         review ->
                                 review.getRating() != null
                 )
-
                 .mapToInt(
                         Review::getRating
                 )
-
                 .average()
-
                 .orElse(0.0);
-
     }
 
+    private List<ServicePackage> getPackages(
+            VendorServicePricing pricing
+    ) {
+
+        if (pricing == null ||
+                pricing.getPackages() == null) {
+
+            return Collections.emptyList();
+        }
+
+        return pricing.getPackages();
+    }
 }

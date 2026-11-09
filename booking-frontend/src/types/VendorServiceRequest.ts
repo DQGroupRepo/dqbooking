@@ -1,67 +1,68 @@
-import type {
-    ContactInfo
-} from "./ContactInfo";
+import type { ServiceTag } from "./ServiceTag";
+import type { ContactInfo } from "./ContactInfo";
 
-import type {
-    Availability
-} from "./Availability";
+import type { Availability } from "./Availability";
 
-import type {
-    BookingSettings
-} from "./BookingSettings";
+import type { BookingSettings } from "./BookingSettings";
 
-import type {
-    ServicePackageRequest
-} from "./ServicePackageRequest";
+import type { ServicePackageRequest } from "./ServicePackageRequest";
 
-import type {
-    ServiceDetailSection
-} from "./ServiceDetailSection";
+import type { ServiceDetailSection } from "./ServiceDetailSection";
 
+import type { CateringMenuItem } from "./CateringMenuItem";
+
+export interface VendorCateringDetailsRequest {
+  vegetarian: boolean;
+  nonVegetarian: boolean;
+  cuisines: string[];
+  menuItems: CateringMenuItem[];
+  providesCateringStaff: boolean;
+  staffCostPerPerson: number | null;
+  maximumServiceDistanceKm: number | null;
+}
 
 export interface VendorServiceRequest {
+  serviceName: string;
 
-    serviceName: string;
+  category: string;
 
-    category: string;
+  location: string;
 
-    location: string;
+  tags: ServiceTag[];
 
-    description: string;
+  description: string;
 
-    price: number;
+  capacity: number;
 
-    capacity: number;
+  durationHours: number;
 
-    durationHours: number;
-
-
-    /* =====================================
+  /* =====================================
        COMMON DETAILS
     ===================================== */
 
-    contactInfo: ContactInfo;
+  contactInfo: ContactInfo;
 
-    availability: Availability;
+  availability: Availability;
 
-    bookingSettings: BookingSettings;
+  bookingSettings: BookingSettings;
 
-    imageUrls: string[];
+  imageUrls: string[];
 
-    amenities: string[];
+  facilities: string[];
 
+  amenities: string[];
 
-    /* =====================================
+  /* =====================================
        GENERIC CATEGORY DETAILS
     ===================================== */
 
-    detailSections: ServiceDetailSection[];
+  detailSections: ServiceDetailSection[];
 
+  cateringDetails?: VendorCateringDetailsRequest;
 
-    /* =====================================
+  /* =====================================
        PACKAGES
     ===================================== */
 
-    packages?: ServicePackageRequest[];
-
+  packages?: ServicePackageRequest[];
 }

@@ -1,8 +1,15 @@
+
 spring:
+  data:
+    mongodb:
+      uri: ${MONGODB_URI}
 
-  profiles:
-    active: prod
+jwt:
+  expiration: 3600000
+  secret: ${JWT_SECRET}
 
-CLOUDINARY_CLOUD_NAME: xxxxxxxx
-CLOUDINARY_API_KEY: xxxxxxxx
-CLOUDINARY_API_SECRET: xxxxxxxx
+app:
+  upload:
+    path: ${UPLOAD_PATH}
+    image-max-size-mb: 5
+    video-max-size-mb: 50

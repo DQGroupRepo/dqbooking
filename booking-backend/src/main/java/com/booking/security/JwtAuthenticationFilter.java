@@ -71,6 +71,18 @@ public class JwtAuthenticationFilter
                         .findById(userId)
                         .orElse(null);
 
+        // Tokens issued by the updated login flow must match the account's
+        // current server-side session. Legacy JWTs without a sid remain valid
+        // until their normal expiry to avoid forcibly logging everyone out on deploy.
+        String tokenSessionId = jwtService.extractSessionId(token);
+        if (tokenSessionId != null && (user == null
+                || !tokenSessionId.equals(user.getActiveSessionId()))) {
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.setContentType("application/json");
+            response.getWriter().write("{\"message\":\"This login session is no longer active. Please sign in again.\"}");
+            return;
+        }
+
         if (
                 user != null &&
                         SecurityContextHolder

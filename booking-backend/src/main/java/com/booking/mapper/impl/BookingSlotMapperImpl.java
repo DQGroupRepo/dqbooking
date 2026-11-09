@@ -18,6 +18,8 @@ public class BookingSlotMapperImpl implements BookingSlotMapper {
         BookingSlot bookingSlot = new BookingSlot();
 
         bookingSlot.setSlotName(request.getSlotName());
+        bookingSlot.setResourceTypeId(request.getResourceTypeId());
+        bookingSlot.setBookingPattern(request.getBookingPattern() == null ? "DAILY_RECURRING" : request.getBookingPattern());
         bookingSlot.setStartTime(request.getStartTime());
         bookingSlot.setEndTime(request.getEndTime());
         bookingSlot.setMaxBookings(request.getMaxBookings());
@@ -35,6 +37,8 @@ public class BookingSlotMapperImpl implements BookingSlotMapper {
         response.setServiceId(bookingSlot.getServiceId());
 
         response.setSlotName(bookingSlot.getSlotName());
+        response.setResourceTypeId(bookingSlot.getResourceTypeId());
+        response.setBookingPattern(bookingSlot.getBookingPattern() == null ? "DAILY_RECURRING" : bookingSlot.getBookingPattern());
 
         response.setStartTime(bookingSlot.getStartTime());
         response.setEndTime(bookingSlot.getEndTime());
@@ -65,6 +69,8 @@ public class BookingSlotMapperImpl implements BookingSlotMapper {
             UpdateBookingSlotRequest request) {
 
         bookingSlot.setSlotName(request.getSlotName());
+        bookingSlot.setResourceTypeId(request.getResourceTypeId());
+        bookingSlot.setBookingPattern(request.getBookingPattern() == null ? "DAILY_RECURRING" : request.getBookingPattern());
 
         bookingSlot.setStartTime(request.getStartTime());
         bookingSlot.setEndTime(request.getEndTime());

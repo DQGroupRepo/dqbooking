@@ -131,20 +131,16 @@ const Cart = () => {
      * =========================================
      */
 
-    const handleRemove = (
+    const handleRemove = async (
         serviceId: string
     ) => {
 
         const updatedCart =
-            CartService.removeItem(
+            await CartService.removeItem(
                 serviceId
             );
 
-
-        setCart(
-            updatedCart
-        );
-
+        setCart(updatedCart);
     };
 
 
@@ -154,12 +150,18 @@ const Cart = () => {
      * =========================================
      */
 
-    const handleClearCart = () => {
+    const handleClearCart = async () => {
 
-        CartService.clearCart();
+        const confirmed = window.confirm(
+            "Clear your cart? All selected services will be removed and their active booking holds will be released."
+        );
+
+        if (!confirmed) {
+            return;
+        }
 
         setCart([]);
-
+        await CartService.clearCart();
     };
 
 
@@ -247,6 +249,14 @@ const Cart = () => {
                     ?.length ||
                 bundleItems.length;
 
+            const completedCount =
+                bundle.bundleServiceIds?.filter(
+                    requiredServiceId =>
+                        bundleItems.some(
+                            item => item.serviceId === requiredServiceId
+                        )
+                ).length ?? bundleItems.length;
+
 
             return (
 
@@ -284,10 +294,57 @@ const Cart = () => {
                                 {
                                     isComplete
                                         ? "✓ Bundle completed"
-                                        : `Bundle in progress — ${bundleItems.length} of ${requiredCount} services selected`
+                                        : `Bundle in progress — ${completedCount} of ${requiredCount} services selected`
                                 }
 
                             </p>
+
+                            {
+                                !isComplete && (
+
+                                    <button
+                                        type="button"
+                                        className="cart-bundle-resume-button"
+                                        style={{
+                                            marginTop: "0.75rem",
+                                            padding: "0.55rem 0.9rem",
+                                            borderRadius: "8px",
+                                            border: "1px solid currentColor",
+                                            background: "transparent",
+                                            cursor: "pointer",
+                                            fontWeight: 600
+                                        }}
+                                        onClick={() => {
+                                            const rootServiceId =
+                                                bundle.bundleServiceIds?.[0] ||
+                                                bundleItems[0]?.serviceId;
+
+                                            if (!rootServiceId) {
+                                                return;
+                                            }
+
+                                            navigate(
+                                                `/bundles/available/${rootServiceId}`,
+                                                {
+                                                    state: {
+                                                        fromBundle: true,
+                                                        bundleRootServiceId: rootServiceId,
+                                                        bundleId: bundle.bundleId,
+                                                        bundleName: bundle.bundleName,
+                                                        bundleDescription: bundle.bundleDescription,
+                                                        bundleServiceIds: bundle.bundleServiceIds,
+                                                        bundleDiscountType: bundle.bundleDiscountType,
+                                                        bundleDiscountValue: bundle.bundleDiscountValue
+                                                    }
+                                                }
+                                            );
+                                        }}
+                                    >
+                                        Continue Bundle
+                                    </button>
+
+                                )
+                            }
 
                         </div>
 

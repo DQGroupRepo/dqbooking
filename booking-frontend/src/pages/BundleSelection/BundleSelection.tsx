@@ -27,6 +27,10 @@ import type {
     VendorListing
 } from "../../types/VendorListing";
 
+import type {
+    CartItem
+} from "../../types/CartItem";
+
 import "./BundleSelection.css";
 
 
@@ -135,12 +139,10 @@ const BundleSelection = () => {
      */
 
     const [
-        cartServiceIds,
-        setCartServiceIds
+        cartItems,
+        setCartItems
     ] =
-        useState<
-            string[]
-        >([]);
+        useState<CartItem[]>([]);
 
 
     /*
@@ -164,30 +166,22 @@ const BundleSelection = () => {
      * =========================================
      */
 
-    const refreshCart =
-        () => {
-
-            const cartItems =
-                CartService.getCart();
-
-
-            setCartServiceIds(
-
-                cartItems.map(
-                    item =>
-                        item.serviceId
-                )
-
-            );
-
-        };
+    const refreshCart = () => {
+        setCartItems(CartService.getCart());
+    };
 
 
     useEffect(
         () => {
-
             refreshCart();
 
+            window.addEventListener("cartUpdated", refreshCart);
+            window.addEventListener("storage", refreshCart);
+
+            return () => {
+                window.removeEventListener("cartUpdated", refreshCart);
+                window.removeEventListener("storage", refreshCart);
+            };
         },
         []
     );
@@ -525,8 +519,10 @@ const BundleSelection = () => {
 
                 id =>
 
-                    !cartServiceIds.includes(
-                        id
+                    !cartItems.some(
+                        item =>
+                            item.serviceId === id &&
+                            item.bundleId === bundle.id
                     )
 
             )
@@ -554,8 +550,10 @@ const BundleSelection = () => {
 
                 id =>
 
-                    cartServiceIds.includes(
-                        id
+                    cartItems.some(
+                        item =>
+                            item.serviceId === id &&
+                            item.bundleId === bundle.id
                     )
 
             ).length
@@ -674,6 +672,12 @@ const BundleSelection = () => {
                 allServicesAdded
             ) {
 
+                // Keep selected services and holds, but detach them
+                // from the bundle being left so its discount cannot persist.
+                if (bundle) {
+                    CartService.removeBundleAssociation(bundle.id);
+                }
+
                 navigate(
                     `/vendor/${serviceId}`,
                     {
@@ -713,6 +717,11 @@ const BundleSelection = () => {
                 false
             );
 
+            if (bundle) {
+                // Keep current bookings and holds; only detach the
+                // abandoned bundle association.
+                CartService.removeBundleAssociation(bundle.id);
+            }
 
             if (
                 !serviceId
@@ -1095,8 +1104,10 @@ const BundleSelection = () => {
 
 
                                         const alreadyAdded =
-                                            cartServiceIds.includes(
-                                                id
+                                            cartItems.some(
+                                                item =>
+                                                    item.serviceId === id &&
+                                                    item.bundleId === bundle.id
                                             );
 
 
@@ -1536,14 +1547,8 @@ const BundleSelection = () => {
 
 
                             {
-                                cartServiceIds.some(
-
-                                    id =>
-
-                                        bundle.serviceIds.includes(
-                                            id
-                                        )
-
+                                cartItems.some(
+                                    item => item.bundleId === bundle.id
                                 ) && (
 
                                     <p>

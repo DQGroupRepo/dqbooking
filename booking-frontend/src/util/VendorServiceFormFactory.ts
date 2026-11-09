@@ -25,6 +25,10 @@ export default class VendorServiceFormFactory {
 
             location: "",
 
+            categoryTags: [],
+
+            locationTags: [],
+
             address: "",
 
             capacity: "",
@@ -66,6 +70,8 @@ export default class VendorServiceFormFactory {
             /* =====================================
                COMMON COLLECTIONS
             ===================================== */
+
+            facilities: [],
 
             amenities: [],
 

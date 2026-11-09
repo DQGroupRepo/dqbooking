@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 
-import type { BookingStats } from "../../../types/BookingStats";
+import type { BookingStats } from "../../../../types/BookingStats";
 
 import styles from "./BookingTableStats.module.css";
 

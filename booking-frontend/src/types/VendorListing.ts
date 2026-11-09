@@ -24,6 +24,8 @@ export interface VendorListing {
 
     gallery?: string[];
 
+    facilities?: string[];
+
     amenities?: string[];
 
     isActive: boolean;

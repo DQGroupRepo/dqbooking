@@ -1,16 +1,12 @@
 import api from "../api/axiosConfig";
-import type { VendorDashboard } from "../types/VendorDashboard";
+import type { VendorDashboardSummary } from "../types/VendorDashboard";
 
 class VendorDashboardService {
+  async getDashboard(): Promise<VendorDashboardSummary> {
+    const response = await api.get<VendorDashboardSummary>("/vendor/dashboard");
 
-    async getDashboard(): Promise<VendorDashboard> {
-        const response = await api.get<VendorDashboard>(
-            "/vendor/dashboard"
-        );
-
-        return response.data;
-    }
-
+    return response.data;
+  }
 }
 
 export default new VendorDashboardService();

@@ -1,5 +1,5 @@
 /* =====================================
-   EVENTNEST GLOBAL STYLE SYSTEM
+   DQBooking GLOBAL STYLE SYSTEM
 ===================================== */
 
 
@@ -1891,16 +1891,6 @@ footer {
 .vendor-layout {
 
     grid-template-columns:1fr;
-
-}
-
-
-
-.1booking-card {
-
-    position:relative;
-
-    top:0;
 
 }
 

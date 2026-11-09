@@ -6,7 +6,7 @@ import lombok.Builder;
 import lombok.Data;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Data
 @Builder
@@ -24,7 +24,9 @@ public class CustomerBookingSummaryResponse {
 
     private String serviceImage;
 
-    private LocalDate eventDate;
+    private LocalDateTime bookingFrom;
+
+    private LocalDateTime bookingTo;
 
     private Integer guestCount;
 

@@ -1,5 +1,6 @@
 import Input from "../../../common/ui/Input/Input";
 import SectionHeader from "../../../common/ui/SectionHeader/SectionHeader";
+import TagChipSelector from "../TagChipSelector";
 
 import type {
     VendorServiceForm
@@ -8,6 +9,10 @@ import type {
 interface Props {
 
     formData: VendorServiceForm;
+
+    onCategoryTagsChange: (values: string[]) => void;
+
+    onLocationTagsChange: (values: string[]) => void;
 
     handleChange: (
         e: React.ChangeEvent<
@@ -23,7 +28,9 @@ export default function BasicInfoSection({
 
     formData,
 
-    handleChange
+    handleChange,
+    onCategoryTagsChange,
+    onLocationTagsChange
 
 }: Props) {
 
@@ -82,6 +89,10 @@ export default function BasicInfoSection({
                 onChange={handleChange}
 
             />
+
+            <TagChipSelector label="Category tags" mode="CATEGORY" parentCategory={formData.category.toUpperCase()} values={formData.categoryTags} onChange={onCategoryTagsChange} />
+
+            <TagChipSelector label="Location tags" mode="LOCATION" values={formData.locationTags} onChange={onLocationTagsChange} />
 
 
             <div className="two-column">

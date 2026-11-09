@@ -116,7 +116,9 @@ const VendorCard = ({
                         <h4>
 
                             ₹
-                            {vendor.startingPrice.toLocaleString()}
+                            {vendor.startingPrice == null
+                                ? "Price unavailable"
+                                : vendor.startingPrice.toLocaleString("en-IN")}
                             {" "}onwards
 
                         </h4>

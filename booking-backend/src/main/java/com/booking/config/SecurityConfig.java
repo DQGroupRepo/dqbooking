@@ -82,6 +82,9 @@ public class SecurityConfig {
                                 "/api/auth/vendor/register",
                                 "/api/customer/services",
                                 "/api/customer/services/**",
+                                "/api/tag-directory/categories",
+                                "/api/tag-directory/category-suggestions",
+                                "/api/tag-directory/locations",
                                 "/uploads/**",
                                 "/api/pricing/**"
                         )
@@ -94,7 +97,10 @@ public class SecurityConfig {
 
                         .requestMatchers(
                                 HttpMethod.GET,
-                                "/api/vendor/listings/**"
+                                "/api/service-attribute-directory",
+                                "/api/vendor/listings/**",
+                                "/api/services/*/availability",
+                                "/api/services/*/availability/*"
                         )
                         .permitAll()
 
@@ -115,6 +121,13 @@ public class SecurityConfig {
                         )
 
 
+                        .requestMatchers(
+                                HttpMethod.POST,
+                                "/api/service-attribute-directory"
+                        )
+                        .hasAnyRole("VENDOR_ADMIN", "VENDOR_USER", "ADMIN")
+
+
                         // --------------------------------
                         // Customer Booking APIs
                         // --------------------------------
@@ -123,7 +136,12 @@ public class SecurityConfig {
                                 HttpMethod.POST,
                                 "/api/bookings"
                         )
-                        .hasRole("CUSTOMER")
+                        .hasAnyRole(
+                                "CUSTOMER",
+                                "VENDOR_ADMIN",
+                                "VENDOR_USER",
+                                "ADMIN"
+                        )
 
 
                         .requestMatchers(
@@ -344,7 +362,11 @@ public class SecurityConfig {
 
                         "http://localhost:5173",
 
-                        "http://localhost:5174"
+                        "http://localhost:5174",
+
+                        "https://venues-aaa-booking-frontend.vercel.app",
+                        "https://venues-aaa-booking-frontend-em3u2oocb-venues-aaa.vercel.app",
+                        "https://www.dqbooking.com"
 
                 )
 

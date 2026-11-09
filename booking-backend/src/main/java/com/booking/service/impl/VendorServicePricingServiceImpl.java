@@ -1,22 +1,35 @@
 package com.booking.service.impl;
 
+import com.booking.dto.customer.EventPricingResponse;
+import com.booking.dto.customer.VendorPricingForDateResponse;
 import com.booking.dto.pricing.VendorServicePricingRequest;
+import com.booking.dto.service.ServicePackageRequest;
 import com.booking.dto.pricing.VendorServicePricingResponse;
+import com.booking.dto.pricing.VendorServicePricingVersionResponse;
 import com.booking.exception.ResourceNotFoundException;
 import com.booking.exception.VendorServiceNotFoundException;
 import com.booking.mapper.PricingMapper;
 import com.booking.model.VendorService;
 import com.booking.model.VendorServicePricing;
+import com.booking.model.enums.ServiceCategory;
 import com.booking.repository.VendorServicePricingRepository;
+import com.booking.repository.BookingSlotRepository;
+import com.booking.model.BookingSlot;
 import com.booking.repository.VendorServiceRepository;
 import com.booking.service.VendorAccessService;
 import com.booking.service.VendorServicePricingService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 @Service
@@ -31,10 +44,13 @@ public class VendorServicePricingServiceImpl
     private final VendorServiceRepository
             vendorServiceRepository;
 
+    private final BookingSlotRepository bookingSlotRepository;
+
     private final PricingMapper pricingMapper;
 
     private final VendorAccessService
             vendorAccessService;
+
 
     @Override
     public VendorServicePricingResponse createPricing(
@@ -55,6 +71,8 @@ public class VendorServicePricingServiceImpl
                 service
         );
 
+        validatePackageReferences(service, request.getPackages());
+
         VendorServicePricing pricing =
                 pricingMapper.toEntity(
                         request
@@ -68,6 +86,15 @@ public class VendorServicePricingServiceImpl
                 service.getId()
         );
 
+
+        /*
+         * =========================================
+         * VERSION
+         * =========================================
+         *
+         * A save always creates a new immutable
+         * pricing version.
+         */
         List<VendorServicePricing> existingPricing =
                 vendorServicePricingRepository
                         .findByServiceIdOrderByVersionDesc(
@@ -76,9 +103,7 @@ public class VendorServicePricingServiceImpl
 
         int nextVersion =
                 existingPricing.isEmpty()
-
                         ? 1
-
                         : existingPricing
                         .get(0)
                         .getVersion()
@@ -88,29 +113,115 @@ public class VendorServicePricingServiceImpl
                 nextVersion
         );
 
+
+        /*
+         * =========================================
+         * AUDIT
+         * =========================================
+         *
+         * These values are generated server-side.
+         * They must not come from the request body.
+         */
+        pricing.setCreatedAt(
+                Instant.now()
+        );
+
+        pricing.setCreatedBy(
+                getCurrentUserId()
+        );
+
+
         VendorServicePricing savedPricing =
                 vendorServicePricingRepository
                         .save(
                                 pricing
                         );
 
+
         syncStartingPrice(
                 savedPricing.getServiceId(),
                 savedPricing.getBaseAmount()
         );
 
+
         log.info(
-                "Pricing configuration created pricingId={} serviceId={} vendorId={} version={}",
+                "Pricing configuration created pricingId={} serviceId={} vendorId={} version={} createdBy={}",
                 savedPricing.getId(),
                 savedPricing.getServiceId(),
                 savedPricing.getVendorId(),
-                savedPricing.getVersion()
+                savedPricing.getVersion(),
+                savedPricing.getCreatedBy()
         );
+
 
         return pricingMapper.toResponse(
                 savedPricing
         );
     }
+
+
+    /*
+     * =========================================
+     * GET VERSION HISTORY
+     * =========================================
+     */
+    @Override
+    public List<VendorServicePricingVersionResponse>
+    getPricingVersions(
+            String serviceId
+    ) {
+
+        log.info(
+                "Retrieving pricing versions serviceId={}",
+                serviceId
+        );
+
+
+        VendorService service =
+                getService(
+                        serviceId
+                );
+
+        validateVendorOwnership(
+                service
+        );
+
+
+        return vendorServicePricingRepository
+                .findByServiceIdOrderByVersionDesc(
+                        serviceId
+                )
+                .stream()
+                .map(
+                        pricing ->
+                                VendorServicePricingVersionResponse
+                                        .builder()
+                                        .id(
+                                                pricing.getId()
+                                        )
+                                        .version(
+                                                pricing.getVersion()
+                                        )
+                                        .effectiveFrom(
+                                                pricing.getEffectiveFrom()
+                                        )
+                                        .effectiveUntil(
+                                                pricing.getEffectiveUntil()
+                                        )
+                                        .baseAmount(
+                                                pricing.getBaseAmount()
+                                        )
+                                        .createdAt(
+                                                pricing.getCreatedAt()
+                                        )
+                                        .createdBy(
+                                                pricing.getCreatedBy()
+                                        )
+                                        .build()
+                )
+                .toList();
+    }
+
 
     private void syncStartingPrice(
             String serviceId,
@@ -123,6 +234,7 @@ public class VendorServicePricingServiceImpl
                                 serviceId
                         )
                         .orElseThrow(() -> {
+
                             log.warn(
                                     "Service not found while synchronizing starting price serviceId={}",
                                     serviceId
@@ -133,19 +245,23 @@ public class VendorServicePricingServiceImpl
                             );
                         });
 
+
         vendorService.setStartingPrice(
                 baseAmount
         );
 
+
         vendorServiceRepository.save(
                 vendorService
         );
+
 
         log.debug(
                 "Vendor service starting price synchronized serviceId={}",
                 serviceId
         );
     }
+
 
     @Override
     public VendorServicePricingResponse getPricingById(
@@ -157,12 +273,14 @@ public class VendorServicePricingServiceImpl
                 pricingId
         );
 
+
         VendorServicePricing pricing =
                 vendorServicePricingRepository
                         .findById(
                                 pricingId
                         )
                         .orElseThrow(() -> {
+
                             log.warn(
                                     "Pricing configuration not found pricingId={}",
                                     pricingId
@@ -173,6 +291,7 @@ public class VendorServicePricingServiceImpl
                             );
                         });
 
+
         VendorService service =
                 getService(
                         pricing.getServiceId()
@@ -182,6 +301,7 @@ public class VendorServicePricingServiceImpl
                 service
         );
 
+
         log.info(
                 "Pricing configuration retrieved pricingId={} serviceId={} version={}",
                 pricingId,
@@ -189,10 +309,12 @@ public class VendorServicePricingServiceImpl
                 pricing.getVersion()
         );
 
+
         return pricingMapper.toResponse(
                 pricing
         );
     }
+
 
     @Override
     public VendorServicePricingResponse getCurrentPricing(
@@ -204,6 +326,7 @@ public class VendorServicePricingServiceImpl
                 serviceId
         );
 
+
         VendorService service =
                 getService(
                         serviceId
@@ -213,11 +336,13 @@ public class VendorServicePricingServiceImpl
                 service
         );
 
+
         List<VendorServicePricing> pricingVersions =
                 vendorServicePricingRepository
                         .findByServiceIdOrderByVersionDesc(
                                 serviceId
                         );
+
 
         if (
                 pricingVersions.isEmpty()
@@ -233,8 +358,10 @@ public class VendorServicePricingServiceImpl
             );
         }
 
+
         VendorServicePricing currentPricing =
                 pricingVersions.get(0);
+
 
         log.info(
                 "Current pricing retrieved serviceId={} pricingId={} version={}",
@@ -243,10 +370,49 @@ public class VendorServicePricingServiceImpl
                 currentPricing.getVersion()
         );
 
+
         return pricingMapper.toResponse(
                 currentPricing,
                 service
         );
+    }
+
+
+    private void validatePackageReferences(
+            VendorService service,
+            List<ServicePackageRequest> packages
+    ) {
+        if (packages == null || packages.isEmpty()) return;
+        boolean isStay = service.getCategory() == ServiceCategory.STAY;
+
+        for (ServicePackageRequest pkg : packages) {
+            if (pkg == null || !pkg.isActive()) continue;
+            if (pkg.getSlotIds() != null) {
+                for (String slotId : pkg.getSlotIds()) {
+                    if (slotId == null || slotId.isBlank()) continue;
+                    BookingSlot slot = bookingSlotRepository.findById(slotId)
+                            .filter(s -> service.getId().equals(s.getServiceId()))
+                            .orElseThrow(() -> new IllegalArgumentException(
+                                    "A selected slot does not belong to this service."));
+                    if (Boolean.FALSE.equals(slot.getActive())) {
+                        throw new IllegalArgumentException("Inactive slots cannot be assigned to active packages.");
+                    }
+                }
+            }
+            if (isStay) {
+                // STAY inventory is managed by slot capacity; Room Type is not part of this flow.
+                if (pkg.getMaxGuestsPerRoom() == null || pkg.getMaxGuestsPerRoom() < 1) {
+                    throw new IllegalArgumentException(
+                            "Every active STAY package must define at least one guest per room.");
+                }
+                if (pkg.getSlotIds() == null || pkg.getSlotIds().isEmpty()) {
+                    throw new IllegalArgumentException(
+                            "Every active STAY package must be assigned to at least one booking slot.");
+                }
+                // STAY bookings always consume capacity from a selected booking slot.
+                pkg.setRequiresSlot(true);
+            }
+        }
     }
 
     private VendorService getService(
@@ -258,6 +424,7 @@ public class VendorServicePricingServiceImpl
                         serviceId
                 )
                 .orElseThrow(() -> {
+
                     log.warn(
                             "Vendor service not found serviceId={}",
                             serviceId
@@ -269,6 +436,7 @@ public class VendorServicePricingServiceImpl
                 });
     }
 
+
     private void validateVendorOwnership(
             VendorService service
     ) {
@@ -276,6 +444,7 @@ public class VendorServicePricingServiceImpl
         String effectiveVendorId =
                 vendorAccessService
                         .getEffectiveVendorId();
+
 
         if (
                 !service
@@ -296,6 +465,7 @@ public class VendorServicePricingServiceImpl
         }
     }
 
+
     @Override
     public VendorServicePricingResponse getPricing(
             String pricingId
@@ -306,12 +476,14 @@ public class VendorServicePricingServiceImpl
                 pricingId
         );
 
+
         VendorServicePricing pricing =
                 vendorServicePricingRepository
                         .findById(
                                 pricingId
                         )
                         .orElseThrow(() -> {
+
                             log.warn(
                                     "Pricing not found pricingId={}",
                                     pricingId
@@ -322,6 +494,7 @@ public class VendorServicePricingServiceImpl
                             );
                         });
 
+
         VendorService service =
                 getService(
                         pricing.getServiceId()
@@ -331,6 +504,7 @@ public class VendorServicePricingServiceImpl
                 service
         );
 
+
         log.info(
                 "Pricing retrieved pricingId={} serviceId={} version={}",
                 pricingId,
@@ -338,9 +512,64 @@ public class VendorServicePricingServiceImpl
                 pricing.getVersion()
         );
 
+
         return pricingMapper.toResponse(
                 pricing,
                 service
         );
     }
+
+
+    /*
+     * =========================================
+     * CURRENT USER ID
+     * =========================================
+     *
+     * This implementation uses the authenticated
+     * principal name. In a JWT setup this is
+     * normally the subject/user ID.
+     */
+    private String getCurrentUserId() {
+
+        Authentication authentication =
+                SecurityContextHolder
+                        .getContext()
+                        .getAuthentication();
+
+
+        if (
+                authentication == null ||
+                        !authentication.isAuthenticated() ||
+                        authentication.getPrincipal() == null ||
+                        "anonymousUser".equals(
+                                authentication.getPrincipal()
+                                        .toString()
+                        )
+        ) {
+
+            throw new AccessDeniedException(
+                    "Authenticated user not found."
+            );
+        }
+
+
+        String userId =
+                authentication.getName();
+
+
+        if (
+                userId == null ||
+                        userId.isBlank()
+        ) {
+
+            throw new AccessDeniedException(
+                    "Authenticated user ID not found."
+            );
+        }
+
+
+        return userId;
+    }
+
+
 }

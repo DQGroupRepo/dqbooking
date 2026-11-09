@@ -1,5 +1,6 @@
 package com.booking.dto.pricing;
 
+import com.booking.dto.service.ServicePackageResponse;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -33,13 +34,8 @@ public class VendorServicePricingResponse {
 
     private CancellationPolicyResponse cancellationPolicy;
 
-
     /*
-     * Packages belong to VendorService.
-     *
-     * They are included here so the frontend
-     * can retrieve pricing and packages together.
+     * Packages belong to the pricing version.
      */
     private List<ServicePackageResponse> packages;
-
 }

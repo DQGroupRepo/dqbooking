@@ -50,7 +50,22 @@ public class BookingResponse extends BaseEntity {
 
     private BigDecimal totalAmount;
 
+    private LocalDateTime bookingFrom;
+
+    private LocalDateTime bookingTo;
+
+    /** Backward-compatible calendar date for non-STAY categories. */
     private LocalDate eventDate;
+
+    private String bookingType;
+
+    private String slotId;
+
+    private String slotName;
+
+    private String slotStartTime;
+
+    private String slotEndTime;
 
     private Integer guestCount;
 

@@ -1,129 +1,82 @@
 import type { VendorServiceForm } from "../types/VendorServiceForm";
 
 export default function calculateListingProgress(
+  formData: VendorServiceForm,
 
-    formData: VendorServiceForm,
+  amenities: string[],
 
-    amenities: string[],
-
-    images: File[]
-
+  images: File[],
 ) {
+  let completed = 0;
 
-    let completed = 0;
+  const total = 7;
 
-    const total = 7;
+  // Basic Information
 
-    // Basic Information
+  if (formData.serviceName && formData.location && formData.description) {
+    completed++;
+  }
 
-    if (
+  // Category Details
 
-        formData.serviceName &&
-        formData.location &&
-        formData.price &&
-        formData.description
-
-    ) {
-
+  switch (formData.category) {
+    case "hall":
+      if (formData.capacity || formData.detailSections.length > 0) {
         completed++;
+      }
 
-    }
+      break;
 
-    // Category Details
+    case "photography":
+      completed++;
 
-    switch (formData.category) {
+      break;
 
-        case "hall":
+    case "makeup":
+      completed++;
 
-            if (
-                formData.hallCapacity ||
-                formData.diningCapacity ||
-                formData.rooms
-            ) {
+      break;
 
-                completed++;
+    case "decoration":
+      completed++;
 
-            }
+      break;
 
-            break;
+    case "catering":
+      completed++;
 
-        case "photography":
+      break;
+  }
 
-            completed++;
+  // Amenities
 
-            break;
+  if (amenities.length > 0) {
+    completed++;
+  }
 
-        case "makeup":
+  // Gallery
 
-            completed++;
+  if (images.length > 0) {
+    completed++;
+  }
 
-            break;
+  // Contact
 
-        case "decoration":
+  if (formData.contactPerson && formData.mobile && formData.email) {
+    completed++;
+  }
 
-            completed++;
+  // Availability
 
-            break;
+  if (formData.availableFrom && formData.availableTo) {
+    completed++;
+  }
 
-        case "catering":
+  // Booking Settings
 
-            completed++;
+  if (formData.maxSimultaneousBookings) {
+    completed++;
+  }
 
-            break;
-
-    }
-
-    // Amenities
-
-    if (amenities.length > 0) {
-
-        completed++;
-
-    }
-
-    // Gallery
-
-    if (images.length > 0) {
-
-        completed++;
-
-    }
-
-    // Contact
-
-    if (
-
-        formData.contactPerson &&
-        formData.mobile &&
-        formData.email
-
-    ) {
-
-        completed++;
-
-    }
-
-    // Availability
-
-    if (
-
-        formData.availableFrom &&
-        formData.availableTo
-
-    ) {
-
-        completed++;
-
-    }
-
-    // Booking Settings
-
-    if (formData.maxSimultaneousBookings) {
-
-        completed++;
-
-    }
-
-    return Math.round((completed / total) * 100);
-
+  return Math.round((completed / total) * 100);
 }

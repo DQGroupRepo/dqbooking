@@ -41,13 +41,15 @@ public class PricingCalculationServiceImpl
     public PricingCalculationResult calculatePrice(
             String serviceId,
             LocalDate eventDate,
-            ServicePackage selectedPackage
+            String packageId
     ) {
 
-        log.info("Calculating service price serviceId={} eventDate={} packageId={}",
+        log.info(
+                "Calculating service price serviceId={} eventDate={} packageId={}",
                 serviceId,
                 eventDate,
-                selectedPackage != null ? selectedPackage.getId() : null);
+                packageId
+        );
 
         VendorService service =
                 vendorServiceRepository
@@ -63,7 +65,10 @@ public class PricingCalculationServiceImpl
                         .findByServiceIdOrderByVersionDesc(serviceId)
                         .stream()
                         .filter(candidate ->
-                                isPricingApplicable(candidate, eventDate)
+                                isPricingApplicable(
+                                        candidate,
+                                        eventDate
+                                )
                         )
                         .findFirst()
                         .orElseThrow(() ->
@@ -72,13 +77,16 @@ public class PricingCalculationServiceImpl
                                 )
                         );
 
-        BigDecimal baseAmount;
+        ServicePackage selectedPackage =
+                resolvePackage(
+                        pricing,
+                        packageId
+                );
 
-        if (selectedPackage != null) {
-            baseAmount = safe(selectedPackage.getPrice());
-        } else {
-            baseAmount = safe(pricing.getBaseAmount());
-        }
+        BigDecimal baseAmount =
+                selectedPackage != null
+                        ? safe(selectedPackage.getPrice())
+                        : safe(pricing.getBaseAmount());
 
         List<PricingHeadSnapshot> headSnapshots =
                 pricing.getPricingHeads() == null
@@ -88,7 +96,10 @@ public class PricingCalculationServiceImpl
                         .filter(this::isActive)
                         .sorted(
                                 Comparator.comparing(
-                                        head -> safeOrder(head.getDisplayOrder())
+                                        head ->
+                                                safeOrder(
+                                                        head.getDisplayOrder()
+                                                )
                                 )
                         )
                         .map(head -> {
@@ -103,10 +114,16 @@ public class PricingCalculationServiceImpl
                                     .builder()
                                     .code(head.getCode())
                                     .name(head.getName())
-                                    .calculationType(head.getCalculationType())
+                                    .calculationType(
+                                            head.getCalculationType()
+                                    )
                                     .value(head.getValue())
-                                    .calculatedAmount(calculatedAmount)
-                                    .displayOrder(head.getDisplayOrder())
+                                    .calculatedAmount(
+                                            calculatedAmount
+                                    )
+                                    .displayOrder(
+                                            head.getDisplayOrder()
+                                    )
                                     .build();
                         })
                         .toList();
@@ -146,15 +163,21 @@ public class PricingCalculationServiceImpl
                         return DiscountSnapshot
                                 .builder()
                                 .name(discount.getName())
-                                .discountType(discount.getDiscountType())
+                                .discountType(
+                                        discount.getDiscountType()
+                                )
                                 .value(discount.getValue())
-                                .calculatedAmount(calculatedAmount)
+                                .calculatedAmount(
+                                        calculatedAmount
+                                )
                                 .build();
                     })
                     .forEach(discountSnapshots::add);
         }
 
-        if (Boolean.TRUE.equals(service.getBundleEnabled())) {
+        if (Boolean.TRUE.equals(
+                service.getBundleEnabled()
+        )) {
 
             BigDecimal bundleDiscount =
                     calculateBundleDiscount(
@@ -162,9 +185,11 @@ public class PricingCalculationServiceImpl
                             service
                     );
 
-            if (bundleDiscount.compareTo(BigDecimal.ZERO) > 0) {
+            if (bundleDiscount.compareTo(
+                    BigDecimal.ZERO
+            ) > 0) {
 
-                DiscountSnapshot bundleSnapshot =
+                discountSnapshots.add(
                         DiscountSnapshot.builder()
                                 .name("Bundle Discount")
                                 .discountType(
@@ -173,23 +198,27 @@ public class PricingCalculationServiceImpl
                                 .value(
                                         service.getBundleDiscountValue()
                                 )
-                                .calculatedAmount(bundleDiscount)
-                                .build();
-
-                discountSnapshots.add(bundleSnapshot);
+                                .calculatedAmount(
+                                        bundleDiscount
+                                )
+                                .build()
+                );
             }
         }
 
-        BigDecimal discountAmount = BigDecimal.ZERO;
+        BigDecimal discountAmount =
+                discountSnapshots
+                        .stream()
+                        .map(DiscountSnapshot::getCalculatedAmount)
+                        .map(this::safe)
+                        .reduce(
+                                BigDecimal.ZERO,
+                                BigDecimal::add
+                        );
 
-        for (DiscountSnapshot discount : discountSnapshots) {
-            discountAmount =
-                    discountAmount.add(
-                            safe(discount.getCalculatedAmount())
-                    );
-        }
-
-        if (discountAmount.compareTo(discountBase) > 0) {
+        if (discountAmount.compareTo(
+                discountBase
+        ) > 0) {
             discountAmount = discountBase;
         }
 
@@ -197,7 +226,10 @@ public class PricingCalculationServiceImpl
                 subtotal
                         .subtract(discountAmount)
                         .max(BigDecimal.ZERO)
-                        .setScale(2, RoundingMode.HALF_UP);
+                        .setScale(
+                                2,
+                                RoundingMode.HALF_UP
+                        );
 
         BigDecimal advanceAmount =
                 calculateAdvance(
@@ -209,9 +241,13 @@ public class PricingCalculationServiceImpl
                 totalAmount
                         .subtract(advanceAmount)
                         .max(BigDecimal.ZERO)
-                        .setScale(2, RoundingMode.HALF_UP);
+                        .setScale(
+                                2,
+                                RoundingMode.HALF_UP
+                        );
 
-        log.info("Price calculated serviceId={} pricingId={} pricingVersion={} subtotal={} discountAmount={} totalAmount={} advanceAmount={} balanceAmount={}",
+        log.info(
+                "Price calculated serviceId={} pricingId={} pricingVersion={} subtotal={} discountAmount={} totalAmount={} advanceAmount={} balanceAmount={}",
                 serviceId,
                 pricing.getId(),
                 pricing.getVersion(),
@@ -219,7 +255,8 @@ public class PricingCalculationServiceImpl
                 discountAmount,
                 totalAmount,
                 advanceAmount,
-                balanceAmount);
+                balanceAmount
+        );
 
         return PricingCalculationResult
                 .builder()
@@ -236,6 +273,42 @@ public class PricingCalculationServiceImpl
                 .build();
     }
 
+    private ServicePackage resolvePackage(
+            VendorServicePricing pricing,
+            String packageId
+    ) {
+
+        if (packageId == null || packageId.isBlank()) {
+            return null;
+        }
+
+        List<ServicePackage> packages =
+                pricing.getPackages() == null
+                        ? List.of()
+                        : pricing.getPackages();
+
+        ServicePackage selectedPackage =
+                packages
+                        .stream()
+                        .filter(pkg ->
+                                packageId.equals(pkg.getId())
+                        )
+                        .findFirst()
+                        .orElseThrow(() ->
+                                new IllegalArgumentException(
+                                        "Selected package not found: "
+                                                + packageId
+                                ));
+
+        if (!selectedPackage.isActive()) {
+            throw new IllegalArgumentException(
+                    "Selected package is not active."
+            );
+        }
+
+        return selectedPackage;
+    }
+
     private BigDecimal calculateHeadAmount(
             BigDecimal currentSubtotal,
             VendorPricingHead head
@@ -245,7 +318,6 @@ public class PricingCalculationServiceImpl
 
         if (head.getCalculationType()
                 == PricingCalculationType.FIXED) {
-
             return value;
         }
 
@@ -273,7 +345,6 @@ public class PricingCalculationServiceImpl
 
         if (discount.getDiscountType()
                 == DiscountType.FIXED) {
-
             return value;
         }
 
@@ -306,7 +377,6 @@ public class PricingCalculationServiceImpl
 
         if (service.getBundleDiscountType()
                 == DiscountType.FIXED) {
-
             return value;
         }
 
@@ -335,14 +405,12 @@ public class PricingCalculationServiceImpl
         }
 
         AdvancePaymentType paymentType =
-                pricing
-                        .getPaymentConfiguration()
+                pricing.getPaymentConfiguration()
                         .getAdvancePaymentType();
 
         BigDecimal paymentValue =
                 safe(
-                        pricing
-                                .getPaymentConfiguration()
+                        pricing.getPaymentConfiguration()
                                 .getAdvancePaymentValue()
                 );
 
@@ -353,16 +421,14 @@ public class PricingCalculationServiceImpl
         if (paymentType
                 == AdvancePaymentType.PERCENTAGE) {
 
-            BigDecimal advanceAmount =
-                    totalAmount
-                            .multiply(paymentValue)
-                            .divide(
-                                    BigDecimal.valueOf(100),
-                                    2,
-                                    RoundingMode.HALF_UP
-                            );
-
-            return advanceAmount.min(totalAmount);
+            return totalAmount
+                    .multiply(paymentValue)
+                    .divide(
+                            BigDecimal.valueOf(100),
+                            2,
+                            RoundingMode.HALF_UP
+                    )
+                    .min(totalAmount);
         }
 
         if (paymentType
@@ -379,17 +445,23 @@ public class PricingCalculationServiceImpl
             LocalDate eventDate
     ) {
 
-        if (!Boolean.TRUE.equals(discount.getActive())) {
+        if (!Boolean.TRUE.equals(
+                discount.getActive()
+        )) {
             return false;
         }
 
         if (discount.getValidFrom() != null
-                && eventDate.isBefore(discount.getValidFrom())) {
+                && eventDate.isBefore(
+                discount.getValidFrom()
+        )) {
             return false;
         }
 
         if (discount.getValidUntil() != null
-                && eventDate.isAfter(discount.getValidUntil())) {
+                && eventDate.isAfter(
+                discount.getValidUntil()
+        )) {
             return false;
         }
 
@@ -399,14 +471,14 @@ public class PricingCalculationServiceImpl
     private boolean isActive(
             VendorPricingHead head
     ) {
-
-        return Boolean.TRUE.equals(head.getActive());
+        return Boolean.TRUE.equals(
+                head.getActive()
+        );
     }
 
     private BigDecimal safe(
             BigDecimal value
     ) {
-
         return value == null
                 ? BigDecimal.ZERO
                 : value;
@@ -415,7 +487,6 @@ public class PricingCalculationServiceImpl
     private int safeOrder(
             Integer order
     ) {
-
         return order == null
                 ? Integer.MAX_VALUE
                 : order;
@@ -425,6 +496,10 @@ public class PricingCalculationServiceImpl
             VendorServicePricing pricing,
             LocalDate eventDate
     ) {
+
+        if (eventDate == null) {
+            return true;
+        }
 
         if (pricing.getEffectiveFrom() != null
                 && eventDate.isBefore(
@@ -442,5 +517,4 @@ public class PricingCalculationServiceImpl
 
         return true;
     }
-
 }

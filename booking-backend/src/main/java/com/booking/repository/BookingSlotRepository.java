@@ -36,4 +36,9 @@ public interface BookingSlotRepository extends MongoRepository<BookingSlot, Stri
             String slotName
     );
 
+    Optional<BookingSlot> findByIdAndServiceId(
+            String slotId,
+            String serviceId
+    );
+
 }

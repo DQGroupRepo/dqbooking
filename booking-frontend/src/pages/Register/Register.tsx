@@ -186,7 +186,7 @@ const Register = () => {
         <div className="image-overlay">
 
           <h1>
-            Join EventNest
+            Join DQBooking.com
           </h1>
 
           <p>

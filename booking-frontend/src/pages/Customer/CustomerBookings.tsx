@@ -186,7 +186,7 @@ const CustomerBookings = () => {
 
             return bookings.filter(
                 booking =>
-                    booking.eventDate >=
+                    booking.bookingFrom.slice(0, 10) >=
                     today
             ).length;
 
@@ -308,7 +308,7 @@ const CustomerBookings = () => {
 
                                 return groupBookings.some(
                                     booking =>
-                                        booking.eventDate >=
+                                        booking.bookingFrom.slice(0, 10) >=
                                         today
                                 );
 
@@ -445,14 +445,14 @@ const CustomerBookings = () => {
                         const dateA =
                             new Date(
                                 groupA[0]
-                                    .eventDate
+                                    .bookingFrom
                             ).getTime();
 
 
                         const dateB =
                             new Date(
                                 groupB[0]
-                                    .eventDate
+                                    .bookingFrom
                             ).getTime();
 
 

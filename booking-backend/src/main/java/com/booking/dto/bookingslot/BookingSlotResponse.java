@@ -16,6 +16,10 @@ public class BookingSlotResponse {
 
     private String slotName;
 
+    private String resourceTypeId;
+
+    private String bookingPattern = "DAILY_RECURRING";
+
     private LocalTime startTime;
 
     private LocalTime endTime;

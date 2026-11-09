@@ -1,7 +1,6 @@
 package com.booking.dto.availability;
 
 import jakarta.validation.constraints.FutureOrPresent;
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
@@ -12,8 +11,11 @@ import java.time.LocalDate;
 @Setter
 public class CreateAvailabilityOverrideRequest {
 
-    @NotBlank
+    /** Set for a slot-level override. */
     private String slotId;
+
+    /** Deprecated compatibility field; room-type overrides are no longer supported. */
+    private String roomTypeId;
 
     @NotNull
     @FutureOrPresent

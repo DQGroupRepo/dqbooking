@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
     useLocation,
     useNavigate,
@@ -11,6 +11,7 @@ import VendorAmenities from "../../components/vendor/VendorAmenities";
 import VendorPackages from "../../components/vendor/VendorPackages";
 import VendorReviews from "../../components/vendor/VendorReviews";
 import BookingCard from "../../components/vendor/VendorBookingCard";
+import "./ResourceTypeSelector.css";
 import VendorServiceDetails
     from "../../components/vendor/VendorServiceDetails";
 
@@ -56,6 +57,8 @@ const VendorDetail = () => {
         selectedPackage,
         setSelectedPackage
     ] = useState<ServicePackage | null>(null);
+
+    const [selectedResourceTypeId, setSelectedResourceTypeId] = useState<string | null>(null);
     /*
      * =========================================
      * VENDOR
@@ -76,6 +79,39 @@ const VendorDetail = () => {
         useState<Bundle[]>([]);
 
 
+    const [pricingPackages, setPricingPackages] =
+        useState<ServicePackage[]>([]);
+
+    const [pricingLoading, setPricingLoading] =
+        useState(false);
+
+    const [selectedEventDate, setSelectedEventDate] =
+        useState("");
+
+    const [selectedSlotId, setSelectedSlotId] =
+        useState<string | null>(null);
+
+    // Anchor for bringing date-specific package choices into view.
+    const packagesSectionRef = useRef<HTMLDivElement>(null);
+
+    const scrollToPackages = () => {
+        packagesSectionRef.current?.scrollIntoView({
+            behavior: "smooth",
+            block: "start"
+        });
+    };
+
+    const scrollToPackagesIfNeeded = () => {
+        const section = packagesSectionRef.current;
+        if (!section) return;
+
+        const rect = section.getBoundingClientRect();
+        const headingIsVisible = rect.top >= 0 && rect.top < window.innerHeight;
+
+        if (!headingIsVisible) {
+            scrollToPackages();
+        }
+    };
     /*
      * =========================================
      * LOAD DATA
@@ -93,6 +129,75 @@ const VendorDetail = () => {
         }
 
     }, [serviceId]);
+
+    const handleEventDateChange = async (
+        date: string
+    ) => {
+
+        // A package selected for a previous date
+        // must never remain selected.
+        setSelectedPackage(null);
+
+        setSelectedEventDate(date);
+
+        if (!serviceId || !date) {
+            setPricingPackages([]);
+            return;
+        }
+
+        try {
+
+            setPricingLoading(true);
+
+            const data =
+                await VendorDetailService.getPricingForDate(
+                    serviceId,
+                    date
+                );
+
+            console.log(
+                "Pricing loaded for event date:",
+                data
+            );
+
+            const packages = (data.packages ?? []).map((pkg) => ({
+                ...pkg,
+                // Only use a backend-provided persisted ID. Never invent one in the browser.
+                id: typeof pkg.id === "string" && pkg.id.trim()
+                    ? pkg.id.trim()
+                    : undefined
+            }));
+
+            const packagesWithoutIds = packages.filter((pkg) => !pkg.id);
+            if (packagesWithoutIds.length > 0) {
+                console.error(
+                    "Pricing API returned packages without persisted IDs. Check PricingMapperImpl.java.",
+                    packagesWithoutIds
+                );
+            }
+
+            setPricingPackages(packages);
+
+        } catch (error) {
+
+            console.error(
+                "Failed to load pricing for event date:",
+                error
+            );
+
+            setPricingPackages([]);
+
+        } finally {
+
+            setPricingLoading(false);
+
+            // Wait for React to render the newly loaded packages before scrolling.
+            window.requestAnimationFrame(() => {
+                window.requestAnimationFrame(scrollToPackages);
+            });
+
+        }
+    };
 
 
     /*
@@ -128,11 +233,18 @@ const VendorDetail = () => {
     const handlePackageSelect = (
         pkg: ServicePackage
     ) => {
+        if (!pkg.id || !pkg.id.trim()) {
+            console.error(
+                "Cannot select this package because the pricing API did not return its persisted ID.",
+                pkg
+            );
+            return;
+        }
 
-        setSelectedPackage(
-            pkg
-        );
-
+        setSelectedPackage({
+            ...pkg,
+            id: pkg.id.trim()
+        });
     };
 
 
@@ -291,7 +403,7 @@ const VendorDetail = () => {
 
     if (!vendor) {
 
-        return (
+    return (
             <h2>Loading...</h2>
         );
 
@@ -303,6 +415,17 @@ const VendorDetail = () => {
      * UI
      * =========================================
      */
+
+    const activeResourceTypes = (vendor?.resourceTypes ?? []).filter(type => type.active !== false);
+    const fixedDurationPackages = pricingPackages.filter(pkg => pkg.packageType === "FIXED_DURATION");
+    const regularPricingPackages = pricingPackages.filter(pkg => pkg.packageType !== "FIXED_DURATION");
+    const visiblePricingPackages = activeResourceTypes.length > 1
+        ? (selectedResourceTypeId
+            ? regularPricingPackages.filter(pkg => pkg.resourceTypeId === selectedResourceTypeId)
+            : [])
+        : activeResourceTypes.length === 1
+            ? regularPricingPackages.filter(pkg => pkg.resourceTypeId === activeResourceTypes[0].id)
+            : regularPricingPackages;
 
     return (
 
@@ -350,17 +473,106 @@ const VendorDetail = () => {
                         />
 
 
-                        <VendorPackages
-                            packages={vendor.packages ?? []}
-                            selectedPackageId={
-                                selectedPackage
-                                    ? selectedPackage.id
-                                    : undefined
-                            }
-                            onSelectPackage={
-                                handlePackageSelect
-                            }
-                        />
+                        <div
+                            ref={packagesSectionRef}
+                            className="vendor-packages-anchor"
+                        >
+                        {!selectedEventDate ? (
+
+                            <div className="pricing-date-message">
+
+                                <div className="pricing-date-icon">
+                                    📅
+                                </div>
+
+                                <h3>
+                                    Packages & Pricing
+                                </h3>
+
+                                <p>
+                                    Select your event date to get the exact price
+                                    and available packages.
+                                </p>
+
+                                <span>
+                                    Pricing may vary depending on the date and season.
+                                </span>
+
+                            </div>
+
+                        ) : pricingLoading ? (
+
+                            <div className="pricing-loading">
+                                Loading pricing...
+                            </div>
+
+                        ) : (pricingPackages.length === 0) ? (
+
+                            <div className="pricing-unavailable">
+
+                                <div className="pricing-unavailable-icon">
+                                    📅
+                                </div>
+
+                                <h3>
+                                    Pricing Not Available
+                                </h3>
+
+                                <p>
+                                    No packages or pricing are available for
+                                    <strong>
+                                        {" "}
+                                        {selectedEventDate}
+                                    </strong>.
+                                </p>
+
+                                <span>
+                                    Please select another event date to check
+                                    available pricing.
+                                </span>
+
+                            </div>
+
+                        ) : (
+
+                            <>
+                            {activeResourceTypes.length > 1 && (
+                                <div className="resource-type-selector">
+                                    <h3>Select Resource Type</h3>
+                                    <div className="resource-type-options">
+                                        {activeResourceTypes.map(type => (
+                                            <button
+                                                type="button"
+                                                key={type.id}
+                                                className={selectedResourceTypeId === type.id ? "selected" : ""}
+                                                onClick={() => {
+                                                    setSelectedResourceTypeId(type.id);
+                                                    setSelectedPackage(null);
+                                                    setSelectedSlotId(null);
+                                                }}
+                                            >
+                                                <strong>{type.name}</strong>
+                                                <span>{type.quantity} available unit(s)</span>
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                            {visiblePricingPackages.length > 0 ? (
+                                <VendorPackages packages={visiblePricingPackages} selectedPackage={selectedPackage} selectedSlotId={selectedSlotId} onSelectPackage={handlePackageSelect} />
+                            ) : (
+                                <div className="pricing-unavailable"><h3>No packages available for this resource type</h3><p>Please choose another Resource Type.</p></div>
+                            )}
+                            {fixedDurationPackages.length > 0 && (
+                                <section className="fixed-duration-packages">
+                                    <h2>Fixed-Duration Packages</h2>
+                                    <p>Packages with a predefined duration and price.</p>
+                                    <VendorPackages packages={fixedDurationPackages} selectedPackage={selectedPackage} selectedSlotId={selectedSlotId} onSelectPackage={handlePackageSelect} />
+                                </section>
+                            )}
+                            </>
+                        )}
+                        </div>
 
 
                         <VendorReviews />
@@ -370,17 +582,21 @@ const VendorDetail = () => {
 
                     <BookingCard
                         vendor={vendor}
+                        serviceId={serviceId}
+                        bundles={bundles}
+                        selectedPackage={selectedPackage}
+                        selectedResourceTypeId={selectedResourceTypeId}
+                        onEventDateChange={handleEventDateChange}
+                        onClearSelectedPackage={() => setSelectedPackage(null)}
+                        onSelectedSlotChange={(slotId) => {
+                            setSelectedSlotId(slotId);
 
-                        serviceId={
-                            serviceId
-                        }
-
-                        bundles={
-                            bundles
-                        }
-
-                       selectedPackage={selectedPackage}
-
+                            // Slot changes should not interrupt the user if the
+                            // package heading is already visible.
+                            if (slotId) {
+                                scrollToPackagesIfNeeded();
+                            }
+                        }}
                     />
 
                 </div>

@@ -42,7 +42,7 @@ const BookingSummary = ({
 
                             <p>
                                 Event Date:{" "}
-                                {booking.eventDate}
+                                {booking.bookingFrom ? new Date(booking.bookingFrom).toLocaleDateString("en-IN") : "-"}
                             </p>
 
 

@@ -4,8 +4,8 @@ import {
     FaCog
 } from "react-icons/fa";
 
-import type { BookingSlot } from "../../../types/BookingSlot";
-import type { AvailabilityOverride } from "../../../types/AvailabilityOverride";
+import type { BookingSlot } from "../../../../types/BookingSlot";
+import type { AvailabilityOverride } from "../../../../types/AvailabilityOverride";
 
 import formatTime from "../../../../util/timeFormatter";
 

@@ -29,8 +29,8 @@ public interface VendorOfferingService {
 
     List<VendorServiceResponse> getBundleServices(String serviceId);
 
-    VendorServiceResponse updatePackages(
+    /*VendorServiceResponse updatePackages(
             String serviceId,
             List<ServicePackageRequest> packages
-    );
+    );*/
 }

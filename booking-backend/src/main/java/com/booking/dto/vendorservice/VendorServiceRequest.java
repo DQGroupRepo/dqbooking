@@ -6,6 +6,7 @@ import com.booking.dto.service.ServicePackageRequest;
 import com.booking.dto.service.CateringDetailsRequest;
 import com.booking.model.enums.DiscountType;
 import com.booking.model.enums.ServiceCategory;
+import com.booking.model.embedded.ServiceTag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -32,6 +33,15 @@ public class VendorServiceRequest {
 
     private Integer durationHours;
 
+    /** STAY configuration: default check-in time, e.g. 15:00. */
+    private java.time.LocalTime checkInTime;
+
+    /** STAY configuration: default check-out time, e.g. 10:00. */
+    private java.time.LocalTime checkOutTime;
+
+    /** Total room inventory managed by this service (if applicable). */
+    private Integer totalRoomCapacity;
+
     @Valid
     private ContactInfoDto contactInfo;
 
@@ -40,13 +50,17 @@ public class VendorServiceRequest {
 
     private List<String> imageUrls;
 
-    private List<String> amenities;
+    private List<String> facilities = new ArrayList<>();
+
+    private List<String> amenities = new ArrayList<>();
 
     @Valid
     private List<ServiceDetailSectionRequest> detailSections =
             new ArrayList<>();
 
     private String location;
+
+    private List<ServiceTag> tags = new ArrayList<>();
 
     private String address;
 

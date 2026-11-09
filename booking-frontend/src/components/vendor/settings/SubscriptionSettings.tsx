@@ -11,7 +11,7 @@ export default function SubscriptionSettings(){
 
                 title="Subscription"
 
-                subtitle="Manage your EventNest subscription."
+                subtitle="Manage your DQBooking.com subscription."
 
             />
 

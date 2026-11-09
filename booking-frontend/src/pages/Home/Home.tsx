@@ -421,7 +421,7 @@ const Home = () => {
                 <div className="container">
 
                     <h2 className="section-title">
-                        How EventNest Works
+                        How DQBooking.com works
                     </h2>
 
 
@@ -569,7 +569,7 @@ const Home = () => {
 
 
                     <p>
-                        Join EventNest and reach
+                        Join DQBooking.com and reach
                         thousands of customers.
                     </p>
 

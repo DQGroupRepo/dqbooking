@@ -1,6 +1,8 @@
 import type { CartItem } from "../types/CartItem";
+import BookingAvailabilityService from "./BookingAvailabilityService";
 
 const CART_STORAGE_KEY = "eventnest_cart";
+const CART_ID_STORAGE_KEY = "eventnest_cart_id";
 
 class CartService {
 
@@ -87,36 +89,140 @@ class CartService {
 
     /*
      * =========================================
-     * ADD ITEM
+     * CART ID
      * =========================================
+     *
+     * Stable identifier shared by holds created
+     * for this browser cart.
      */
 
-    addItem(
-        item: CartItem
-    ): CartItem[] {
-console.log("addItem:", item);
-        const cart =
-            this.getCart();
+    getOrCreateCartId(): string {
 
-        const alreadyExists =
-            cart.some(
-                cartItem =>
-                    cartItem.serviceId ===
-                    item.serviceId
-            );
+        let cartId = localStorage.getItem(CART_ID_STORAGE_KEY);
 
-        if (!alreadyExists) {
+        if (!cartId) {
+            cartId = `cart-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
-            cart.push(item);
-
+            localStorage.setItem(CART_ID_STORAGE_KEY, cartId);
         }
 
-        this.saveCart(
-            cart
+        return cartId;
+    }
+
+
+    /*
+     * =========================================
+     * RELEASE HOLD (BEST EFFORT)
+     * =========================================
+     *
+     * The backend remains authoritative. If release
+     * fails, the hold expires automatically after
+     * its five-minute lifetime.
+     */
+
+    private async releaseHold(item: CartItem): Promise<void> {
+
+        if (!item.holdId) {
+            return;
+        }
+
+        try {
+            await BookingAvailabilityService.releaseHold(
+                item.serviceId,
+                item.holdId
+            );
+        } catch (error) {
+            console.warn(
+                `Could not release hold ${item.holdId}; it will expire automatically.`,
+                error
+            );
+        }
+    }
+
+
+    private async releaseHolds(items: CartItem[]): Promise<void> {
+        await Promise.all(items.map(item => this.releaseHold(item)));
+    }
+
+
+    private withoutBundleAssociation(item: CartItem): CartItem {
+
+        const {
+            bundleId: _bundleId,
+            bundleName: _bundleName,
+            bundleDescription: _bundleDescription,
+            bundleServiceIds: _bundleServiceIds,
+            bundleDiscountType: _bundleDiscountType,
+            bundleDiscountValue: _bundleDiscountValue,
+            bundleEnabled: _bundleEnabled,
+            ...normalItem
+        } = item;
+
+        return normalItem;
+    }
+
+
+    /*
+     * =========================================
+     * ADD / REPLACE ITEM
+     * =========================================
+     *
+     * Call only after the customer confirms a
+     * duplicate and the new hold has been secured.
+     * Save the new cart first, then release the old
+     * hold. A failed local save therefore does not
+     * discard the previous booking.
+     */
+
+    async replaceItem(item: CartItem): Promise<CartItem[]> {
+
+        const cart = this.getCart();
+        const existing = cart.find(
+            cartItem => cartItem.serviceId === item.serviceId
         );
 
-        return cart;
+        let nextCart = cart;
 
+        if (existing) {
+            nextCart = cart
+                .filter(cartItem => cartItem.serviceId !== item.serviceId)
+                .map(cartItem => {
+                    // Replacing a member with a different bundle (or a
+                    // normal booking) invalidates the old bundle group.
+                    if (
+                        existing.bundleId &&
+                        existing.bundleId !== item.bundleId &&
+                        cartItem.bundleId === existing.bundleId
+                    ) {
+                        return this.withoutBundleAssociation(cartItem);
+                    }
+
+                    return cartItem;
+                });
+        }
+
+        nextCart = [...nextCart, item];
+
+        this.saveCart(nextCart);
+
+        if (existing?.holdId && existing.holdId !== item.holdId) {
+            await this.releaseHold(existing);
+        }
+
+        return nextCart;
+    }
+
+
+    /*
+     * ADD ITEM COMPATIBILITY ALIAS
+     *
+     * New booking flows should ask for duplicate confirmation
+     * before calling this method. It delegates to replaceItem
+     * so an existing hold is never silently orphaned.
+     */
+
+    async addItem(item: CartItem): Promise<CartItem[]> {
+        return this.replaceItem(item);
     }
 
 
@@ -125,32 +231,36 @@ console.log("addItem:", item);
      * REMOVE ITEM
      * =========================================
      *
-     * Removes only one service.
-     *
-     * If that service belongs to a bundle,
-     * the caller can separately remove the
-     * bundle association from the remaining
-     * services.
+     * Releases the removed service's hold. If it was
+     * part of a bundle, the remaining members become
+     * normal services so an incomplete bundle cannot
+     * retain a discount association.
      */
 
-    removeItem(
-        serviceId: string
-    ): CartItem[] {
+    async removeItem(serviceId: string): Promise<CartItem[]> {
 
-        const cart =
-            this.getCart()
-                .filter(
-                    item =>
-                        item.serviceId !==
-                        serviceId
-                );
-
-        this.saveCart(
-            cart
+        const cart = this.getCart();
+        const removed = cart.filter(item => item.serviceId === serviceId);
+        const removedBundleIds = new Set(
+            removed.map(item => item.bundleId).filter(
+                (id): id is string => Boolean(id)
+            )
         );
 
-        return cart;
+        const nextCart = cart
+            .filter(item => item.serviceId !== serviceId)
+            .map(item =>
+                item.bundleId && removedBundleIds.has(item.bundleId)
+                    ? this.withoutBundleAssociation(item)
+                    : item
+            );
 
+        // Persist removal even if the network is unavailable; backend
+        // expiry is the fallback if release cannot be reached.
+        this.saveCart(nextCart);
+        await this.releaseHolds(removed);
+
+        return nextCart;
     }
 
 
@@ -172,67 +282,25 @@ console.log("addItem:", item);
      * Bundle discount -> removed
      */
 
-    removeItemFromBundle(
+    async removeItemFromBundle(
         serviceId: string,
         bundleId: string
-    ): CartItem[] {
+    ): Promise<CartItem[]> {
 
-        const cart =
-            this.getCart()
-                .filter(
-                    item =>
-                        item.serviceId !==
-                        serviceId
-                )
-                .map(
-                    item => {
+        const cart = this.getCart();
+        const removed = cart.filter(item => item.serviceId === serviceId);
+        const nextCart = cart
+            .filter(item => item.serviceId !== serviceId)
+            .map(item =>
+                item.bundleId === bundleId
+                    ? this.withoutBundleAssociation(item)
+                    : item
+            );
 
-                        if (
-                            item.bundleId !==
-                            bundleId
-                        ) {
+        this.saveCart(nextCart);
+        await this.releaseHolds(removed);
 
-                            return item;
-
-                        }
-
-                        const {
-                            bundleId:
-                                _bundleId,
-
-                            bundleName:
-                                _bundleName,
-
-                            bundleDescription:
-                                _bundleDescription,
-
-                            bundleServiceIds:
-                                _bundleServiceIds,
-
-                            bundleDiscountType:
-                                _bundleDiscountType,
-
-                            bundleDiscountValue:
-                                _bundleDiscountValue,
-
-                            bundleEnabled:
-                                _bundleEnabled,
-
-                            ...normalItem
-
-                        } = item;
-
-                        return normalItem;
-
-                    }
-                );
-
-        this.saveCart(
-            cart
-        );
-
-        return cart;
-
+        return nextCart;
     }
 
 
@@ -245,24 +313,16 @@ console.log("addItem:", item);
      * the specified bundle.
      */
 
-    removeBundle(
-        bundleId: string
-    ): CartItem[] {
+    async removeBundle(bundleId: string): Promise<CartItem[]> {
 
-        const cart =
-            this.getCart()
-                .filter(
-                    item =>
-                        item.bundleId !==
-                        bundleId
-                );
+        const cart = this.getCart();
+        const removed = cart.filter(item => item.bundleId === bundleId);
+        const nextCart = cart.filter(item => item.bundleId !== bundleId);
 
-        this.saveCart(
-            cart
-        );
+        this.saveCart(nextCart);
+        await this.releaseHolds(removed);
 
-        return cart;
-
+        return nextCart;
     }
 
 
@@ -272,24 +332,20 @@ console.log("addItem:", item);
      * =========================================
      */
 
-    clearCart(): void {
+    async clearCart(authToken?: string | null): Promise<void> {
 
-        localStorage.removeItem(
-            CART_STORAGE_KEY
-        );
+        const cart = this.getCart();
 
+        // Clear locally immediately so the UI cannot continue to use stale
+        // holds; release calls are best-effort and holds expire as fallback.
+        localStorage.removeItem(CART_STORAGE_KEY);
+        localStorage.removeItem(CART_ID_STORAGE_KEY);
+        window.dispatchEvent(new Event("cartUpdated"));
 
-        /*
-         * Notify Header and other
-         * components that cart changed.
-         */
-
-        window.dispatchEvent(
-            new Event(
-                "cartUpdated"
-            )
-        );
-
+        // Authentication is supplied by the shared Axios request interceptor.
+        // Retain the optional argument for compatibility with existing callers.
+        void authToken;
+        await this.releaseHolds(cart);
     }
 
 

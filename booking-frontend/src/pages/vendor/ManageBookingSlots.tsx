@@ -141,9 +141,9 @@ export default function ManageBookingSlots() {
 
         }
 
-        catch {
+        catch (error) {
 
-             if (
+            if (
                 axios.isAxiosError(error) &&
                 error.response?.status === 403
             ) {
@@ -209,7 +209,7 @@ export default function ManageBookingSlots() {
 
         }
 
-        catch {
+        catch (error) {
 
             if (
                 axios.isAxiosError(error) &&
@@ -302,15 +302,15 @@ export default function ManageBookingSlots() {
 
                             <p>
 
-                                 Define booking slots so customers can choose their preferred time when making a reservation.
+                                Define booking slots so customers can choose their preferred time when making a reservation.
 
 
                             </p>
-                              <Button onClick={handleAdd}>
+                            <Button onClick={handleAdd}>
 
-                                    Create First Slot
+                                Create First Slot
 
-                                </Button>
+                            </Button>
 
                         </div>
 
@@ -349,19 +349,19 @@ export default function ManageBookingSlots() {
                     )
 
             }
-        <BookingSlotModal
+            <BookingSlotModal
 
-            serviceId={serviceId!}
+                serviceId={serviceId!}
 
-            slot={selectedSlot}
+                slot={selectedSlot}
 
-            open={showModal}
+                open={showModal}
 
-            onClose={() => setShowModal(false)}
+                onClose={() => setShowModal(false)}
 
-            onSaved={loadSlots}
+                onSaved={loadSlots}
 
-        />
+            />
 
         </section>
 

@@ -96,10 +96,10 @@ public class VendorDashboardServiceImpl
 
         BigDecimal monthlyRevenue =
                 bookingRepository
-                        .findByVendorIdAndEventDateBetween(
+                        .findByVendorIdAndBookingFromBetween(
                                 vendorId,
-                                LocalDate.now().withDayOfMonth(1),
-                                LocalDate.now()
+                                LocalDate.now().withDayOfMonth(1).atStartOfDay(),
+                                LocalDate.now().plusDays(1).atStartOfDay()
                         )
                         .stream()
                         .filter(
@@ -217,9 +217,8 @@ public class VendorDashboardServiceImpl
                 .serviceName(
                         booking.getServiceName()
                 )
-                .eventDate(
-                        booking.getEventDate()
-                )
+                .bookingFrom(booking.getBookingFrom())
+                .bookingTo(booking.getBookingTo())
                 .status(
                         booking.getStatus().name()
                 )

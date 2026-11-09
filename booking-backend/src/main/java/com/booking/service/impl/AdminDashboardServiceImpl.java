@@ -448,9 +448,8 @@ public class AdminDashboardServiceImpl
                         booking.getServiceName()
                 )
 
-                .eventDate(
-                        booking.getEventDate()
-                )
+                .bookingFrom(booking.getBookingFrom())
+                .bookingTo(booking.getBookingTo())
 
                 .totalAmount(
                         booking.getTotalAmount()

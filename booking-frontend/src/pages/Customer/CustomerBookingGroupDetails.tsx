@@ -23,7 +23,7 @@ import CustomerBookingService
     from "../../services/CustomerBookingService";
 
 import BookingStatusBadge
-    from "../../components/Customer/BookingStatusBadge";
+    from "../../components/customer/BookingStatusBadge";
 
 import type {
     Booking
@@ -162,7 +162,7 @@ const CustomerBookingGroupDetails = () => {
 
                     }
                     catch (
-                        error
+                    error
                     ) {
 
                         console.error(
@@ -370,7 +370,7 @@ const CustomerBookingGroupDetails = () => {
 
             }
             catch (
-                error
+            error
             ) {
 
                 console.error(
@@ -742,7 +742,7 @@ const CustomerBookingGroupDetails = () => {
 
                                         const details =
                                             bookingDetails[
-                                                id
+                                            id
                                             ];
 
 
@@ -753,10 +753,9 @@ const CustomerBookingGroupDetails = () => {
                                                     id
                                                 }
                                                 className={
-                                                    `customer-booked-service-card ${
-                                                        isExpanded
-                                                            ? "expanded"
-                                                            : ""
+                                                    `customer-booked-service-card ${isExpanded
+                                                        ? "expanded"
+                                                        : ""
                                                     }`
                                                 }
                                             >
@@ -834,7 +833,7 @@ const CustomerBookingGroupDetails = () => {
 
                                                                     {
                                                                         formatDate(
-                                                                            booking.eventDate
+                                                                            booking.bookingFrom
                                                                         )
                                                                     }
 
@@ -989,7 +988,7 @@ const CustomerBookingGroupDetails = () => {
 
                                                                 {
                                                                     loadingDetailsId ===
-                                                                    id
+                                                                        id
                                                                         ? (
 
                                                                             <div className="customer-booked-service-details-loading">
@@ -1071,7 +1070,7 @@ const CustomerBookingGroupDetails = () => {
                                                                                             {
                                                                                                 formatDate(
                                                                                                     details?.eventDate ||
-                                                                                                    booking.eventDate
+                                                                                                    booking.bookingFrom
                                                                                                 )
                                                                                             }
 

@@ -7,7 +7,7 @@ import BookingCalendar from "../../components/vendor/booking/BookingCalendar/Boo
 
 import BookingStatsService from "../../services/BookingStatsService";
 
-import type { BookingStats } from "../../../types/BookingStats";
+import type { BookingStats } from "../../types/BookingStats";
 
 import styles from "./VendorBookingSummary.module.css";
 
@@ -40,8 +40,8 @@ export default function VendorBookingSummary() {
         activeFilter === "All"
             ? bookings
             : bookings.filter(
-                  booking => booking.status === activeFilter
-              );
+                booking => booking.status === activeFilter
+            );
 
     return (
 

@@ -50,7 +50,7 @@ export default function VendorServiceReviews() {
         return reviews.filter(review => {
 
             const matchesSearch =
-                review.customerName
+                review.customerName ?? "Customer"
                     .toLowerCase()
                     .includes(search.toLowerCase());
 
