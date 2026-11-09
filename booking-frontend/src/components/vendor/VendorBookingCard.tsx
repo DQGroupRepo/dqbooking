@@ -1437,6 +1437,13 @@ const BookingCard = ({
 
             <aside className="vendor-booking-card">
 
+                <div className="booking-panel-heading">
+                    <span aria-hidden="true">▦</span>
+                    {isStay ? "Book Your Stay" : "Book This Service"}
+                </div>
+
+                <div className="booking-price-summary">
+                {selectedPackage && <div className="booking-summary-label">Selected Package</div>}
                 <h2>
                     ₹
                     {Number(selectedPackage
@@ -1459,13 +1466,16 @@ const BookingCard = ({
 
 
                 <p className="pricing-hint">
-                    Select the event date to get the exact price.
+                    Select your dates and package to see the exact price.
                 </p>
+                </div>
 
 
                 {isStay ? (
                     <div className="stay-flexible-booking-fields">
-                        <label htmlFor="stay-booking-from">From Date (Check-in)</label>
+                        <div className="stay-date-range-fields">
+                        <div className="stay-date-field">
+                        <label htmlFor="stay-booking-from">Check-in Date</label>
                         <input
                             id="stay-booking-from"
                             type="date"
@@ -1499,7 +1509,9 @@ const BookingCard = ({
 
                             }}
                         />
-                        <label htmlFor="stay-booking-to">To Date (Check-out)</label>
+                        </div>
+                        <div className="stay-date-field">
+                        <label htmlFor="stay-booking-to">Check-out Date</label>
                         <input
                             id="stay-booking-to"
                             type="date"
@@ -1508,6 +1520,8 @@ const BookingCard = ({
                             readOnly={selectedPackage?.packageType === "FIXED_DURATION"}
                             onChange={e => { if (selectedPackage?.packageType !== "FIXED_DURATION") setCustomBookingTo(e.target.value); }}
                         />
+                        </div>
+                        </div>
                     </div>
                 ) : (
                     <>
@@ -1801,7 +1815,7 @@ const BookingCard = ({
 
                 {isStay && (
                     <div className="stay-flexible-booking-fields">
-                        <label htmlFor="stay-room-quantity">Number of rooms</label>
+                        <label htmlFor="stay-room-quantity">Number of Rooms</label>
                         <input
                             id="stay-room-quantity"
                             type="number"
@@ -1867,7 +1881,7 @@ const BookingCard = ({
                     className="save-button"
                     type="button"
                 >
-                    ♡ Save Vendor
+                    ♡ Save for Later
                 </button>
 
             </aside>

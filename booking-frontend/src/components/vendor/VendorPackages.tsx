@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import "./VendorPackages.css";
 import type { ServicePackage } from "../../types/ServicePackage";
 
@@ -67,8 +67,7 @@ const VendorPackages = ({
             pkg => pkg.active !== false
         );
 
-    const [currentIndex, setCurrentIndex] =
-        useState(0);
+    const carouselRef = useRef<HTMLDivElement>(null);
 
     const [menuPackage, setMenuPackage] =
         useState<PackageWithCateringMenu | null>(null);
@@ -91,29 +90,6 @@ const VendorPackages = ({
 
     const showNavigation =
         totalPackages > VISIBLE_PACKAGES;
-
-
-    const maxIndex =
-        Math.max(
-            0,
-            totalPackages - VISIBLE_PACKAGES
-        );
-
-
-    const safeCurrentIndex =
-        Math.min(
-            currentIndex,
-            maxIndex
-        );
-
-
-    const visiblePackages =
-        showNavigation
-            ? activePackages.slice(
-                safeCurrentIndex,
-                safeCurrentIndex + VISIBLE_PACKAGES
-            )
-            : activePackages;
 
 
     /*
@@ -148,28 +124,17 @@ const VendorPackages = ({
 
 
     const goPrevious = () => {
-
-        setCurrentIndex(
-            previous =>
-                Math.max(
-                    0,
-                    previous - 1
-                )
-        );
-
+        carouselRef.current?.scrollBy({
+            left: -Math.max(260, carouselRef.current.clientWidth * 0.82),
+            behavior: "smooth"
+        });
     };
 
-
     const goNext = () => {
-
-        setCurrentIndex(
-            previous =>
-                Math.min(
-                    maxIndex,
-                    previous + 1
-                )
-        );
-
+        carouselRef.current?.scrollBy({
+            left: Math.max(260, (carouselRef.current?.clientWidth ?? 0) * 0.82),
+            behavior: "smooth"
+        });
     };
 
     const getPackageKey = (pkg: ServicePackage, index = 0) =>
@@ -272,7 +237,7 @@ const VendorPackages = ({
                 <div>
 
                     <h2>
-                        Packages
+                        Select a Package
                     </h2>
 
                 </div>
@@ -287,7 +252,7 @@ const VendorPackages = ({
                             className="package-nav-button"
                             onClick={goPrevious}
                             disabled={
-                                safeCurrentIndex === 0
+                                false
                             }
                             aria-label="Previous packages"
                         >
@@ -296,13 +261,7 @@ const VendorPackages = ({
 
 
                         <span className="package-page-count">
-
-                            {safeCurrentIndex + 1}
-
-                            {" / "}
-
-                            {maxIndex + 1}
-
+                            {totalPackages} packages
                         </span>
 
 
@@ -311,7 +270,7 @@ const VendorPackages = ({
                             className="package-nav-button"
                             onClick={goNext}
                             disabled={
-                                safeCurrentIndex >= maxIndex
+                                false
                             }
                             aria-label="Next packages"
                         >
@@ -327,8 +286,7 @@ const VendorPackages = ({
 
             <p className="package-selection-help">
 
-                Choose a package that best suits
-                your requirements.
+                Choose the package that best suits your requirements. Scroll to explore more options.
 
             </p>
 
@@ -337,17 +295,11 @@ const VendorPackages = ({
                 PACKAGE CARDS
             ========================================= */}
 
-            <div className="package-carousel">
+            <div className="package-carousel" ref={carouselRef}>
 
-                <div
-                    className={
-                        showNavigation
-                            ? "package-grid carousel-grid"
-                            : "package-grid"
-                    }
-                >
+                <div className="package-grid carousel-grid">
 
-                    {visiblePackages.map(
+                    {activePackages.map(
                         (
                             pkg,
                             index
@@ -355,7 +307,7 @@ const VendorPackages = ({
 
                             const packageKey =
                                 pkg.id ??
-                                `${pkg.name}-${pkg.price}-${safeCurrentIndex}-${index}`;
+                                `${pkg.name}-${pkg.price}-${index}`;
 
 
                             const isSelected =
@@ -393,6 +345,18 @@ const VendorPackages = ({
 
 
                                     <div className="package-card-content">
+
+                                        <div className="package-pricing-basis">
+                                            {pkg.packageType === "FIXED_DURATION"
+                                                ? `Fixed duration${pkg.includedDuration ? ` · ${pkg.includedDuration} units` : ""}`
+                                                : pkg.pricingBasis === "PER_DAY"
+                                                    ? "Per day"
+                                                    : pkg.pricingBasis === "PER_NIGHT"
+                                                        ? "Per night"
+                                                        : pkg.pricingBasis === "FIXED"
+                                                            ? "Flat price per booking"
+                                                            : "Package"}
+                                        </div>
 
                                         <h3>
                                             {pkg.name}
@@ -514,36 +478,6 @@ const VendorPackages = ({
             {/* =========================================
                 FOOTER
             ========================================= */}
-
-            {showNavigation && (
-
-                <div className="package-carousel-footer">
-
-                    <span>
-
-                        Showing{" "}
-
-                        {safeCurrentIndex + 1}
-
-                        {" - "}
-
-                        {Math.min(
-                            safeCurrentIndex +
-                            VISIBLE_PACKAGES,
-                            totalPackages
-                        )}
-
-                        {" of "}
-
-                        {totalPackages}
-
-                        {" packages"}
-
-                    </span>
-
-                </div>
-
-            )}
 
             {menuPackage && (() => {
                 const menu = getMenu(menuPackage);

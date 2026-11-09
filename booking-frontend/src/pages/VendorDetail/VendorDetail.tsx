@@ -448,137 +448,12 @@ const VendorDetail = () => {
             )}
 
 
-            <VendorGallery
-                vendor={vendor}
-            />
-
-
-            <section className="section">
-
+            <section className="section vendor-detail-page">
                 <div className="container vendor-layout">
-
                     <div className="vendor-detail-main">
-
-                        <VendorInfo
-                            vendor={vendor}
-                        />
-
-                        <VendorServiceDetails
-                                vendor={vendor}
-                            />
-
-
-                        <VendorAmenities
-                            vendor={vendor}
-                        />
-
-
-                        <div
-                            ref={packagesSectionRef}
-                            className="vendor-packages-anchor"
-                        >
-                        {!selectedEventDate ? (
-
-                            <div className="pricing-date-message">
-
-                                <div className="pricing-date-icon">
-                                    📅
-                                </div>
-
-                                <h3>
-                                    Packages & Pricing
-                                </h3>
-
-                                <p>
-                                    Select your event date to get the exact price
-                                    and available packages.
-                                </p>
-
-                                <span>
-                                    Pricing may vary depending on the date and season.
-                                </span>
-
-                            </div>
-
-                        ) : pricingLoading ? (
-
-                            <div className="pricing-loading">
-                                Loading pricing...
-                            </div>
-
-                        ) : (pricingPackages.length === 0) ? (
-
-                            <div className="pricing-unavailable">
-
-                                <div className="pricing-unavailable-icon">
-                                    📅
-                                </div>
-
-                                <h3>
-                                    Pricing Not Available
-                                </h3>
-
-                                <p>
-                                    No packages or pricing are available for
-                                    <strong>
-                                        {" "}
-                                        {selectedEventDate}
-                                    </strong>.
-                                </p>
-
-                                <span>
-                                    Please select another event date to check
-                                    available pricing.
-                                </span>
-
-                            </div>
-
-                        ) : (
-
-                            <>
-                            {activeResourceTypes.length > 1 && (
-                                <div className="resource-type-selector">
-                                    <h3>Select Resource Type</h3>
-                                    <div className="resource-type-options">
-                                        {activeResourceTypes.map(type => (
-                                            <button
-                                                type="button"
-                                                key={type.id}
-                                                className={selectedResourceTypeId === type.id ? "selected" : ""}
-                                                onClick={() => {
-                                                    setSelectedResourceTypeId(type.id);
-                                                    setSelectedPackage(null);
-                                                    setSelectedSlotId(null);
-                                                }}
-                                            >
-                                                <strong>{type.name}</strong>
-                                                <span>{type.quantity} available unit(s)</span>
-                                            </button>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-                            {visiblePricingPackages.length > 0 ? (
-                                <VendorPackages packages={visiblePricingPackages} selectedPackage={selectedPackage} selectedSlotId={selectedSlotId} onSelectPackage={handlePackageSelect} />
-                            ) : (
-                                <div className="pricing-unavailable"><h3>No packages available for this resource type</h3><p>Please choose another Resource Type.</p></div>
-                            )}
-                            {fixedDurationPackages.length > 0 && (
-                                <section className="fixed-duration-packages">
-                                    <h2>Fixed-Duration Packages</h2>
-                                    <p>Packages with a predefined duration and price.</p>
-                                    <VendorPackages packages={fixedDurationPackages} selectedPackage={selectedPackage} selectedSlotId={selectedSlotId} onSelectPackage={handlePackageSelect} />
-                                </section>
-                            )}
-                            </>
-                        )}
-                        </div>
-
-
-                        <VendorReviews />
-
+                        <VendorGallery vendor={vendor} />
+                        <VendorInfo vendor={vendor} />
                     </div>
-
 
                     <BookingCard
                         vendor={vendor}
@@ -590,17 +465,76 @@ const VendorDetail = () => {
                         onClearSelectedPackage={() => setSelectedPackage(null)}
                         onSelectedSlotChange={(slotId) => {
                             setSelectedSlotId(slotId);
-
-                            // Slot changes should not interrupt the user if the
-                            // package heading is already visible.
-                            if (slotId) {
-                                scrollToPackagesIfNeeded();
-                            }
+                            if (slotId) scrollToPackagesIfNeeded();
                         }}
                     />
 
-                </div>
+                    <div className="vendor-detail-main-lower">
+                        <VendorServiceDetails vendor={vendor} />
+                        <VendorAmenities vendor={vendor} />
 
+                        <div ref={packagesSectionRef} className="vendor-packages-anchor">
+                            {!selectedEventDate ? (
+                                <div className="pricing-date-message">
+                                    <div className="pricing-date-icon">📅</div>
+                                    <h3>Packages &amp; Pricing</h3>
+                                    <p>Select your event date to see the exact price and available packages.</p>
+                                    <span>Pricing may vary depending on the date and season.</span>
+                                </div>
+                            ) : pricingLoading ? (
+                                <div className="pricing-loading">Loading packages and prices...</div>
+                            ) : pricingPackages.length === 0 ? (
+                                <div className="pricing-unavailable">
+                                    <div className="pricing-unavailable-icon">📅</div>
+                                    <h3>Pricing Not Available</h3>
+                                    <p>No packages or pricing are available for <strong>{" "}{selectedEventDate}</strong>.</p>
+                                    <span>Please select another event date to check available pricing.</span>
+                                </div>
+                            ) : (
+                                <>
+                                    {activeResourceTypes.length > 1 && (
+                                        <div className="resource-type-selector">
+                                            <h3>Select Resource Type</h3>
+                                            <div className="resource-type-options">
+                                                {activeResourceTypes.map(type => (
+                                                    <button
+                                                        type="button"
+                                                        key={type.id}
+                                                        className={selectedResourceTypeId === type.id ? "selected" : ""}
+                                                        onClick={() => {
+                                                            setSelectedResourceTypeId(type.id);
+                                                            setSelectedPackage(null);
+                                                            setSelectedSlotId(null);
+                                                        }}
+                                                    >
+                                                        <strong>{type.name}</strong>
+                                                        <span>{type.quantity} available unit(s)</span>
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+                                    {visiblePricingPackages.length > 0 ? (
+                                        <VendorPackages packages={visiblePricingPackages} selectedPackage={selectedPackage} selectedSlotId={selectedSlotId} onSelectPackage={handlePackageSelect} />
+                                    ) : (
+                                        <div className="pricing-unavailable">
+                                            <h3>No packages available for this resource type</h3>
+                                            <p>Please choose another Resource Type.</p>
+                                        </div>
+                                    )}
+                                    {fixedDurationPackages.length > 0 && (
+                                        <section className="fixed-duration-packages">
+                                            <h2>Fixed-Duration Packages</h2>
+                                            <p>Packages with a predefined duration and price.</p>
+                                            <VendorPackages packages={fixedDurationPackages} selectedPackage={selectedPackage} selectedSlotId={selectedSlotId} onSelectPackage={handlePackageSelect} />
+                                        </section>
+                                    )}
+                                </>
+                            )}
+                        </div>
+                        <VendorReviews />
+                    </div>
+                </div>
             </section>
 
         </>

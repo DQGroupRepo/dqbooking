@@ -41,12 +41,14 @@ const VendorReviews = () => {
 
 
 
-      {reviews.map((review,index)=>(
+      <div className="reviews-carousel" aria-label="Customer reviews">
 
-        <div
-          className="review-card"
-          key={index}
-        >
+        {reviews.map((review,index)=>(
+
+          <div
+            className="review-card"
+            key={index}
+          >
 
           <div className="review-stars">
 
@@ -65,10 +67,11 @@ const VendorReviews = () => {
           </strong>
 
 
-        </div>
+          </div>
 
-      ))}
+        ))}
 
+      </div>
 
     </section>
 

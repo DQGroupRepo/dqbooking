@@ -275,3 +275,349 @@
 .vendor-packages-anchor {
     scroll-margin-top: 24px;
 }
+
+
+/* Warm-premium venue detail refresh */
+.section { background: #fffaf5; padding: 28px 0 48px; }
+.vendor-layout {
+    grid-template-columns: minmax(0, 1fr) minmax(330px, 390px);
+    gap: 28px;
+    max-width: 1440px;
+    align-items: start;
+}
+.vendor-detail-main { min-width: 0; }
+.vendor-booking-card {
+    max-width: none;
+    width: 100%;
+    position: sticky;
+    top: 88px;
+    border: 1px solid #f0dfce;
+    border-radius: 18px;
+    background: linear-gradient(180deg, #fffdfb 0%, #fff8f0 100%);
+    box-shadow: 0 12px 34px rgba(104, 65, 34, .12);
+}
+.pricing-date-message, .pricing-loading, .pricing-unavailable {
+    border-color: #ead8c7;
+    border-radius: 16px;
+    background: #fffdfb;
+}
+.pricing-date-message h3, .pricing-unavailable h3 { color: #623b22; }
+.resource-type-selector {
+    margin: 24px 0 20px;
+    padding: 18px;
+    border: 1px solid #efdfd0;
+    border-radius: 16px;
+    background: #fffdfb;
+}
+.resource-type-selector h3 { color: #623b22; margin: 0 0 12px; }
+.resource-type-options { display: flex; flex-wrap: wrap; gap: 10px; }
+.resource-type-options button {
+    border: 1px solid #ead8c7;
+    border-radius: 12px;
+    background: #fff;
+    color: #49301f;
+    padding: 12px 16px;
+}
+.resource-type-options button.selected {
+    border-color: #cf7437;
+    background: #fff1e5;
+    box-shadow: 0 0 0 2px rgba(207,116,55,.10);
+}
+.fixed-duration-packages { margin-top: 30px; }
+.fixed-duration-packages > h2 { color: #4b2d1c; margin-bottom: 6px; }
+.fixed-duration-packages > p { color: #806b5b; margin: 0 0 14px; }
+@media (max-width: 1024px) {
+    .vendor-layout { grid-template-columns: minmax(0, 1fr) 340px; gap: 20px; }
+}
+@media (max-width: 900px) {
+    .vendor-layout { grid-template-columns: minmax(0, 1fr); }
+    .vendor-booking-card { position: static; max-width: 100%; }
+}
+@media (max-width: 768px) {
+    .section { padding: 18px 0 34px; }
+    .vendor-layout { display: flex; flex-direction: column; gap: 22px; }
+    .vendor-detail-main, .vendor-booking-card { width: 100%; }
+}
+
+/* =========================================================
+   DQBOOKING APPROVED VENUE DETAIL LAYOUT
+   Visual/layout layer only. Existing booking state and handlers
+   remain in their original components.
+   ========================================================= */
+.vendor-detail-page.section {
+    --dq-navy: #0b3550;
+    --dq-blue: #087da0;
+    --dq-blue-dark: #075d7c;
+    --dq-blue-soft: #eaf6fa;
+    --dq-page: #f4f7fb;
+    --dq-border: #dce6ef;
+    --dq-orange: #e58a28;
+    background: var(--dq-page);
+    color: #17364f;
+    font-family: Inter, "Segoe UI", Arial, sans-serif;
+    padding: 26px 0 54px;
+}
+.vendor-detail-page .vendor-layout {
+    width: min(100% - 40px, 1440px);
+    max-width: 1440px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(330px, 370px);
+    grid-template-areas:
+        "main booking"
+        "lower booking";
+    align-items: start;
+    column-gap: 28px;
+    row-gap: 22px;
+}
+.vendor-detail-page .vendor-detail-main {
+    grid-area: main;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    gap: 18px;
+}
+.vendor-detail-page .vendor-detail-main-lower {
+    grid-area: lower;
+    min-width: 0;
+}
+.vendor-detail-page .vendor-booking-card {
+    grid-area: booking;
+    position: sticky;
+    top: 22px;
+    align-self: start;
+    width: 100%;
+    max-width: none;
+    box-sizing: border-box;
+    padding: 0 20px 22px;
+    border: 1px solid var(--dq-border);
+    border-radius: 18px;
+    background: #fff;
+    box-shadow: 0 8px 28px rgba(12, 48, 74, .10);
+    overflow: hidden;
+}
+.vendor-detail-page .vendor-gallery {
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(150px, .8fr);
+    gap: 10px;
+    align-items: stretch;
+}
+.vendor-detail-page .vendor-gallery .main-image {
+    height: clamp(280px, 27vw, 390px);
+    min-width: 0;
+    border-radius: 14px;
+    overflow: hidden;
+}
+.vendor-detail-page .vendor-gallery .thumbnail-row {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-width: 0;
+    margin: 0;
+    overflow: hidden;
+}
+.vendor-detail-page .vendor-gallery .gallery-thumbnail,
+.vendor-detail-page .vendor-gallery .more-images {
+    width: 100%;
+    height: auto;
+    min-height: 0;
+    flex: 1 1 0;
+    max-height: 92px;
+    border-radius: 12px;
+    overflow: hidden;
+}
+.vendor-detail-page .vendor-gallery .gallery-thumbnail-media,
+.vendor-detail-page .vendor-gallery .gallery-main-media {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+.vendor-detail-page .vendor-info {
+    padding: 2px 2px 14px;
+    border-bottom: 1px solid var(--dq-border);
+}
+.vendor-detail-page .service-title h1,
+.vendor-detail-page .vendor-details-card h2,
+.vendor-detail-page .vendor-amenities h2,
+.vendor-detail-page .vendor-packages h2,
+.vendor-detail-page .fixed-duration-packages > h2,
+.vendor-detail-page .vendor-reviews h2 {
+    color: var(--dq-navy);
+    font-family: Inter, "Segoe UI", Arial, sans-serif;
+    letter-spacing: -.02em;
+}
+.vendor-detail-page .service-title h1 { font-size: clamp(25px, 2.2vw, 32px); }
+.vendor-detail-page .business-name span { color: var(--dq-blue-dark); font-family: inherit; }
+.vendor-detail-page .rating-large { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.vendor-detail-page .rating-text { color: #526579; }
+.vendor-detail-page .vendor-details-card {
+    margin: 0 0 22px;
+    padding: 22px;
+    border: 1px solid var(--dq-border);
+    border-radius: 16px;
+    background: #fff;
+    box-shadow: 0 4px 16px rgba(12,48,74,.045);
+}
+.vendor-detail-page .vendor-details-card h2 { margin-bottom: 18px; font-size: 22px; }
+.vendor-detail-page .venue-info-item {
+    padding: 14px 16px;
+    border: 1px solid #e2ebf2;
+    border-radius: 11px;
+    background: #f7fafc;
+}
+.vendor-detail-page .venue-info-label svg { color: var(--dq-blue); }
+.vendor-detail-page .venue-info-item strong { color: #142d43; }
+.vendor-detail-page .vendor-description { border-color: #e6edf3; }
+.vendor-detail-page .vendor-amenities { margin: 22px 0; }
+.vendor-detail-page .vendor-amenities h2 { margin: 0 0 12px; font-size: 21px; }
+.vendor-detail-page .vendor-attribute-group { margin: 0 0 18px; }
+.vendor-detail-page .amenities-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 9px;
+}
+.vendor-detail-page .amenity-card {
+    flex: 0 1 auto;
+    min-height: 38px;
+    padding: 9px 13px;
+    border: 1px solid #dce8f0;
+    border-radius: 999px;
+    background: #fff;
+    color: #29465c;
+    font-size: 13px;
+    gap: 8px;
+}
+.vendor-detail-page .amenity-icon { color: var(--dq-blue); }
+.vendor-detail-page .resource-type-selector {
+    margin: 18px 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+}
+.vendor-detail-page .resource-type-selector h3 {
+    margin: 0 0 10px;
+    color: var(--dq-navy);
+    font-size: 18px;
+}
+.vendor-detail-page .resource-type-options { display: flex; flex-wrap: wrap; gap: 10px; }
+.vendor-detail-page .resource-type-options button {
+    min-width: 185px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+    border: 1px solid var(--dq-border);
+    border-radius: 12px;
+    background: #fff;
+    color: var(--dq-navy);
+    padding: 12px 15px;
+    text-align: left;
+}
+.vendor-detail-page .resource-type-options button span { color: #60758a; font-size: 12px; }
+.vendor-detail-page .resource-type-options button.selected {
+    border: 1.5px solid var(--dq-blue);
+    background: var(--dq-blue-soft);
+    box-shadow: 0 0 0 2px rgba(8,125,160,.08);
+}
+.vendor-detail-page .pricing-date-message,
+.vendor-detail-page .pricing-loading,
+.vendor-detail-page .pricing-unavailable {
+    border-color: var(--dq-border);
+    border-radius: 15px;
+    background: #fff;
+}
+.vendor-detail-page .pricing-date-message h3,
+.vendor-detail-page .pricing-unavailable h3 { color: var(--dq-navy); }
+.vendor-detail-page .fixed-duration-packages { margin-top: 26px; }
+.vendor-detail-page .fixed-duration-packages > h2 { margin: 0 0 6px; font-size: 22px; }
+.vendor-detail-page .fixed-duration-packages > p { color: #60758a; margin: 0 0 14px; font-size: 13px; }
+.vendor-detail-page .vendor-reviews { margin-top: 28px; }
+.vendor-detail-page .vendor-reviews h2 { font-size: 22px; margin-bottom: 14px; }
+.vendor-detail-page .bundle-back-container { max-width: 1440px; margin: 0 auto; }
+
+@media (max-width: 1000px) {
+    .vendor-detail-page .vendor-layout {
+        width: min(100% - 32px, 900px);
+        grid-template-columns: minmax(0, 1fr) 320px;
+        column-gap: 18px;
+    }
+    .vendor-detail-page .vendor-gallery { grid-template-columns: minmax(0, 1.7fr) minmax(110px, .8fr); }
+}
+@media (max-width: 760px) {
+    .vendor-detail-page.section { padding: 14px 0 34px; }
+    .vendor-detail-page .vendor-layout {
+        width: min(100% - 24px, 620px);
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-areas: "main" "booking" "lower";
+        gap: 18px;
+    }
+    .vendor-detail-page .vendor-detail-main { gap: 12px; }
+    .vendor-detail-page .vendor-booking-card { position: static; top: auto; }
+    .vendor-detail-page .vendor-gallery { grid-template-columns: minmax(0, 1fr); gap: 9px; }
+    .vendor-detail-page .vendor-gallery .main-image { height: clamp(210px, 58vw, 330px); }
+    .vendor-detail-page .vendor-gallery .thumbnail-row {
+        flex-direction: row;
+        overflow-x: auto;
+        padding-bottom: 4px;
+    }
+    .vendor-detail-page .vendor-gallery .gallery-thumbnail,
+    .vendor-detail-page .vendor-gallery .more-images {
+        flex: 0 0 92px;
+        width: 92px;
+        height: 70px;
+        max-height: none;
+    }
+    .vendor-detail-page .vendor-details-card { padding: 17px; }
+    .vendor-detail-page .venue-information-grid { grid-template-columns: repeat(2, minmax(0,1fr)); gap: 9px; }
+    .vendor-detail-page .venue-info-item { padding: 12px; }
+    .vendor-detail-page .amenities-grid { gap: 8px; }
+    .vendor-detail-page .amenity-card { font-size: 12px; padding: 8px 11px; }
+    .vendor-detail-page .resource-type-options button { min-width: min(46%, 180px); flex: 1 1 140px; }
+}
+@media (max-width: 420px) {
+    .vendor-detail-page .vendor-layout { width: calc(100% - 20px); }
+    .vendor-detail-page .venue-information-grid { grid-template-columns: minmax(0,1fr); }
+    .vendor-detail-page .vendor-details-card h2 { font-size: 19px; }
+}
+
+.vendor-detail-page .booking-summary-label {
+    margin-bottom: 5px;
+    color: #087da0;
+    font-size: 11px;
+    font-weight: 700;
+    text-align: left;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+}
+
+/* Final alignment and typography corrections for the approved detail-page design. */
+.vendor-detail-page,
+.vendor-detail-page * {
+    font-family: Inter, "Segoe UI", Arial, sans-serif;
+}
+.vendor-detail-page .vendor-detail-main-lower,
+.vendor-detail-page .vendor-packages-anchor,
+.vendor-detail-page .fixed-duration-packages,
+.vendor-detail-page .vendor-reviews {
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+}
+.vendor-detail-page .fixed-duration-packages > h2 {
+    display: block;
+    width: 100%;
+    text-align: left !important;
+    margin: 0 0 6px;
+}
+.vendor-detail-page .fixed-duration-packages > p {
+    text-align: left;
+}
+.vendor-detail-page .vendor-reviews {
+    margin-left: 0;
+    margin-right: 0;
+}
