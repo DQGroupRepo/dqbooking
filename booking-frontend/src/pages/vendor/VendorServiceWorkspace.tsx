@@ -18,8 +18,8 @@ export default function VendorServiceWorkspace() {
             </div>
             <nav className="workspace-tabs">
                 <NavLink to={`/vendor/services/${serviceId}`} end>Overview</NavLink>
-                <NavLink to={`/vendor/services/${serviceId}/pricing`}>Pricing</NavLink>
                 <NavLink to={`/vendor/services/${serviceId}/slots`}>Booking Slots</NavLink>
+                <NavLink to={`/vendor/services/${serviceId}/pricing`}>Pricing</NavLink>
                 <NavLink to={`/vendor/services/${serviceId}/availability`}>Availability</NavLink>
                 <NavLink to={`/vendor/services/${serviceId}/bookings`}>Bookings</NavLink>
                 <NavLink to={`/vendor/services/${serviceId}/reviews`}>Reviews</NavLink>

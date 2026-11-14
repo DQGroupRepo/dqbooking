@@ -1,43 +1,32 @@
+/* Keep the desktop availability layout unchanged; stack it only on tablet/mobile. */
+@media (max-width: 900px) {
+    .manage-availability {
+        width: 100%;
+        min-width: 0;
+        overflow: hidden;
+        box-sizing: border-box;
+    }
 
-.room-type-availability-panel {
-    margin-top: 1.5rem;
-    padding: 1rem;
-    border: 1px solid #e2e8f0;
-    border-radius: 12px;
-    background: #fff;
-}
-.room-type-availability-panel > p {
-    color: #64748b;
-    margin: .4rem 0 1rem;
-}
-.room-type-availability-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
-    padding: .85rem 0;
-    border-top: 1px solid #edf2f7;
-}
-.room-type-availability-row > div {
-    display: flex;
-    flex-direction: column;
-    gap: .25rem;
-}
-.room-type-availability-row span {
-    color: #64748b;
-    font-size: .875rem;
-}
-.room-type-availability-row > div:last-child {
-    align-items: flex-end;
-}
-.room-type-availability-row button {
-    border: 1px solid #cbd5e1;
-    background: #fff;
-    border-radius: 7px;
-    padding: .4rem .8rem;
-    cursor: pointer;
-}
-@media (max-width: 600px) {
-    .room-type-availability-row { align-items: flex-start; }
-    .room-type-availability-row > div:last-child { align-items: flex-end; }
+    .manage-availability .availability-layout {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 16px;
+        width: 100%;
+        min-width: 0;
+    }
+
+    .manage-availability .calendar-panel,
+    .manage-availability .slot-panel {
+        width: 100%;
+        min-width: 0;
+        max-width: 100%;
+        box-sizing: border-box;
+    }
+
+    .manage-availability .react-calendar {
+        width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
+    }
 }

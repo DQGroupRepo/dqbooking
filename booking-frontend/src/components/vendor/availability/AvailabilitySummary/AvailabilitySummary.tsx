@@ -1,3 +1,4 @@
+import MobileCarousel from "../../../common/MobileCarousel/MobileCarousel";
 import "./AvailabilitySummary.css";
 
 interface Props{
@@ -26,7 +27,7 @@ export default function AvailabilitySummary({
 
     return(
 
-        <div className="availability-summary">
+        <MobileCarousel className="availability-summary" ariaLabel="Availability summary" itemsPerPage={2}>
 
             <div className="summary-card">
 
@@ -68,7 +69,7 @@ export default function AvailabilitySummary({
 
             </div>
 
-        </div>
+        </MobileCarousel>
 
     );
 

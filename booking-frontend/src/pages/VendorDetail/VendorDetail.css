@@ -365,7 +365,10 @@
     grid-template-columns: minmax(0, 1fr) minmax(330px, 370px);
     grid-template-areas:
         "main booking"
-        "lower booking";
+        "details booking"
+        "amenities booking"
+        "packages booking"
+        "reviews booking";
     align-items: start;
     column-gap: 28px;
     row-gap: 22px;
@@ -378,7 +381,22 @@
     gap: 18px;
 }
 .vendor-detail-page .vendor-detail-main-lower {
-    grid-area: lower;
+    display: contents;
+}
+.vendor-detail-page .vendor-detail-information {
+    grid-area: details;
+    min-width: 0;
+}
+.vendor-detail-page .vendor-amenities {
+    grid-area: amenities;
+    min-width: 0;
+}
+.vendor-detail-page .vendor-packages-anchor {
+    grid-area: packages;
+    min-width: 0;
+}
+.vendor-detail-page .vendor-reviews {
+    grid-area: reviews;
     min-width: 0;
 }
 .vendor-detail-page .vendor-booking-card {
@@ -553,7 +571,13 @@
         width: min(100% - 24px, 620px);
         display: grid;
         grid-template-columns: minmax(0, 1fr);
-        grid-template-areas: "main" "booking" "lower";
+        grid-template-areas:
+            "main"
+            "details"
+            "amenities"
+            "booking"
+            "packages"
+            "reviews";
         gap: 18px;
     }
     .vendor-detail-page .vendor-detail-main { gap: 12px; }

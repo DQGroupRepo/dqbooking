@@ -6,6 +6,7 @@ import {
 } from "react-icons/fa";
 
 import DashboardCard from "../DashboardCard/DashboardCard";
+import MobileCarousel from "../../../common/MobileCarousel/MobileCarousel";
 
 import type {
     VendorDashboardSummary
@@ -46,7 +47,7 @@ export default function DashboardStats({
 
     return (
 
-        <div className={styles.statsGrid}>
+        <MobileCarousel className={styles.statsGrid} ariaLabel="Dashboard statistics" itemsPerPage={2}>
 
 
             <DashboardCard
@@ -93,7 +94,7 @@ export default function DashboardStats({
             />
 
 
-        </div>
+        </MobileCarousel>
 
     );
 

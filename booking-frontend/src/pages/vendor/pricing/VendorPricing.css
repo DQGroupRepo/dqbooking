@@ -2799,3 +2799,277 @@
         width: 32px;
     }
 }
+
+/* Mobile pricing workspace: one-column package editors with compact controls. */
+@media (max-width: 900px) {
+    .vendor-pricing-page {
+        min-width: 0;
+        width: 100%;
+        overflow: hidden;
+    }
+
+    .vendor-pricing-page .pricing-header {
+        align-items: flex-start;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-bottom: 14px;
+    }
+
+    .vendor-pricing-page .pricing-header h2 {
+        font-size: 21px;
+        line-height: 1.25;
+    }
+
+    .vendor-pricing-page .pricing-header p { font-size: 12px; }
+
+    .vendor-pricing-page .package-card-section {
+        padding: 14px 12px;
+        border-radius: 14px;
+    }
+
+    .vendor-pricing-page .package-section-header {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+        margin-bottom: 14px;
+    }
+
+    .vendor-pricing-page .package-section-actions {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 8px;
+        width: 100%;
+    }
+
+    .vendor-pricing-page .package-count {
+        justify-self: start;
+    }
+
+    .vendor-pricing-page .add-package-btn {
+        width: 100%;
+        min-height: 42px;
+        box-sizing: border-box;
+        white-space: normal;
+    }
+
+    .vendor-pricing-page .package-editor-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        gap: 12px;
+    }
+
+    .vendor-pricing-page .service-package-card {
+        width: 100%;
+        min-width: 0;
+        border-radius: 13px;
+    }
+
+    .vendor-pricing-page .package-card-header { padding: 12px; }
+    .vendor-pricing-page .package-card-title-area { gap: 9px; }
+    .vendor-pricing-page .package-card-title-area h4 { font-size: 14px; }
+    .vendor-pricing-page .package-price-field { padding: 12px; }
+    .vendor-pricing-page .package-eligibility-config { margin: 10px 12px 0; padding: 11px; }
+    .vendor-pricing-page .package-features-section { padding: 12px; }
+    .vendor-pricing-page .package-card-footer { padding: 10px 12px; }
+
+    .vendor-pricing-page .package-summary-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 10px 0;
+        font-size: 13px;
+    }
+
+    .vendor-pricing-page input,
+    .vendor-pricing-page select,
+    .vendor-pricing-page textarea {
+        max-width: 100%;
+        box-sizing: border-box;
+    }
+}
+
+
+/* Mobile/tablet package editor: one complete editable package per swipe page. */
+@media (max-width: 900px) {
+    .vendor-pricing-page .package-editor-grid { display: block; width: 100%; }
+    .vendor-pricing-page .package-editor-grid .dq-mobile-carousel__card > .service-package-card {
+        display: block; width: 100%; min-width: 0; max-width: none; box-sizing: border-box;
+    }
+}
+
+
+/* Responsive corrections for resource configuration and summary panels. */
+@media (max-width: 900px) {
+    .vendor-pricing-page .pricing-grid {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 16px;
+        width: 100%;
+        min-width: 0;
+    }
+
+    .vendor-pricing-page .pricing-left,
+    .vendor-pricing-page .pricing-right,
+    .vendor-pricing-page .pricing-card,
+    .vendor-pricing-page .package-eligibility-config {
+        min-width: 0;
+        max-width: 100%;
+        box-sizing: border-box;
+    }
+
+    .vendor-pricing-page .pricing-right {
+        position: static;
+        width: 100%;
+    }
+
+    .vendor-pricing-page .package-eligibility-config > div:first-child {
+        display: grid !important;
+        grid-template-columns: minmax(0, 1fr) minmax(88px, .45fr);
+        gap: 10px;
+        align-items: end;
+    }
+
+    .vendor-pricing-page .package-eligibility-config > div:first-child > label:first-child {
+        min-width: 0;
+        width: 100%;
+    }
+
+    .vendor-pricing-page .package-eligibility-config > div:first-child > label:nth-child(2) {
+        min-width: 0;
+        width: 100%;
+    }
+
+    .vendor-pricing-page .package-eligibility-config input {
+        display: block;
+        width: 100%;
+        min-width: 0;
+        max-width: 100%;
+        box-sizing: border-box;
+    }
+
+    .vendor-pricing-page .pricing-summary-card .summary-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 12px;
+        min-width: 0;
+    }
+
+    .vendor-pricing-page .pricing-summary-card .summary-row > span {
+        min-width: 0;
+        flex: 1 1 auto;
+    }
+
+    .vendor-pricing-page .pricing-summary-card .summary-row > strong {
+        flex: 0 0 auto;
+        max-width: 48%;
+        text-align: right;
+        overflow-wrap: anywhere;
+    }
+
+    .vendor-pricing-page .cancellation-card {
+        width: 100%;
+        min-width: 0;
+        overflow: visible;
+    }
+
+    .vendor-pricing-page .cancellation-card .section-header {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .vendor-pricing-page .cancellation-card .section-header > div {
+        flex: 1 1 180px;
+        min-width: 0;
+    }
+
+    .vendor-pricing-page .cancellation-card .section-header > button {
+        flex: 0 0 auto;
+        max-width: 100%;
+        white-space: normal;
+    }
+
+    .vendor-pricing-page .refund-rules-empty {
+        min-height: 150px;
+        height: auto;
+        padding: 20px 12px;
+        box-sizing: border-box;
+    }
+
+    .vendor-pricing-page .refund-rules-list,
+    .vendor-pricing-page .refund-rule-row,
+    .vendor-pricing-page .refund-rule-field {
+        min-width: 0;
+        max-width: 100%;
+        box-sizing: border-box;
+    }
+
+    .vendor-pricing-page .refund-rule-row {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+    }
+
+    .vendor-pricing-page .refund-rule-field input,
+    .vendor-pricing-page .refund-rule-field select {
+        width: 100%;
+        min-width: 0;
+        max-width: 100%;
+        box-sizing: border-box;
+    }
+}
+
+@media (max-width: 480px) {
+    .vendor-pricing-page .package-eligibility-config > div:first-child {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .vendor-pricing-page .cancellation-card .section-header > button {
+        width: 100%;
+    }
+}
+
+
+/* Keep package slot eligibility checkboxes beside their labels on narrow screens. */
+@media (max-width: 900px) {
+    .vendor-pricing-page .package-eligibility-config .package-eligibility-option {
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: flex-start !important;
+        justify-content: flex-start !important;
+        gap: 10px !important;
+        width: 100%;
+        min-width: 0;
+        padding: 9px 0;
+        line-height: 1.4;
+        box-sizing: border-box;
+    }
+    .vendor-pricing-page .package-eligibility-config .package-eligibility-option input[type="checkbox"] {
+        display: inline-block !important;
+        flex: 0 0 18px !important;
+        width: 18px !important;
+        min-width: 18px !important;
+        max-width: 18px !important;
+        height: 18px !important;
+        margin: 2px 0 0 !important;
+    }
+    .vendor-pricing-page .package-eligibility-config .package-eligibility-option span {
+        display: block;
+        flex: 1 1 auto;
+        min-width: 0;
+        overflow-wrap: anywhere;
+        white-space: normal;
+    }
+    .vendor-pricing-page .package-editor-grid .dq-mobile-carousel__page-content {
+        min-width: 0;
+        width: 100%;
+    }
+    .vendor-pricing-page .package-editor-grid .service-package-card {
+        min-width: 0;
+        max-width: 100%;
+        overflow: hidden;
+    }
+}

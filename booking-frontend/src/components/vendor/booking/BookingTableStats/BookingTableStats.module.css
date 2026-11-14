@@ -176,3 +176,126 @@
 .viewBtn:hover {
     background: #1d4ed8;
 }
+
+.mobileBookingList {
+    display: none;
+}
+
+@media (max-width: 700px) {
+    .tableWrapper {
+        margin-top: 0;
+        border-radius: 16px;
+        overflow: hidden;
+        background: transparent;
+        border: 0;
+        box-shadow: none;
+    }
+
+    .table {
+        display: none;
+    }
+
+    .mobileBookingList {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        min-width: 0;
+    }
+
+    .mobileBookingCard {
+        min-width: 0;
+        padding: 15px;
+        border: 1px solid #e1eaf3;
+        border-radius: 15px;
+        background: #fff;
+        box-shadow: 0 4px 14px rgba(15, 76, 129, .06);
+        cursor: pointer;
+    }
+
+    .mobileCardTop {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 8px;
+    }
+
+    .mobileCardTop > strong {
+        min-width: 0;
+        color: #0f3554;
+        font-size: 12px;
+        line-height: 1.4;
+        overflow-wrap: anywhere;
+    }
+
+    .mobileBookingCard .status {
+        flex: 0 0 auto;
+        padding: 5px 9px;
+        font-size: 10px;
+        line-height: 1.2;
+    }
+
+    .mobileCustomer {
+        margin-top: 10px;
+        color: #1e293b;
+        font-size: 15px;
+        font-weight: 700;
+        overflow-wrap: anywhere;
+    }
+
+    .mobileService {
+        margin-top: 3px;
+        color: #64748b;
+        font-size: 12px;
+        line-height: 1.4;
+        overflow-wrap: anywhere;
+    }
+
+    .mobileCardMeta {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        gap: 10px;
+        margin-top: 13px;
+        padding-top: 11px;
+        border-top: 1px solid #edf2f7;
+    }
+
+    .mobileCardMeta span {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+        min-width: 0;
+    }
+
+    .mobileCardMeta small {
+        color: #94a3b8;
+        font-size: 10px;
+    }
+
+    .mobileCardMeta strong {
+        color: #334155;
+        font-size: 12px;
+        overflow-wrap: anywhere;
+    }
+
+    .mobileViewButton {
+        width: 100%;
+        margin-top: 13px;
+        padding: 9px 12px;
+        border: 1px solid #c9dced;
+        border-radius: 9px;
+        background: #f3f8fd;
+        color: #0f4c81;
+        font-size: 12px;
+        font-weight: 700;
+    }
+
+    .mobileEmptyState {
+        padding: 24px 16px;
+        border: 1px dashed #cbd9e7;
+        border-radius: 14px;
+        background: #fff;
+        color: #64748b;
+        text-align: center;
+        font-size: 13px;
+    }
+}

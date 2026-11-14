@@ -1,4 +1,4 @@
-.booking-slot-card {
+.vendor-managed-slot-card {
     background: #fff;
     border-radius: 12px;
     padding: 20px;
@@ -149,7 +149,7 @@
     color: #003580;
 }
 
-.booking-slot-card.disabled {
+.vendor-managed-slot-card.disabled {
     opacity: 0.65;
     background: #fafafa;
     border: 1px solid #d9d9d9;
@@ -196,7 +196,7 @@
 }
 
 @media (max-width: 480px) {
-    .booking-slot-card {
+    .vendor-managed-slot-card {
         padding: 16px;
         gap: 14px;
     }
@@ -208,5 +208,72 @@
     .slot-actions button {
         flex: 1 1 90px;
         padding: 10px 12px;
+    }
+}
+
+
+/* Isolated vendor slot-management cards.
+   The customer booking widget also uses .booking-slot-card; this separate
+   class prevents its compact horizontal slot styling leaking into this page. */
+.vendor-managed-slot-card {
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    align-items: stretch;
+    border: 1px solid #eadfce;
+    border-radius: 16px;
+    background: #fff;
+    box-shadow: 0 5px 18px rgba(20, 45, 73, .07);
+}
+.vendor-managed-slot-card .slot-header {
+    justify-content: center;
+    text-align: center;
+}
+.vendor-managed-slot-card .slot-header h3 {
+    overflow-wrap: normal;
+    word-break: normal;
+}
+.vendor-managed-slot-card .slot-time-range {
+    justify-content: center;
+    flex-wrap: nowrap;
+    white-space: nowrap;
+    font-size: 18px;
+}
+.vendor-managed-slot-card .capacity-box,
+.vendor-managed-slot-card .overlap-box {
+    width: min(100%, 235px);
+    min-height: 82px;
+    box-sizing: border-box;
+    align-self: center;
+    justify-content: center;
+    text-align: center;
+}
+.vendor-managed-slot-card .capacity-box h4,
+.vendor-managed-slot-card .overlap-box h4 {
+    color: #0b3550;
+}
+.vendor-managed-slot-card .slot-actions {
+    justify-content: center;
+    flex-wrap: nowrap;
+    gap: 10px;
+}
+.vendor-managed-slot-card .slot-actions button {
+    flex: 1 1 0;
+    min-width: 0;
+    min-height: 58px;
+    max-width: 120px;
+    white-space: normal;
+}
+@media (max-width: 600px) {
+    .vendor-managed-slot-card .slot-time-range {
+        white-space: normal;
+        font-size: 16px;
+    }
+    .vendor-managed-slot-card .slot-actions {
+        flex-wrap: wrap;
+    }
+    .vendor-managed-slot-card .slot-actions button {
+        flex: 1 1 100px;
+        max-width: none;
     }
 }

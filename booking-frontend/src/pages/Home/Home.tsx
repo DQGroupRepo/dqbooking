@@ -1,8 +1,5 @@
 import "./Home.css";
 
-import SearchBar
-    from "../../components/search/SearchBar";
-
 import CategoryCard
     from "../../components/home/CategoryCard";
 
@@ -194,9 +191,6 @@ const Home = () => {
                             makeup artists,
                             decorators and event professionals.
                         </p>
-
-
-                        <SearchBar />
 
                     </div>
 

@@ -1244,3 +1244,35 @@
         padding: 17px;
     }
 }
+
+
+/* Final correction: package feature text must expand naturally.
+   Do not create an inner vertical scroll area or let it collide with Select. */
+.vendor-detail-page .package-card {
+    height: auto;
+    min-height: 218px;
+    max-height: none;
+}
+.vendor-detail-page .package-card-content {
+    flex: 1 0 auto;
+}
+.vendor-detail-page .package-feature-area {
+    flex: 0 0 auto;
+    height: auto;
+    min-height: 24px;
+    max-height: none;
+    margin: 0 0 10px;
+    padding: 0;
+    overflow: visible;
+}
+.vendor-detail-page .package-features {
+    margin: 0;
+    padding-left: 18px;
+}
+.vendor-detail-page .package-features li {
+    overflow-wrap: anywhere;
+}
+.vendor-detail-page .package-card > .package-select-button {
+    flex: 0 0 38px;
+    margin-top: auto;
+}

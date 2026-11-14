@@ -2820,3 +2820,104 @@
         font-size: 11px;
     }
 }
+
+
+/* =========================================================
+   MOBILE HEADER FIXES
+   - Keep vendor/admin Dashboard available on small screens.
+   - Keep location selection in the primary header search.
+   - Search layout: keyword + button, then location selector.
+========================================================= */
+@media (max-width: 700px) {
+    .header-main-actions .header-dashboard {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 7px 9px;
+        min-height: 34px;
+        border-radius: 7px;
+        font-size: 10px;
+        line-height: 1;
+        flex: 0 0 auto;
+    }
+
+    .header-main-actions {
+        flex-wrap: nowrap;
+        max-width: calc(100% - 145px);
+        gap: 5px;
+    }
+
+    .header-search {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 88px;
+        grid-template-rows: 50px 42px;
+        height: auto;
+        min-height: 92px;
+        overflow: visible;
+        border-radius: 13px;
+    }
+
+    .header-search .search-keyword {
+        grid-column: 1;
+        grid-row: 1;
+        min-width: 0;
+        padding-left: 12px;
+    }
+
+    .header-search .search-keyword input {
+        font-size: 12px;
+    }
+
+    .header-search .search-separator {
+        display: none;
+    }
+
+    .header-search .search-location {
+        display: flex;
+        grid-column: 1 / -1;
+        grid-row: 2;
+        width: 100%;
+        min-width: 0;
+        padding: 0 10px;
+        border-top: 1px solid #e5edf3;
+        border-radius: 0 0 13px 13px;
+    }
+
+    .header-search .search-location-trigger {
+        min-height: 41px;
+        padding: 0 4px;
+        gap: 8px;
+    }
+
+    .header-search .search-location-trigger > span {
+        font-size: 12px;
+    }
+
+    .header-search .header-search-button {
+        grid-column: 2;
+        grid-row: 1;
+        width: 100%;
+        min-width: 0;
+        height: 50px;
+        padding: 0 8px;
+        border-radius: 0 12px 0 0;
+    }
+
+    .header-location-menu {
+        left: 0;
+        right: auto;
+        width: min(460px, calc(100vw - 24px));
+        max-width: calc(100vw - 24px);
+    }
+}
+
+@media (max-width: 450px) {
+    .header-main-actions .header-dashboard {
+        padding: 6px 7px;
+        font-size: 9px;
+    }
+
+    .header-search {
+        grid-template-columns: minmax(0, 1fr) 78px;
+    }
+}

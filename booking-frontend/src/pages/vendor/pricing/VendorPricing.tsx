@@ -1,3 +1,5 @@
+import MobileCarousel from "../../../components/common/MobileCarousel/MobileCarousel";
+import Loader from "../../../components/common/Loader";
 import { useEffect, useState } from "react";
 
 import { useNavigate, useParams } from "react-router-dom";
@@ -1349,11 +1351,7 @@ const VendorPricing = () => {
 
         return (
 
-            <div className="vendor-pricing-loading">
-
-                Loading Pricing...
-
-            </div>
+            <Loader label="Loading pricing configuration" />
 
         );
 
@@ -1685,7 +1683,7 @@ const VendorPricing = () => {
 
                         ) : (
 
-                            <div className="package-editor-grid">
+                            <MobileCarousel className="package-editor-grid" ariaLabel="Service packages" paginationPosition="top">
 
                                 {packages.map((pkg, packageIndex) => {
 
@@ -1966,7 +1964,7 @@ const VendorPricing = () => {
 
                                 })}
 
-                            </div>
+                            </MobileCarousel>
 
                         )}
 

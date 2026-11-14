@@ -1,3 +1,5 @@
+import "./ManageAvailability.css";
+import Loader from "../../components/common/Loader";
 import Calendar from "react-calendar";
 
 import AvailabilitySummary from "../../components/vendor/availability/AvailabilitySummary/AvailabilitySummary";
@@ -147,7 +149,7 @@ export default function ManageAvailability() {
 
     if (loading) {
 
-        return <h2>Loading...</h2>;
+        return <Loader />;
 
     }
 

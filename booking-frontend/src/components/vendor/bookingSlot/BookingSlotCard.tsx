@@ -53,7 +53,7 @@ export default function BookingSlotCard({
     const duration = getSlotDuration(slot.startTime, slot.endTime);
 
     return (
-        <div className={slot.active ? "booking-slot-card" : "booking-slot-card disabled"}>
+        <div className={slot.active ? "vendor-managed-slot-card" : "vendor-managed-slot-card disabled"}>
             <div className="slot-header">
                 <div>
                     <h3>#{slot.displayOrder} {slot.slotName}</h3>

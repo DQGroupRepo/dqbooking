@@ -1,3 +1,5 @@
+import MobileCarousel from "../../components/common/MobileCarousel/MobileCarousel";
+import Loader from "../../components/common/Loader";
 import { useEffect, useState } from "react";
 
 import {
@@ -367,9 +369,7 @@ export default function VendorServiceProfile() {
 
         return (
 
-            <h2>
-                Loading...
-            </h2>
+            <Loader />
 
         );
 
@@ -581,7 +581,7 @@ export default function VendorServiceProfile() {
             {/* STATS */}
 
 
-            <div className="stats-grid">
+            <MobileCarousel className="stats-grid" ariaLabel="Service overview summary" itemsPerPage={2}>
 
 
                 <div className="stat-card">
@@ -685,7 +685,7 @@ export default function VendorServiceProfile() {
                 </div>
 
 
-            </div>
+            </MobileCarousel>
 
 
             <div className="content-grid">

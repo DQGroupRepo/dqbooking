@@ -26,7 +26,8 @@
 
     display:grid;
 
-    grid-template-columns:repeat(auto-fill,minmax(340px,1fr));
+    grid-template-columns:repeat(auto-fill,minmax(min(100%, 380px), 428px));
+    align-items:stretch;
 
     gap:20px;
 
@@ -103,4 +104,123 @@
 
 .slot-status.inactive {
     background: #fee2e2;
+}
+@media (max-width: 900px) {
+    .slot-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .slots-grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); }
+}
+@media (max-width: 560px) {
+    .manage-booking-slots { padding: 16px; }
+    .slot-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+    .summary-card { padding: 16px; }
+    .slots-grid { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* Mobile slot management: swipeable KPI strip, readable vertical slot cards. */
+@media (max-width: 900px) {
+    .manage-booking-slots {
+        padding: 14px 12px 22px;
+        min-width: 0;
+        overflow: hidden;
+    }
+
+    .manage-booking-slots .page-header {
+        margin-bottom: 14px;
+    }
+
+    .manage-booking-slots .slot-summary {
+        display: flex;
+        flex-wrap: nowrap;
+        gap: 10px;
+        margin: 0 -12px 18px;
+        padding: 2px 12px 10px;
+        overflow-x: auto;
+        overflow-y: hidden;
+        scroll-snap-type: x mandatory;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: thin;
+        scrollbar-color: #9bb5ca #eaf0f6;
+    }
+
+    .manage-booking-slots .slot-summary::-webkit-scrollbar { height: 4px; }
+    .manage-booking-slots .slot-summary::-webkit-scrollbar-track { background: #eaf0f6; border-radius: 99px; }
+    .manage-booking-slots .slot-summary::-webkit-scrollbar-thumb { background: #9bb5ca; border-radius: 99px; }
+
+    .manage-booking-slots .summary-card {
+        flex: 0 0 142px;
+        min-width: 142px;
+        padding: 13px 14px;
+        border-radius: 14px;
+        scroll-snap-align: start;
+    }
+
+    .manage-booking-slots .summary-card h4 { font-size: 12px; }
+    .manage-booking-slots .summary-card h2 { margin-top: 5px; font-size: 23px; }
+
+    .manage-booking-slots .slots-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        gap: 12px;
+    }
+
+    .manage-booking-slots .vendor-managed-slot-card {
+        padding: 14px;
+        gap: 11px;
+        border-radius: 15px;
+    }
+
+    .manage-booking-slots .slot-header h3 { font-size: 17px; }
+    .manage-booking-slots .slot-details { gap: 8px; }
+    .manage-booking-slots .slot-duration-summary,
+    .manage-booking-slots .capacity-box {
+        padding: 10px 12px;
+        border-radius: 10px;
+    }
+
+    .manage-booking-slots .capacity-box h4 { font-size: 20px; }
+    .manage-booking-slots .overlap-box { margin-top: 0; padding: 10px 12px; }
+
+    .manage-booking-slots .slot-actions {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 8px;
+    }
+
+    .manage-booking-slots .slot-actions button {
+        min-width: 0;
+        min-height: 42px;
+        padding: 9px 6px;
+        font-size: 12px;
+        line-height: 1.2;
+    }
+}
+
+
+/* Mobile/tablet: paginated swipe cards for slot KPIs and each booking slot. */
+@media (max-width: 900px) {
+    .manage-booking-slots .slot-summary { display: block; margin: 0 0 14px; padding: 0; overflow: visible; }
+    .manage-booking-slots .slot-summary .dq-mobile-carousel__card > .summary-card {
+        width: 100%; min-width: 0; min-height: 86px; box-sizing: border-box;
+        display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .manage-booking-slots .slots-grid { display: block; width: 100%; }
+    .manage-booking-slots .slots-grid .dq-mobile-carousel__card > .vendor-managed-slot-card {
+        width: 100%; min-width: 0; max-width: none; box-sizing: border-box;
+    }
+}
+
+
+@media (max-width: 900px) {
+    .manage-booking-slots .slot-summary .dq-mobile-carousel__page-content.is-multi-card {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .manage-booking-slots .slot-summary .dq-mobile-carousel__card > .summary-card {
+        min-width: 0;
+        min-height: 100px;
+        height: 100%;
+        flex-direction: column;
+        align-items: flex-start;
+        justify-content: center;
+        gap: 6px;
+    }
 }

@@ -1,3 +1,4 @@
+import Loader from "../../components/common/Loader";
 import { useEffect, useRef, useState } from "react";
 import {
     useLocation,
@@ -404,7 +405,7 @@ const VendorDetail = () => {
     if (!vendor) {
 
     return (
-            <h2>Loading...</h2>
+            <Loader />
         );
 
     }
@@ -455,23 +456,25 @@ const VendorDetail = () => {
                         <VendorInfo vendor={vendor} />
                     </div>
 
-                    <BookingCard
-                        vendor={vendor}
-                        serviceId={serviceId}
-                        bundles={bundles}
-                        selectedPackage={selectedPackage}
-                        selectedResourceTypeId={selectedResourceTypeId}
-                        onEventDateChange={handleEventDateChange}
-                        onClearSelectedPackage={() => setSelectedPackage(null)}
-                        onSelectedSlotChange={(slotId) => {
-                            setSelectedSlotId(slotId);
-                            if (slotId) scrollToPackagesIfNeeded();
-                        }}
-                    />
-
                     <div className="vendor-detail-main-lower">
-                        <VendorServiceDetails vendor={vendor} />
+                        <div className="vendor-detail-information">
+                            <VendorServiceDetails vendor={vendor} />
+                        </div>
                         <VendorAmenities vendor={vendor} />
+
+                        <BookingCard
+                            vendor={vendor}
+                            serviceId={serviceId}
+                            bundles={bundles}
+                            selectedPackage={selectedPackage}
+                            selectedResourceTypeId={selectedResourceTypeId}
+                            onEventDateChange={handleEventDateChange}
+                            onClearSelectedPackage={() => setSelectedPackage(null)}
+                            onSelectedSlotChange={(slotId) => {
+                                setSelectedSlotId(slotId);
+                                if (slotId) scrollToPackagesIfNeeded();
+                            }}
+                        />
 
                         <div ref={packagesSectionRef} className="vendor-packages-anchor">
                             {!selectedEventDate ? (
