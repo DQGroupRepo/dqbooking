@@ -15,6 +15,7 @@ import MainLayout from "../layouts/MainLayout";
 import VendorLayout from "../layouts/VendorLayout";
 
 import Home from "../pages/Home/Home";
+import StaticInfoPage from "../pages/StaticInfo/StaticInfoPage";
 import CategoryListing from "../pages/CategoryListing/CategoryListing";
 import VendorDetail from "../pages/VendorDetail/VendorDetail";
 import BookingCheckout from "../pages/BookingCheckout/BookingCheckout";
@@ -339,6 +340,11 @@ const AppRoutes = () => {
                             <CategoryListing />
                         }
                     />
+
+                    <Route path="/help-center" element={<StaticInfoPage page="help" />} />
+                    <Route path="/contact-us" element={<StaticInfoPage page="contact" />} />
+                    <Route path="/terms-and-conditions" element={<StaticInfoPage page="terms" />} />
+                    <Route path="/privacy-policy" element={<StaticInfoPage page="privacy" />} />
 
 
                     <Route

@@ -62,109 +62,13 @@ const ServiceSection = ({
     ]);
 
 
-    /*
-     * =========================================
-     * DISPLAY SERVICES
-     * =========================================
-     *
-     * 1 service:
-     *
-     * 1, 1, 1
-     *
-     * 2 services:
-     *
-     * 1, 2, 1
-     *
-     * 3+ services:
-     *
-     * Normal 3-card carousel window.
-     */
-
-    const displayServices =
-        useMemo(
-            () => {
-
-                /*
-                 * No services.
-                 */
-
-                if (
-                    services.length === 0
-                ) {
-
-                    return [];
-
-                }
-
-
-                /*
-                 * One service.
-                 *
-                 * Repeat the same service
-                 * three times.
-                 */
-
-                if (
-                    services.length === 1
-                ) {
-
-                    return [
-
-                        services[0],
-
-                        services[0],
-
-                        services[0]
-
-                    ];
-
-                }
-
-
-                /*
-                 * Two services.
-                 *
-                 * Display:
-                 *
-                 * First
-                 * Second
-                 * First
-                 */
-
-                if (
-                    services.length === 2
-                ) {
-
-                    return [
-
-                        services[0],
-
-                        services[1],
-
-                        services[0]
-
-                    ];
-
-                }
-
-
-                /*
-                 * Three or more services.
-                 *
-                 * Display a 3-card window.
-                 */
-
-                return services.slice(
-                    startIndex,
-                    startIndex + 3
-                );
-
-            },
-            [
-                services,
-                startIndex
-            ]
-        );
+    // Never repeat listings to fill empty carousel positions.
+    const displayServices = useMemo(
+        () => services.length > 3
+            ? services.slice(startIndex, startIndex + 3)
+            : services,
+        [services, startIndex]
+    );
 
 
     /*
@@ -242,6 +146,9 @@ const ServiceSection = ({
 
     }
 
+
+    // Empty discovery sections should not create blank space on the homepage.
+    if (services.length === 0) return null;
 
     return (
 
@@ -346,53 +253,14 @@ const ServiceSection = ({
                     EMPTY STATE
                 ===================================== */}
 
-                {
-                    services.length === 0 ? (
-
-                        <div className="service-empty-state">
-
-                            <p>
-
-                                No services available
-                                at the moment.
-
-                            </p>
-
-                        </div>
-
-                    ) : (
-
-                        <div className="service-grid">
-
-
-                            {
-                                displayServices.map(
-                                    (
-                                        service,
-                                        index
-                                    ) => (
-
-                                        <ServiceCard
-
-                                            key={
-                                                `${service.serviceId}-${index}`
-                                            }
-
-                                            {
-                                                ...service
-                                            }
-
-                                        />
-
-                                    )
-                                )
-                            }
-
-
-                        </div>
-
-                    )
-                }
+                <div className="service-grid">
+                    {displayServices.map(service => (
+                        <ServiceCard
+                            key={service.serviceId}
+                            {...service}
+                        />
+                    ))}
+                </div>
 
 
             </div>

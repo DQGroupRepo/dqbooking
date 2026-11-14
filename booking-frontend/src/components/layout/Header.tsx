@@ -915,7 +915,7 @@ const Header = () => {
                     <div className="utility-right">
 
                         <Link
-                            to="/help"
+                            to="/help-center"
                             className="utility-link"
                         >
 
