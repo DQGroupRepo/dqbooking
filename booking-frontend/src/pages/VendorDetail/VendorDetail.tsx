@@ -12,7 +12,6 @@ import VendorAmenities from "../../components/vendor/VendorAmenities";
 import VendorPackages from "../../components/vendor/VendorPackages";
 import VendorReviews from "../../components/vendor/VendorReviews";
 import BookingCard from "../../components/vendor/VendorBookingCard";
-import "./ResourceTypeSelector.css";
 import VendorServiceDetails
     from "../../components/vendor/VendorServiceDetails";
 
@@ -59,7 +58,6 @@ const VendorDetail = () => {
         setSelectedPackage
     ] = useState<ServicePackage | null>(null);
 
-    const [selectedResourceTypeId, setSelectedResourceTypeId] = useState<string | null>(null);
     /*
      * =========================================
      * VENDOR
@@ -91,6 +89,9 @@ const VendorDetail = () => {
 
     const [selectedSlotId, setSelectedSlotId] =
         useState<string | null>(null);
+    const [selectedSlotResourceTypeId, setSelectedSlotResourceTypeId] =
+        useState<string | null>(null);
+    const [packageSelectionVersion, setPackageSelectionVersion] = useState(0);
 
     // Anchor for bringing date-specific package choices into view.
     const packagesSectionRef = useRef<HTMLDivElement>(null);
@@ -246,6 +247,10 @@ const VendorDetail = () => {
             ...pkg,
             id: pkg.id.trim()
         });
+        // Package changes invalidate the prior slot selection.
+        setSelectedSlotId(null);
+        setSelectedSlotResourceTypeId(null);
+        setPackageSelectionVersion(version => version + 1);
     };
 
 
@@ -417,16 +422,14 @@ const VendorDetail = () => {
      * =========================================
      */
 
-    const activeResourceTypes = (vendor?.resourceTypes ?? []).filter(type => type.active !== false);
+    const isStayService = ["STAY", "STAYS"].includes(String(vendor?.category ?? "").trim().toUpperCase());
+    const activeResourceTypes = isStayService
+        ? (vendor?.resourceTypes ?? []).filter(type => type.active !== false)
+        : [];
     const fixedDurationPackages = pricingPackages.filter(pkg => pkg.packageType === "FIXED_DURATION");
     const regularPricingPackages = pricingPackages.filter(pkg => pkg.packageType !== "FIXED_DURATION");
-    const visiblePricingPackages = activeResourceTypes.length > 1
-        ? (selectedResourceTypeId
-            ? regularPricingPackages.filter(pkg => pkg.resourceTypeId === selectedResourceTypeId)
-            : [])
-        : activeResourceTypes.length === 1
-            ? regularPricingPackages.filter(pkg => pkg.resourceTypeId === activeResourceTypes[0].id)
-            : regularPricingPackages;
+    // Stay customers select a complete package composition, not a resource type first.
+    const visiblePricingPackages = regularPricingPackages;
 
     return (
 
@@ -467,11 +470,13 @@ const VendorDetail = () => {
                             serviceId={serviceId}
                             bundles={bundles}
                             selectedPackage={selectedPackage}
-                            selectedResourceTypeId={selectedResourceTypeId}
+                            packageSelectionVersion={packageSelectionVersion}
+                            selectedResourceTypeId={null}
                             onEventDateChange={handleEventDateChange}
                             onClearSelectedPackage={() => setSelectedPackage(null)}
-                            onSelectedSlotChange={(slotId) => {
+                            onSelectedSlotChange={(slotId, resourceTypeId) => {
                                 setSelectedSlotId(slotId);
+                                setSelectedSlotResourceTypeId(resourceTypeId ?? null);
                                 if (slotId) scrollToPackagesIfNeeded();
                             }}
                         />
@@ -495,41 +500,19 @@ const VendorDetail = () => {
                                 </div>
                             ) : (
                                 <>
-                                    {activeResourceTypes.length > 1 && (
-                                        <div className="resource-type-selector">
-                                            <h3>Select Resource Type</h3>
-                                            <div className="resource-type-options">
-                                                {activeResourceTypes.map(type => (
-                                                    <button
-                                                        type="button"
-                                                        key={type.id}
-                                                        className={selectedResourceTypeId === type.id ? "selected" : ""}
-                                                        onClick={() => {
-                                                            setSelectedResourceTypeId(type.id);
-                                                            setSelectedPackage(null);
-                                                            setSelectedSlotId(null);
-                                                        }}
-                                                    >
-                                                        <strong>{type.name}</strong>
-                                                        <span>{type.quantity} available unit(s)</span>
-                                                    </button>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    )}
                                     {visiblePricingPackages.length > 0 ? (
-                                        <VendorPackages packages={visiblePricingPackages} selectedPackage={selectedPackage} selectedSlotId={selectedSlotId} onSelectPackage={handlePackageSelect} />
+                                        <VendorPackages packages={visiblePricingPackages} selectedPackage={selectedPackage} selectedSlotId={selectedSlotId} selectedSlotResourceTypeId={selectedSlotResourceTypeId} isStay={isStayService} resourceTypes={activeResourceTypes} onSelectPackage={handlePackageSelect} />
                                     ) : (
                                         <div className="pricing-unavailable">
-                                            <h3>No packages available for this resource type</h3>
-                                            <p>Please choose another Resource Type.</p>
+                                            <h3>No packages available</h3>
+                                            <p>Please select another date or contact the vendor.</p>
                                         </div>
                                     )}
                                     {fixedDurationPackages.length > 0 && (
                                         <section className="fixed-duration-packages">
                                             <h2>Fixed-Duration Packages</h2>
                                             <p>Packages with a predefined duration and price.</p>
-                                            <VendorPackages packages={fixedDurationPackages} selectedPackage={selectedPackage} selectedSlotId={selectedSlotId} onSelectPackage={handlePackageSelect} />
+                                            <VendorPackages packages={fixedDurationPackages} selectedPackage={selectedPackage} selectedSlotId={selectedSlotId} selectedSlotResourceTypeId={selectedSlotResourceTypeId} isStay={isStayService} resourceTypes={activeResourceTypes} onSelectPackage={handlePackageSelect} />
                                         </section>
                                     )}
                                 </>

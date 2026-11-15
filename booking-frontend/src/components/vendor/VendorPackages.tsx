@@ -48,6 +48,9 @@ interface Props {
     packages?: ServicePackage[];
     selectedPackage?: ServicePackage | null;
     selectedSlotId?: string | null;
+    selectedSlotResourceTypeId?: string | null;
+    isStay?: boolean;
+    resourceTypes?: { id: string; name: string }[];
     onSelectPackage: (pkg: ServicePackage) => void;
     onSelectedCateringDishesChange?: (dishes: SelectedCateringDish[]) => void;
 }
@@ -58,6 +61,9 @@ const VendorPackages = ({
     packages = [],
     selectedPackage,
     selectedSlotId,
+    selectedSlotResourceTypeId,
+    isStay = false,
+    resourceTypes = [],
     onSelectPackage,
     onSelectedCateringDishesChange
 }: Props) => {
@@ -314,10 +320,24 @@ const VendorPackages = ({
                                 isPackageSelected(
                                     pkg
                                 );
-                            const incompatibleWithSlot = Boolean(
-                                selectedSlotId && pkg.slotIds?.length &&
+                            const packageRequirements = pkg.resourceRequirements ?? [];
+                            const legacyResourceTypeId = pkg.resourceTypeId;
+                            const packageResourceTypeIds = packageRequirements.length > 0
+                                ? packageRequirements.map(requirement => requirement.resourceTypeId)
+                                : (legacyResourceTypeId ? [legacyResourceTypeId] : []);
+                            const slotIsExcludedByPackage = Boolean(
+                                selectedSlotId && pkg.slotIds?.length > 0 &&
                                 !pkg.slotIds.includes(selectedSlotId)
                             );
+                            // In Stay, a slot assigned to a physical resource type can
+                            // only be used by packages that include that type. A combined
+                            // package remains compatible when it includes the slot's type
+                            // alongside its other required room types.
+                            const resourceTypeIsExcludedByPackage = Boolean(
+                                isStay && selectedSlotId && selectedSlotResourceTypeId &&
+                                !packageResourceTypeIds.includes(selectedSlotResourceTypeId)
+                            );
+                            const incompatibleWithSlot = slotIsExcludedByPackage || resourceTypeIsExcludedByPackage;
 
 
                             return (
@@ -348,13 +368,13 @@ const VendorPackages = ({
 
                                         <div className="package-pricing-basis">
                                             {pkg.packageType === "FIXED_DURATION"
-                                                ? `Fixed duration${pkg.includedDuration ? ` · ${pkg.includedDuration} units` : ""}`
+                                                ? `Fixed duration${pkg.includedDuration ? ` · ${pkg.includedDuration} ${isStay ? "nights" : "units"}` : ""}`
                                                 : pkg.pricingBasis === "PER_DAY"
-                                                    ? "Per day"
+                                                    ? (isStay ? "Per night · complete combination" : "Per day")
                                                     : pkg.pricingBasis === "PER_NIGHT"
-                                                        ? "Per night"
+                                                        ? (isStay ? "Per night · complete combination" : "Per night")
                                                         : pkg.pricingBasis === "FIXED"
-                                                            ? "Flat price per booking"
+                                                            ? (isStay ? "Price per complete combination" : "Flat price per booking")
                                                             : "Package"}
                                         </div>
 
@@ -374,6 +394,23 @@ const VendorPackages = ({
 
                                         </h4>
 
+
+                                        {isStay && (pkg.resourceRequirements?.length || pkg.resourceTypeId) && (
+                                            <div className="package-room-composition">
+                                                <strong>Included rooms</strong>
+                                                <ul>
+                                                    {(pkg.resourceRequirements?.length
+                                                        ? pkg.resourceRequirements
+                                                        : [{ resourceTypeId: pkg.resourceTypeId!, quantity: 1 }]
+                                                    ).map((requirement, requirementIndex) => (
+                                                        <li key={`${requirement.resourceTypeId}-${requirementIndex}`}>
+                                                            {(resourceTypes.find(type => type.id === requirement.resourceTypeId)?.name ?? "Room type")}
+                                                            {` × ${requirement.quantity}`}
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            </div>
+                                        )}
 
                                         <div className="package-feature-area">
 

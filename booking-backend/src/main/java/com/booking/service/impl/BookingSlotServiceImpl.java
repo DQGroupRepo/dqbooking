@@ -8,6 +8,7 @@ import com.booking.exception.ResourceNotFoundException;
 import com.booking.mapper.BookingSlotMapper;
 import com.booking.model.BookingSlot;
 import com.booking.model.VendorService;
+import com.booking.model.enums.ServiceCategory;
 import com.booking.repository.BookingSlotRepository;
 import com.booking.repository.VendorServiceRepository;
 import com.booking.service.BookingSlotService;
@@ -217,6 +218,8 @@ public class BookingSlotServiceImpl
 
     private void validateResourceType(VendorService service, String resourceTypeId) {
         if (resourceTypeId == null || resourceTypeId.isBlank()) return;
+        if (service.getCategory() != ServiceCategory.STAY)
+            throw new IllegalArgumentException("Resource Types can be assigned to booking slots only for STAY services.");
         boolean exists = service.getResourceTypes() != null && service.getResourceTypes().stream()
                 .anyMatch(type -> resourceTypeId.equals(type.getId()) && !Boolean.FALSE.equals(type.getActive()));
         if (!exists) throw new IllegalArgumentException("Selected resource type is not active for this service.");

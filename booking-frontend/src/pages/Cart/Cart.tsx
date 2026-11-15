@@ -132,12 +132,14 @@ const Cart = () => {
      */
 
     const handleRemove = async (
-        serviceId: string
+        serviceId: string,
+        holdId?: string
     ) => {
 
         const updatedCart =
             await CartService.removeItem(
-                serviceId
+                serviceId,
+                holdId
             );
 
         setCart(updatedCart);
@@ -391,7 +393,7 @@ const Cart = () => {
 
                                     <div
                                         key={
-                                            item.serviceId
+                                            item.holdId ?? `${item.serviceId}-${item.slotId ?? "no-slot"}-${item.packageId ?? "no-package"}`
                                         }
                                         className="cart-item"
                                     >
@@ -495,6 +497,12 @@ const Cart = () => {
                                         </div>
 
 
+                                        {String(item.category ?? "").toUpperCase() === "STAY" && Number(item.roomQuantity ?? 1) >= 1 && (
+                                            <div className="cart-item-quantity">
+                                                {`Quantity: ${Number(item.roomQuantity)} package combinations`}
+                                            </div>
+                                        )}
+
                                         <div className="cart-item-price">
 
                                             <strong>
@@ -518,7 +526,8 @@ const Cart = () => {
                                             className="cart-remove-button"
                                             onClick={() =>
                                                 handleRemove(
-                                                    item.serviceId
+                                                    item.serviceId,
+                                                    item.holdId
                                                 )
                                             }
                                             aria-label={
@@ -764,7 +773,7 @@ const Cart = () => {
 
                                                     <div
                                                         key={
-                                                            item.serviceId
+                                                            item.holdId ?? `${item.serviceId}-${item.slotId ?? "no-slot"}-${item.packageId ?? "no-package"}`
                                                         }
                                                         className="cart-item"
                                                     >
@@ -893,7 +902,8 @@ const Cart = () => {
                                                             className="cart-remove-button"
                                                             onClick={() =>
                                                                 handleRemove(
-                                                                    item.serviceId
+                                                                    item.serviceId,
+                                                                    item.holdId
                                                                 )
                                                             }
                                                             aria-label={

@@ -947,11 +947,14 @@
 /* A package incompatible with the currently selected slot stays clickable
    so the customer can switch to it; the slot selection is cleared upstream. */
 .package-card.incompatible {
-    opacity: 0.48;
-    border-style: dashed;
+    opacity: 0.28;
+    filter: grayscale(1) saturate(0.25);
+    border: 1px dashed #aab5c0;
+    background: #f1f3f5;
+    box-shadow: none;
 }
 .package-card.incompatible:hover {
-    opacity: 0.82;
+    opacity: 0.42;
 }
 
 
@@ -1275,4 +1278,21 @@
 .vendor-detail-page .package-card > .package-select-button {
     flex: 0 0 38px;
     margin-top: auto;
+}
+
+
+/* Stay package composition is displayed as part of the package price card. */
+.vendor-detail-page .package-room-composition {
+    margin: 8px 0 12px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.035);
+    font-size: 0.9rem;
+}
+.vendor-detail-page .package-room-composition ul {
+    margin: 5px 0 0;
+    padding-left: 18px;
+}
+.vendor-detail-page .package-room-composition li {
+    overflow-wrap: anywhere;
 }

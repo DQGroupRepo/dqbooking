@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import type { VendorListing } from "../../types/VendorListing";
+import RatingStars from "../common/RatingStars";
 import "./VendorCard.css";
 
 interface VendorCardProps {
@@ -107,9 +108,9 @@ const VendorCard = ({
                     <div>
 
                         <div className="rating">
-
-                            ⭐ {vendor.rating}
-
+                            <RatingStars value={Number(vendor.rating ?? 0)} size="small" />
+                            <span>{Number(vendor.rating ?? 0).toFixed(1)}</span>
+                            {vendor.reviewCount > 0 && <span className="listing-review-count">({vendor.reviewCount})</span>}
                         </div>
 
 

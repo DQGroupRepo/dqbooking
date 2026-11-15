@@ -2,6 +2,7 @@ package com.booking.model;
 
 import com.booking.model.enums.BookingHoldStatus;
 import com.booking.model.embedded.BookingTimeInterval;
+import com.booking.model.embedded.ResourceAllocation;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.data.mongodb.core.index.Indexed;
@@ -9,6 +10,8 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Getter
 @Setter
@@ -24,6 +27,9 @@ public class BookingHold extends BaseEntity {
 
     private String resourceTypeId;
     private java.util.List<String> resourceIds = new java.util.ArrayList<>();
+
+    /** All physical allocations for combined STAY package inventory. */
+    private List<ResourceAllocation> resourceAllocations = new ArrayList<>();
     private String customerId;
 
     private String cartId;

@@ -5,6 +5,7 @@ import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Max;
+import com.booking.model.embedded.ResourceTypeRequirement;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -19,6 +20,9 @@ public class ServicePackageRequest {
     private String id;
 
     private String resourceTypeId;
+
+    /** Required resource-type composition for combined STAY packages. */
+    private List<ResourceTypeRequirement> resourceRequirements = new ArrayList<>();
 
     /** PER_DAY, PER_NIGHT, or FIXED. */
     private String pricingBasis = "FIXED";

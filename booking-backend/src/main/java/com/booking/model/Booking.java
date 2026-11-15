@@ -3,6 +3,7 @@ package com.booking.model;
 import com.booking.model.embedded.BookingPricingSnapshot;
 import com.booking.model.embedded.BookingSelectedCateringDish;
 import com.booking.model.embedded.BookingTimeInterval;
+import com.booking.model.embedded.ResourceAllocation;
 import com.booking.model.enums.BookingStatus;
 import com.booking.model.enums.PaymentStatus;
 import lombok.Getter;
@@ -105,6 +106,9 @@ public class Booking extends BaseEntity {
     /** Generic physical inventory allocation snapshot. */
     private String resourceTypeId;
     private List<String> resourceIds = new ArrayList<>();
+
+    /** All physical allocations for combined STAY package inventory. */
+    private List<ResourceAllocation> resourceAllocations = new ArrayList<>();
 
     private String slotName;
 

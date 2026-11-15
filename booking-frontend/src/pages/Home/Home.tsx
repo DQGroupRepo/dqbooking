@@ -1,4 +1,3 @@
-import { Link } from "react-router-dom";
 import "./Home.css";
 
 import CategoryCard
@@ -9,6 +8,9 @@ import ServiceSection
 
 import MobileCarousel
     from "../../components/common/MobileCarousel/MobileCarousel";
+
+import RatingStars
+    from "../../components/common/RatingStars";
 
 import {
     categories
@@ -224,8 +226,6 @@ const Home = () => {
                     <MobileCarousel
                         className="category-grid home-category-carousel"
                         ariaLabel="Service categories"
-                        itemsPerPage={2}
-                        paginationPosition="bottom"
                     >
                         {categories.map(category => (
                             <CategoryCard
@@ -484,7 +484,7 @@ const Home = () => {
                     >
                         {testimonials.map(item => (
                             <div className="testimonial-card" key={item.name}>
-                                <div aria-label="5 out of 5 stars">⭐⭐⭐⭐⭐</div>
+                                <RatingStars value={5} size="medium" />
                                 <p>"{item.review}"</p>
                                 <strong>- {item.name}</strong>
                             </div>
@@ -515,12 +515,11 @@ const Home = () => {
                     </p>
 
 
-                    <Link
-                        to="/vendor/register"
-                        className="vendor-register-button"
+                    <button
+                        type="button"
                     >
                         Register Your Business
-                    </Link>
+                    </button>
 
                 </div>
 

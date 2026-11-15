@@ -196,7 +196,8 @@ const VendorPricing = () => {
 
     const removeResourceType = async (resourceTypeId: string) => {
         if (!serviceId) return;
-        if (packages.some(pkg => pkg.resourceTypeId === resourceTypeId) ||
+        if (packages.some(pkg => pkg.resourceTypeId === resourceTypeId ||
+            (pkg.resourceRequirements ?? []).some(requirement => requirement.resourceTypeId === resourceTypeId)) ||
             bookingSlots.some(slot => slot.resourceTypeId === resourceTypeId)) {
             toast.error("Unassign this resource type from packages and booking slots before removing it.");
             return;
@@ -248,7 +249,9 @@ const VendorPricing = () => {
 
                 setIsCateringService(isCatering);
                 setIsStayService(isStay);
-                const savedResourceTypes = await VendorServiceService.getResourceTypes(serviceId!);
+                const savedResourceTypes = isStay
+                    ? await VendorServiceService.getResourceTypes(serviceId!)
+                    : [];
                 if (!cancelled) setResourceTypes(savedResourceTypes);
 
                 // Package eligibility and STAY inventory are managed by booking slots.
@@ -747,6 +750,18 @@ const VendorPricing = () => {
                     setSaving(false);
                     return;
                 }
+                const unassignedInventoryPackage = packages.find(pkg => pkg.active && !(pkg.resourceRequirements?.length || pkg.resourceTypeId));
+                if (unassignedInventoryPackage) {
+                    toast.error(`Add at least one Resource Type to package "${unassignedInventoryPackage.name || "Untitled"}".`);
+                    setSaving(false);
+                    return;
+                }
+                const invalidInventoryPackage = packages.find(pkg => pkg.active && (pkg.resourceRequirements ?? []).some(item => !item.resourceTypeId || !Number.isInteger(Number(item.quantity)) || Number(item.quantity) < 1));
+                if (invalidInventoryPackage) {
+                    toast.error(`Check the room composition for package "${invalidInventoryPackage.name || "Untitled"}".`);
+                    setSaving(false);
+                    return;
+                }
                 const unassignedStayPackage = packages.find(pkg => pkg.active && !(pkg.slotIds ?? []).length);
                 if (unassignedStayPackage) {
                     toast.error(`Assign at least one booking slot to package "${unassignedStayPackage.name || "Untitled"}".`);
@@ -755,9 +770,9 @@ const VendorPricing = () => {
                 }
             }
 
-            const invalidFixedDurationPackage = packages.find(pkg => pkg.active && pkg.packageType === "FIXED_DURATION" && (!pkg.resourceTypeId || !pkg.includedDuration || pkg.includedDuration < 1 || pkg.pricingBasis !== "FIXED"));
+            const invalidFixedDurationPackage = packages.find(pkg => isStayService && pkg.active && pkg.packageType === "FIXED_DURATION" && (!(pkg.resourceRequirements?.length || pkg.resourceTypeId) || !pkg.includedDuration || pkg.includedDuration < 1 || pkg.pricingBasis !== "FIXED"));
             if (invalidFixedDurationPackage) {
-                toast.error(`Fixed-duration package "${invalidFixedDurationPackage.name || "Untitled"}" requires a Resource Type, an included duration, and fixed pricing.`);
+                toast.error(`Fixed-duration package "${invalidFixedDurationPackage.name || "Untitled"}" requires at least one Resource Type, an included duration, and fixed pricing.`);
                 setSaving(false);
                 return;
             }
@@ -1036,6 +1051,7 @@ const VendorPricing = () => {
             maximumDuration: 31,
             includedDuration: packageType === "FIXED_DURATION" ? 3 : undefined,
             resourceTypeId: undefined,
+            resourceRequirements: [],
             maxGuestsPerRoom: isStayService ? 2 : undefined,
             packageType
 
@@ -1050,6 +1066,33 @@ const VendorPricing = () => {
 
     }
 
+
+    function addPackageResourceRequirement(packageIndex: number) {
+        setPackages(previous => previous.map((pkg, index) => {
+            if (index !== packageIndex) return pkg;
+            const existing = pkg.resourceRequirements ?? (pkg.resourceTypeId ? [{ resourceTypeId: pkg.resourceTypeId, quantity: 1 }] : []);
+            const used = new Set(existing.map(item => item.resourceTypeId));
+            const nextType = resourceTypes.find(type => type.active !== false && !used.has(type.id));
+            if (!nextType) return pkg;
+            return { ...pkg, resourceRequirements: [...existing, { resourceTypeId: nextType.id, quantity: 1 }], resourceTypeId: undefined };
+        }));
+    }
+
+    function updatePackageResourceRequirement(packageIndex: number, requirementIndex: number, field: "resourceTypeId" | "quantity", value: string | number) {
+        setPackages(previous => previous.map((pkg, index) => {
+            if (index !== packageIndex) return pkg;
+            const next = [...(pkg.resourceRequirements ?? (pkg.resourceTypeId ? [{ resourceTypeId: pkg.resourceTypeId, quantity: 1 }] : []))];
+            if (!next[requirementIndex]) return pkg;
+            next[requirementIndex] = { ...next[requirementIndex], [field]: value };
+            return { ...pkg, resourceRequirements: next, resourceTypeId: undefined };
+        }));
+    }
+
+    function removePackageResourceRequirement(packageIndex: number, requirementIndex: number) {
+        setPackages(previous => previous.map((pkg, index) => index === packageIndex
+            ? { ...pkg, resourceRequirements: (pkg.resourceRequirements ?? (pkg.resourceTypeId ? [{ resourceTypeId: pkg.resourceTypeId, quantity: 1 }] : [])).filter((_, i) => i !== requirementIndex), resourceTypeId: undefined }
+            : pkg));
+    }
 
     function togglePackage(
         packageIndex: number
@@ -1731,7 +1774,7 @@ const VendorPricing = () => {
 
                                                 <>
                                                     <div className="package-price-field">
-                                                        <label>Package Price</label>
+                                                        <label>{isStayService ? "Price per complete package combination" : "Package Price"}</label>
                                                         <div className="package-price-input">
                                                             <span>₹</span>
                                                             <input
@@ -1749,6 +1792,7 @@ const VendorPricing = () => {
                                                             />
                                                         </div>
                                                     </div>
+                                                    {isStayService && <p className="package-eligibility-help">This price applies to one complete room composition. The customer-selected quantity multiplies the price by the number of complete combinations.</p>}
 
                                                     {pkg.packageType === "FIXED_DURATION" ? (
                                                         <div className="package-eligibility-config">
@@ -1795,14 +1839,26 @@ const VendorPricing = () => {
                                                     </div>
                                                     )}
 
-                                                    {resourceTypes.length > 0 && (
+                                                    {isStayService && (
                                                         <div className="package-eligibility-config">
-                                                            <div className="package-features-header"><h5>Resource Type</h5></div>
-                                                            <p className="package-eligibility-help">Choose which physical inventory group this package uses.</p>
-                                                            <select value={pkg.resourceTypeId ?? ""} onChange={e => updatePackage(packageIndex, "resourceTypeId", e.target.value || undefined)}>
-                                                                <option value="">Select resource type</option>
-                                                                {resourceTypes.filter(type => type.active !== false).map(type => <option key={type.id} value={type.id}>{type.name} ({type.quantity} unit(s))</option>)}
-                                                            </select>
+                                                            <div className="package-features-header"><h5>Room composition</h5></div>
+                                                            <p className="package-eligibility-help">Define the rooms included in one complete package. For example, 2 Premium + 1 Gold. Customers can book multiple complete combinations; all included rooms are held together.</p>
+                                                            {(pkg.resourceRequirements ?? (pkg.resourceTypeId ? [{ resourceTypeId: pkg.resourceTypeId, quantity: 1 }] : [])).map((requirement, requirementIndex) => (
+                                                                <div className="package-duration-fields" key={`${requirement.resourceTypeId}-${requirementIndex}`}>
+                                                                    <label>
+                                                                        Room type
+                                                                        <select value={requirement.resourceTypeId} onChange={e => updatePackageResourceRequirement(packageIndex, requirementIndex, "resourceTypeId", e.target.value)}>
+                                                                            {resourceTypes.filter(type => type.active !== false).map(type => <option key={type.id} value={type.id}>{type.name} ({type.quantity} total)</option>)}
+                                                                        </select>
+                                                                    </label>
+                                                                    <label>
+                                                                        Rooms in package
+                                                                        <input type="number" min="1" max="100" value={requirement.quantity} onChange={e => updatePackageResourceRequirement(packageIndex, requirementIndex, "quantity", Math.max(1, Math.min(100, Math.floor(Number(e.target.value) || 1))))} />
+                                                                    </label>
+                                                                    <button type="button" className="secondary-button" onClick={() => removePackageResourceRequirement(packageIndex, requirementIndex)}>Remove</button>
+                                                                </div>
+                                                            ))}
+                                                            <button type="button" className="secondary-button" onClick={() => addPackageResourceRequirement(packageIndex)} disabled={resourceTypes.filter(type => type.active !== false).length <= (pkg.resourceRequirements ?? []).length}>Add room type</button>
                                                         </div>
                                                     )}
                                                     <div className="package-eligibility-config">
@@ -1811,7 +1867,7 @@ const VendorPricing = () => {
                                                         </div>
                                                         <p className="package-eligibility-help">
                                                             {isStayService
-                                                                ? "Assign this STAY package to one or more active booking slots. Each slot's maximum bookings value is the number of rooms available."
+                                                                ? "Assign this STAY package to one or more active booking slots. Slots control check-in timing and vendor date blocks; physical room availability is calculated from the Resource Types above."
                                                                 : "Select which slots customers may use with this package. Leave all unchecked to allow all active slots."}
                                                         </p>
                                                         {bookingSlots.length === 0 ? (

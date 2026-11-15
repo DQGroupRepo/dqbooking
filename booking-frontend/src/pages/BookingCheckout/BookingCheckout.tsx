@@ -267,6 +267,55 @@ interface CartItemPricing {
 const EMPTY_CART: CartItem[] = [];
 
 
+const getCartLineKey = (item: CartItem): string =>
+    item.holdId || [item.serviceId, item.slotId ?? "no-slot", item.packageId ?? "no-package",
+        item.bookingFrom ?? item.eventDate ?? "", item.bookingTo ?? item.eventDate ?? ""].join("::");
+
+const getCartItemHolds = (item: CartItem) => {
+    if (item.holds?.length) return item.holds;
+    return item.holdId
+        ? [{ holdId: item.holdId, roomQuantity: item.roomQuantity, quantity: item.quantity, expiresAt: item.holdExpiresAt }]
+        : [];
+};
+
+const getCartPricingMultiplier = (item: CartItem): number => {
+    const quantity = Math.max(1, Number(item.roomQuantity ?? item.quantity ?? 1));
+    if (item.packageType === "FIXED_DURATION") return quantity;
+
+    const from = (item.bookingFrom ?? item.eventDate ?? "").slice(0, 10);
+    const to = (item.bookingTo ?? item.eventDate ?? from).slice(0, 10);
+    let duration = 1;
+    if (from && to) {
+        const start = new Date(`${from}T00:00:00`).getTime();
+        const end = new Date(`${to}T00:00:00`).getTime();
+        const days = Math.max(0, Math.round((end - start) / 86400000));
+        duration = item.pricingBasis === "PER_NIGHT"
+            ? Math.max(1, days)
+            : item.pricingBasis === "PER_DAY"
+                ? Math.max(1, days + (String(item.category ?? "").toUpperCase() === "STAY" ? 0 : 1))
+                : 1;
+    }
+    return quantity * duration;
+};
+
+const scaleCartPricing = (pricing: PricingCalculationResult, multiplier: number): PricingCalculationResult => ({
+    ...pricing,
+    baseAmount: pricing.baseAmount * multiplier,
+    subtotal: pricing.subtotal * multiplier,
+    discountAmount: pricing.discountAmount * multiplier,
+    totalAmount: pricing.totalAmount * multiplier,
+    advanceAmount: pricing.advanceAmount * multiplier,
+    balanceAmount: pricing.balanceAmount * multiplier,
+    pricingHeads: (pricing.pricingHeads ?? []).map(head => ({
+        ...head,
+        calculatedAmount: head.calculatedAmount * multiplier
+    })),
+    discounts: (pricing.discounts ?? []).map(discount => ({
+        ...discount,
+        calculatedAmount: discount.calculatedAmount * multiplier
+    }))
+});
+
 function addCalendarDay(date: string): string {
     const [year, month, day] = date.split("-").map(Number);
     const value = new Date(year, month - 1, day);
@@ -498,7 +547,7 @@ const BookingCheckout = () => {
 
                     const pricing =
                         cartItemPricing[
-                        item.serviceId
+                        getCartLineKey(item)
                         ];
 
 
@@ -613,7 +662,7 @@ const BookingCheckout = () => {
 
                                 const pricing =
                                     cartItemPricing[
-                                    item.serviceId
+                                    getCartLineKey(item)
                                     ];
 
 
@@ -720,7 +769,7 @@ const BookingCheckout = () => {
 
                             const itemPricing =
                                 cartItemPricing[
-                                item.serviceId
+                                getCartLineKey(item)
                                 ];
 
 
@@ -885,7 +934,8 @@ const BookingCheckout = () => {
 
             updatedCart =
                 await CartService.removeItem(
-                    item.serviceId
+                    item.serviceId,
+                    item.holdId
                 );
 
         }
@@ -1444,11 +1494,11 @@ const BookingCheckout = () => {
 
                                         return {
 
-                                            serviceId:
-                                                item.serviceId,
+                                            cartLineKey:
+                                                getCartLineKey(item),
 
                                             pricing:
-                                                response.data
+                                                scaleCartPricing(response.data, getCartPricingMultiplier(item))
 
                                         };
 
@@ -1489,7 +1539,7 @@ const BookingCheckout = () => {
 
 
                             pricingMap[
-                                entry.serviceId
+                                entry.cartLineKey
                             ] =
                                 entry.pricing;
 
@@ -1833,31 +1883,19 @@ const BookingCheckout = () => {
                                 }
 
 
-                                bundleRequest.items.push({
-
-                                    serviceId:
-                                        item.serviceId,
-
-                                    slotId:
-                                        item.slotId,
-
-                                    holdId:
-                                        item.holdId,
-
-                                    packageId:
-                                        item.packageId,
-
-                                    ...resolveBookingInterval(item),
-                                    bookingType: item.bookingType || "STANDARD_SLOT",
-                                    roomQuantity: item.roomQuantity,
-
-                                    guestCount:
-                                        String(item.category ?? "").toUpperCase() === "STAY"
-                                            ? undefined
-                                            : Number(item.guestCount ?? 1),
-
-                                    selectedCateringDishes:
-                                        item.selectedCateringDishes?.map(dish => ({
+                                const holds = getCartItemHolds(item);
+                                (holds.length ? holds : [undefined]).forEach(hold => {
+                                    bundleRequest!.items.push({
+                                        serviceId: item.serviceId,
+                                        slotId: item.slotId,
+                                        holdId: hold?.holdId,
+                                        packageId: item.packageId,
+                                        ...resolveBookingInterval(item),
+                                        bookingType: item.bookingType || "STANDARD_SLOT",
+                                        roomQuantity: hold?.roomQuantity ?? item.roomQuantity,
+                                        guestCount: String(item.category ?? "").toUpperCase() === "STAY"
+                                            ? undefined : Number(item.guestCount ?? 1),
+                                        selectedCateringDishes: item.selectedCateringDishes?.map(dish => ({
                                             dishId: dish.dishId ?? dish.id,
                                             menuItemId: dish.menuItemId,
                                             name: dish.name,
@@ -1865,6 +1903,7 @@ const BookingCheckout = () => {
                                             foodType: dish.foodType,
                                             custom: dish.custom
                                         }))
+                                    });
                                 });
 
 
@@ -1879,31 +1918,19 @@ const BookingCheckout = () => {
                              * =========================================
                              */
 
-                            serviceRequests.push({
-
-                                serviceId:
-                                    item.serviceId,
-
-                                slotId:
-                                    item.slotId,
-
-                                holdId:
-                                    item.holdId,
-
-                                packageId:
-                                    item.packageId,
-
-                                ...resolveBookingInterval(item),
-                                bookingType: item.bookingType || "STANDARD_SLOT",
-                                roomQuantity: item.roomQuantity,
-
-                                guestCount:
-                                    String(item.category ?? "").toUpperCase() === "STAY"
-                                        ? undefined
-                                        : Number(item.guestCount ?? 1),
-
-                                selectedCateringDishes:
-                                    item.selectedCateringDishes?.map(dish => ({
+                            const holds = getCartItemHolds(item);
+                            (holds.length ? holds : [undefined]).forEach(hold => {
+                                serviceRequests.push({
+                                    serviceId: item.serviceId,
+                                    slotId: item.slotId,
+                                    holdId: hold?.holdId,
+                                    packageId: item.packageId,
+                                    ...resolveBookingInterval(item),
+                                    bookingType: item.bookingType || "STANDARD_SLOT",
+                                    roomQuantity: hold?.roomQuantity ?? item.roomQuantity,
+                                    guestCount: String(item.category ?? "").toUpperCase() === "STAY"
+                                        ? undefined : Number(item.guestCount ?? 1),
+                                    selectedCateringDishes: item.selectedCateringDishes?.map(dish => ({
                                         dishId: dish.dishId ?? dish.id,
                                         menuItemId: dish.menuItemId,
                                         name: dish.name,
@@ -1911,6 +1938,7 @@ const BookingCheckout = () => {
                                         foodType: dish.foodType,
                                         custom: dish.custom
                                     }))
+                                });
                             });
 
                         }
@@ -2112,7 +2140,7 @@ const BookingCheckout = () => {
                                 return (
                                     item.slotId === expiredSlotId &&
                                     (!expiredEventDate || item.eventDate === expiredEventDate) &&
-                                    (!expiredHoldId || item.holdId === expiredHoldId)
+                                    (!expiredHoldId || item.holdId === expiredHoldId || item.holds?.some(hold => hold.holdId === expiredHoldId))
                                 );
                             }
 
@@ -2126,7 +2154,8 @@ const BookingCheckout = () => {
                                 bookingTo?: string;
                             };
 
-                            if (expiredHoldId && item.holdId && item.holdId !== expiredHoldId) {
+                            if (expiredHoldId && item.holdId && item.holdId !== expiredHoldId &&
+                                !item.holds?.some(hold => hold.holdId === expiredHoldId)) {
                                 return false;
                             }
 
@@ -2171,8 +2200,9 @@ const BookingCheckout = () => {
                             else {
 
                                 updatedCart =
-                                    await CartService.removeItem(
-                                        expiredItem.serviceId
+                                    await CartService.removeHold(
+                                        expiredItem.serviceId,
+                                        expiredHoldId
                                     );
 
                             }
@@ -2421,7 +2451,7 @@ const BookingCheckout = () => {
                                 return (
                                     item.slotId === expiredSlotId &&
                                     (!expiredEventDate || item.eventDate === expiredEventDate) &&
-                                    (!expiredHoldId || item.holdId === expiredHoldId)
+                                    (!expiredHoldId || item.holdId === expiredHoldId || item.holds?.some(hold => hold.holdId === expiredHoldId))
                                 );
                             }
 
@@ -2435,7 +2465,8 @@ const BookingCheckout = () => {
                                 bookingTo?: string;
                             };
 
-                            if (expiredHoldId && item.holdId && item.holdId !== expiredHoldId) {
+                            if (expiredHoldId && item.holdId && item.holdId !== expiredHoldId &&
+                                !item.holds?.some(hold => hold.holdId === expiredHoldId)) {
                                 return false;
                             }
 
@@ -2480,8 +2511,9 @@ const BookingCheckout = () => {
                         else {
 
                             updatedCart =
-                                await CartService.removeItem(
-                                    expiredItem.serviceId
+                                await CartService.removeHold(
+                                    expiredItem.serviceId,
+                                    expiredHoldId
                                 );
 
                         }
@@ -2676,7 +2708,7 @@ const BookingCheckout = () => {
 
                                                     const itemPricing =
                                                         cartItemPricing[
-                                                        item.serviceId
+                                                        getCartLineKey(item)
                                                         ];
 
 
@@ -2705,7 +2737,7 @@ const BookingCheckout = () => {
 
                                                         <div
                                                             key={
-                                                                item.serviceId
+                                                                getCartLineKey(item)
                                                             }
                                                             className="checkout-cart-item"
                                                         >
@@ -2769,6 +2801,12 @@ const BookingCheckout = () => {
 
                                                                 </div>
 
+
+                                                                {String(item.category ?? "").toUpperCase() === "STAY" && Number(item.roomQuantity ?? 1) >= 1 && (
+                                                                    <div className="checkout-service-category">
+                                                                        {`Quantity: ${Number(item.roomQuantity)} package combinations`}
+                                                                    </div>
+                                                                )}
 
                                                                 {/* EVENT DATE */}
 
@@ -3360,7 +3398,7 @@ const BookingCheckout = () => {
 
                                                     const itemPricing =
                                                         cartItemPricing[
-                                                        item.serviceId
+                                                        getCartLineKey(item)
                                                         ];
 
 
@@ -3384,7 +3422,7 @@ const BookingCheckout = () => {
                                                         <div
                                                             className="summary-row"
                                                             key={
-                                                                item.serviceId
+                                                                getCartLineKey(item)
                                                             }
                                                         >
 

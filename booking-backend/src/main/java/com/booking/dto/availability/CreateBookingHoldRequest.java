@@ -9,6 +9,7 @@ import lombok.Setter;
 import java.time.LocalDateTime;
 import java.util.List;
 import com.booking.model.embedded.BookingTimeInterval;
+import com.booking.model.embedded.ResourceTypeRequirement;
 
 @Getter
 @Setter
@@ -23,6 +24,9 @@ public class CreateBookingHoldRequest {
     private String packageId;
 
     private String resourceTypeId;
+
+    /** Optional explicit package composition; accepted only for STAY. */
+    private List<ResourceTypeRequirement> resourceRequirements;
 
     @NotNull
     private LocalDateTime bookingFrom;

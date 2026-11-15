@@ -752,19 +752,37 @@ public class BookingServiceImpl implements BookingService
 
             validatePackageSlot(vendorService, selectedPackage, item);
             if (vendorService.getCategory() == com.booking.model.enums.ServiceCategory.STAY) {
-                int rooms = item.getRoomQuantity() == null ? 1 : item.getRoomQuantity();
+                int combinations = item.getRoomQuantity() == null ? 1 : item.getRoomQuantity();
+                int roomsPerCombination = selectedPackage.getResourceRequirements() == null
+                        || selectedPackage.getResourceRequirements().isEmpty() ? 1
+                        : selectedPackage.getResourceRequirements().stream()
+                        .mapToInt(requirement -> requirement.getQuantity() == null ? 0 : requirement.getQuantity())
+                        .sum();
                 int guestsPerRoom = selectedPackage.getMaxGuestsPerRoom();
-                int maxGuests = rooms * guestsPerRoom;
+                int maxGuests = Math.multiplyExact(Math.multiplyExact(combinations, roomsPerCombination), guestsPerRoom);
                 if (item.getGuestCount() != null && item.getGuestCount() > maxGuests) {
                     throw new IllegalArgumentException(
-                            "Guest count exceeds the selected package capacity of " + maxGuests + " guests for " + rooms + " room(s).");
+                            "Guest count exceeds the selected package capacity of " + maxGuests + " guests across " + (combinations * roomsPerCombination) + " room(s).");
                 }
             }
 
-            BigDecimal serviceTotal =
-                    safe(
-                            pricingResult.getTotalAmount()
-                    );
+            BigDecimal serviceTotal = safe(pricingResult.getTotalAmount());
+            int stayPriceMultiplier = 1;
+            if (vendorService.getCategory() == com.booking.model.enums.ServiceCategory.STAY) {
+                int packageQuantity = item.getRoomQuantity() == null ? 1 : item.getRoomQuantity();
+                int stayNights = Math.max(1, (int) java.time.temporal.ChronoUnit.DAYS.between(
+                        item.getBookingFrom().toLocalDate(), item.getBookingTo().toLocalDate()));
+                boolean fixedDuration = selectedPackage != null
+                        && "FIXED_DURATION".equalsIgnoreCase(selectedPackage.getPackageType());
+                boolean durationPriced = selectedPackage != null
+                        && ("PER_NIGHT".equalsIgnoreCase(selectedPackage.getPricingBasis())
+                        || "PER_DAY".equalsIgnoreCase(selectedPackage.getPricingBasis()));
+                int durationMultiplier = !fixedDuration && durationPriced ? stayNights : 1;
+                stayPriceMultiplier = Math.multiplyExact(packageQuantity, durationMultiplier);
+                // The package price is for one complete room composition, per
+                // night where configured. Quantity means complete combinations.
+                serviceTotal = serviceTotal.multiply(BigDecimal.valueOf(stayPriceMultiplier));
+            }
 
 
             /*
@@ -877,6 +895,8 @@ public class BookingServiceImpl implements BookingService
                     booking.setResourceTypeId(hold.getResourceTypeId());
                     booking.setResourceIds(hold.getResourceIds() == null
                             ? new java.util.ArrayList<>() : new java.util.ArrayList<>(hold.getResourceIds()));
+                    booking.setResourceAllocations(hold.getResourceAllocations() == null
+                            ? new java.util.ArrayList<>() : new java.util.ArrayList<>(hold.getResourceAllocations()));
                     booking.setBookingIntervals(hold.getBookingIntervals() == null
                             ? new java.util.ArrayList<>()
                             : new java.util.ArrayList<>(hold.getBookingIntervals()));
@@ -956,11 +976,10 @@ public class BookingServiceImpl implements BookingService
             );
 
 
-            BookingPricingSnapshot pricingSnapshot =
-                    createPricingSnapshot(
-                            pricingResult
-                    );
-
+            BookingPricingSnapshot pricingSnapshot = createPricingSnapshot(pricingResult);
+            if (vendorService.getCategory() == com.booking.model.enums.ServiceCategory.STAY) {
+                scaleStayPricingSnapshot(pricingSnapshot, stayPriceMultiplier);
+            }
 
             Bundle bookingBundle =
                     bundleId == null
@@ -1862,6 +1881,24 @@ public class BookingServiceImpl implements BookingService
 
 
         return snapshot;
+    }
+
+    private void scaleStayPricingSnapshot(BookingPricingSnapshot snapshot, int quantity) {
+        if (snapshot == null || quantity <= 1) return;
+        BigDecimal multiplier = BigDecimal.valueOf(quantity);
+        snapshot.setBaseAmount(safe(snapshot.getBaseAmount()).multiply(multiplier));
+        snapshot.setSubtotal(safe(snapshot.getSubtotal()).multiply(multiplier));
+        snapshot.setDiscountAmount(safe(snapshot.getDiscountAmount()).multiply(multiplier));
+        snapshot.setAdvanceAmount(safe(snapshot.getAdvanceAmount()).multiply(multiplier));
+        snapshot.setBalanceAmount(safe(snapshot.getBalanceAmount()).multiply(multiplier));
+        if (snapshot.getPricingHeads() != null) {
+            snapshot.getPricingHeads().forEach(head -> head.setCalculatedAmount(
+                    safe(head.getCalculatedAmount()).multiply(multiplier)));
+        }
+        if (snapshot.getDiscounts() != null) {
+            snapshot.getDiscounts().forEach(discount -> discount.setCalculatedAmount(
+                    safe(discount.getCalculatedAmount()).multiply(multiplier)));
+        }
     }
 
     private BigDecimal safe(

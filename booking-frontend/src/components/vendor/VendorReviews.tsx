@@ -1,3 +1,4 @@
+import RatingStars from "../common/RatingStars";
 import "./VendorReviews.css";
 
 
@@ -52,7 +53,7 @@ const VendorReviews = () => {
 
           <div className="review-stars">
 
-            {"⭐".repeat(review.rating)}
+            <RatingStars value={review.rating} size="medium" />
 
           </div>
 

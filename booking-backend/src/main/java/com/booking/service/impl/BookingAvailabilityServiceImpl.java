@@ -10,6 +10,8 @@ import com.booking.model.VendorServicePricing;
 import com.booking.model.embedded.ServicePackage;
 import com.booking.model.embedded.ServiceResourceType;
 import com.booking.model.embedded.ServiceResourceUnit;
+import com.booking.model.embedded.ResourceAllocation;
+import com.booking.model.embedded.ResourceTypeRequirement;
 import com.booking.model.embedded.BookingTimeInterval;
 import com.booking.model.enums.ServiceCategory;
 import com.booking.model.enums.BookingHoldStatus;
@@ -259,8 +261,8 @@ public class BookingAvailabilityServiceImpl
                             + (included == null ? "its configured" : included) + " "
                             + (isStay ? "nights." : "days."));
                 }
-                if (selectedPackage.getResourceTypeId() == null || selectedPackage.getResourceTypeId().isBlank()) {
-                    throw new IllegalArgumentException("The selected fixed-duration package is not assigned to a resource type.");
+                if (isStay && effectiveRequirements(selectedPackage, request).isEmpty()) {
+                    throw new IllegalArgumentException("The selected fixed-duration package must include at least one resource type.");
                 }
             }
             int minDuration = selectedPackage.getMinimumDuration() == null ? 1 : selectedPackage.getMinimumDuration();
@@ -287,6 +289,32 @@ public class BookingAvailabilityServiceImpl
             if (slotResourceTypeId != null && !resourceTypeId.equals(slotResourceTypeId))
                 throw new IllegalArgumentException("Selected slot does not belong to the selected resource type.");
         }
+        List<ResourceTypeRequirement> resourceRequirements = isStay
+                ? effectiveRequirements(selectedPackage, request) : List.of();
+        if (!isStay && ((request.getResourceRequirements() != null && !request.getResourceRequirements().isEmpty())
+                || (selectedPackage != null && selectedPackage.getResourceRequirements() != null
+                && !selectedPackage.getResourceRequirements().isEmpty())
+                || (request.getResourceTypeId() != null && !request.getResourceTypeId().isBlank()))) {
+            // Resource allocation is a STAY-only concern. Ignore any stale or
+            // accidentally submitted STAY fields for other categories so their
+            // existing slot-capacity booking flow continues unchanged.
+            log.warn("Ignoring STAY-only resource allocation fields for non-STAY service. serviceId={} category={}",
+                    request.getServiceId(), service.getCategory());
+        }
+        if (isStay) {
+            if (resourceRequirements.isEmpty()) {
+                throw new IllegalArgumentException("The selected STAY package must include at least one resource type.");
+            }
+            java.util.Set<String> seenTypes = new java.util.HashSet<>();
+            for (ResourceTypeRequirement requirement : resourceRequirements) {
+                if (requirement.getResourceTypeId() == null || requirement.getResourceTypeId().isBlank()
+                        || requirement.getQuantity() == null || requirement.getQuantity() < 1
+                        || !seenTypes.add(requirement.getResourceTypeId())) {
+                    throw new IllegalArgumentException("Each STAY package resource type must be unique and have a quantity of at least one.");
+                }
+            }
+        }
+
         if (isStay && selectedPackage != null
                 && (selectedPackage.getSlotIds() == null || selectedPackage.getSlotIds().isEmpty())) {
             throw new IllegalArgumentException("The selected STAY package must be assigned to at least one booking slot.");
@@ -314,18 +342,31 @@ public class BookingAvailabilityServiceImpl
 
         LocalDateTime now = LocalDateTime.now();
         List<String> holdResourceAllocation = new java.util.ArrayList<>();
+        List<ResourceAllocation> holdAllocations = new java.util.ArrayList<>();
         if (slot != null) {
-            if (resourceTypeId == null || resourceTypeId.isBlank()) {
+            if (!isStay) {
                 validateSlotCapacityForInterval(request.getServiceId(), slot,
                         request.getBookingFrom(), request.getBookingTo(), quantity, now);
-            }
-            if (resourceTypeId != null && !resourceTypeId.isBlank()) {
-                List<String> allocated = allocateResourceUnits(request.getServiceId(), resourceTypeId,
-                        requestedIntervals, quantity, now);
-                if (allocated.size() < quantity) {
-                    throw new IllegalStateException("The selected resource type is no longer available for the requested time.");
+            } else {
+                validateStaySlotNotBlocked(request.getServiceId(), slot, requestedIntervals);
+                for (ResourceTypeRequirement requirement : resourceRequirements) {
+                    int requiredUnits = Math.multiplyExact(requirement.getQuantity(), roomQuantity);
+                    List<String> allocated = allocateResourceUnits(request.getServiceId(), requirement.getResourceTypeId(),
+                            requestedIntervals, requiredUnits, now);
+                    if (allocated.size() < requiredUnits) {
+                        throw new IllegalStateException("The selected package is no longer available: insufficient rooms for one or more included room types.");
+                    }
+                    ResourceAllocation allocation = new ResourceAllocation();
+                    allocation.setResourceTypeId(requirement.getResourceTypeId());
+                    allocation.setResourceIds(allocated);
+                    holdAllocations.add(allocation);
+                    holdResourceAllocation.addAll(allocated);
                 }
-                holdResourceAllocation = allocated;
+                if (holdAllocations.size() == 1) {
+                    resourceTypeId = holdAllocations.get(0).getResourceTypeId();
+                } else {
+                    resourceTypeId = null;
+                }
             }
         } else {
             throw new IllegalArgumentException("A valid booking slot is required.");
@@ -337,6 +378,7 @@ public class BookingAvailabilityServiceImpl
         hold.setPackageId(selectedPackage == null ? request.getPackageId() : selectedPackage.getId());
         hold.setResourceTypeId(resourceTypeId);
         hold.setResourceIds(holdResourceAllocation);
+        hold.setResourceAllocations(holdAllocations);
         hold.setBookingFrom(request.getBookingFrom());
         hold.setBookingTo(request.getBookingTo());
         hold.setBookingIntervals(new java.util.ArrayList<>(requestedIntervals));
@@ -360,11 +402,30 @@ public class BookingAvailabilityServiceImpl
                 .packageId(savedHold.getPackageId())
                 .resourceTypeId(savedHold.getResourceTypeId())
                 .resourceIds(savedHold.getResourceIds())
+                .resourceAllocations(savedHold.getResourceAllocations())
                 .bookingFrom(savedHold.getBookingFrom())
                 .bookingTo(savedHold.getBookingTo())
                 .quantity(savedHold.getQuantity())
                 .expiresAt(savedHold.getExpiresAt())
                 .build();
+    }
+
+    private List<ResourceTypeRequirement> effectiveRequirements(ServicePackage selectedPackage,
+                                                                CreateBookingHoldRequest request) {
+        if (request.getResourceRequirements() != null && !request.getResourceRequirements().isEmpty()) {
+            throw new IllegalArgumentException("Room composition is defined by the selected package and cannot be overridden during booking.");
+        }
+        if (selectedPackage != null && selectedPackage.getResourceRequirements() != null
+                && !selectedPackage.getResourceRequirements().isEmpty()) {
+            return new java.util.ArrayList<>(selectedPackage.getResourceRequirements());
+        }
+        String legacyTypeId = selectedPackage != null && selectedPackage.getResourceTypeId() != null
+                ? selectedPackage.getResourceTypeId() : request.getResourceTypeId();
+        if (legacyTypeId == null || legacyTypeId.isBlank()) return List.of();
+        ResourceTypeRequirement legacy = new ResourceTypeRequirement();
+        legacy.setResourceTypeId(legacyTypeId);
+        legacy.setQuantity(1);
+        return List.of(legacy);
     }
 
     private ServicePackage resolvePackageForHold(String serviceId, String packageId, LocalDate bookingDate) {
@@ -482,12 +543,14 @@ public class BookingAvailabilityServiceImpl
             LocalDateTime from = slotStart(date, slot);
             LocalDateTime to = slotEnd(date, slot);
             int free = countFreeResourceUnits(serviceId, capacityResourceTypeId, from, to, now);
+            boolean vendorBlocked = hasVendorBlock(serviceId, slot.getId(), date);
+            int availableUnits = vendorBlocked ? 0 : free;
             return SlotAvailabilityResponse.builder()
                     .slotId(slot.getId()).serviceId(serviceId).slotName(slot.getSlotName()).resourceTypeId(capacityResourceTypeId).bookingPattern(slot.getBookingPattern() == null ? "DAILY_RECURRING" : slot.getBookingPattern()).date(date)
                     .startTime(slot.getStartTime()).endTime(slot.getEndTime())
-                    .baseCapacity(free).effectiveCapacity(free).bookedCount(0)
-                    .remainingCapacity(free).available(free > 0)
-                    .vendorBlocked(free == 0 && hasVendorBlock(serviceId, slot.getId(), date))
+                    .baseCapacity(availableUnits).effectiveCapacity(availableUnits).bookedCount(0)
+                    .remainingCapacity(availableUnits).available(availableUnits > 0)
+                    .vendorBlocked(vendorBlocked)
                     .build();
         }
 
@@ -659,6 +722,20 @@ public class BookingAvailabilityServiceImpl
      * the requested interval. Intervals are half-open [from, to), so a booking
      * ending exactly when a slot begins does not consume that slot.
      */
+    private void validateStaySlotNotBlocked(String serviceId, BookingSlot slot,
+                                            List<BookingTimeInterval> intervals) {
+        for (BookingTimeInterval interval : intervals) {
+            LocalDate date = interval.getFrom().toLocalDate();
+            LocalDate endDate = interval.getTo().toLocalDate();
+            while (date.isBefore(endDate)) {
+                if (hasVendorBlock(serviceId, slot.getId(), date)) {
+                    throw new IllegalStateException("The selected booking slot is blocked by the vendor on " + date + ".");
+                }
+                date = date.plusDays(1);
+            }
+        }
+    }
+
     private List<String> allocateResourceUnits(String serviceId, String resourceTypeId,
                                                List<BookingTimeInterval> intervals,
                                                int quantity, LocalDateTime now) {
@@ -674,14 +751,24 @@ public class BookingAvailabilityServiceImpl
             if (unit.getId() == null || Boolean.FALSE.equals(unit.getActive())) continue;
             boolean booked = bookingRepository.findByServiceId(serviceId).stream()
                     .filter(this::countsAgainstAvailability)
-                    .filter(b -> resourceTypeId.equals(b.getResourceTypeId()))
+                    .filter(b -> resourceTypeId.equals(b.getResourceTypeId())
+                            || (b.getResourceAllocations() != null && b.getResourceAllocations().stream()
+                            .anyMatch(a -> resourceTypeId.equals(a.getResourceTypeId()))))
                     .filter(b -> overlapsAny(b.getBookingIntervals(), b.getBookingFrom(), b.getBookingTo(), intervals))
-                    .anyMatch(b -> b.getResourceIds() != null && b.getResourceIds().contains(unit.getId()));
+                    .anyMatch(b -> (resourceTypeId.equals(b.getResourceTypeId()) && b.getResourceIds() != null
+                            && b.getResourceIds().contains(unit.getId())) || (b.getResourceAllocations() != null
+                            && b.getResourceAllocations().stream().anyMatch(a -> resourceTypeId.equals(a.getResourceTypeId())
+                            && a.getResourceIds() != null && a.getResourceIds().contains(unit.getId()))));
             boolean held = bookingHoldRepository.findByServiceIdAndStatusAndExpiresAtAfter(
                             serviceId, BookingHoldStatus.ACTIVE, now).stream()
-                    .filter(h -> resourceTypeId.equals(h.getResourceTypeId()))
+                    .filter(h -> resourceTypeId.equals(h.getResourceTypeId())
+                            || (h.getResourceAllocations() != null && h.getResourceAllocations().stream()
+                            .anyMatch(a -> resourceTypeId.equals(a.getResourceTypeId()))))
                     .filter(h -> overlapsAny(h.getBookingIntervals(), h.getBookingFrom(), h.getBookingTo(), intervals))
-                    .anyMatch(h -> h.getResourceIds() != null && h.getResourceIds().contains(unit.getId()));
+                    .anyMatch(h -> (resourceTypeId.equals(h.getResourceTypeId()) && h.getResourceIds() != null
+                            && h.getResourceIds().contains(unit.getId())) || (h.getResourceAllocations() != null
+                            && h.getResourceAllocations().stream().anyMatch(a -> resourceTypeId.equals(a.getResourceTypeId())
+                            && a.getResourceIds() != null && a.getResourceIds().contains(unit.getId()))));
             if (!booked && !held) free.add(unit.getId());
             if (free.size() >= quantity) break;
         }
@@ -701,16 +788,26 @@ public class BookingAvailabilityServiceImpl
             if (unit.getId() == null || Boolean.FALSE.equals(unit.getActive())) continue;
             boolean booked = bookingRepository.findByServiceId(serviceId).stream()
                     .filter(this::countsAgainstAvailability)
-                    .filter(b -> resourceTypeId.equals(b.getResourceTypeId()))
+                    .filter(b -> resourceTypeId.equals(b.getResourceTypeId())
+                            || (b.getResourceAllocations() != null && b.getResourceAllocations().stream()
+                            .anyMatch(a -> resourceTypeId.equals(a.getResourceTypeId()))))
                     .filter(b -> overlapsAny(b.getBookingIntervals(), b.getBookingFrom(), b.getBookingTo(),
                             List.of(new BookingTimeInterval(from, to))))
-                    .anyMatch(b -> b.getResourceIds() != null && b.getResourceIds().contains(unit.getId()));
+                    .anyMatch(b -> (resourceTypeId.equals(b.getResourceTypeId()) && b.getResourceIds() != null
+                            && b.getResourceIds().contains(unit.getId())) || (b.getResourceAllocations() != null
+                            && b.getResourceAllocations().stream().anyMatch(a -> resourceTypeId.equals(a.getResourceTypeId())
+                            && a.getResourceIds() != null && a.getResourceIds().contains(unit.getId()))));
             boolean held = bookingHoldRepository.findByServiceIdAndStatusAndExpiresAtAfter(
                             serviceId, BookingHoldStatus.ACTIVE, now).stream()
-                    .filter(h -> resourceTypeId.equals(h.getResourceTypeId()))
+                    .filter(h -> resourceTypeId.equals(h.getResourceTypeId())
+                            || (h.getResourceAllocations() != null && h.getResourceAllocations().stream()
+                            .anyMatch(a -> resourceTypeId.equals(a.getResourceTypeId()))))
                     .filter(h -> overlapsAny(h.getBookingIntervals(), h.getBookingFrom(), h.getBookingTo(),
                             List.of(new BookingTimeInterval(from, to))))
-                    .anyMatch(h -> h.getResourceIds() != null && h.getResourceIds().contains(unit.getId()));
+                    .anyMatch(h -> (resourceTypeId.equals(h.getResourceTypeId()) && h.getResourceIds() != null
+                            && h.getResourceIds().contains(unit.getId())) || (h.getResourceAllocations() != null
+                            && h.getResourceAllocations().stream().anyMatch(a -> resourceTypeId.equals(a.getResourceTypeId())
+                            && a.getResourceIds() != null && a.getResourceIds().contains(unit.getId()))));
             if (!booked && !held) count++;
         }
         return count;

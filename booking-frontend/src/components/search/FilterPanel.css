@@ -1,289 +1,43 @@
-/* =========================================================
-   FILTER PANEL - DESKTOP
-   ========================================================= */
-
 .filter-panel {
     position: sticky;
-
     top: 100px;
-
+    align-self: start;
+    min-width: 0;
+    padding: 20px;
     background: #fff;
-
-    border: 1px solid #e5e5e5;
-
-    border-radius: 8px;
-
-    padding: 24px;
-
-    height: fit-content;
-
-    box-shadow:
-        0 2px 8px rgba(0, 0, 0, 0.05);
-
-    box-sizing: border-box;
+    border: 1px solid #e6ebf2;
+    border-radius: 16px;
+    box-shadow: 0 8px 26px rgba(15, 39, 68, .06);
 }
-
-
-/* =========================================================
-   MOBILE TOGGLE
-   Hidden on desktop
-   ========================================================= */
-
-.mobile-filter-toggle {
-    display: none;
+.filter-panel__heading { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; padding-bottom:15px; border-bottom:1px solid #edf1f5; }
+.filter-panel__heading h2 { margin:0; color:#173b59; font-size:20px; font-weight:750; }
+.filter-panel__heading p { margin:4px 0 0; color:#8290a2; font-size:12px; }
+.filter-panel__clear { border:0; background:transparent; color:#176092; font-size:12px; font-weight:700; cursor:pointer; padding:4px 0; }
+.filter-panel__groups { display:grid; gap:20px; padding-top:18px; }
+.filter-group h3 { margin:0 0 11px; color:#243b53; font-size:14px; font-weight:750; }
+.filter-option { display:flex; align-items:center; column-gap:12px; margin:0 0 10px; color:#596a7d; font-size:13px; line-height:1.35; cursor:pointer; }
+.filter-option:last-child { margin-bottom:0; }
+.filter-option input { width:16px; height:16px; margin:0 2px 0 0; accent-color:#155b8c; flex:0 0 auto; cursor:pointer; }
+.filter-empty { color:#8a96a5; font-size:12px; margin:0; }
+.filter-panel__footer,.filter-panel__mobile-top,.filter-mobile-trigger,.filter-backdrop { display:none; }
+@media (max-width: 1100px) and (min-width: 769px) {
+    .filter-panel { position:static; padding:16px; }
+    .filter-panel__groups { grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px; }
+    .filter-group--locations { max-height:150px; overflow:auto; }
 }
-
-
-/* =========================================================
-   FILTER CONTENT
-   ========================================================= */
-
-.filter-content h2 {
-    margin: 0 0 24px;
-
-    font-size: 1.4rem;
-
-    color: #222;
-
-    border-bottom: 1px solid #eee;
-
-    padding-bottom: 12px;
-}
-
-
-/* =========================================================
-   FILTER GROUP
-   ========================================================= */
-
-.filter-group {
-    margin-bottom: 24px;
-}
-
-.filter-group:last-child {
-    margin-bottom: 0;
-}
-
-
-.filter-group h4 {
-    margin: 0 0 12px;
-
-    font-size: 1rem;
-
-    color: #333;
-
-    font-weight: 600;
-}
-
-
-.filter-group label {
-    display: flex;
-
-    align-items: center;
-
-    gap: 10px;
-
-    margin-bottom: 10px;
-
-    font-size: 0.95rem;
-
-    color: #555;
-
-    cursor: pointer;
-}
-
-
-.filter-group input[type="checkbox"] {
-    width: 16px;
-
-    height: 16px;
-
-    flex-shrink: 0;
-
-    cursor: pointer;
-}
-
-
-/* =========================================================
-   MOBILE
-   ========================================================= */
-
 @media (max-width: 768px) {
-
-    .filter-panel {
-
-        position: static;
-
-        width: 100%;
-
-        margin: 0 0 18px;
-
-        padding: 0;
-
-        border-radius: 10px;
-
-        box-shadow:
-            0 2px 8px rgba(0, 0, 0, 0.05);
-
-        overflow: hidden;
-
-        box-sizing: border-box;
-    }
-
-
-    /* ============================
-       MOBILE FILTER HEADER
-    ============================ */
-
-    .mobile-filter-toggle {
-
-        display: flex;
-
-        align-items: center;
-
-        justify-content: space-between;
-
-        width: 100%;
-
-        min-height: 48px;
-
-        padding: 0 16px;
-
-        border: none;
-
-        background: #ffffff;
-
-        color: #222;
-
-        font-size: 17px;
-
-        font-weight: 700;
-
-        text-align: left;
-
-        cursor: pointer;
-    }
-
-
-    .mobile-filter-arrow {
-
-        font-size: 12px;
-
-        color: #64748b;
-    }
-
-
-    /* ============================
-       FILTER CONTENT CLOSED
-    ============================ */
-
-    .filter-content {
-
-        display: none;
-
-        padding: 0 16px 16px;
-    }
-
-
-    /* ============================
-       FILTER CONTENT OPEN
-    ============================ */
-
-    .filter-panel.mobile-filter-open
-    .filter-content {
-
-        display: block;
-
-        max-height: 48vh;
-
-        overflow-y: auto;
-
-        border-top: 1px solid #eee;
-    }
-
-
-    /* Hide duplicate desktop heading */
-
-    .filter-content h2 {
-
-        display: none;
-    }
-
-
-    .filter-group {
-
-        margin-bottom: 16px;
-    }
-
-
-    .filter-group:last-child {
-
-        margin-bottom: 0;
-    }
-
-
-    .filter-group h4 {
-
-        margin: 14px 0 8px;
-
-        font-size: 15px;
-    }
-
-
-    .filter-group label {
-
-        gap: 8px;
-
-        margin-bottom: 8px;
-
-        font-size: 13px;
-
-        line-height: 1.3;
-    }
-
-
-    .filter-group input[type="checkbox"] {
-
-        width: 17px;
-
-        height: 17px;
-    }
-
-}
-
-
-/* =========================================================
-   SMALL MOBILE
-   ========================================================= */
-
-@media (max-width: 480px) {
-
-    .mobile-filter-toggle {
-
-        min-height: 44px;
-
-        padding: 0 14px;
-
-        font-size: 16px;
-    }
-
-
-    .filter-content {
-
-        padding: 0 14px 14px;
-    }
-
-
-    .filter-group h4 {
-
-        font-size: 14px;
-    }
-
-
-    .filter-group label {
-
-        font-size: 12px;
-
-        margin-bottom: 7px;
-    }
-
+    .filter-mobile-trigger { display:flex; align-items:center; justify-content:center; gap:8px; width:100%; min-height:42px; margin:0 0 14px; border:1px solid #dbe5ef; border-radius:11px; background:#fff; color:#174b70; font-weight:700; box-shadow:0 4px 12px rgba(15,39,68,.05); cursor:pointer; }
+    .filter-mobile-count { display:inline-flex; align-items:center; justify-content:center; min-width:20px; height:20px; padding:0 5px; border-radius:20px; background:#155b8c; color:#fff; font-size:11px; }
+    .filter-backdrop { display:block; position:fixed; inset:0; z-index:1000; border:0; background:rgba(11,27,43,.42); }
+    .filter-panel { position:fixed; z-index:1001; top:0; right:0; bottom:0; width:min(360px,88vw); max-width:100%; padding:0; border:0; border-radius:18px 0 0 18px; box-shadow:-12px 0 35px rgba(10,25,41,.18); transform:translateX(105%); transition:transform .24s ease; overflow-y:auto; }
+    .filter-panel.filter-panel--open { transform:translateX(0); }
+    .filter-panel__mobile-top { display:flex; align-items:center; justify-content:space-between; padding:18px 18px 14px; border-bottom:1px solid #edf1f5; color:#173b59; font-size:17px; font-weight:750; }
+    .filter-panel__mobile-top button { width:32px; height:32px; border:0; border-radius:50%; background:#f0f4f8; color:#34495e; font-size:24px; line-height:1; cursor:pointer; }
+    .filter-panel__heading { padding:17px 18px 14px; }
+    .filter-panel__groups { display:grid; grid-template-columns:1fr; gap:0; padding:0 18px 18px; }
+    .filter-group { padding:17px 0; border-bottom:1px solid #edf1f5; }
+    .filter-group--locations { max-height:210px; overflow-y:auto; }
+    .filter-option { min-height:28px; font-size:14px; }
+    .filter-panel__footer { display:block; position:sticky; bottom:0; padding:14px 18px calc(14px + env(safe-area-inset-bottom)); background:#fff; border-top:1px solid #edf1f5; }
+    .filter-panel__apply { width:100%; min-height:44px; border:0; border-radius:10px; background:#155b8c; color:#fff; font-weight:750; cursor:pointer; }
 }

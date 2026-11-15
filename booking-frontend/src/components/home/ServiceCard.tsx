@@ -6,6 +6,7 @@ import type {
     VendorListing
 } from "../../types/VendorListing";
 
+import RatingStars from "../common/RatingStars";
 import "./ServiceCard.css";
 
 
@@ -75,7 +76,7 @@ const ServiceCard = ({
 
                         <p className="service-rating">
 
-                            ⭐ {rating.toFixed(1)}
+                            <RatingStars value={rating} size="small" /> {rating.toFixed(1)}
 
                             {
                                 reviewCount !== undefined && (
