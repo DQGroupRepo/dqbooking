@@ -1,3 +1,4 @@
+import NumericInput from "../../common/ui/NumericInput";
 import type {
     CancellationPolicy,
     RefundRule
@@ -120,9 +121,9 @@ export default function CancellationPolicySection({
 
                     Processing Days
 
-                    <input
+                    <NumericInput
 
-                        type="number"
+
 
                         min={1}
 
@@ -218,9 +219,9 @@ export default function CancellationPolicySection({
 
                                     From Days
 
-                                    <input
+                                    <NumericInput
 
-                                        type="number"
+
 
                                         value={rule.minDaysBeforeEvent}
 
@@ -246,9 +247,9 @@ export default function CancellationPolicySection({
 
                                     To Days
 
-                                    <input
+                                    <NumericInput
 
-                                        type="number"
+
 
                                         value={rule.maxDaysBeforeEvent ?? ""}
 
@@ -278,9 +279,9 @@ export default function CancellationPolicySection({
 
                                     Refund %
 
-                                    <input
+                                    <NumericInput
 
-                                        type="number"
+
 
                                         min={0}
 

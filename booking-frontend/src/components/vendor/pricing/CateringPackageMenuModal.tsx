@@ -1,3 +1,4 @@
+import NumericInput from "../../common/ui/NumericInput";
 
 import { useEffect, useState } from "react";
 import type { CateringPackageDish, CateringPackageMenu } from "../../../types/CateringPackageMenu";
@@ -146,12 +147,12 @@ export default function CateringPackageMenuModal({
                 )
                 : [...current, dish];
 
-            const limit = previous[section.limitKey];
-
+            // Keep the configured customer limit while the vendor is selecting
+            // package dishes. The save action validates that enough dishes have
+            // been included to satisfy this limit.
             return {
                 ...previous,
                 [section.key]: updated,
-                [section.limitKey]: Math.min(limit, updated.length),
             };
         });
     };
@@ -161,15 +162,17 @@ export default function CateringPackageMenuModal({
         value: string
     ) => {
         const limit = value === "" ? 0 : Number(value);
-        const selectedCount = menu[section.key].length;
+        const availableCount = menuItems.filter(
+            item => item.active && section.matches(item)
+        ).length;
 
         if (
             !Number.isInteger(limit) ||
             limit < 0 ||
-            limit > selectedCount
+            limit > availableCount
         ) {
             setError(
-                `The ${section.title} selection limit must be between 0 and ${selectedCount}.`
+                `The ${section.title} selection limit must be between 0 and ${availableCount}.`
             );
             return;
         }
@@ -188,7 +191,7 @@ export default function CateringPackageMenuModal({
 
             if (limit < 0 || limit > selected.length) {
                 setError(
-                    `${section.title}: the selection limit cannot exceed the number of selected dishes.`
+                    `${section.title}: you set a customer limit of ${limit}, but selected only ${selected.length} package dish(es). Select at least ${limit} dish(es), or reduce the customer limit.`
                 );
                 return;
             }
@@ -258,11 +261,11 @@ export default function CateringPackageMenuModal({
                                     </div>
 
                                     <label className="catering-limit-field">
-                                        Customer can select
-                                        <input
-                                            type="number"
+                                        Customer can select up to
+                                        <NumericInput
+
                                             min={0}
-                                            max={selected.length}
+                                            max={available.length}
                                             value={menu[section.limitKey]}
                                             onChange={event =>
                                                 updateLimit(

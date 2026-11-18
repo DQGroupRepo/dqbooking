@@ -184,7 +184,8 @@
 
     gap: 20px;
 
-    margin-left: 28px;
+    /* Keep notifications and vendor profile anchored to the far right. */
+    margin-left: auto;
 
 }
 
@@ -280,6 +281,8 @@
 .vendor-topbar .profile-box {
 
     display: flex;
+    justify-content: flex-start;
+    text-align: left;
 
     align-items: center;
 
@@ -351,14 +354,13 @@
 .vendor-topbar .profile-details {
 
     display: flex;
-
+    flex: 0 1 160px;
     flex-direction: column;
-
     align-items: flex-start;
-
-    min-width: 120px;
-
+    justify-content: center;
+    min-width: 0;
     max-width: 160px;
+    text-align: left;
 
 }
 

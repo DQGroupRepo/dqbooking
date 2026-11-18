@@ -30,3 +30,14 @@
         box-sizing: border-box;
     }
 }
+
+
+/* Keep breathing room between the availability summary and the date picker. */
+.calendar-panel {
+    margin-top: 18px;
+}
+@media (max-width: 600px) {
+    .calendar-panel {
+        margin-top: 14px;
+    }
+}

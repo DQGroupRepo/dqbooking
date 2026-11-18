@@ -18,6 +18,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 
 import BookingSlotService from "../../services/BookingSlotService";
+import VendorServiceService from "../../services/VendorServiceService";
 
 import type { BookingSlot } from "../../types/BookingSlot";
 
@@ -37,6 +38,9 @@ export default function ManageAvailability() {
 
     const [loading, setLoading] =
         useState(true);
+
+    const [isStayService, setIsStayService] =
+        useState(false);
 
     const [showModal, setShowModal] =
         useState(false);
@@ -115,6 +119,11 @@ export default function ManageAvailability() {
 
         try {
 
+            const service = await VendorServiceService.getServiceById(serviceId);
+            setIsStayService(
+                ["stay", "stays"].includes(String(service.category ?? "").toLowerCase().trim())
+            );
+
             const response =
                 await BookingSlotService.getSlots(serviceId);
 
@@ -161,7 +170,7 @@ export default function ManageAvailability() {
             <AvailabilitySummary
                 selectedDate={selectedDate}
                 totalSlots={slots.length}
-                blockedSlots={0}
+                blockedSlots={overrides.filter(o => Boolean(o.blocked)).length}
                 availableCapacity={
 
                     slots
@@ -179,6 +188,7 @@ export default function ManageAvailability() {
                         )
 
                 }
+                isStayService={isStayService}
             />
 
             <div className="availability-layout">
@@ -201,6 +211,7 @@ export default function ManageAvailability() {
                         slots={slots}
                         overrides={overrides}
                         onManage={handleManage}
+                        isStayService={isStayService}
                     />
 
                 </div>
@@ -218,6 +229,7 @@ export default function ManageAvailability() {
                         selectedDate={selectedDate}
                         slot={selectedSlot}
                         override={selectedOverride}
+                        isStayService={isStayService}
                     />
 
                 )

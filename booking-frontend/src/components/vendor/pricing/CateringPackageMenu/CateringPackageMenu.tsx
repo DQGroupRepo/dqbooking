@@ -1,3 +1,4 @@
+import NumericInput from "../../../common/ui/NumericInput";
 import { useMemo, useState } from "react";
 import type { CateringMenuItem } from "../../../../types/CateringMenuItem";
 import type {
@@ -156,8 +157,8 @@ export default function CateringPackageMenu({
                             <div className="catering-package-menu-limit">
                                 <label>
                                     Customer can select up to
-                                    <input
-                                        type="number"
+                                    <NumericInput
+
                                         min="0"
                                         max={items.length}
                                         value={limitFor(section)}

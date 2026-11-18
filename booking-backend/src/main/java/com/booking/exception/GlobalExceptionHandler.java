@@ -297,6 +297,11 @@ public class GlobalExceptionHandler {
         );
 
         response.put(
+                "holdId",
+                ex.getHoldId()
+        );
+
+        response.put(
                 "timestamp",
                 LocalDateTime.now()
         );

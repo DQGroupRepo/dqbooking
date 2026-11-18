@@ -21,4 +21,8 @@ public class BundleCalculationItemRequest {
     private LocalDateTime bookingTo;
 
     private String packageId;
+
+    private Integer guestCount;
+
+    private Integer roomQuantity;
 }

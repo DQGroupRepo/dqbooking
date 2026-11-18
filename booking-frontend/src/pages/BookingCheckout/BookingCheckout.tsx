@@ -7,6 +7,7 @@ import toast from "react-hot-toast";
 import api from "../../api/axiosConfig";
 
 import CartService from "../../services/CartService";
+import BookingAvailabilityService from "../../services/BookingAvailabilityService";
 
 import type { CartItem } from "../../types/CartItem";
 
@@ -279,6 +280,9 @@ const getCartItemHolds = (item: CartItem) => {
 };
 
 const getCartPricingMultiplier = (item: CartItem): number => {
+    // Catering guest multiplication is performed by the pricing API using
+    // guestCount; do not multiply the returned result a second time here.
+    if (String(item.category ?? "").toUpperCase() === "CATERING") return 1;
     const quantity = Math.max(1, Number(item.roomQuantity ?? item.quantity ?? 1));
     if (item.packageType === "FIXED_DURATION") return quantity;
 
@@ -346,6 +350,55 @@ function resolveBookingInterval(item: {
         bookingTo: localDateTime(overnight ? addCalendarDay(item.eventDate) : item.eventDate, item.slotEndTime)
     };
 }
+
+async function renewExpiredCartHold(item: CartItem, expiredHoldId?: string): Promise<CartItem[]> {
+    const interval = resolveBookingInterval(item);
+    const oldHoldId = expiredHoldId || item.holdId || item.holds?.[0]?.holdId;
+    const expiredHold = (item.holds ?? []).find(hold => hold.holdId === oldHoldId);
+    const quantity = Math.max(1, Number(expiredHold?.quantity ?? expiredHold?.roomQuantity ?? item.quantity ?? item.roomQuantity ?? 1));
+    const roomQuantity = Math.max(1, Number(expiredHold?.roomQuantity ?? item.roomQuantity ?? quantity));
+    const renewed = await BookingAvailabilityService.holdSlot({
+        cartId: CartService.getOrCreateCartId(),
+        serviceId: item.serviceId,
+        slotId: item.slotId,
+        packageId: item.packageId,
+        // Package composition is authoritative on the server. Do not resend
+        // resourceRequirements here, especially for STAY packages.
+        bookingFrom: interval.bookingFrom,
+        bookingTo: interval.bookingTo,
+        bookingIntervals: item.bookingIntervals,
+        bookingType: item.bookingType || "STANDARD_SLOT",
+        roomQuantity,
+        quantity
+    });
+
+    const cart = CartService.getCart();
+    const updated = cart.map(cartItem => {
+        if (cartItem.serviceId !== item.serviceId || cartItem.slotId !== item.slotId ||
+            cartItem.packageId !== item.packageId ||
+            (cartItem.bookingFrom ?? cartItem.eventDate ?? "") !== (item.bookingFrom ?? item.eventDate ?? "") ||
+            (cartItem.bookingTo ?? cartItem.eventDate ?? "") !== (item.bookingTo ?? item.eventDate ?? "")) return cartItem;
+
+        const existingHolds = cartItem.holds?.length ? [...cartItem.holds] :
+            cartItem.holdId ? [{ holdId: cartItem.holdId, roomQuantity: cartItem.roomQuantity, quantity: cartItem.quantity, expiresAt: cartItem.holdExpiresAt, price: cartItem.price }] : [];
+        const targetIndex = oldHoldId ? existingHolds.findIndex(hold => hold.holdId === oldHoldId) : 0;
+        const newHold = { holdId: renewed.holdId, roomQuantity, quantity, expiresAt: renewed.expiresAt, price: cartItem.price };
+        if (targetIndex >= 0 && existingHolds.length) existingHolds[targetIndex] = newHold;
+        else existingHolds.push(newHold);
+        return {
+            ...cartItem,
+            holds: existingHolds,
+            holdId: existingHolds[0]?.holdId ?? renewed.holdId,
+            holdExpiresAt: existingHolds.reduce<string | undefined>((earliest, hold) => {
+                if (!hold.expiresAt) return earliest;
+                return !earliest || Date.parse(hold.expiresAt) < Date.parse(earliest) ? hold.expiresAt : earliest;
+            }, undefined)
+        };
+    });
+    CartService.saveCart(updated);
+    return updated;
+}
+
 
 const BookingCheckout = () => {
 
@@ -436,7 +489,7 @@ const BookingCheckout = () => {
         paymentPreference,
         setPaymentPreference
     ] = useState(
-        "PAY_AFTER_CONFIRMATION"
+        "PAY_BY_CASH"
     );
 
 
@@ -569,6 +622,15 @@ const BookingCheckout = () => {
         ]);
 
 
+    const cartPricingTotal = useMemo(() => cart.reduce((total, item) => {
+        const pricing = cartItemPricing[getCartLineKey(item)];
+        const isCompletedBundle = !!item.bundleId && CartService.isBundleComplete(item.bundleId);
+        const amount = isCompletedBundle
+            ? (pricing?.subtotal ?? item.price)
+            : (pricing?.totalAmount ?? pricing?.subtotal ?? item.price);
+        return total + Number(amount);
+    }, 0), [cart, cartItemPricing]);
+
     /*
      * =========================================
      * LOCAL BUNDLE DISCOUNT CALCULATION
@@ -660,19 +722,8 @@ const BookingCheckout = () => {
                                 item
                             ) => {
 
-                                const pricing =
-                                    cartItemPricing[
-                                    getCartLineKey(item)
-                                    ];
-
-
-                                return (
-                                    total +
-                                    Number(
-                                        pricing?.subtotal ??
-                                        item.price
-                                    )
-                                );
+                                const pricing = cartItemPricing[getCartLineKey(item)];
+                                return total + Number(pricing?.subtotal ?? item.packagePrice ?? item.price);
 
                             },
                             0
@@ -767,17 +818,7 @@ const BookingCheckout = () => {
                     bundleItems.forEach(
                         item => {
 
-                            const itemPricing =
-                                cartItemPricing[
-                                getCartLineKey(item)
-                                ];
-
-
-                            const itemPrice =
-                                Number(
-                                    itemPricing?.subtotal ??
-                                    item.price
-                                );
+                            const itemPrice = Number(cartItemPricing[getCartLineKey(item)]?.subtotal ?? item.packagePrice ?? item.price);
 
 
                             if (
@@ -785,7 +826,7 @@ const BookingCheckout = () => {
                             ) {
 
                                 discountMap.set(
-                                    item.serviceId,
+                                    getCartLineKey(item),
                                     0
                                 );
 
@@ -805,7 +846,7 @@ const BookingCheckout = () => {
 
 
                             discountMap.set(
-                                item.serviceId,
+                                getCartLineKey(item),
                                 itemDiscount
                             );
 
@@ -861,19 +902,16 @@ const BookingCheckout = () => {
      * =========================================
      */
 
+    // Includes normal service discounts plus any separately qualifying bundle discount.
+    const localTotalDiscount = Math.max(
+        0,
+        cartSubtotal - cartPricingTotal + localTotalBundleDiscount
+    );
+
     const localBundleFinalTotal =
         useMemo(() => {
-
-            return Math.max(
-                0,
-                cartSubtotal -
-                localTotalBundleDiscount
-            );
-
-        }, [
-            cartSubtotal,
-            localTotalBundleDiscount
-        ]);
+            return Math.max(0, cartPricingTotal - localTotalBundleDiscount);
+        }, [cartPricingTotal, localTotalBundleDiscount]);
 
 
     /*
@@ -1237,7 +1275,10 @@ const BookingCheckout = () => {
                                                                         item.serviceId,
 
                                                                     packageId:
-                                                                        item.packageId
+                                                                        item.packageId,
+                                                                    ...resolveBookingInterval(item),
+                                                                    guestCount: item.guestCount,
+                                                                    roomQuantity: item.roomQuantity ?? item.quantity ?? 1
 
                                                                 })
                                                             )
@@ -1485,7 +1526,9 @@ const BookingCheckout = () => {
 
                                                         packageId:
                                                             item.packageId ||
-                                                            undefined
+                                                            undefined,
+                                                        guestCount: String(item.category ?? "").toUpperCase() === "CATERING"
+                                                            ? Math.max(1, Number(item.guestCount ?? 1)) : undefined
 
                                                     }
                                                 }
@@ -2179,66 +2222,23 @@ const BookingCheckout = () => {
                         });
 
                         if (expiredItem) {
+                            const shouldContinue = window.confirm(
+                                "Your selected time slot has expired. Would you like us to check availability and refresh your booking hold?"
+                            );
 
-                            let updatedCart: CartItem[];
-
-                            /*
-                             * Preserve the existing bundle
-                             * behavior.
-                             */
-                            if (
-                                expiredItem.bundleId
-                            ) {
-
-                                updatedCart =
-                                    await CartService.removeItemFromBundle(
-                                        expiredItem.serviceId,
-                                        expiredItem.bundleId
-                                    );
-
+                            if (shouldContinue) {
+                                try {
+                                    const updatedCart = await renewExpiredCartHold(expiredItem, expiredHoldId);
+                                    setCurrentCart(updatedCart);
+                                    toast.success("Availability confirmed and your booking hold has been refreshed. You can continue checkout.");
+                                } catch (renewError: any) {
+                                    console.error("Failed to refresh expired booking hold:", renewError?.response?.data ?? renewError);
+                                    toast.error(renewError?.response?.data?.message || "This slot is no longer available. Please return to the service and select another slot.");
+                                }
+                            } else {
+                                toast("Your cart was left unchanged. You can return and choose another slot when ready.");
                             }
-                            else {
-
-                                updatedCart =
-                                    await CartService.removeHold(
-                                        expiredItem.serviceId,
-                                        expiredHoldId
-                                    );
-
-                            }
-
-                            setCurrentCart(
-                                updatedCart
-                            );
-
-                            toast.error(
-                                "Your selected time slot has expired. " +
-                                "That item was removed from your cart. " +
-                                "Please select the slot again."
-                            );
-
                         }
-                        else {
-
-                            /*
-                             * Defensive fallback.
-                             *
-                             * We received an expired hold from
-                             * the backend but could not match it
-                             * to the current local cart.
-                             */
-                            console.warn(
-                                "Expired hold could not be matched to cart item.",
-                                responseData
-                            );
-
-                            toast.error(
-                                "Your selected time slot has expired. " +
-                                "Please return to the cart and select the slot again."
-                            );
-
-                        }
-
                     }
                     else {
 
@@ -2490,66 +2490,23 @@ const BookingCheckout = () => {
                         });
 
                     if (expiredItem) {
+                        const shouldContinue = window.confirm(
+                            "Your selected time slot has expired. Would you like us to check availability and refresh your booking hold?"
+                        );
 
-                        let updatedCart: CartItem[];
-
-                        /*
-                         * Preserve the existing bundle
-                         * behavior.
-                         */
-                        if (
-                            expiredItem.bundleId
-                        ) {
-
-                            updatedCart =
-                                await CartService.removeItemFromBundle(
-                                    expiredItem.serviceId,
-                                    expiredItem.bundleId
-                                );
-
+                        if (shouldContinue) {
+                            try {
+                                const updatedCart = await renewExpiredCartHold(expiredItem, expiredHoldId);
+                                setCurrentCart(updatedCart);
+                                toast.success("Availability confirmed and your booking hold has been refreshed. You can continue checkout.");
+                            } catch (renewError: any) {
+                                console.error("Failed to refresh expired booking hold:", renewError?.response?.data ?? renewError);
+                                toast.error(renewError?.response?.data?.message || "This slot is no longer available. Please return to the service and select another slot.");
+                            }
+                        } else {
+                            toast("Your cart was left unchanged. You can return and choose another slot when ready.");
                         }
-                        else {
-
-                            updatedCart =
-                                await CartService.removeHold(
-                                    expiredItem.serviceId,
-                                    expiredHoldId
-                                );
-
-                        }
-
-                        setCurrentCart(
-                            updatedCart
-                        );
-
-                        toast.error(
-                            "Your selected time slot has expired. " +
-                            "That item was removed from your cart. " +
-                            "Please select the slot again."
-                        );
-
                     }
-                    else {
-
-                        /*
-                         * Defensive fallback.
-                         *
-                         * We received an expired hold from
-                         * the backend but could not match it
-                         * to the current local cart.
-                         */
-                        console.warn(
-                            "Expired hold could not be matched to cart item.",
-                            responseData
-                        );
-
-                        toast.error(
-                            "Your selected time slot has expired. " +
-                            "Please return to the cart and select the slot again."
-                        );
-
-                    }
-
                 }
                 else {
 
@@ -2627,12 +2584,12 @@ const BookingCheckout = () => {
 
     const bundleDiscount =
         bundlePricing?.totalDiscount ??
-        0;
+        localTotalBundleDiscount;
 
 
     const bundleFinalTotal =
         bundlePricing?.finalTotal ??
-        cartSubtotal;
+        localBundleFinalTotal;
 
 
     /*
@@ -2698,14 +2655,6 @@ const BookingCheckout = () => {
                                             displayCart.map(
                                                 item => {
 
-                                                    const bundleItem =
-                                                        bundlePricing?.items?.find(
-                                                            bundle =>
-                                                                bundle.serviceId ===
-                                                                item.serviceId
-                                                        );
-
-
                                                     const itemPricing =
                                                         cartItemPricing[
                                                         getCartLineKey(item)
@@ -2713,24 +2662,18 @@ const BookingCheckout = () => {
 
 
                                                     const originalAmount =
-                                                        bundleItem?.originalAmount ??
-                                                        itemPricing?.subtotal ??
-                                                        Number(
-                                                            item.price
-                                                        );
+                                                        Number(itemPricing?.subtotal ?? item.price);
 
 
-                                                    const finalAmount =
-                                                        bundleItem?.finalAmount ??
-                                                        itemPricing?.totalAmount ??
-                                                        Number(
-                                                            item.price
-                                                        );
-
-
-                                                    const discountAmount =
-                                                        bundleItem?.discountAmount ??
-                                                        0;
+                                                    const lineBundleDiscount = localBundleDiscounts.get(getCartLineKey(item)) ?? 0;
+                                                    const isCompletedBundleItem = !!item.bundleId && CartService.isBundleComplete(item.bundleId);
+                                                    const amountBeforeDiscount = isCompletedBundleItem
+                                                        ? originalAmount
+                                                        : Number(itemPricing?.totalAmount ?? itemPricing?.subtotal ?? item.price);
+                                                    const finalAmount = Math.max(0, amountBeforeDiscount - lineBundleDiscount);
+                                                    const discountAmount = isCompletedBundleItem
+                                                        ? lineBundleDiscount
+                                                        : Number(itemPricing?.discountAmount ?? 0) + lineBundleDiscount;
 
 
                                                     return (
@@ -2902,7 +2845,7 @@ const BookingCheckout = () => {
                                                                             <span className="service-bundle-discount">
 
                                                                                 <strong>
-                                                                                    Bundle Discount:
+                                                                                    Discount:
                                                                                 </strong>{" "}
 
                                                                                 -
@@ -2991,7 +2934,7 @@ const BookingCheckout = () => {
                                                                         {/* NORMAL DISCOUNTS */}
 
                                                                         {
-                                                                            itemPricing.discounts.map(
+                                                                            (isCompletedBundleItem ? [] : itemPricing.discounts).map(
                                                                                 (
                                                                                     discount,
                                                                                     index
@@ -3027,20 +2970,25 @@ const BookingCheckout = () => {
                                                                         }
 
 
+                                                                        {isCompletedBundleItem && lineBundleDiscount > 0 && (
+                                                                            <div className="checkout-pricing-row discount-row">
+                                                                                <span>Bundle Discount</span>
+                                                                                <strong>-{formatCurrency(lineBundleDiscount)}</strong>
+                                                                            </div>
+                                                                        )}
+
                                                                         {/* SUBTOTAL */}
 
                                                                         <div className="checkout-pricing-row">
 
                                                                             <span>
-                                                                                Subtotal
+                                                                                Total after discounts
                                                                             </span>
 
 
                                                                             <strong>
                                                                                 {
-                                                                                    formatCurrency(
-                                                                                        itemPricing.subtotal
-                                                                                    )
+                                                                                    formatCurrency(finalAmount)
                                                                                 }
                                                                             </strong>
 
@@ -3294,10 +3242,10 @@ const BookingCheckout = () => {
                                 <input
                                     type="radio"
                                     name="payment"
-                                    value="PAY_AFTER_CONFIRMATION"
+                                    value="PAY_BY_CASH"
                                     checked={
                                         paymentPreference ===
-                                        "PAY_AFTER_CONFIRMATION"
+                                        "PAY_BY_CASH"
                                     }
                                     onChange={(e) =>
                                         setPaymentPreference(
@@ -3306,7 +3254,7 @@ const BookingCheckout = () => {
                                     }
                                 />
 
-                                Pay After Vendor Confirmation
+                                Pay by Cash
 
                             </label>
 
@@ -3390,10 +3338,7 @@ const BookingCheckout = () => {
                                                 item => {
 
                                                     const itemDiscount =
-                                                        localBundleDiscounts.get(
-                                                            item.serviceId
-                                                        ) ??
-                                                        0;
+                                                        localBundleDiscounts.get(getCartLineKey(item)) ?? 0;
 
 
                                                     const itemPricing =
@@ -3412,8 +3357,7 @@ const BookingCheckout = () => {
                                                     const itemFinalPrice =
                                                         Math.max(
                                                             0,
-                                                            itemOriginalPrice -
-                                                            itemDiscount
+                                                            Number(itemPricing?.totalAmount ?? itemOriginalPrice) - itemDiscount
                                                         );
 
 
@@ -3476,16 +3420,16 @@ const BookingCheckout = () => {
 
 
                                         {/* =================================
-                                            BUNDLE DISCOUNT
+                                            DISCOUNTS
                                         ================================= */}
 
                                         {
-                                            localTotalBundleDiscount > 0 && (
+                                            localTotalDiscount > 0 && (
 
                                                 <div className="summary-row discount-row">
 
                                                     <span>
-                                                        Bundle Discount
+                                                        Discount
                                                     </span>
 
 
@@ -3493,7 +3437,7 @@ const BookingCheckout = () => {
                                                         -
                                                         {
                                                             formatCurrency(
-                                                                localTotalBundleDiscount
+                                                                localTotalDiscount
                                                             )
                                                         }
                                                     </strong>
@@ -3530,12 +3474,11 @@ const BookingCheckout = () => {
 
 
                                         {
-                                            localTotalBundleDiscount <= 0 && (
+                                            localTotalDiscount <= 0 && (
 
                                                 <p className="payment-message">
 
-                                                    No bundle discount applies
-                                                    to the selected services.
+                                                    Individual service discounts are already included in the displayed totals.
 
                                                 </p>
 

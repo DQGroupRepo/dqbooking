@@ -67,6 +67,14 @@ public class BookingResponse extends BaseEntity {
 
     private String slotEndTime;
 
+    private Integer roomQuantity;
+
+    private String resourceTypeName;
+
+    private java.util.List<String> resourceIds;
+
+    private java.util.List<String> resourceNames;
+
     private Integer guestCount;
 
     private BookingStatus status;

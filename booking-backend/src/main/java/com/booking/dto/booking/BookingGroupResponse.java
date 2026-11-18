@@ -22,6 +22,10 @@ public class BookingGroupResponse {
 
     private BigDecimal totalDiscount;
 
+    private BigDecimal individualDiscount;
+
+    private BigDecimal bundleDiscount;
+
     private BigDecimal finalTotal;
 
     private boolean bundleApplied;

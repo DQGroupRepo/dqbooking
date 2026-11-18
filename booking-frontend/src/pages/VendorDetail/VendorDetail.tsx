@@ -18,6 +18,7 @@ import VendorServiceDetails
 import VendorDetailService from "../../services/VendorDetailService";
 import BundleService from "../../services/BundleService";
 import type { ServicePackage } from "../../types/ServicePackage";
+import type { CartSelectedCateringDish } from "../../types/CartItem";
 
 import type { VendorDetail as VendorDetailType } from "../../types/VendorDetail";
 
@@ -92,6 +93,8 @@ const VendorDetail = () => {
     const [selectedSlotResourceTypeId, setSelectedSlotResourceTypeId] =
         useState<string | null>(null);
     const [packageSelectionVersion, setPackageSelectionVersion] = useState(0);
+    const [selectedCateringDishes, setSelectedCateringDishes] =
+        useState<CartSelectedCateringDish[]>([]);
 
     // Anchor for bringing date-specific package choices into view.
     const packagesSectionRef = useRef<HTMLDivElement>(null);
@@ -139,6 +142,7 @@ const VendorDetail = () => {
         // A package selected for a previous date
         // must never remain selected.
         setSelectedPackage(null);
+        setSelectedCateringDishes([]);
 
         setSelectedEventDate(date);
 
@@ -243,9 +247,13 @@ const VendorDetail = () => {
             return;
         }
 
+        const nextPackageId = pkg.id.trim();
+        if (selectedPackage?.id !== nextPackageId) {
+            setSelectedCateringDishes([]);
+        }
         setSelectedPackage({
             ...pkg,
-            id: pkg.id.trim()
+            id: nextPackageId
         });
         // Package changes invalidate the prior slot selection.
         setSelectedSlotId(null);
@@ -470,10 +478,14 @@ const VendorDetail = () => {
                             serviceId={serviceId}
                             bundles={bundles}
                             selectedPackage={selectedPackage}
+                            selectedCateringDishes={selectedCateringDishes}
                             packageSelectionVersion={packageSelectionVersion}
                             selectedResourceTypeId={null}
                             onEventDateChange={handleEventDateChange}
-                            onClearSelectedPackage={() => setSelectedPackage(null)}
+                            onClearSelectedPackage={() => {
+                                setSelectedPackage(null);
+                                setSelectedCateringDishes([]);
+                            }}
                             onSelectedSlotChange={(slotId, resourceTypeId) => {
                                 setSelectedSlotId(slotId);
                                 setSelectedSlotResourceTypeId(resourceTypeId ?? null);
@@ -501,7 +513,7 @@ const VendorDetail = () => {
                             ) : (
                                 <>
                                     {visiblePricingPackages.length > 0 ? (
-                                        <VendorPackages packages={visiblePricingPackages} selectedPackage={selectedPackage} selectedSlotId={selectedSlotId} selectedSlotResourceTypeId={selectedSlotResourceTypeId} isStay={isStayService} resourceTypes={activeResourceTypes} onSelectPackage={handlePackageSelect} />
+                                        <VendorPackages packages={visiblePricingPackages} selectedPackage={selectedPackage} selectedSlotId={selectedSlotId} selectedSlotResourceTypeId={selectedSlotResourceTypeId} isStay={isStayService} resourceTypes={activeResourceTypes} onSelectPackage={handlePackageSelect} onSelectedCateringDishesChange={setSelectedCateringDishes} />
                                     ) : (
                                         <div className="pricing-unavailable">
                                             <h3>No packages available</h3>
@@ -512,7 +524,7 @@ const VendorDetail = () => {
                                         <section className="fixed-duration-packages">
                                             <h2>Fixed-Duration Packages</h2>
                                             <p>Packages with a predefined duration and price.</p>
-                                            <VendorPackages packages={fixedDurationPackages} selectedPackage={selectedPackage} selectedSlotId={selectedSlotId} selectedSlotResourceTypeId={selectedSlotResourceTypeId} isStay={isStayService} resourceTypes={activeResourceTypes} onSelectPackage={handlePackageSelect} />
+                                            <VendorPackages packages={fixedDurationPackages} selectedPackage={selectedPackage} selectedSlotId={selectedSlotId} selectedSlotResourceTypeId={selectedSlotResourceTypeId} isStay={isStayService} resourceTypes={activeResourceTypes} onSelectPackage={handlePackageSelect} onSelectedCateringDishesChange={setSelectedCateringDishes} />
                                         </section>
                                     )}
                                 </>

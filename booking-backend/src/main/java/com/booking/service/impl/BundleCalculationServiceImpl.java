@@ -14,6 +14,9 @@ import com.booking.repository.BundleRepository;
 import com.booking.repository.VendorServicePricingRepository;
 import com.booking.repository.VendorServiceRepository;
 import com.booking.service.BundleCalculationService;
+import com.booking.service.PricingCalculationService;
+import com.booking.dto.pricing.PricingCalculationResult;
+import com.booking.model.enums.ServiceCategory;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -38,6 +41,8 @@ public class BundleCalculationServiceImpl
 
     private final VendorServicePricingRepository
             vendorServicePricingRepository;
+
+    private final PricingCalculationService pricingCalculationService;
 
     @Override
     public BundleCalculationResponse calculateBundle(
@@ -128,10 +133,19 @@ public class BundleCalculationServiceImpl
                                             item.getBookingFrom().toLocalDate()
                                     );
 
-                            return new BundleCalculationLine(
-                                    service,
-                                    selectedPackage
-                            );
+                            PricingCalculationResult pricing = pricingCalculationService.calculatePrice(
+                                    service.getId(), item.getBookingFrom().toLocalDate(), item.getPackageId(), item.getGuestCount());
+                            BigDecimal eligibleAmount = safe(pricing.getSubtotal());
+                            if (service.getCategory() == ServiceCategory.STAY) {
+                                int quantity = Math.max(1, item.getRoomQuantity() == null ? 1 : item.getRoomQuantity());
+                                int nights = Math.max(1, (int) java.time.temporal.ChronoUnit.DAYS.between(
+                                        item.getBookingFrom().toLocalDate(), item.getBookingTo().toLocalDate()));
+                                boolean fixed = selectedPackage != null && "FIXED_DURATION".equalsIgnoreCase(selectedPackage.getPackageType());
+                                boolean durationPriced = selectedPackage != null && ("PER_NIGHT".equalsIgnoreCase(selectedPackage.getPricingBasis())
+                                        || "PER_DAY".equalsIgnoreCase(selectedPackage.getPricingBasis()));
+                                eligibleAmount = eligibleAmount.multiply(BigDecimal.valueOf(quantity * (!fixed && durationPriced ? nights : 1)));
+                            }
+                            return new BundleCalculationLine(service, selectedPackage, eligibleAmount);
                         })
                         .toList();
 
@@ -174,20 +188,7 @@ public class BundleCalculationServiceImpl
 
         BigDecimal originalTotal =
                 lines.stream()
-                        .map(line -> {
-
-                            if (line.selectedPackage() != null) {
-                                return safe(
-                                        line.selectedPackage()
-                                                .getPrice()
-                                );
-                            }
-
-                            return safe(
-                                    line.service()
-                                            .getStartingPrice()
-                            );
-                        })
+                        .map(BundleCalculationLine::eligibleAmount)
                         .reduce(
                                 BigDecimal.ZERO,
                                 BigDecimal::add
@@ -236,14 +237,7 @@ public class BundleCalculationServiceImpl
             ServicePackage selectedPackage =
                     line.selectedPackage();
 
-            BigDecimal originalAmount =
-                    selectedPackage != null
-                            ? safe(
-                            selectedPackage.getPrice()
-                    )
-                            : safe(
-                            service.getStartingPrice()
-                    );
+            BigDecimal originalAmount = line.eligibleAmount();
 
             BigDecimal itemDiscount =
                     BigDecimal.ZERO;
@@ -419,7 +413,8 @@ public class BundleCalculationServiceImpl
 
     private record BundleCalculationLine(
             VendorService service,
-            ServicePackage selectedPackage
+            ServicePackage selectedPackage,
+            BigDecimal eligibleAmount
     ) {
     }
 }

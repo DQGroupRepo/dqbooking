@@ -62,11 +62,24 @@ const ServiceSection = ({
     ]);
 
 
-    // Never repeat listings to fill empty carousel positions.
+    // Fill the three desktop card positions when only one or two eligible
+    // listings exist. Repeated cards are display-only and link to the same
+    // underlying service.
     const displayServices = useMemo(
-        () => services.length > 3
-            ? services.slice(startIndex, startIndex + 3)
-            : services,
+        () => {
+            if (services.length > 3) {
+                return services.slice(startIndex, startIndex + 3);
+            }
+
+            if (services.length === 0) {
+                return [];
+            }
+
+            return Array.from(
+                { length: 3 },
+                (_, index) => services[index % services.length]
+            );
+        },
         [services, startIndex]
     );
 
@@ -254,9 +267,9 @@ const ServiceSection = ({
                 ===================================== */}
 
                 <div className="service-grid">
-                    {displayServices.map(service => (
+                    {displayServices.map((service, index) => (
                         <ServiceCard
-                            key={service.serviceId}
+                            key={`${service.serviceId}-${index}`}
                             {...service}
                         />
                     ))}

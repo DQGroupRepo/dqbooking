@@ -13,6 +13,9 @@ import com.booking.model.VendorService;
 import com.booking.model.VendorServicePricing;
 import com.booking.model.enums.ServiceCategory;
 import com.booking.repository.VendorServicePricingRepository;
+import com.booking.repository.UserRepository;
+import com.booking.model.User;
+import org.bson.types.ObjectId;
 import com.booking.repository.BookingSlotRepository;
 import com.booking.model.BookingSlot;
 import com.booking.repository.VendorServiceRepository;
@@ -40,6 +43,8 @@ public class VendorServicePricingServiceImpl
 
     private final VendorServicePricingRepository
             vendorServicePricingRepository;
+
+    private final UserRepository userRepository;
 
     private final VendorServiceRepository
             vendorServiceRepository;
@@ -215,7 +220,7 @@ public class VendorServicePricingServiceImpl
                                                 pricing.getCreatedAt()
                                         )
                                         .createdBy(
-                                                pricing.getCreatedBy()
+                                                resolveCreatedByDisplay(pricing.getCreatedBy())
                                         )
                                         .build()
                 )
@@ -563,6 +568,38 @@ public class VendorServicePricingServiceImpl
      * principal name. In a JWT setup this is
      * normally the subject/user ID.
      */
+
+
+    /**
+     * Converts the audit user ID into a readable label for pricing history.
+     * Older records may contain a Java object's default toString() value
+     * (for example, com.booking.model.User@...); that value is not an ID and
+     * cannot be resolved, so show a clear legacy label instead of leaking it.
+     */
+    private String resolveCreatedByDisplay(String createdBy) {
+        if (createdBy == null || createdBy.isBlank()) {
+            return "Unknown user";
+        }
+
+        String value = createdBy.trim();
+        if (value.startsWith("com.booking.model.User@")) {
+            return "Vendor (legacy record)";
+        }
+
+        if (ObjectId.isValid(value)) {
+            return userRepository.findById(value)
+                    .map(User::getFullName)
+                    .filter(name -> name != null && !name.isBlank())
+                    .orElseGet(() -> userRepository.findById(value)
+                            .map(User::getEmail)
+                            .filter(email -> email != null && !email.isBlank())
+                            .orElse("Unknown user"));
+        }
+
+        // Preserve already-readable audit labels from older records.
+        return value;
+    }
+
     private String getCurrentUserId() {
 
         Authentication authentication =

@@ -132,12 +132,6 @@ const AddService = () => {
 
 
     const [
-        saved,
-        setSaved
-    ] = useState(false);
-
-
-    const [
         errors,
         setErrors
     ] = useState<string[]>([]);
@@ -1333,7 +1327,7 @@ const AddService = () => {
              */
 
             navigate(
-                `/vendor/services/${serviceId}/pricing`
+                `/vendor/services/${serviceId}/slots`
             );
 
         }
@@ -1436,43 +1430,6 @@ const AddService = () => {
                             )
                 )
         );
-
-
-    /*
-     * =========================
-     * Save Draft
-     * =========================
-     */
-
-    function saveDraft() {
-
-        localStorage.setItem(
-            "vendorListingDraft",
-            JSON.stringify(
-                formData
-            )
-        );
-
-
-        setSaved(
-            true
-        );
-
-
-        toast.success(
-            "Draft saved successfully."
-        );
-
-
-        setTimeout(
-            () =>
-                setSaved(
-                    false
-                ),
-            2500
-        );
-
-    }
 
 
     /*
@@ -1942,20 +1899,13 @@ const AddService = () => {
                                     </strong>
 
                                     <p>
-
-                                        You can save this listing as
-                                        a draft and continue later.
-
+                                        After publishing, you can configure your booking slots and pricing.
                                     </p>
 
                                 </div>
 
 
                                 <FormActions
-
-                                    onSaveDraft={
-                                        saveDraft
-                                    }
 
                                     publishing={
                                         publishing

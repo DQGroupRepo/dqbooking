@@ -43,6 +43,16 @@ public class PricingCalculationServiceImpl
             LocalDate eventDate,
             String packageId
     ) {
+        return calculatePrice(serviceId, eventDate, packageId, null);
+    }
+
+    @Override
+    public PricingCalculationResult calculatePrice(
+            String serviceId,
+            LocalDate eventDate,
+            String packageId,
+            Integer guestCount
+    ) {
 
         log.info(
                 "Calculating service price serviceId={} eventDate={} packageId={}",
@@ -87,7 +97,13 @@ public class PricingCalculationServiceImpl
                 selectedPackage != null
                         ? safe(selectedPackage.getPrice())
                         : safe(pricing.getBaseAmount());
+        int cateringGuests = service.getCategory() == com.booking.model.enums.ServiceCategory.CATERING
+                ? Math.max(1, guestCount == null ? 1 : guestCount) : 1;
+        if (service.getCategory() == com.booking.model.enums.ServiceCategory.CATERING) {
+            baseAmount = baseAmount.multiply(BigDecimal.valueOf(cateringGuests));
+        }
 
+        final BigDecimal headCalculationBaseAmount = baseAmount;
         List<PricingHeadSnapshot> headSnapshots =
                 pricing.getPricingHeads() == null
                         ? List.of()
@@ -106,8 +122,9 @@ public class PricingCalculationServiceImpl
 
                             BigDecimal calculatedAmount =
                                     calculateHeadAmount(
-                                            baseAmount,
-                                            head
+                                            headCalculationBaseAmount,
+                                            head,
+                                            cateringGuests
                                     );
 
                             return PricingHeadSnapshot
@@ -311,7 +328,8 @@ public class PricingCalculationServiceImpl
 
     private BigDecimal calculateHeadAmount(
             BigDecimal currentSubtotal,
-            VendorPricingHead head
+            VendorPricingHead head,
+            int guestCount
     ) {
 
         BigDecimal value = safe(head.getValue());
@@ -319,6 +337,11 @@ public class PricingCalculationServiceImpl
         if (head.getCalculationType()
                 == PricingCalculationType.FIXED) {
             return value;
+        }
+
+        if (head.getCalculationType()
+                == PricingCalculationType.PER_GUEST) {
+            return value.multiply(BigDecimal.valueOf(Math.max(1, guestCount)));
         }
 
         if (head.getCalculationType()

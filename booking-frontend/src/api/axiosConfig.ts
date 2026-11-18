@@ -1,3 +1,4 @@
+import { clearAuthSession, getAuthToken } from "../util/authStorage";
 import axios from "axios";
 
 
@@ -26,9 +27,7 @@ api.interceptors.request.use(
     config => {
 
         const token =
-            localStorage.getItem(
-                "eventnest_token"
-            );
+            getAuthToken();
 
 
         if (token) {
@@ -74,9 +73,7 @@ api.interceptors.response.use(
         if (status === 401) {
 
             const currentToken =
-                localStorage.getItem(
-                    "eventnest_token"
-                );
+                getAuthToken();
 
 
             /*

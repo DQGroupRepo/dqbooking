@@ -1,3 +1,4 @@
+import NumericInput from "../NumericInput/NumericInput";
 import styles from "./Input.module.css";
 
 interface InputProps {
@@ -22,13 +23,11 @@ export default function Input({
         <div className={styles.group}>
             <label>{label}</label>
 
-            <input
-                name={name}
-                type={type}
-                value={value}
-                placeholder={placeholder}
-                onChange={onChange}
-            />
+            {type === "number" ? (
+                <NumericInput name={name} value={value} placeholder={placeholder} onChange={onChange} />
+            ) : (
+                <input name={name} type={type} value={value} placeholder={placeholder} onChange={onChange} />
+            )}
         </div>
     );
 }

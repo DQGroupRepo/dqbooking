@@ -425,6 +425,20 @@ class CartService {
     }
 
 
+    /**
+     * Returns the cart line's gross amount before bundle discount.
+     * Catering prices are stored per guest, so multiply by the selected
+     * guest count here. Other categories retain their existing price rules.
+     */
+    getItemTotalPrice(item: CartItem): number {
+        const basePrice = Number(item.price) || 0;
+        const category = String(item.category ?? "").trim().toUpperCase();
+        if (category === "CATERING") {
+            return basePrice * Math.max(1, Number(item.guestCount) || 1);
+        }
+        return basePrice;
+    }
+
     /*
      * =========================================
      * RAW SUBTOTAL
@@ -442,9 +456,7 @@ class CartService {
                     item
                 ) =>
                     total +
-                    Number(
-                        item.price
-                    ),
+                    this.getItemTotalPrice(item),
                 0
             );
 
@@ -595,9 +607,7 @@ console.log("isBundleComplete:", cart);
                     item
                 ) =>
                     total +
-                    Number(
-                        item.price
-                    ),
+                    this.getItemTotalPrice(item),
                 0
             );
 

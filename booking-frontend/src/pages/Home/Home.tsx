@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import "./Home.css";
 
 import CategoryCard
@@ -515,11 +516,12 @@ const Home = () => {
                     </p>
 
 
-                    <button
-                        type="button"
+                    <Link
+                        to="/vendor/register"
+                        className="vendor-register-button"
                     >
                         Register Your Business
-                    </button>
+                    </Link>
 
                 </div>
 

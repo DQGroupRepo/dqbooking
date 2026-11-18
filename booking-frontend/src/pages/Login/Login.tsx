@@ -27,6 +27,8 @@ const Login = () => {
 
   const [password, setPassword] = useState("");
 
+  const [rememberMe, setRememberMe] = useState(false);
+
   const [loading, setLoading] = useState(false);
 
   const [error, setError] = useState("");
@@ -130,7 +132,8 @@ const Login = () => {
 
       login(
         loginData.token,
-        user
+        user,
+        rememberMe
       );
 
 
@@ -315,6 +318,8 @@ const Login = () => {
 
                 <input
                   type="checkbox"
+                  checked={rememberMe}
+                  onChange={(event) => setRememberMe(event.target.checked)}
                 />
 
                 Remember me

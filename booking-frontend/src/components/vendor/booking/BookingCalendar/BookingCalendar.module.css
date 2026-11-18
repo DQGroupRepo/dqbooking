@@ -987,3 +987,40 @@
     border-color: #78c49a !important;
     background: #e6f7ed !important;
 }
+
+.bookingSchedule {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 10px 14px;
+    margin: 12px 0;
+    padding: 11px 12px;
+    border: 1px solid #e6edf5;
+    border-radius: 9px;
+    background: #f8fbff;
+}
+
+.bookingSchedule > div {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+}
+
+.bookingSchedule span {
+    color: #71839a;
+    font-size: 11px;
+}
+
+.bookingSchedule strong {
+    color: #193b5b;
+    font-size: 12px;
+    line-height: 1.45;
+    overflow-wrap: anywhere;
+}
+
+@media (max-width: 600px) {
+    .bookingSchedule {
+        grid-template-columns: 1fr;
+        gap: 9px;
+    }
+}

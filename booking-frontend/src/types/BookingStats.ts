@@ -21,6 +21,15 @@ export interface BookingStats {
     bookingTo?: string;
     serviceCategory?: string;
     bookingType?: string;
+    roomQuantity?: number;
+    slotId?: string;
+    slotName?: string;
+    slotStartTime?: string;
+    slotEndTime?: string;
+    resourceTypeName?: string;
+    resourceIds?: string[];
+    resourceNames?: string[];
+    vendorCanCancel?: boolean;
 
     guestCount: number;
 

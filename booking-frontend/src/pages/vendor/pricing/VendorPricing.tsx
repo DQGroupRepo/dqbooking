@@ -1,3 +1,5 @@
+import NumericInput from "../../../components/common/ui/NumericInput";
+import DateField from "../../../components/common/DateField/DateField";
 import MobileCarousel from "../../../components/common/MobileCarousel/MobileCarousel";
 import Loader from "../../../components/common/Loader";
 import { useEffect, useState } from "react";
@@ -1650,6 +1652,7 @@ const VendorPricing = () => {
                         SERVICE PACKAGES
                     ================================================= */}
 
+                    {isStayService && (
                     <section className="pricing-card package-card-section">
                         <div className="package-section-header">
                             <div>
@@ -1663,7 +1666,7 @@ const VendorPricing = () => {
                                     <input value={resourceTypeName} onChange={e => setResourceTypeName(e.target.value)} placeholder="e.g. Big Hall, Small Hall" />
                                 </label>
                                 <label>Physical quantity
-                                    <input type="number" min={1} max={100} value={resourceTypeQuantity} onChange={e => setResourceTypeQuantity(Math.max(1, Number(e.target.value) || 1))} />
+                                    <NumericInput  min={1} max={100} value={resourceTypeQuantity} onChange={e => setResourceTypeQuantity(Math.max(1, Number(e.target.value) || 1))} />
                                 </label>
                                 <button type="button" className="add-package-btn" onClick={addResourceType}>+ Add Resource Type</button>
                             </div>
@@ -1676,6 +1679,7 @@ const VendorPricing = () => {
                             {resourceTypes.length === 0 && <p className="package-eligibility-help">No resource types configured. Existing slot-capacity behavior remains active.</p>}
                         </div>
                     </section>
+                    )}
 
                     <section className="pricing-card package-card-section">
 
@@ -1693,16 +1697,32 @@ const VendorPricing = () => {
                                     {packages.length} {packages.length === 1 ? "package" : "packages"}
                                 </div>
 
-                                <button
-                                    type="button"
-                                    className="add-package-btn"
-                                    onClick={() => addPackage("STANDARD")}
-                                >
-                                    + Create Resource Type Package
-                                </button>
-                                <button type="button" className="add-package-btn" onClick={() => addPackage("FIXED_DURATION")}>
-                                    + Create Fixed-Duration Package
-                                </button>
+                                {isStayService ? (
+                                    <>
+                                        <button
+                                            type="button"
+                                            className="add-package-btn"
+                                            onClick={() => addPackage("STANDARD")}
+                                        >
+                                            + Create Resource Type Package
+                                        </button>
+                                        <button
+                                            type="button"
+                                            className="add-package-btn"
+                                            onClick={() => addPackage("FIXED_DURATION")}
+                                        >
+                                            + Create Fixed-Duration Package
+                                        </button>
+                                    </>
+                                ) : (
+                                    <button
+                                        type="button"
+                                        className="add-package-btn"
+                                        onClick={() => addPackage("STANDARD")}
+                                    >
+                                        + Create Package
+                                    </button>
+                                )}
                             </div>
 
                         </div>
@@ -1715,13 +1735,6 @@ const VendorPricing = () => {
                                 <p>
                                     Create your first package with a name, price and optional features.
                                 </p>
-                                <button
-                                    type="button"
-                                    className="add-package-btn"
-                                    onClick={() => addPackage("STANDARD")}
-                                >
-                                    + Create Package
-                                </button>
                             </div>
 
                         ) : (
@@ -1777,8 +1790,8 @@ const VendorPricing = () => {
                                                         <label>{isStayService ? "Price per complete package combination" : "Package Price"}</label>
                                                         <div className="package-price-input">
                                                             <span>₹</span>
-                                                            <input
-                                                                type="number"
+                                                            <NumericInput
+
                                                                 min="0"
                                                                 step="0.01"
                                                                 value={pkg.price ?? 0}
@@ -1798,7 +1811,7 @@ const VendorPricing = () => {
                                                         <div className="package-eligibility-config">
                                                             <div className="package-features-header"><h5>Fixed-Duration Package</h5></div>
                                                             <label>Included {isStayService ? "nights" : "days"}
-                                                                <input type="number" min="1" max="31" value={pkg.includedDuration ?? 3}
+                                                                <NumericInput  min="1" max="31" value={pkg.includedDuration ?? 3}
                                                                     onChange={e => updatePackage(packageIndex, "includedDuration", Math.max(1, Math.min(31, Number(e.target.value) || 1)))} />
                                                             </label>
                                                             <p className="package-eligibility-help">Customers cannot change this duration. Checkout is calculated from the selected start date.</p>
@@ -1817,17 +1830,17 @@ const VendorPricing = () => {
                                                                 <option value="FIXED">Flat price per booking</option>
                                                             </select>
                                                         </label>
-                                                        <div className="package-duration-fields">
-                                                            <label>
+                                                        <div className="package-duration-fields stay-duration-fields">
+                                                            <label className="stay-duration-field">
                                                                 Minimum {pkg.pricingBasis === "PER_NIGHT" ? "nights" : "days"}
-                                                                <input type="number" min="1" max="31"
+                                                                <NumericInput  min="1" max="31"
                                                                     value={pkg.minimumDuration ?? 1}
                                                                     onChange={e => updatePackage(packageIndex, "minimumDuration", Math.max(1, Math.min(31, Number(e.target.value) || 1)))}
                                                                 />
                                                             </label>
-                                                            <label>
+                                                            <label className="stay-duration-field">
                                                                 Maximum {pkg.pricingBasis === "PER_NIGHT" ? "nights" : "days"}
-                                                                <input type="number" min={pkg.minimumDuration ?? 1} max="31"
+                                                                <NumericInput  min={pkg.minimumDuration ?? 1} max="31"
                                                                     value={pkg.maximumDuration ?? 31}
                                                                     onChange={e => updatePackage(packageIndex, "maximumDuration", Math.max(pkg.minimumDuration ?? 1, Math.min(31, Number(e.target.value) || 1)))}
                                                                 />
@@ -1844,21 +1857,21 @@ const VendorPricing = () => {
                                                             <div className="package-features-header"><h5>Room composition</h5></div>
                                                             <p className="package-eligibility-help">Define the rooms included in one complete package. For example, 2 Premium + 1 Gold. Customers can book multiple complete combinations; all included rooms are held together.</p>
                                                             {(pkg.resourceRequirements ?? (pkg.resourceTypeId ? [{ resourceTypeId: pkg.resourceTypeId, quantity: 1 }] : [])).map((requirement, requirementIndex) => (
-                                                                <div className="package-duration-fields" key={`${requirement.resourceTypeId}-${requirementIndex}`}>
-                                                                    <label>
+                                                                <div className="package-duration-fields stay-room-composition-row" key={`${requirement.resourceTypeId}-${requirementIndex}`}>
+                                                                    <label className="stay-room-type-field">
                                                                         Room type
                                                                         <select value={requirement.resourceTypeId} onChange={e => updatePackageResourceRequirement(packageIndex, requirementIndex, "resourceTypeId", e.target.value)}>
                                                                             {resourceTypes.filter(type => type.active !== false).map(type => <option key={type.id} value={type.id}>{type.name} ({type.quantity} total)</option>)}
                                                                         </select>
                                                                     </label>
-                                                                    <label>
+                                                                    <label className="stay-room-quantity-field">
                                                                         Rooms in package
-                                                                        <input type="number" min="1" max="100" value={requirement.quantity} onChange={e => updatePackageResourceRequirement(packageIndex, requirementIndex, "quantity", Math.max(1, Math.min(100, Math.floor(Number(e.target.value) || 1))))} />
+                                                                        <NumericInput  min="1" max="100" value={requirement.quantity} onChange={e => updatePackageResourceRequirement(packageIndex, requirementIndex, "quantity", Math.max(1, Math.min(100, Math.floor(Number(e.target.value) || 1))))} />
                                                                     </label>
-                                                                    <button type="button" className="secondary-button" onClick={() => removePackageResourceRequirement(packageIndex, requirementIndex)}>Remove</button>
+                                                                    <button type="button" className="remove-package-room-btn" onClick={() => removePackageResourceRequirement(packageIndex, requirementIndex)}>Remove</button>
                                                                 </div>
                                                             ))}
-                                                            <button type="button" className="secondary-button" onClick={() => addPackageResourceRequirement(packageIndex)} disabled={resourceTypes.filter(type => type.active !== false).length <= (pkg.resourceRequirements ?? []).length}>Add room type</button>
+                                                            <button type="button" className="add-package-btn stay-add-room-type-btn" onClick={() => addPackageResourceRequirement(packageIndex)} disabled={resourceTypes.filter(type => type.active !== false).length <= (pkg.resourceRequirements ?? []).length}>+ Add Room Type</button>
                                                         </div>
                                                     )}
                                                     <div className="package-eligibility-config">
@@ -1896,9 +1909,9 @@ const VendorPricing = () => {
                                                             </p>
                                                             <label className="stay-max-guests-field">
                                                                 <span className="stay-max-guests-label">Maximum guests per room</span>
-                                                                <input
+                                                                <NumericInput
                                                                     className="stay-max-guests-input"
-                                                                    type="number"
+
                                                                     min="1"
                                                                     step="1"
                                                                     value={pkg.maxGuestsPerRoom ?? ""}
@@ -2071,9 +2084,9 @@ const VendorPricing = () => {
                                 </label>
 
 
-                                <input
+                                <NumericInput
 
-                                    type="number"
+
 
                                     min="0"
 
@@ -2099,21 +2112,10 @@ const VendorPricing = () => {
                                 </label>
 
 
-                                <input
-
-                                    type="date"
-
-                                    value={
-                                        pricing.effectiveFrom ??
-                                        ""
-                                    }
-
-                                    onChange={e =>
-                                        updateEffectiveFrom(
-                                            e.target.value
-                                        )
-                                    }
-
+                                <DateField
+                                    value={pricing.effectiveFrom ?? ""}
+                                    onChange={updateEffectiveFrom}
+                                    ariaLabel="Pricing effective from"
                                 />
 
                             </div>
@@ -2126,21 +2128,11 @@ const VendorPricing = () => {
                                 </label>
 
 
-                                <input
-
-                                    type="date"
-
-                                    value={
-                                        pricing.effectiveUntil ??
-                                        ""
-                                    }
-
-                                    onChange={e =>
-                                        updateEffectiveUntil(
-                                            e.target.value
-                                        )
-                                    }
-
+                                <DateField
+                                    value={pricing.effectiveUntil ?? ""}
+                                    minDate={pricing.effectiveFrom ?? undefined}
+                                    onChange={updateEffectiveUntil}
+                                    ariaLabel="Pricing effective until"
                                 />
 
                             </div>
@@ -2268,9 +2260,9 @@ const VendorPricing = () => {
                                             </select>
 
 
-                                            <input
+                                            <NumericInput
 
-                                                type="number"
+
 
                                                 value={
                                                     head.value
@@ -2417,9 +2409,9 @@ const VendorPricing = () => {
                                             </select>
 
 
-                                            <input
+                                            <NumericInput
 
-                                                type="number"
+
 
                                                 value={
                                                     discount.value
@@ -2532,9 +2524,9 @@ const VendorPricing = () => {
                             </label>
 
 
-                            <input
+                            <NumericInput
 
-                                type="number"
+
 
                                 min="0"
 
@@ -2620,9 +2612,9 @@ const VendorPricing = () => {
                             </label>
 
 
-                            <input
+                            <NumericInput
 
-                                type="number"
+
 
                                 min="0"
 
@@ -2732,8 +2724,8 @@ const VendorPricing = () => {
                                                             From Days
                                                         </label>
 
-                                                        <input
-                                                            type="number"
+                                                        <NumericInput
+
                                                             min="0"
                                                             value={
                                                                 rule.minDaysBeforeEvent
@@ -2758,8 +2750,8 @@ const VendorPricing = () => {
                                                             To Days
                                                         </label>
 
-                                                        <input
-                                                            type="number"
+                                                        <NumericInput
+
                                                             min="0"
                                                             value={
                                                                 rule.maxDaysBeforeEvent ===
@@ -2792,8 +2784,8 @@ const VendorPricing = () => {
 
                                                         <div className="percentage-input">
 
-                                                            <input
-                                                                type="number"
+                                                            <NumericInput
+
                                                                 min="0"
                                                                 max="100"
                                                                 value={

@@ -11,6 +11,8 @@ interface Props{
 
     availableCapacity:number;
 
+    isStayService?: boolean;
+
 }
 
 export default function AvailabilitySummary({
@@ -21,7 +23,9 @@ export default function AvailabilitySummary({
 
     blockedSlots,
 
-    availableCapacity
+    availableCapacity,
+
+    isStayService = false
 
 }:Props){
 
@@ -61,13 +65,13 @@ export default function AvailabilitySummary({
 
             </div>
 
-            <div className="summary-card">
+            {!isStayService && <div className="summary-card">
 
                 <span>Available Capacity</span>
 
                 <h3>{availableCapacity}</h3>
 
-            </div>
+            </div>}
 
         </MobileCarousel>
 

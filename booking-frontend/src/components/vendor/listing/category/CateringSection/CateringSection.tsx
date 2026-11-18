@@ -1,3 +1,4 @@
+import NumericInput from "../../../../common/ui/NumericInput";
 import { useEffect, useMemo, useState } from "react";
 
 import type { VendorServiceForm } from "../../../../../types/VendorServiceForm";
@@ -1441,8 +1442,8 @@ export default function CateringSection({
                                                 <div className="catering-custom-dish-price">
 
 
-                                                    <input
-                                                        type="number"
+                                                    <NumericInput
+
                                                         min="0"
                                                         step="0.01"
                                                         value={
@@ -1778,8 +1779,8 @@ export default function CateringSection({
 
                                                                                 <div className="catering-menu-price-wrapper">
 
-                                                                                    <input
-                                                                                        type="number"
+                                                                                    <NumericInput
+
                                                                                         min="0"
                                                                                         step="0.01"
                                                                                         placeholder="0.00"

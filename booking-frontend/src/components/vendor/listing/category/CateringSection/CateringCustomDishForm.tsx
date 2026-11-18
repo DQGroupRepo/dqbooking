@@ -1,3 +1,4 @@
+import NumericInput from "../../../../common/ui/NumericInput";
 import { useState } from "react";
 
 import type { CateringMenuItem } from "../../../../../types/CateringMenuItem";
@@ -259,8 +260,8 @@ export default function CateringCustomDishForm({
                         Price / Person
                     </label>
 
-                    <input
-                        type="number"
+                    <NumericInput
+
                         min="0"
                         step="0.01"
                         value={pricePerPerson}

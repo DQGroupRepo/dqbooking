@@ -8,6 +8,7 @@ import {
 
 import api from "../api/axios";
 import CartService from "../services/CartService";
+import { clearAuthSession, getAuthToken, getStoredAuthUser, storeAuthSession, updateStoredAuthUser } from "../util/authStorage";
 
 export type UserRole =
     | "CUSTOMER"
@@ -39,7 +40,8 @@ interface AuthContextType {
 
     login: (
         token: string,
-        user: AuthUser
+        user: AuthUser,
+        rememberMe?: boolean
     ) => void;
 
     logout: () => void;
@@ -93,7 +95,7 @@ export const AuthProvider = ({
      */
 
     const logout = () => {
-        const currentToken = localStorage.getItem("eventnest_token");
+        const currentToken = getAuthToken();
 
         // Run remote cleanup while the current JWT is still available. Both
         // operations are best-effort; local logout must never be blocked.
@@ -108,8 +110,7 @@ export const AuthProvider = ({
             console.warn("Cart cleanup could not be completed.", error);
         });
 
-        localStorage.removeItem("eventnest_token");
-        localStorage.removeItem("eventnest_user");
+        clearAuthSession();
         delete api.defaults.headers.common["Authorization"];
         setToken(null);
         setUser(null);
@@ -125,25 +126,15 @@ export const AuthProvider = ({
 
     const login = (
         newToken: string,
-        newUser: AuthUser
+        newUser: AuthUser,
+        rememberMe = false
     ) => {
 
         /*
          * Store authentication details.
          */
 
-        localStorage.setItem(
-            "eventnest_token",
-            newToken
-        );
-
-
-        localStorage.setItem(
-            "eventnest_user",
-            JSON.stringify(
-                newUser
-            )
-        );
+        storeAuthSession(newToken, newUser, rememberMe);
 
 
         /*
@@ -191,16 +182,8 @@ export const AuthProvider = ({
              * =====================================
              */
 
-            const storedToken =
-                localStorage.getItem(
-                    "eventnest_token"
-                );
-
-
-            const storedUser =
-                localStorage.getItem(
-                    "eventnest_user"
-                );
+            const storedToken = getAuthToken();
+            const storedUser = getStoredAuthUser();
 
 
             /*
@@ -279,9 +262,7 @@ export const AuthProvider = ({
                             error
                         );
 
-                        localStorage.removeItem(
-                            "eventnest_user"
-                        );
+                        clearAuthSession();
 
                     }
 
@@ -325,12 +306,7 @@ export const AuthProvider = ({
                  * Keep local storage synchronized.
                  */
 
-                localStorage.setItem(
-                    "eventnest_user",
-                    JSON.stringify(
-                        validatedUser
-                    )
-                );
+                updateStoredAuthUser(validatedUser);
 
 
                 setUser(
@@ -350,14 +326,7 @@ export const AuthProvider = ({
                  * JWT is invalid or expired.
                  */
 
-                localStorage.removeItem(
-                    "eventnest_token"
-                );
-
-
-                localStorage.removeItem(
-                    "eventnest_user"
-                );
+                clearAuthSession();
 
 
                 delete api.defaults.headers.common[
@@ -447,9 +416,9 @@ export const AuthProvider = ({
         ) => {
 
             if (
-                event.key ===
-                    "eventnest_token" &&
-                event.newValue === null
+                event.key === "eventnest_token" &&
+                event.newValue === null &&
+                !getAuthToken()
             ) {
 
                 delete api.defaults.headers.common[

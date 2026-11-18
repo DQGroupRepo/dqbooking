@@ -34,6 +34,9 @@ export default function BasicInfoSection({
 
 }: Props) {
 
+    const isPhotography =
+        formData.category.trim().toLowerCase().replace(/[\s_-]+/g, "") === "photography";
+
     return (
 
         <>
@@ -95,38 +98,17 @@ export default function BasicInfoSection({
             <TagChipSelector label="Location tags" mode="LOCATION" values={formData.locationTags} onChange={onLocationTagsChange} />
 
 
-            <div className="two-column">
-
-                <Input
-
-                    name="capacity"
-
-                    type="number"
-
-                    label="Maximum Capacity"
-
-                    value={formData.capacity}
-
-                    onChange={handleChange}
-
-                />
-
-
-                <Input
-
-                    name="durationHours"
-
-                    type="number"
-
-                    label="Duration (Hours)"
-
-                    value={formData.durationHours}
-
-                    onChange={handleChange}
-
-                />
-
-            </div>
+            {!isPhotography && (
+                <div className="two-column">
+                    <Input
+                        name="capacity"
+                        type="number"
+                        label="Maximum Capacity"
+                        value={formData.capacity}
+                        onChange={handleChange}
+                    />
+                </div>
+            )}
 
         </>
 

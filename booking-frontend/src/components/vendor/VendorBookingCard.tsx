@@ -1,4 +1,6 @@
+import NumericInput from "../common/ui/NumericInput";
 import { useEffect, useState } from "react";
+import DateField from "../common/DateField/DateField";
 import toast from "react-hot-toast";
 import { useLocation, useNavigate } from "react-router-dom";
 
@@ -11,6 +13,7 @@ import CartService from "../../services/CartService";
 import VendorDetailService from "../../services/VendorDetailService";
 
 import BookingAvailabilityService from "../../services/BookingAvailabilityService";
+import formatTime from "../../util/timeFormatter";
 import type { SlotAvailability } from "../../types/SlotAvailability";
 
 import "./VendorBookingCard.css";
@@ -41,18 +44,9 @@ interface Props {
 }
 
 
-function getTomorrowDate(): string {
-
-    const tomorrow = new Date();
-
-    tomorrow.setDate(
-        tomorrow.getDate() + 1
-    );
-
-    return tomorrow
-        .toISOString()
-        .split("T")[0];
-
+function getTodayDate(): string {
+    const today = new Date();
+    return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
 }
 
 function addOneDay(date: string): string {
@@ -785,6 +779,41 @@ const BookingCard = ({
                 return false;
             }
 
+            // Catering packages with selectable menu items must include at
+            // least one customer-selected dish before a hold/cart item is made.
+            const cateringPackage = selectedPackage as (ServicePackage & {
+                cateringMenu?: {
+                    vegetarianSelectionLimit?: number;
+                    nonVegetarianSelectionLimit?: number;
+                    soupSelectionLimit?: number;
+                    dessertSelectionLimit?: number;
+                    vegetarianDishes?: unknown[];
+                    nonVegetarianDishes?: unknown[];
+                    soupDishes?: unknown[];
+                    dessertDishes?: unknown[];
+                } | null;
+                cateringPackageMenu?: {
+                    vegetarianSelectionLimit?: number;
+                    nonVegetarianSelectionLimit?: number;
+                    soupSelectionLimit?: number;
+                    dessertSelectionLimit?: number;
+                    vegetarianDishes?: unknown[];
+                    nonVegetarianDishes?: unknown[];
+                    soupDishes?: unknown[];
+                    dessertDishes?: unknown[];
+                } | null;
+            }) | null;
+            const cateringMenu = cateringPackage?.cateringPackageMenu ?? cateringPackage?.cateringMenu;
+            const hasSelectableCateringDishes = Boolean(cateringMenu && (
+                ((cateringMenu.vegetarianSelectionLimit ?? 0) > 0 && (cateringMenu.vegetarianDishes?.length ?? 0) > 0) ||
+                ((cateringMenu.nonVegetarianSelectionLimit ?? 0) > 0 && (cateringMenu.nonVegetarianDishes?.length ?? 0) > 0) ||
+                ((cateringMenu.soupSelectionLimit ?? 0) > 0 && (cateringMenu.soupDishes?.length ?? 0) > 0) ||
+                ((cateringMenu.dessertSelectionLimit ?? 0) > 0 && (cateringMenu.dessertDishes?.length ?? 0) > 0)
+            ));
+            if (isCatering && hasSelectableCateringDishes && selectedCateringDishes.length === 0) {
+                toast.error("Please open the Catering Menu and select at least one dish before adding this package to your cart.");
+                return false;
+            }
 
             const existingCartItem = getExistingCartItem();
 
@@ -889,8 +918,8 @@ const BookingCard = ({
                         serviceId,
                         slotId: holdSlotId,
                         packageId: selectedPackage?.id,
-                        resourceTypeId: selectedPackage?.resourceTypeId,
-                        resourceRequirements: isStay ? (selectedPackage?.resourceRequirements ?? []) : undefined,
+                        // Stay room composition is defined by the selected package on the backend.
+                        // Do not send resourceRequirements/resourceTypeId as client overrides.
                         bookingFrom,
                         bookingTo,
                         bookingType: isStay ? "ROOM_STAY" : "STANDARD_SLOT",
@@ -1556,13 +1585,11 @@ const BookingCard = ({
                         <div className="stay-date-range-fields">
                         <div className="stay-date-field">
                         <label htmlFor="stay-booking-from">Check-in Date</label>
-                        <input
+                        <DateField
                             id="stay-booking-from"
-                            type="date"
-                            min={getTomorrowDate()}
+                            minDate={getTodayDate()}
                             value={customBookingFrom}
-                            onChange={async e => {
-                                const from = e.target.value;
+                            onChange={async from => {
                                 const oldFrom = customBookingFrom || eventDate;
                                 const oldTo = customBookingTo;
                                 const oldSpan = oldFrom && oldTo
@@ -1599,13 +1626,12 @@ const BookingCard = ({
                         </div>
                         <div className="stay-date-field">
                         <label htmlFor="stay-booking-to">Check-out Date</label>
-                        <input
+                        <DateField
                             id="stay-booking-to"
-                            type="date"
-                            min={customBookingFrom || getTomorrowDate()}
+                            minDate={customBookingFrom || getTodayDate()}
                             value={customBookingTo}
                             readOnly={selectedPackage?.packageType === "FIXED_DURATION"}
-                            onChange={e => { if (selectedPackage?.packageType !== "FIXED_DURATION") setCustomBookingTo(e.target.value); }}
+                            onChange={date => { if (selectedPackage?.packageType !== "FIXED_DURATION") setCustomBookingTo(date); }}
                         />
                         </div>
                         </div>
@@ -1613,12 +1639,10 @@ const BookingCard = ({
                 ) : (
                     <>
                         <label>From Date</label>
-                        <input
-                            type="date"
+                        <DateField
                             value={eventDate}
-                            min={getTomorrowDate()}
-                            onChange={async (e) => {
-                                const date = e.target.value;
+                            minDate={getTodayDate()}
+                            onChange={async (date) => {
                                 const oldFrom = customBookingFrom || eventDate;
                                 const oldTo = customBookingTo || oldFrom;
                                 const oldSpan = oldFrom && oldTo
@@ -1640,12 +1664,11 @@ const BookingCard = ({
                             }}
                         />
                         <label>To Date</label>
-                        <input
-                            type="date"
+                        <DateField
                             value={customBookingTo || eventDate}
-                            min={eventDate || getTomorrowDate()}
+                            minDate={eventDate || getTodayDate()}
                             readOnly={selectedPackage?.packageType === "FIXED_DURATION"}
-                            onChange={e => { if (selectedPackage?.packageType !== "FIXED_DURATION") setCustomBookingTo(e.target.value); }}
+                            onChange={date => { if (selectedPackage?.packageType !== "FIXED_DURATION") setCustomBookingTo(date); }}
                         />
                         <p className="package-eligibility-help">
                             Select a date range. Availability is checked for every occupied session.
@@ -1794,13 +1817,13 @@ const BookingCard = ({
                                                                 <span className="booking-slot-time">
 
                                                                     {
-                                                                        slot.startTime
+                                                                        formatTime(slot.startTime)
                                                                     }
 
                                                                     {" - "}
 
                                                                     {
-                                                                        slot.endTime
+                                                                        formatTime(slot.endTime)
                                                                     }
 
                                                                 </span>
@@ -1908,9 +1931,9 @@ const BookingCard = ({
                 {isStay && (
                     <div className="stay-flexible-booking-fields">
                         <label htmlFor="stay-room-quantity">Number of package combinations</label>
-                        <input
+                        <NumericInput
                             id="stay-room-quantity"
-                            type="number"
+
                             min="1"
                             value={roomQuantity}
                             onChange={e => setRoomQuantity(Math.max(1, Math.floor(Number(e.target.value) || 1)))}
@@ -1934,8 +1957,8 @@ const BookingCard = ({
                             Guests
                         </label>
 
-                        <input
-                            type="number"
+                        <NumericInput
+
                             min="1"
                             value={guests}
                             onChange={(e) =>

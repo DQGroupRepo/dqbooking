@@ -176,6 +176,14 @@ public class BookingAvailabilityServiceImpl
                 throw new IllegalArgumentException("Every booking interval must have a valid start and end.");
             }
         }
+        LocalDateTime validationNow = LocalDateTime.now();
+        for (BookingTimeInterval interval : requestedIntervals) {
+            if (!interval.getFrom().isAfter(validationNow)) {
+                throw new IllegalArgumentException(
+                        "This time slot has already started or passed. Please select a future slot."
+                );
+            }
+        }
         if (!requestedIntervals.get(0).getFrom().equals(request.getBookingFrom())
                 || !requestedIntervals.get(requestedIntervals.size() - 1).getTo().equals(request.getBookingTo())) {
             throw new IllegalArgumentException("Booking interval boundaries do not match bookingFrom and bookingTo.");
@@ -536,20 +544,32 @@ public class BookingAvailabilityServiceImpl
                 .orElse(false);
         String capacityResourceTypeId = requestedResourceTypeId != null && !requestedResourceTypeId.isBlank()
                 ? requestedResourceTypeId : slot.getResourceTypeId();
-        if (isStay && capacityResourceTypeId != null && !capacityResourceTypeId.isBlank()) {
-            // A package's mapped Resource Type takes precedence over the slot's
-            // default mapping for availability display. Hold creation validates
-            // that package, slot and request mappings are compatible.
+        if (isStay) {
+            // STAY inventory is exclusively physical Resource Type inventory.
+            // Slot maxBookings and capacity overrides must never limit room count.
+            // A slot-level block is still authoritative for the selected date.
             LocalDateTime from = slotStart(date, slot);
             LocalDateTime to = slotEnd(date, slot);
-            int free = countFreeResourceUnits(serviceId, capacityResourceTypeId, from, to, now);
             boolean vendorBlocked = hasVendorBlock(serviceId, slot.getId(), date);
-            int availableUnits = vendorBlocked ? 0 : free;
+            boolean slotAlreadyStarted = !from.isAfter(now);
+            int free = capacityResourceTypeId == null || capacityResourceTypeId.isBlank()
+                    ? 0
+                    : countFreeResourceUnits(serviceId, capacityResourceTypeId, from, to, now);
+            int availableUnits = vendorBlocked || slotAlreadyStarted ? 0 : free;
             return SlotAvailabilityResponse.builder()
-                    .slotId(slot.getId()).serviceId(serviceId).slotName(slot.getSlotName()).resourceTypeId(capacityResourceTypeId).bookingPattern(slot.getBookingPattern() == null ? "DAILY_RECURRING" : slot.getBookingPattern()).date(date)
-                    .startTime(slot.getStartTime()).endTime(slot.getEndTime())
-                    .baseCapacity(availableUnits).effectiveCapacity(availableUnits).bookedCount(0)
-                    .remainingCapacity(availableUnits).available(availableUnits > 0)
+                    .slotId(slot.getId())
+                    .serviceId(serviceId)
+                    .slotName(slot.getSlotName())
+                    .resourceTypeId(capacityResourceTypeId)
+                    .bookingPattern(slot.getBookingPattern() == null ? "DAILY_RECURRING" : slot.getBookingPattern())
+                    .date(date)
+                    .startTime(slot.getStartTime())
+                    .endTime(slot.getEndTime())
+                    .baseCapacity(availableUnits)
+                    .effectiveCapacity(availableUnits)
+                    .bookedCount(0)
+                    .remainingCapacity(availableUnits)
+                    .available(availableUnits > 0)
                     .vendorBlocked(vendorBlocked)
                     .build();
         }
@@ -569,7 +589,9 @@ public class BookingAvailabilityServiceImpl
                         now
                 );
 
-        int availableCount =
+        LocalDateTime scheduledSlotStart = slotStart(date, slot);
+        boolean slotAlreadyStarted = !scheduledSlotStart.isAfter(now);
+        int availableCount = slotAlreadyStarted ? 0 :
                 Math.max(
                         0,
                         effectiveCapacity

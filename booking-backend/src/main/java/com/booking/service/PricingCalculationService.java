@@ -11,4 +11,11 @@ public interface PricingCalculationService {
             LocalDate eventDate,
             String packageId
     );
+
+    PricingCalculationResult calculatePrice(
+            String serviceId,
+            LocalDate eventDate,
+            String packageId,
+            Integer guestCount
+    );
 }
