@@ -42,13 +42,30 @@ const BookingSummary = ({
 
                             <p>
                                 Event Date:{" "}
-                                {booking.eventDate}
+                                {booking.bookingFrom ? new Date(booking.bookingFrom).toLocaleDateString("en-IN") : "-"}
                             </p>
 
 
+                            {booking.slotName && (
+                                <p>
+                                    Time Slot: {booking.slotName}
+                                    {(booking.slotStartTime || booking.slotEndTime) && (
+                                        <> ({booking.slotStartTime ?? ""}{booking.slotEndTime ? ` - ${booking.slotEndTime}` : ""})</>
+                                    )}
+                                </p>
+                            )}
+
+                            {String(booking.serviceCategory ?? "").toUpperCase() === "STAY" && (
+                                <>
+                                    {booking.resourceTypeName && <p>Room Type: {booking.resourceTypeName}</p>}
+                                    {booking.roomQuantity != null && <p>Room Quantity: {booking.roomQuantity}</p>}
+                                    {!!booking.resourceIds?.length && <p>Allocated Rooms: {booking.resourceIds.join(", ")}</p>}
+                                </>
+                            )}
+
                             <p>
                                 Guests:{" "}
-                                {booking.guestCount}
+                                {booking.guestCount ?? "—"}
                             </p>
 
 

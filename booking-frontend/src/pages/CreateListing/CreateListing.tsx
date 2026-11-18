@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import CategoryCard from "../../components/vendor/create-listing/CategoryCard/CategoryCard";
+import MobileCarousel from "../../components/common/MobileCarousel/MobileCarousel";
 
 import VendorCategoryService from "../../services/VendorCategoryService";
 
@@ -37,34 +38,20 @@ export default function CreateListing() {
                 <h1>Create New Listing</h1>
 
                 <p>
-                    Select the type of business you'd like to register on EventNest.
+                    Select the type of business you'd like to register on DQBooking.
                 </p>
 
             </div>
 
-            <div className={styles.grid}>
-
-                {
-
-                    categories.map(category => (
-
-                        <CategoryCard
-
-                            key={category.id}
-
-                            category={category}
-
-                            onClick={() =>
-                                navigate(`/vendor/add-service/${category.slug}`)
-                            }
-
-                        />
-
-                    ))
-
-                }
-
-            </div>
+            <MobileCarousel className={styles.grid} ariaLabel="Listing categories" paginationPosition="top">
+                {categories.map(category => (
+                    <CategoryCard
+                        key={category.id}
+                        category={category}
+                        onClick={() => navigate(`/vendor/add-service/${category.slug}`)}
+                    />
+                ))}
+            </MobileCarousel>
 
         </div>
 

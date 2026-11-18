@@ -1,0 +1,16 @@
+
+spring:
+  data:
+    mongodb:
+      uri: ${MONGODB_URI:mongodb://127.0.0.1:27017/Catalog}
+
+jwt:
+  expiration: 3600000
+  secret: ${JWT_SECRET:4A6B4D6E5A715564586E3272357538782F413F4428472B4B6250655368566D5971}
+
+app:
+  upload:
+    path: C:/workspace/DqBooking/booking-backend/src/main/resources
+    base-url: http://localhost:8080/uploads
+    image-max-size-mb: 5
+    video-max-size-mb: 50

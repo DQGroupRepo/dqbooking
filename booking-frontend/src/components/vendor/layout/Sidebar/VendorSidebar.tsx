@@ -10,7 +10,8 @@ import {
     FaCog,
     FaChartLine,
     FaLayerGroup,
-    FaUsers
+    FaUsers,
+    FaTimes
 } from "react-icons/fa";
 
 import { useAuth } from "../../../../context/AuthContext";
@@ -23,6 +24,10 @@ interface VendorSidebarProps {
     viewPages: string[];
 
     supportActive?: boolean;
+
+    mobileOpen?: boolean;
+
+    onClose?: () => void;
 
 }
 
@@ -99,7 +104,11 @@ export default function VendorSidebar({
 
     viewPages,
 
-    supportActive = false
+    supportActive = false,
+
+    mobileOpen = false,
+
+    onClose
 
 }: VendorSidebarProps) {
 
@@ -132,33 +141,27 @@ export default function VendorSidebar({
 
     return (
 
-        <aside className="vendor-sidebar">
+        <aside className={`vendor-sidebar${mobileOpen ? " is-mobile-open" : ""}`}>
 
+            <button
+                type="button"
+                className="vendor-sidebar-close"
+                aria-label="Close navigation menu"
+                onClick={onClose}
+            >
+                <FaTimes />
+            </button>
 
             {/* =====================================================
                 LOGO
             ===================================================== */}
 
             <div className="vendor-logo">
-
-                <span className="logo-icon">
-                    🎉
-                </span>
-
-
-                <div>
-
-                    <h2>
-                        EventNest
-                    </h2>
-
-
-                    <p>
-                        Vendor Portal
-                    </p>
-
-                </div>
-
+                <img
+                    src="/images/dq-logo.png"
+                    alt="DQBooking"
+                    className="vendor-logo-image"
+                />
             </div>
 
 
@@ -196,6 +199,7 @@ export default function VendorSidebar({
                                     }
 
                                     className="sidebar-link"
+                                    onClick={onClose}
 
                                 >
 
@@ -240,6 +244,7 @@ export default function VendorSidebar({
                             to="/vendor/team"
 
                             className="sidebar-link"
+                            onClick={onClose}
 
                         >
 

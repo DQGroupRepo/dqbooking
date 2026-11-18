@@ -6,3 +6,10 @@
     max-width: none;
     box-sizing: border-box;
 }
+/* Vendor dashboard responsive containment */
+.dashboard,
+.dashboard > * { min-width: 0; max-width: 100%; box-sizing: border-box; }
+@media (max-width: 900px) {
+    .dashboard { width: 100%; gap: 20px; padding: 0; overflow-x: clip; }
+}
+@media (max-width: 600px) { .dashboard { gap: 16px; } }

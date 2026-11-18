@@ -8,6 +8,7 @@ import com.booking.exception.ResourceNotFoundException;
 import com.booking.mapper.BookingSlotMapper;
 import com.booking.model.BookingSlot;
 import com.booking.model.VendorService;
+import com.booking.model.enums.ServiceCategory;
 import com.booking.repository.BookingSlotRepository;
 import com.booking.repository.VendorServiceRepository;
 import com.booking.service.BookingSlotService;
@@ -56,6 +57,7 @@ public class BookingSlotServiceImpl
                     );
                 });
 
+        validateResourceType(service, request.getResourceTypeId());
         validateSlot(request, serviceId);
 
         BookingSlot bookingSlot =
@@ -103,6 +105,9 @@ public class BookingSlotServiceImpl
                             );
                         });
 
+        VendorService service = vendorServiceRepository.findById(bookingSlot.getServiceId())
+                .orElseThrow(() -> new ResourceNotFoundException("Vendor Service not found."));
+        validateResourceType(service, request.getResourceTypeId());
         validateSlotForUpdate(
                 request,
                 bookingSlot
@@ -211,6 +216,15 @@ public class BookingSlotServiceImpl
                     Validation Methods
        ======================================================= */
 
+    private void validateResourceType(VendorService service, String resourceTypeId) {
+        if (resourceTypeId == null || resourceTypeId.isBlank()) return;
+        if (service.getCategory() != ServiceCategory.STAY)
+            throw new IllegalArgumentException("Resource Types can be assigned to booking slots only for STAY services.");
+        boolean exists = service.getResourceTypes() != null && service.getResourceTypes().stream()
+                .anyMatch(type -> resourceTypeId.equals(type.getId()) && !Boolean.FALSE.equals(type.getActive()));
+        if (!exists) throw new IllegalArgumentException("Selected resource type is not active for this service.");
+    }
+
     private void validateSlot(
             CreateBookingSlotRequest request,
             String serviceId) {
@@ -272,7 +286,10 @@ public class BookingSlotServiceImpl
             java.time.LocalTime start,
             java.time.LocalTime end) {
 
-        if (!end.isAfter(start)) {
+        // A slot whose end time is earlier than its start time represents an
+        // overnight interval (for example 11:00 -> 10:00 next day). Equal
+        // times are rejected because they would otherwise be ambiguous.
+        if (start == null || end == null || start.equals(end)) {
 
             log.warn(
                     "Invalid booking slot time range startTime={} endTime={}",
@@ -281,7 +298,7 @@ public class BookingSlotServiceImpl
             );
 
             throw new IllegalArgumentException(
-                    "End time must be after start time."
+                    "Start and end times must be present and must not be equal."
             );
         }
     }

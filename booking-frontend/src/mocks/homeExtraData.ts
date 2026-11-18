@@ -1,23 +1,23 @@
 export const popularLocations = [
 
   {
-    city: "Chennai",
-    vendors: "1200+ Vendors"
+    city: "Trivandrum",
+    vendors: "120+ Vendors"
   },
 
   {
-    city: "Bangalore",
-    vendors: "980+ Vendors"
+    city: "Kochi",
+    vendors: "80+ Vendors"
   },
 
   {
-    city: "Hyderabad",
-    vendors: "760+ Vendors"
+    city: "Alappuzha",
+    vendors: "60+ Vendors"
   },
 
   {
-    city: "Mumbai",
-    vendors: "1400+ Vendors"
+    city: "Kozhikode",
+    vendors: "40+ Vendors"
   }
 
 ];
@@ -28,7 +28,7 @@ export const testimonials = [
   {
     name: "Priya",
     review:
-      "EventNest helped us find our dream wedding hall."
+      "DQBooking helped us find our dream wedding hall."
   },
 
   {

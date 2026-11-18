@@ -16,6 +16,12 @@ public class BookingSlot extends BaseEntity {
 
     private String serviceId;
 
+    /** Optional resource type assignment; null keeps legacy slot capacity. */
+    private String resourceTypeId;
+
+    /** DAILY_RECURRING reserves the slot window each selected day; CONTINUOUS reserves the whole stay. */
+    private String bookingPattern = "DAILY_RECURRING";
+
     private String slotName;
 
     private LocalTime startTime;

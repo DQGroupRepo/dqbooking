@@ -1,0 +1,173 @@
+/* DQBooking approved navy/blue venue-page theme.
+   Visual-only overrides: no API, state, pricing or booking logic is changed. */
+:root {
+  --dq-navy: #0b3854;
+  --dq-blue: #075b91;
+  --dq-blue-strong: #0877b9;
+  --dq-blue-soft: #eaf5fb;
+  --dq-blue-pale: #f4f8fc;
+  --dq-border: #d8e5ef;
+  --dq-text: #142d49;
+  --dq-muted: #66788c;
+}
+
+.section {
+  background: #f5f8fc;
+  padding: 28px 0 48px;
+}
+.vendor-layout {
+  grid-template-columns: minmax(0, 1fr) minmax(330px, 390px);
+  gap: 28px;
+  max-width: 1440px;
+  align-items: start;
+}
+.vendor-detail-main { min-width: 0; }
+.vendor-booking-card {
+  width: 100%; max-width: none; box-sizing: border-box;
+  position: sticky; top: 88px;
+  border: 1px solid var(--dq-border); border-radius: 20px;
+  background: #fff; box-shadow: 0 10px 30px rgba(16, 55, 85, .12);
+  overflow: hidden;
+}
+.vendor-booking-card h2 { color: var(--dq-blue); }
+.vendor-booking-card label, .slot-section-label { color: var(--dq-text); }
+.vendor-booking-card input, .vendor-booking-card select {
+  border: 1px solid var(--dq-border); border-radius: 11px; background: #fff;
+}
+.vendor-booking-card input:focus, .vendor-booking-card select:focus {
+  border-color: var(--dq-blue-strong);
+  box-shadow: 0 0 0 3px rgba(8, 119, 185, .13);
+}
+.vendor-booking-card button, .vendor-booking-card .book-button {
+  border-radius: 12px;
+}
+.vendor-booking-card .book-button { background: var(--dq-blue); }
+.vendor-booking-card .book-button:hover:not(:disabled) { background: var(--dq-navy); }
+.vendor-booking-card .save-button { border-radius: 12px; }
+.booking-slot-card {
+  border: 1px solid var(--dq-border); border-radius: 14px;
+  background: #f8fbfe;
+}
+.booking-slot-card:hover:not(:disabled) {
+  border-color: var(--dq-blue-strong); background: var(--dq-blue-soft);
+}
+.booking-slot-card.selected, .booking-slot-card.active,
+.booking-slot-card[aria-pressed="true"] {
+  border: 2px solid var(--dq-blue-strong); background: var(--dq-blue-soft);
+  box-shadow: 0 0 0 2px rgba(8, 119, 185, .08);
+}
+.selected-slot-summary { border-radius: 10px; background: var(--dq-blue-pale); border-color: var(--dq-border); }
+.pricing-date-message, .pricing-loading, .pricing-unavailable {
+  border: 1px dashed var(--dq-border); border-radius: 18px; background: #fff;
+}
+.pricing-date-message h3, .pricing-unavailable h3,
+.pricing-unavailable p strong { color: var(--dq-navy); }
+.resource-type-selector {
+  margin: 24px 0 20px; padding: 18px;
+  border: 1px solid var(--dq-border); border-radius: 18px; background: #fff;
+}
+.resource-type-selector h3 { color: var(--dq-navy); margin: 0 0 12px; }
+.resource-type-options { display: flex; flex-wrap: wrap; gap: 10px; }
+.resource-type-options button {
+  border: 1px solid var(--dq-border); border-radius: 12px;
+  background: #fff; color: var(--dq-text);
+}
+.resource-type-options button.selected {
+  border-color: var(--dq-blue-strong); background: var(--dq-blue-soft);
+  box-shadow: 0 0 0 2px rgba(8, 119, 185, .10);
+}
+.vendor-details-card, .vendor-info, .vendor-amenities,
+.venue-info-item, .amenity-card, .facility-item {
+  border-radius: 16px;
+}
+.vendor-details-card, .vendor-amenities {
+  border-color: var(--dq-border); background: #fff;
+  box-shadow: 0 5px 18px rgba(16, 55, 85, .055);
+}
+.vendor-details-card h2, .vendor-amenities h2,
+.vendor-info h1, .service-title h1 { color: var(--dq-navy); }
+.venue-information-grid { gap: 12px; }
+.venue-info-item, .amenity-card, .facility-item {
+  border: 1px solid var(--dq-border); background: #f8fbfe;
+}
+.venue-info-label, .amenity-icon, .facility-label { color: var(--dq-blue); }
+.detail-value.available { color: var(--dq-blue); }
+
+/* Regular and fixed-duration package rails */
+.vendor-packages { margin-top: 30px; }
+.vendor-packages h2, .fixed-duration-packages > h2,
+.vendor-reviews h2 { color: var(--dq-navy); }
+.package-selection-help, .fixed-duration-packages > p { color: var(--dq-muted); }
+.package-nav-button {
+  border-color: var(--dq-border); color: var(--dq-blue); background: #fff;
+  border-radius: 10px;
+}
+.package-nav-button:hover:not(:disabled) { border-color: var(--dq-blue); background: var(--dq-blue-soft); color: var(--dq-navy); }
+.package-carousel {
+  overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain;
+  scrollbar-width: thin; scrollbar-color: #8bbbd7 #e8f0f6;
+}
+.package-grid, .package-grid.carousel-grid {
+  display: flex; flex-wrap: nowrap; gap: 16px; width: max-content; min-width: 100%;
+}
+.package-card {
+  flex: 0 0 clamp(245px, 31%, 300px); width: clamp(245px, 31%, 300px);
+  min-width: 245px; border: 1px solid var(--dq-border); border-radius: 17px;
+  background: #fff; box-shadow: 0 5px 16px rgba(16, 55, 85, .055);
+  scroll-snap-align: start;
+}
+.package-card:hover { border-color: #8bbbd7; box-shadow: 0 8px 22px rgba(16, 75, 115, .10); }
+.package-card.selected { border: 2px solid var(--dq-blue-strong); background: linear-gradient(180deg, #fff, #edf7fc); box-shadow: 0 8px 22px rgba(8, 119, 185, .13); }
+.package-card h3 { color: var(--dq-navy); }
+.package-card h4 { color: #d87516; }
+.package-card button, .package-select-button { background: var(--dq-blue); border-radius: 10px; }
+.package-card button:hover, .package-select-button:hover { background: var(--dq-navy); }
+.package-card .package-menu-button { color: var(--dq-blue); border-color: var(--dq-border); background: #f7fbfe; }
+.package-selected-badge { background: var(--dq-blue); }
+.package-select-button.selected { background: var(--dq-blue-strong); }
+.fixed-duration-packages { margin-top: 30px; }
+
+/* Hardcoded review cards remain unchanged; only the horizontal presentation is styled. */
+.vendor-reviews { margin-top: 32px; }
+.reviews-carousel {
+  display: flex; gap: 14px; width: 100%; overflow-x: auto; overflow-y: hidden;
+  padding: 3px 2px 14px; scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain;
+  scrollbar-width: thin; scrollbar-color: #8bbbd7 #e8f0f6;
+}
+.review-card {
+  flex: 0 0 calc(50% - 7px); min-width: 260px; margin: 0;
+  padding: 20px; border: 1px solid var(--dq-border); border-radius: 16px;
+  background: #fff; box-shadow: 0 5px 16px rgba(16, 55, 85, .055);
+  scroll-snap-align: start;
+}
+.review-card p { color: #52677d; }
+.review-card strong { color: var(--dq-navy); }
+.review-stars { color: #e2a126; }
+
+/* Slot rail: all configured slots remain reachable without growing the card vertically. */
+.booking-slots {
+  display: flex; flex-wrap: nowrap; gap: 10px; max-height: none;
+  overflow-x: auto; overflow-y: hidden; padding: 5px 3px 12px;
+  margin: 8px 0 12px; scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain;
+  scrollbar-width: thin; scrollbar-color: #8bbbd7 #e8f0f6;
+}
+.booking-slot-card { flex: 0 0 142px; width: 142px; min-width: 142px; scroll-snap-align: start; }
+
+@media (max-width: 1024px) {
+  .vendor-layout { grid-template-columns: minmax(0, 1fr) 340px; gap: 20px; }
+}
+@media (max-width: 900px) {
+  .vendor-layout { grid-template-columns: minmax(0, 1fr); }
+  .vendor-booking-card { position: static; max-width: 100%; }
+}
+@media (max-width: 768px) {
+  .section { padding: 18px 0 34px; }
+  .vendor-layout { display: flex; flex-direction: column; gap: 22px; }
+  .vendor-detail-main, .vendor-booking-card { width: 100%; }
+  .booking-slot-card { flex-basis: 132px; width: 132px; min-width: 132px; }
+  .package-card { flex-basis: min(82vw, 300px); width: min(82vw, 300px); min-width: min(82vw, 300px); }
+  .review-card { flex-basis: 86%; min-width: 0; }
+}

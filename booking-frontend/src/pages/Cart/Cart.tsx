@@ -2,10 +2,26 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 import CartService from "../../services/CartService";
+import api from "../../api/axiosConfig";
 import type { CartItem } from "../../types/CartItem";
 
 import "./Cart.css";
 
+
+interface BundleCalculationItem {
+    serviceId: string;
+    originalAmount: number;
+    discountAmount: number;
+    finalAmount: number;
+}
+
+interface BundleCalculationResponse {
+    bundleApplied: boolean;
+    totalDiscount: number;
+    originalTotal: number;
+    finalTotal: number;
+    items: BundleCalculationItem[];
+}
 
 const Cart = () => {
 
@@ -16,6 +32,8 @@ const Cart = () => {
     const [cart, setCart] =
         useState<CartItem[]>([]);
 
+    const [bundleCalculations, setBundleCalculations] =
+        useState<Record<string, BundleCalculationResponse>>({});
 
     useEffect(() => {
 
@@ -74,24 +92,62 @@ const Cart = () => {
 
     }, []);
 
+    // Use the same backend bundle-calculation endpoint as checkout. This keeps
+    // Cart totals in sync with checkout, including guest-based catering prices
+    // and all applicable payment heads before the single bundle discount.
+    useEffect(() => {
+        let cancelled = false;
 
-    /*
-     * =========================================
-     * CALCULATIONS
-     * =========================================
-     */
+        const calculateBundles = async () => {
+            const groups = new Map<string, CartItem[]>();
+            cart.forEach(item => {
+                if (!item.bundleId) return;
+                const group = groups.get(item.bundleId) ?? [];
+                group.push(item);
+                groups.set(item.bundleId, group);
+            });
 
-    const subtotal =
-        CartService.getSubtotal();
+            const results = await Promise.all(Array.from(groups.entries()).map(async ([bundleId, items]) => {
+                if (!CartService.isBundleComplete(bundleId)) return [bundleId, null] as const;
+                try {
+                    const response = await api.post<BundleCalculationResponse>("/bundles/calculate", {
+                        bundleId,
+                        items: items.map(item => {
+                            const from = item.bookingFrom ?? (item.eventDate ? `${item.eventDate}T00:00:00` : "");
+                            const to = item.bookingTo ?? from;
+                            return {
+                                serviceId: item.serviceId,
+                                packageId: item.packageId,
+                                bookingFrom: from,
+                                bookingTo: to,
+                                guestCount: item.guestCount,
+                                roomQuantity: item.roomQuantity ?? item.quantity ?? 1
+                            };
+                        })
+                    });
+                    return [bundleId, response.data] as const;
+                } catch (error) {
+                    console.error(`Cart bundle calculation failed for ${bundleId}:`, error);
+                    return [bundleId, null] as const;
+                }
+            }));
 
+            if (cancelled) return;
+            const next: Record<string, BundleCalculationResponse> = {};
+            results.forEach(([bundleId, result]) => {
+                if (result) next[bundleId] = result;
+            });
+            setBundleCalculations(next);
+        };
 
-    const totalDiscount =
-        CartService.getTotalDiscount();
+        if (cart.length === 0) {
+            setBundleCalculations({});
+        } else {
+            void calculateBundles();
+        }
 
-
-    const finalTotal =
-        CartService.getFinalTotal();
-
+        return () => { cancelled = true; };
+    }, [cart]);
 
     /*
      * =========================================
@@ -101,6 +157,46 @@ const Cart = () => {
 
     const cartBundles =
         CartService.getCartBundles();
+
+
+    const getCartLineAmount = (item: CartItem): number => {
+        if (item.bundleId) {
+            const calculated = bundleCalculations[item.bundleId]?.items?.find(
+                line => line.serviceId === item.serviceId
+            );
+            if (calculated) return Number(calculated.originalAmount) || 0;
+        }
+        return CartService.getItemTotalPrice(item);
+    };
+
+    /*
+     * =========================================
+     * CALCULATIONS
+     * =========================================
+     */
+
+    const localSubtotal = CartService.getSubtotal();
+    const localDiscount = CartService.getTotalDiscount();
+    const calculatedBundleIds = Object.keys(bundleCalculations);
+    const calculatedBundleIdSet = new Set(calculatedBundleIds);
+    const localBundleOriginal = cartBundles
+        .filter(bundle => calculatedBundleIdSet.has(bundle.bundleId!))
+        .reduce((sum, bundle) => sum + CartService.getBundleOriginalPrice(bundle.bundleId!), 0);
+    const calculatedBundleOriginal = calculatedBundleIds.reduce((sum, id) =>
+        sum + Number(bundleCalculations[id].originalTotal ?? 0), 0);
+    const subtotal = calculatedBundleIds.length
+        ? localSubtotal - localBundleOriginal + calculatedBundleOriginal
+        : localSubtotal;
+    const localBundleDiscount = cartBundles
+        .filter(bundle => calculatedBundleIdSet.has(bundle.bundleId!))
+        .reduce((sum, bundle) => sum + CartService.getBundleDiscount(bundle.bundleId!), 0);
+    const calculatedBundleDiscount = calculatedBundleIds.reduce((sum, id) =>
+        sum + Number(bundleCalculations[id].totalDiscount ?? 0), 0);
+    const totalDiscount = calculatedBundleIds.length
+        ? localDiscount - localBundleDiscount + calculatedBundleDiscount
+        : localDiscount;
+    const finalTotal = subtotal - totalDiscount;
+
 
 
     const bundleIds =
@@ -131,20 +227,18 @@ const Cart = () => {
      * =========================================
      */
 
-    const handleRemove = (
-        serviceId: string
+    const handleRemove = async (
+        serviceId: string,
+        holdId?: string
     ) => {
 
         const updatedCart =
-            CartService.removeItem(
-                serviceId
+            await CartService.removeItem(
+                serviceId,
+                holdId
             );
 
-
-        setCart(
-            updatedCart
-        );
-
+        setCart(updatedCart);
     };
 
 
@@ -154,12 +248,18 @@ const Cart = () => {
      * =========================================
      */
 
-    const handleClearCart = () => {
+    const handleClearCart = async () => {
 
-        CartService.clearCart();
+        const confirmed = window.confirm(
+            "Clear your cart? All selected services will be removed and their active booking holds will be released."
+        );
+
+        if (!confirmed) {
+            return;
+        }
 
         setCart([]);
-
+        await CartService.clearCart();
     };
 
 
@@ -211,18 +311,10 @@ const Cart = () => {
                 );
 
 
-            const originalPrice =
-                bundleItems.reduce(
-                    (
-                        total,
-                        item
-                    ) =>
-                        total +
-                        Number(
-                            item.price
-                        ),
-                    0
-                );
+            const calculatedBundle = bundleCalculations[bundle.bundleId!];
+            const originalPrice = calculatedBundle
+                ? Number(calculatedBundle.originalTotal)
+                : bundleItems.reduce((total, item) => total + CartService.getItemTotalPrice(item), 0);
 
 
             const isComplete =
@@ -231,21 +323,27 @@ const Cart = () => {
                 );
 
 
-            const discount =
-                CartService.getBundleDiscount(
-                    bundle.bundleId!
-                );
+            const discount = calculatedBundle
+                ? Number(calculatedBundle.totalDiscount)
+                : CartService.getBundleDiscount(bundle.bundleId!);
 
-
-            const finalPrice =
-                originalPrice -
-                discount;
+            const finalPrice = calculatedBundle
+                ? Number(calculatedBundle.finalTotal)
+                : originalPrice - discount;
 
 
             const requiredCount =
                 bundle.bundleServiceIds
                     ?.length ||
                 bundleItems.length;
+
+            const completedCount =
+                bundle.bundleServiceIds?.filter(
+                    requiredServiceId =>
+                        bundleItems.some(
+                            item => item.serviceId === requiredServiceId
+                        )
+                ).length ?? bundleItems.length;
 
 
             return (
@@ -284,10 +382,57 @@ const Cart = () => {
                                 {
                                     isComplete
                                         ? "✓ Bundle completed"
-                                        : `Bundle in progress — ${bundleItems.length} of ${requiredCount} services selected`
+                                        : `Bundle in progress — ${completedCount} of ${requiredCount} services selected`
                                 }
 
                             </p>
+
+                            {
+                                !isComplete && (
+
+                                    <button
+                                        type="button"
+                                        className="cart-bundle-resume-button"
+                                        style={{
+                                            marginTop: "0.75rem",
+                                            padding: "0.55rem 0.9rem",
+                                            borderRadius: "8px",
+                                            border: "1px solid currentColor",
+                                            background: "transparent",
+                                            cursor: "pointer",
+                                            fontWeight: 600
+                                        }}
+                                        onClick={() => {
+                                            const rootServiceId =
+                                                bundle.bundleServiceIds?.[0] ||
+                                                bundleItems[0]?.serviceId;
+
+                                            if (!rootServiceId) {
+                                                return;
+                                            }
+
+                                            navigate(
+                                                `/bundles/available/${rootServiceId}`,
+                                                {
+                                                    state: {
+                                                        fromBundle: true,
+                                                        bundleRootServiceId: rootServiceId,
+                                                        bundleId: bundle.bundleId,
+                                                        bundleName: bundle.bundleName,
+                                                        bundleDescription: bundle.bundleDescription,
+                                                        bundleServiceIds: bundle.bundleServiceIds,
+                                                        bundleDiscountType: bundle.bundleDiscountType,
+                                                        bundleDiscountValue: bundle.bundleDiscountValue
+                                                    }
+                                                }
+                                            );
+                                        }}
+                                    >
+                                        Continue Bundle
+                                    </button>
+
+                                )
+                            }
 
                         </div>
 
@@ -334,7 +479,7 @@ const Cart = () => {
 
                                     <div
                                         key={
-                                            item.serviceId
+                                            item.holdId ?? `${item.serviceId}-${item.slotId ?? "no-slot"}-${item.packageId ?? "no-package"}`
                                         }
                                         className="cart-item"
                                     >
@@ -438,15 +583,19 @@ const Cart = () => {
                                         </div>
 
 
+                                        {String(item.category ?? "").toUpperCase() === "STAY" && Number(item.roomQuantity ?? 1) >= 1 && (
+                                            <div className="cart-item-quantity">
+                                                {`Quantity: ${Number(item.roomQuantity)} package combinations`}
+                                            </div>
+                                        )}
+
                                         <div className="cart-item-price">
 
                                             <strong>
 
                                                 ₹
                                                 {
-                                                    Number(
-                                                        item.price
-                                                    ).toLocaleString(
+                                                    getCartLineAmount(item).toLocaleString(
                                                         "en-IN"
                                                     )
                                                 }
@@ -461,7 +610,8 @@ const Cart = () => {
                                             className="cart-remove-button"
                                             onClick={() =>
                                                 handleRemove(
-                                                    item.serviceId
+                                                    item.serviceId,
+                                                    item.holdId
                                                 )
                                             }
                                             aria-label={
@@ -707,7 +857,7 @@ const Cart = () => {
 
                                                     <div
                                                         key={
-                                                            item.serviceId
+                                                            item.holdId ?? `${item.serviceId}-${item.slotId ?? "no-slot"}-${item.packageId ?? "no-package"}`
                                                         }
                                                         className="cart-item"
                                                     >
@@ -819,9 +969,7 @@ const Cart = () => {
 
                                                                 ₹
                                                                 {
-                                                                    Number(
-                                                                        item.price
-                                                                    ).toLocaleString(
+                                                                    getCartLineAmount(item).toLocaleString(
                                                                         "en-IN"
                                                                     )
                                                                 }
@@ -836,7 +984,8 @@ const Cart = () => {
                                                             className="cart-remove-button"
                                                             onClick={() =>
                                                                 handleRemove(
-                                                                    item.serviceId
+                                                                    item.serviceId,
+                                                                    item.holdId
                                                                 )
                                                             }
                                                             aria-label={

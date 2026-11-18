@@ -1,34 +1,60 @@
-import {
-    useEffect,
-    useState
-} from "react";
+import NumericInput from "../../../components/common/ui/NumericInput";
+import DateField from "../../../components/common/DateField/DateField";
+import MobileCarousel from "../../../components/common/MobileCarousel/MobileCarousel";
+import Loader from "../../../components/common/Loader";
+import { useEffect, useState } from "react";
 
-import {
-    useNavigate,
-    useParams
-} from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 
-import type {
-    ServicePackage
-} from "../../../types/ServicePackage";
+import type { ServicePackage} from "../../../types/ServicePackage";
 
-import VendorPricingService
-    from "../../../services/VendorPricingService";
+import VendorPricingService from "../../../services/VendorPricingService";
 
-import VendorServiceService
-    from "../../../services/VendorServiceService";
+import toast from "react-hot-toast";
 
-import toast
-    from "react-hot-toast";
+import type { VendorServicePricing, VendorPricingHead, VendorDiscount,
+    RefundRule } from "../../../types/VendorPricing";
 
-import type {
-    VendorServicePricing,
-    VendorPricingHead,
-    VendorDiscount,
-    RefundRule
-} from "../../../types/VendorPricing";
+import CateringPackageMenuModal
+    from "../../../components/vendor/pricing/CateringPackageMenuModal";
+
+import type { CateringPackageMenu } from "../../../types/CateringPackageMenu";
+
+import VendorCateringMenuService from "../../../services/VendorCateringMenuService";
+
+import VendorServiceService from "../../../services/VendorServiceService";
+import BookingSlotService from "../../../services/BookingSlotService";
+import type { BookingSlot } from "../../../types/BookingSlot";
+import type { ServiceResourceType } from "../../../types/VendorDetail";
+
+import type { CateringMenuItem} from "../../../types/CateringMenuItem";
 
 import "./VendorPricing.css";
+
+
+/*
+ * =========================================================
+ * PRICING VERSION HISTORY
+ * =========================================================
+ */
+
+interface VendorServicePricingVersion {
+
+    id: string;
+
+    version: number;
+
+    effectiveFrom: string;
+
+    effectiveUntil?: string | null;
+
+    baseAmount: number;
+
+    createdAt: string;
+
+    createdBy: string;
+
+}
 
 
 /*
@@ -41,10 +67,10 @@ import "./VendorPricing.css";
  * The vendor creates their own rules.
  */
 
- const emptyCancellationPolicy = {
-     processingDays: 0,
-     refundRules: []
- };
+const emptyCancellationPolicy = {
+    processingDays: 0,
+    refundRules: []
+};
 
 const emptyPricing:
     VendorServicePricing = {
@@ -61,19 +87,15 @@ const emptyPricing:
 
     discounts: [],
 
+    packages: [],
+
     paymentConfiguration: {
 
-        advancePaymentType:
-            "PERCENTAGE",
+        advancePaymentAllowed: false,
 
-        advancePaymentValue:
-            null,
+        advancePaymentType: "PERCENTAGE",
 
-        payAfterConfirmation:
-            true,
-
-        discussWithVendor:
-            true
+        advancePaymentValue: null
 
     },
 
@@ -86,8 +108,6 @@ const emptyPricing:
     }
 
 };
-
-
 
 
 /*
@@ -127,19 +147,76 @@ const VendorPricing = () => {
             emptyPricing
         );
 
+    const [ packages, setPackages
+    ] = useState<ServicePackage[]>([]);
 
-    const [
-        packages,
-        setPackages
-    ] =
-        useState<ServicePackage[]>([]);
+    const [ pricingVersions, setPricingVersions
+    ] = useState<VendorServicePricingVersion[]>([]);
 
+    const [ selectedPricingId, setSelectedPricingId ] =  useState<string | null>(null);
 
+    const [isCateringService, setIsCateringService] = useState(false);
+    const [isStayService, setIsStayService] = useState(false);
+    const [bookingSlots, setBookingSlots] = useState<BookingSlot[]>([]);
+    const [resourceTypes, setResourceTypes] = useState<ServiceResourceType[]>([]);
+    const [resourceTypeName, setResourceTypeName] = useState("");
+    const [resourceTypeQuantity, setResourceTypeQuantity] = useState(1);
+
+    const [cateringMenuItems, setCateringMenuItems] =
+        useState<CateringMenuItem[]>([]);
+
+    const [menuPackageIndex, setMenuPackageIndex] =
+        useState<number | null>(null);
     /*
      * =========================================================
      * LOAD PRICING + PACKAGES
      * =========================================================
      */
+
+    const addResourceType = async () => {
+        if (!serviceId || !resourceTypeName.trim()) {
+            toast.error("Enter a resource type name.");
+            return;
+        }
+        try {
+            const next = [...resourceTypes, {
+                id: `resource-${Date.now()}`,
+                name: resourceTypeName.trim(),
+                quantity: Math.max(1, Math.min(100, Math.floor(resourceTypeQuantity || 1))),
+                active: true
+            }];
+            const saved = await VendorServiceService.saveResourceTypes(serviceId, next);
+            setResourceTypes(saved);
+            setResourceTypeName("");
+            setResourceTypeQuantity(1);
+            toast.success("Resource type saved.");
+        } catch (error) {
+            console.error("Failed to save resource types", error);
+            toast.error("Unable to save resource type.");
+        }
+    };
+
+    const removeResourceType = async (resourceTypeId: string) => {
+        if (!serviceId) return;
+        if (packages.some(pkg => pkg.resourceTypeId === resourceTypeId ||
+            (pkg.resourceRequirements ?? []).some(requirement => requirement.resourceTypeId === resourceTypeId)) ||
+            bookingSlots.some(slot => slot.resourceTypeId === resourceTypeId)) {
+            toast.error("Unassign this resource type from packages and booking slots before removing it.");
+            return;
+        }
+        try {
+            const next = resourceTypes.filter(type => type.id !== resourceTypeId);
+            const saved = await VendorServiceService.saveResourceTypes(serviceId, next);
+            setResourceTypes(saved);
+            setPackages(previous => previous.map(pkg =>
+                pkg.resourceTypeId === resourceTypeId ? { ...pkg, resourceTypeId: undefined } : pkg
+            ));
+            toast.success("Resource type removed.");
+        } catch (error) {
+            console.error("Failed to remove resource type", error);
+            toast.error("Unable to remove resource type.");
+        }
+    };
 
     useEffect(() => {
 
@@ -156,6 +233,77 @@ const VendorPricing = () => {
         serviceId
     ]);
 
+    useEffect(() => {
+        if (!serviceId) return;
+
+        let cancelled = false;
+
+        async function loadCateringData() {
+            try {
+                const service =
+                    await VendorServiceService.getServiceById(serviceId!);
+
+                if (cancelled) return;
+
+                const category = service.category?.toLowerCase().trim();
+                const isCatering = category === "catering";
+                const isStay = category === "stay" || category === "stays";
+
+                setIsCateringService(isCatering);
+                setIsStayService(isStay);
+                const savedResourceTypes = isStay
+                    ? await VendorServiceService.getResourceTypes(serviceId!)
+                    : [];
+                if (!cancelled) setResourceTypes(savedResourceTypes);
+
+                // Package eligibility and STAY inventory are managed by booking slots.
+                const slotResults = await BookingSlotService.getSlots(serviceId!);
+                if (!cancelled) setBookingSlots(slotResults.filter(slot => slot.active));
+
+                if (isCatering) {
+                    const response =
+                        await VendorCateringMenuService.getMenu(serviceId!);
+
+                    if (!cancelled) {
+                        setCateringMenuItems(response.items ?? []);
+                    }
+                } else {
+                    setCateringMenuItems([]);
+                }
+            } catch (error) {
+                if (!cancelled) {
+                    console.error("Failed to load catering menu:", error);
+                    toast.error("Unable to load package or catering configuration.");
+                }
+            }
+        }
+
+        void loadCateringData();
+
+        return () => {
+            cancelled = true;
+        };
+    }, [serviceId]);
+
+    function updatePackageCateringMenu(
+        packageIndex: number,
+        menu: CateringPackageMenu
+    ) {
+        setPackages(previous =>
+            previous.map((pkg, index) =>
+                index === packageIndex
+                    ? { ...pkg, cateringPackageMenu: menu }
+                    : pkg
+            )
+        );
+
+        setMenuPackageIndex(null);
+    }
+    /*
+     * =========================================================
+     * LOAD PRICING
+     * =========================================================
+     */
 
     async function loadPricing() {
 
@@ -166,15 +314,32 @@ const VendorPricing = () => {
             );
 
 
-            /*
-             * Load pricing configuration.
-             */
+            const [
+                response,
+                versions
+            ] = await Promise.all([
 
-            const response =
-                await VendorPricingService
+                VendorPricingService
                     .getPricing(
                         serviceId!
-                    );
+                    ),
+
+                VendorPricingService
+                    .getPricingVersions(
+                        serviceId!
+                    )
+
+            ]);
+
+
+            setPricingVersions(
+                (versions ?? []).map(version => ({
+                    ...version,
+                    baseAmount: Number(version.baseAmount),
+                    createdAt: version.createdAt ?? "",
+                    createdBy: version.createdBy ?? ""
+                }))
+            );
 
 
             if (response) {
@@ -184,7 +349,6 @@ const VendorPricing = () => {
                     ...emptyPricing,
 
                     ...response,
-
 
                     paymentConfiguration: {
 
@@ -199,7 +363,6 @@ const VendorPricing = () => {
 
                             "PERCENTAGE",
 
-
                         advancePaymentValue:
 
                             response.paymentConfiguration
@@ -208,7 +371,6 @@ const VendorPricing = () => {
                             null
 
                     },
-
 
                     cancellationPolicy: {
 
@@ -228,23 +390,38 @@ const VendorPricing = () => {
 
                 });
 
+
+                setPackages(
+                    response.packages ?? []
+                );
+
+
+                setSelectedPricingId(
+                    response.id ?? null
+                );
+
+            }
+            else {
+
+                setPricing({
+
+                    ...emptyPricing,
+
+                    serviceId:
+                        serviceId!
+
+                });
+
+                setPackages(
+                    []
+                );
+
+                setSelectedPricingId(
+                    null
+                );
+
             }
 
-
-            /*
-             * Load packages from service.
-             */
-
-            const service =
-                await VendorServiceService
-                    .getServiceById(
-                        serviceId!
-                    );
-
-
-            setPackages(
-                service.packages ?? []
-            );
 
         }
         catch (error) {
@@ -254,6 +431,13 @@ const VendorPricing = () => {
                 error
             );
 
+            setPricingVersions(
+                []
+            );
+
+            setSelectedPricingId(
+                null
+            );
 
             setPricing({
 
@@ -263,7 +447,6 @@ const VendorPricing = () => {
                     serviceId!
 
             });
-
 
             setPackages(
                 []
@@ -283,893 +466,163 @@ const VendorPricing = () => {
 
     /*
      * =========================================================
-     * SORTED PACKAGES
-     * =========================================================
-     *
-     * Important:
-     *
-     * Never mutate the packages state with .sort().
-     */
-
-    const sortedPackages = [...packages];
-
-
-    /*
-     * =========================================================
-     * BASE PRICING
+     * LOAD A SPECIFIC PRICING VERSION
      * =========================================================
      */
 
-    function updateBaseAmount(
-        value: string
+    async function selectPricingVersion(
+        pricingId: string
     ) {
 
-        setPricing(
-            previous => ({
+        try {
 
-                ...previous,
-
-                baseAmount:
-                    Number(value)
-
-            })
-        );
-
-    }
+            setLoading(
+                true
+            );
 
 
-    function updateEffectiveFrom(
-        value: string
-    ) {
-
-        setPricing(
-            previous => ({
-
-                ...previous,
-
-                effectiveFrom:
-                    value
-
-            })
-        );
-
-    }
+            const response =
+                await VendorPricingService
+                    .getPricingById(
+                        pricingId
+                    );
 
 
-    function updateEffectiveUntil(
-        value: string
-    ) {
+            if (!response) {
 
-        setPricing(
-            previous => ({
+                return;
 
-                ...previous,
-
-                effectiveUntil:
-                    value
-
-            })
-        );
-
-    }
+            }
 
 
-    /*
-     * =========================================================
-     * PAYMENT CONFIGURATION
-     * =========================================================
-     */
+            setPricing({
 
-    function updateAdvancePaymentType(
-        type:
-            | "PERCENTAGE"
-            | "FIXED_AMOUNT"
-    ) {
+                ...emptyPricing,
 
-        setPricing(
-            current => ({
-
-                ...current,
+                ...response,
 
                 paymentConfiguration: {
 
-                    ...current.paymentConfiguration,
+                    ...emptyPricing.paymentConfiguration,
+
+                    ...response.paymentConfiguration,
 
                     advancePaymentType:
-                        type
 
-                }
+                        response.paymentConfiguration
+                            ?.advancePaymentType ??
 
-            })
-        );
-
-    }
-
-    function updateAdvancePaymentValue(
-        value: string
-    ) {
-
-        const numericValue =
-
-            value === ""
-
-                ? null
-
-                : Number(value);
-
-
-        setPricing(
-            current => ({
-
-                ...current,
-
-                paymentConfiguration: {
-
-                    ...current.paymentConfiguration,
+                        "PERCENTAGE",
 
                     advancePaymentValue:
-                        numericValue
+
+                        response.paymentConfiguration
+                            ?.advancePaymentValue ??
+
+                        null
+
+                },
+
+                cancellationPolicy: {
+
+                    ...emptyCancellationPolicy,
+
+                    ...response.cancellationPolicy,
+
+                    refundRules:
+
+                        response
+                            .cancellationPolicy
+                            ?.refundRules ??
+
+                        []
 
                 }
 
-            })
-        );
+            });
 
-    }
 
+            setPackages(
+                response.packages ?? []
+            );
 
-    /*
-     * =========================================================
-     * PRICING HEADS
-     * =========================================================
-     */
 
-    function addPricingHead() {
+            setSelectedPricingId(
+                response.id ?? pricingId
+            );
 
-        const head:
-            VendorPricingHead = {
+        }
+        catch (error) {
 
-            code: "",
+            console.error(
+                "Failed to load pricing version:",
+                error
+            );
 
-            name: "",
+            toast.error(
+                "Unable to load pricing version."
+            );
 
-            calculationType:
-                "FIXED",
+        }
+        finally {
 
-            value: 0,
+            setLoading(
+                false
+            );
 
-            displayOrder:
-                pricing
-                    .pricingHeads
-                    .length + 1,
-
-            active: true
-
-        };
-
-
-        setPricing(
-            previous => ({
-
-                ...previous,
-
-                pricingHeads: [
-
-                    ...previous
-                        .pricingHeads,
-
-                    head
-
-                ]
-
-            })
-        );
-
-    }
-
-
-    function updatePricingHead(
-
-        index: number,
-
-        field:
-            keyof VendorPricingHead,
-
-        value: any
-
-    ) {
-
-        setPricing(
-            previous => {
-
-                const updated =
-                    [
-                        ...previous
-                            .pricingHeads
-                    ];
-
-
-                updated[index] = {
-
-                    ...updated[index],
-
-                    [field]:
-                        value
-
-                };
-
-
-                return {
-
-                    ...previous,
-
-                    pricingHeads:
-                        updated
-
-                };
-
-            }
-        );
-
-    }
-
-
-    function removePricingHead(
-        index: number
-    ) {
-
-        setPricing(
-            previous => ({
-
-                ...previous,
-
-                pricingHeads:
-                    previous
-                        .pricingHeads
-                        .filter(
-                            (
-                                _,
-                                i
-                            ) =>
-                                i !== index
-                        )
-
-            })
-        );
-
-    }
-
-
-    /*
-     * =========================================================
-     * DISCOUNTS
-     * =========================================================
-     */
-
-    function addDiscount() {
-
-        const discount:
-            VendorDiscount = {
-
-            name: "",
-
-            discountType:
-                "FIXED",
-
-            value: 0,
-
-            active: true
-
-        };
-
-
-        setPricing(
-            previous => ({
-
-                ...previous,
-
-                discounts: [
-
-                    ...previous
-                        .discounts,
-
-                    discount
-
-                ]
-
-            })
-        );
-
-    }
-
-
-    function updateDiscount(
-
-        index: number,
-
-        field:
-            keyof VendorDiscount,
-
-        value: any
-
-    ) {
-
-        setPricing(
-            previous => {
-
-                const updated =
-                    [
-                        ...previous
-                            .discounts
-                    ];
-
-
-                updated[index] = {
-
-                    ...updated[index],
-
-                    [field]:
-                        value
-
-                };
-
-
-                return {
-
-                    ...previous,
-
-                    discounts:
-                        updated
-
-                };
-
-            }
-        );
-
-    }
-
-
-    function removeDiscount(
-        index: number
-    ) {
-
-        setPricing(
-            previous => ({
-
-                ...previous,
-
-                discounts:
-                    previous
-                        .discounts
-                        .filter(
-                            (
-                                _,
-                                i
-                            ) =>
-                                i !== index
-                        )
-
-            })
-        );
-
-    }
-
-
-    /*
-     * =========================================================
-     * PACKAGE
-     * =========================================================
-     */
-
-    function createPackageId(): string {
-
-        if (
-            typeof crypto !== "undefined" &&
-            typeof crypto.randomUUID === "function"
-        ) {
-            return crypto.randomUUID();
         }
 
-        return `package-${Date.now()}-${Math.random()
-            .toString(36)
-            .substring(2, 9)}`;
     }
 
 
-    function addPackage() {
+    function formatVersionDate(
+        value?: string | null
+    ): string {
 
-        const newPackage: ServicePackage = {
+        if (!value) {
 
-            id: createPackageId(),
-
-            name: "",
-
-            price: 0,
-
-            features: [],
-
-            active: true
-
-        };
-
-
-        setPackages(
-            previous => [
-                ...previous,
-                newPackage
-            ]
-        );
-
-    }
-
-
-    /*
-     * =========================================================
-     * TOGGLE PACKAGE
-     * =========================================================
-     */
-
-    function togglePackage(
-        packageId: string
-    ) {
-
-        setPackages(
-            previous =>
-                previous.map(
-                    pkg =>
-                        pkg.id === packageId
-                            ? {
-                                ...pkg,
-                                active: !pkg.active
-                            }
-                            : pkg
-                )
-        );
-
-    }
-
-
-    /*
-     * =========================================================
-     * UPDATE PACKAGE
-     * =========================================================
-     */
-
-    function updatePackage(
-        packageId: string,
-        field: keyof ServicePackage,
-        value: string | number | boolean
-    ) {
-
-        setPackages(
-            previous =>
-                previous.map(
-                    pkg =>
-                        pkg.id === packageId
-                            ? {
-                                ...pkg,
-                                [field]: value
-                            }
-                            : pkg
-                )
-        );
-
-    }
-
-
-    /*
-     * =========================================================
-     * REMOVE PACKAGE
-     * =========================================================
-     */
-
-    function removePackage(
-        packageId: string
-    ) {
-
-        setPackages(
-            previous =>
-                previous.filter(
-                    pkg =>
-                        pkg.id !== packageId
-                )
-        );
-
-    }
-
-
-    /*
-     * =========================================================
-     * ADD FEATURE
-     * =========================================================
-     */
-
-    function addFeature(
-        packageId: string
-    ) {
-
-        setPackages(
-            previous =>
-                previous.map(
-                    pkg =>
-                        pkg.id === packageId
-                            ? {
-                                ...pkg,
-                                features: [
-                                    ...pkg.features,
-                                    ""
-                                ]
-                            }
-                            : pkg
-                )
-        );
-
-    }
-
-
-    /*
-     * =========================================================
-     * UPDATE FEATURE
-     * =========================================================
-     */
-
-    function updateFeature(
-        packageId: string,
-        featureIndex: number,
-        value: string
-    ) {
-
-        setPackages(
-            previous =>
-                previous.map(
-                    pkg => {
-
-                        if (
-                            pkg.id !== packageId
-                        ) {
-                            return pkg;
-                        }
-
-
-                        const features = [
-                            ...pkg.features
-                        ];
-
-
-                        features[
-                            featureIndex
-                        ] = value;
-
-
-                        return {
-                            ...pkg,
-                            features
-                        };
-
-                    }
-                )
-        );
-
-    }
-
-
-    /*
-     * =========================================================
-     * REMOVE FEATURE
-     * =========================================================
-     */
-
-    function removeFeature(
-        packageId: string,
-        featureIndex: number
-    ) {
-
-        setPackages(
-            previous =>
-                previous.map(
-                    pkg => {
-
-                        if (
-                            pkg.id !== packageId
-                        ) {
-                            return pkg;
-                        }
-
-
-                        return {
-                            ...pkg,
-
-                            features:
-                                pkg.features.filter(
-                                    (
-                                        _,
-                                        index
-                                    ) =>
-                                        index !== featureIndex
-                                )
-                        };
-
-                    }
-                )
-        );
-
-    }
-
-
-    /*
-     * =========================================================
-     * CANCELLATION POLICY
-     * =========================================================
-     */
-
-    function updateProcessingDays(
-        value: string
-    ) {
-
-        setPricing(
-            previous => ({
-
-                ...previous,
-
-                cancellationPolicy: {
-
-                    processingDays:
-                        Number(value),
-
-                    refundRules:
-                        previous
-                            .cancellationPolicy
-                            ?.refundRules ?? []
-
-                }
-
-            })
-        );
-
-    }
-
-
-    /*
-     * =========================================================
-     * ADD REFUND RULE
-     * =========================================================
-     *
-     * No business assumptions are made.
-     *
-     * Vendor defines the rule.
-     *
-     * maxDaysBeforeEvent = null means:
-     *
-     *     No upper limit
-     *
-     * Example:
-     *
-     *     31+ days
-     *
-     */
-
-    function addRefundRule() {
-
-        const newRule: RefundRule = {
-
-            minDaysBeforeEvent: 0,
-
-            maxDaysBeforeEvent: null,
-
-            refundPercentage: 0
-
-        };
-
-
-        setPricing(
-            previous => ({
-
-                ...previous,
-
-                cancellationPolicy: {
-
-                    processingDays:
-                        previous
-                            .cancellationPolicy
-                            ?.processingDays ?? 0,
-
-                    refundRules: [
-
-                        ...(
-                            previous
-                                .cancellationPolicy
-                                ?.refundRules ?? []
-                        ),
-
-                        newRule
-
-                    ]
-
-                }
-
-            })
-        );
-
-    }
-
-
-    /*
-     * =========================================================
-     * UPDATE REFUND RULE
-     * =========================================================
-     */
-
-    function updateRefundRule(
-
-        index: number,
-
-        field: keyof RefundRule,
-
-        value: number | null
-
-    ) {
-
-        setPricing(
-            previous => {
-
-                const updatedRules = [
-                    ...(
-                        previous
-                            .cancellationPolicy
-                            ?.refundRules ?? []
-                    )
-                ];
-
-
-                updatedRules[index] = {
-
-                    ...updatedRules[index],
-
-                    [field]:
-                        value
-
-                };
-
-
-                return {
-
-                    ...previous,
-
-                    cancellationPolicy: {
-
-                        processingDays:
-                            previous
-                                .cancellationPolicy
-                                ?.processingDays ?? 0,
-
-                        refundRules:
-                            updatedRules
-
-                    }
-
-                };
-
-            }
-        );
-
-    }
-
-
-    /*
-     * =========================================================
-     * REMOVE REFUND RULE
-     * =========================================================
-     */
-
-    function removeRefundRule(
-        index: number
-    ) {
-
-        setPricing(
-            previous => ({
-
-                ...previous,
-
-                cancellationPolicy: {
-
-                    processingDays:
-                        previous
-                            .cancellationPolicy
-                            ?.processingDays ?? 0,
-
-                    refundRules:
-                        (
-                            previous
-                                .cancellationPolicy
-                                ?.refundRules ?? []
-                        ).filter(
-                            (
-                                _,
-                                ruleIndex
-                            ) =>
-                                ruleIndex !== index
-                        )
-
-                }
-
-            })
-        );
-
-    }
-
-
-    /*
-     * =========================================================
-     * VALIDATE CANCELLATION RULES
-     * =========================================================
-     */
-
-    function validateRefundRules():
-        boolean {
-
-        const rules =
-            pricing
-                .cancellationPolicy
-                ?.refundRules ?? [];
-
-
-        for (
-            let index = 0;
-            index < rules.length;
-            index++
-        ) {
-
-            const rule =
-                rules[index];
-
-
-            if (
-                rule.minDaysBeforeEvent <
-                0
-            ) {
-
-                toast.error(
-                    `Refund Rule ${index + 1}: From Days cannot be negative.`
-                );
-
-                return false;
-
-            }
-
-
-            if (
-                rule.maxDaysBeforeEvent !==
-                    null &&
-                rule.maxDaysBeforeEvent <
-                    rule.minDaysBeforeEvent
-            ) {
-
-                toast.error(
-                    `Refund Rule ${index + 1}: To Days must be greater than or equal to From Days.`
-                );
-
-                return false;
-
-            }
-
-
-            if (
-                rule.refundPercentage < 0 ||
-                rule.refundPercentage > 100
-            ) {
-
-                toast.error(
-                    `Refund Rule ${index + 1}: Refund percentage must be between 0 and 100.`
-                );
-
-                return false;
-
-            }
+            return "—";
 
         }
 
 
-        return true;
+        return new Date(
+            `${value}T00:00:00`
+        ).toLocaleDateString(
+            "en-IN",
+            {
+                day: "2-digit",
+                month: "short",
+                year: "numeric"
+            }
+        );
+
+    }
+
+
+    function formatVersionDateTime(
+        value?: string | null
+    ): string {
+
+        if (!value) {
+
+            return "—";
+
+        }
+
+
+        return new Date(
+            value
+        ).toLocaleString(
+            "en-IN",
+            {
+                day: "2-digit",
+                month: "short",
+                year: "numeric",
+                hour: "2-digit",
+                minute: "2-digit"
+            }
+        );
 
     }
 
@@ -1241,28 +694,16 @@ const VendorPricing = () => {
         ) {
 
             if (
-                !pkg.name ||
-                !pkg.name.trim()
-            ) {
-
-                toast.error(
-                    "Enter a package name for every active package."
-                );
-
-                return;
-            }
-
-
-            if (
                 !pkg.price ||
                 pkg.price <= 0
             ) {
 
                 toast.error(
-                    `Enter a valid price for the "${pkg.name}" package.`
+                    `Enter a valid price for the ${pkg.name} package.`
                 );
 
                 return;
+
             }
 
         }
@@ -1279,61 +720,6 @@ const VendorPricing = () => {
             return;
 
         }
-        const paymentConfiguration =
-            pricing.paymentConfiguration;
-
-
-        if (
-            paymentConfiguration?.advancePaymentType ===
-            "PERCENTAGE"
-        ) {
-
-            const advanceValue =
-                paymentConfiguration.advancePaymentValue;
-
-
-            if (
-                advanceValue !== null &&
-                (
-                    advanceValue < 0 ||
-                    advanceValue > 100
-                )
-            ) {
-
-                toast.error(
-                    "Advance payment percentage must be between 0 and 100."
-                );
-
-                return;
-
-            }
-
-        }
-
-
-        if (
-            paymentConfiguration?.advancePaymentType ===
-            "FIXED_AMOUNT"
-        ) {
-
-            const advanceValue =
-                paymentConfiguration.advancePaymentValue;
-
-
-            if (
-                advanceValue !== null &&
-                advanceValue < 0
-            ) {
-
-                toast.error(
-                    "Advance payment amount cannot be negative."
-                );
-
-                return;
-
-            }
-
-        }
 
 
         try {
@@ -1344,42 +730,68 @@ const VendorPricing = () => {
 
 
             /*
-             * =========================================
-             * SAVE PACKAGES
-             * =========================================
+             * =====================================================
+             * SAVE PRICING + PACKAGES TOGETHER
+             * =====================================================
+             *
+             * Packages now belong to VendorServicePricing.
+             *
+             * There is no separate package API call.
              */
 
-            await VendorServiceService
-                .updatePackages(
-                    serviceId,
-                    packages
-                );
+            if (!isStayService && packages.some(pkg => pkg.active && pkg.requiresSlot === false)) {
+                toast.error("Packages without predefined slots are supported only for Stays services.");
+                setSaving(false);
+                return;
+            }
 
+            if (isStayService) {
+                const invalidStayPackage = packages.find(pkg => pkg.active && (!Number.isInteger(Number(pkg.maxGuestsPerRoom)) || Number(pkg.maxGuestsPerRoom) < 1));
+                if (invalidStayPackage) {
+                    toast.error(`Enter a maximum of at least one guest per room for package "${invalidStayPackage.name || "Untitled"}".`);
+                    setSaving(false);
+                    return;
+                }
+                const unassignedInventoryPackage = packages.find(pkg => pkg.active && !(pkg.resourceRequirements?.length || pkg.resourceTypeId));
+                if (unassignedInventoryPackage) {
+                    toast.error(`Add at least one Resource Type to package "${unassignedInventoryPackage.name || "Untitled"}".`);
+                    setSaving(false);
+                    return;
+                }
+                const invalidInventoryPackage = packages.find(pkg => pkg.active && (pkg.resourceRequirements ?? []).some(item => !item.resourceTypeId || !Number.isInteger(Number(item.quantity)) || Number(item.quantity) < 1));
+                if (invalidInventoryPackage) {
+                    toast.error(`Check the room composition for package "${invalidInventoryPackage.name || "Untitled"}".`);
+                    setSaving(false);
+                    return;
+                }
+                const unassignedStayPackage = packages.find(pkg => pkg.active && !(pkg.slotIds ?? []).length);
+                if (unassignedStayPackage) {
+                    toast.error(`Assign at least one booking slot to package "${unassignedStayPackage.name || "Untitled"}".`);
+                    setSaving(false);
+                    return;
+                }
+            }
 
-            /*
-             * =========================================
-             * SAVE PRICING
-             * =========================================
-             */
+            const invalidFixedDurationPackage = packages.find(pkg => isStayService && pkg.active && pkg.packageType === "FIXED_DURATION" && (!(pkg.resourceRequirements?.length || pkg.resourceTypeId) || !pkg.includedDuration || pkg.includedDuration < 1 || pkg.pricingBasis !== "FIXED"));
+            if (invalidFixedDurationPackage) {
+                toast.error(`Fixed-duration package "${invalidFixedDurationPackage.name || "Untitled"}" requires at least one Resource Type, an included duration, and fixed pricing.`);
+                setSaving(false);
+                return;
+            }
 
-            await VendorPricingService
-                .savePricing({
-
-                    ...pricing,
-
-                    serviceId
-
-                });
+            await VendorPricingService.savePricing(
+                serviceId,
+                pricing,
+                packages
+            );
 
 
             toast.success(
-                "Pricing and packages saved successfully."
+                "New pricing version created successfully."
             );
 
 
-            navigate(
-                "/vendor/manage-services"
-            );
+            await loadPricing();
 
         }
         catch (error) {
@@ -1408,6 +820,561 @@ const VendorPricing = () => {
 
     /*
      * =========================================================
+     * BASE PRICING
+     * =========================================================
+     */
+
+    function updateBaseAmount(value: string) {
+
+        setPricing(previous => ({
+            ...previous,
+            baseAmount: Number(value)
+        }));
+
+    }
+
+
+    function updateEffectiveFrom(value: string) {
+
+        setPricing(previous => ({
+            ...previous,
+            effectiveFrom: value
+        }));
+
+    }
+
+
+    function updateEffectiveUntil(value: string) {
+
+        setPricing(previous => ({
+            ...previous,
+            effectiveUntil: value
+        }));
+
+    }
+
+
+    /*
+     * =========================================================
+     * PAYMENT CONFIGURATION
+     * =========================================================
+     */
+
+    function updateAdvancePaymentType(
+        type: "PERCENTAGE" | "FIXED_AMOUNT"
+    ) {
+
+        setPricing(current => ({
+            ...current,
+            paymentConfiguration: {
+                ...current.paymentConfiguration,
+                advancePaymentType: type
+            }
+        }));
+
+    }
+
+
+    function updateAdvancePaymentValue(value: string) {
+
+        const numericValue =
+            value === ""
+                ? null
+                : Number(value);
+
+        setPricing(current => ({
+            ...current,
+            paymentConfiguration: {
+                ...current.paymentConfiguration,
+                advancePaymentValue: numericValue
+            }
+        }));
+
+    }
+
+
+    /*
+     * =========================================================
+     * PRICING HEADS
+     * =========================================================
+     */
+
+    function addPricingHead() {
+
+        const head: VendorPricingHead = {
+            code: "",
+            name: "",
+            calculationType: "FIXED",
+            value: 0,
+            displayOrder:
+                pricing.pricingHeads.length + 1,
+            active: true
+        };
+
+        setPricing(previous => ({
+            ...previous,
+            pricingHeads: [
+                ...previous.pricingHeads,
+                head
+            ]
+        }));
+
+    }
+
+
+    function updatePricingHead(
+        index: number,
+        field: keyof VendorPricingHead,
+        value: any
+    ) {
+
+        setPricing(previous => {
+
+            const updated = [
+                ...previous.pricingHeads
+            ];
+
+            updated[index] = {
+                ...updated[index],
+                [field]: value
+            };
+
+            return {
+                ...previous,
+                pricingHeads: updated
+            };
+
+        });
+
+    }
+
+
+    function removePricingHead(index: number) {
+
+        setPricing(previous => ({
+            ...previous,
+            pricingHeads:
+                previous.pricingHeads.filter(
+                    (_, i) => i !== index
+                )
+        }));
+
+    }
+
+
+    /*
+     * =========================================================
+     * DISCOUNTS
+     * =========================================================
+     */
+
+    function addDiscount() {
+
+        const discount: VendorDiscount = {
+            name: "",
+            discountType: "FIXED",
+            value: 0,
+            active: true
+        };
+
+        setPricing(previous => ({
+            ...previous,
+            discounts: [
+                ...previous.discounts,
+                discount
+            ]
+        }));
+
+    }
+
+
+    function updateDiscount(
+        index: number,
+        field: keyof VendorDiscount,
+        value: any
+    ) {
+
+        setPricing(previous => {
+
+            const updated = [
+                ...previous.discounts
+            ];
+
+            updated[index] = {
+                ...updated[index],
+                [field]: value
+            };
+
+            return {
+                ...previous,
+                discounts: updated
+            };
+
+        });
+
+    }
+
+
+    function removeDiscount(index: number) {
+
+        setPricing(previous => ({
+            ...previous,
+            discounts:
+                previous.discounts.filter(
+                    (_, i) => i !== index
+                )
+        }));
+
+    }
+
+
+    /*
+     * =========================================================
+     * SERVICE PACKAGES
+     * =========================================================
+     *
+     * Packages are completely vendor-defined.
+     * There are no predefined package names or package limits.
+     */
+
+    function addPackage(packageType: string = "STANDARD") {
+
+        const newPackage: ServicePackage = {
+
+            id: undefined,
+            name: "",
+            price: 0,
+            features: [],
+            active: true,
+            requiresSlot: true,
+            slotIds: [],
+            pricingBasis: "FIXED",
+            minimumDuration: 1,
+            maximumDuration: 31,
+            includedDuration: packageType === "FIXED_DURATION" ? 3 : undefined,
+            resourceTypeId: undefined,
+            resourceRequirements: [],
+            maxGuestsPerRoom: isStayService ? 2 : undefined,
+            packageType
+
+        };
+
+        setPackages(
+            previous => [
+                ...previous,
+                newPackage
+            ]
+        );
+
+    }
+
+
+    function addPackageResourceRequirement(packageIndex: number) {
+        setPackages(previous => previous.map((pkg, index) => {
+            if (index !== packageIndex) return pkg;
+            const existing = pkg.resourceRequirements ?? (pkg.resourceTypeId ? [{ resourceTypeId: pkg.resourceTypeId, quantity: 1 }] : []);
+            const used = new Set(existing.map(item => item.resourceTypeId));
+            const nextType = resourceTypes.find(type => type.active !== false && !used.has(type.id));
+            if (!nextType) return pkg;
+            return { ...pkg, resourceRequirements: [...existing, { resourceTypeId: nextType.id, quantity: 1 }], resourceTypeId: undefined };
+        }));
+    }
+
+    function updatePackageResourceRequirement(packageIndex: number, requirementIndex: number, field: "resourceTypeId" | "quantity", value: string | number) {
+        setPackages(previous => previous.map((pkg, index) => {
+            if (index !== packageIndex) return pkg;
+            const next = [...(pkg.resourceRequirements ?? (pkg.resourceTypeId ? [{ resourceTypeId: pkg.resourceTypeId, quantity: 1 }] : []))];
+            if (!next[requirementIndex]) return pkg;
+            next[requirementIndex] = { ...next[requirementIndex], [field]: value };
+            return { ...pkg, resourceRequirements: next, resourceTypeId: undefined };
+        }));
+    }
+
+    function removePackageResourceRequirement(packageIndex: number, requirementIndex: number) {
+        setPackages(previous => previous.map((pkg, index) => index === packageIndex
+            ? { ...pkg, resourceRequirements: (pkg.resourceRequirements ?? (pkg.resourceTypeId ? [{ resourceTypeId: pkg.resourceTypeId, quantity: 1 }] : [])).filter((_, i) => i !== requirementIndex), resourceTypeId: undefined }
+            : pkg));
+    }
+
+    function togglePackage(
+        packageIndex: number
+    ) {
+
+        setPackages(
+            previous =>
+                previous.map(
+                    (pkg, index) =>
+                        index === packageIndex
+                            ? { ...pkg, active: !pkg.active }
+                            : pkg
+                )
+        );
+
+    }
+
+
+    function updatePackage(
+        packageIndex: number,
+        field: keyof ServicePackage,
+        value: string | number | boolean | undefined
+    ) {
+
+        setPackages(
+            previous =>
+                previous.map(
+                    (pkg, index) =>
+                        index === packageIndex
+                            ? { ...pkg, [field]: value }
+                            : pkg
+                )
+        );
+
+    }
+
+
+    function togglePackageId(
+        packageIndex: number,
+        field: "slotIds",
+        id: string
+    ) {
+        setPackages(previous => previous.map((pkg, index) => {
+            if (index !== packageIndex) return pkg;
+            const current = pkg[field] ?? [];
+            const next = current.includes(id)
+                ? current.filter(value => value !== id)
+                : [...current, id];
+            return { ...pkg, [field]: next };
+        }));
+    }
+
+    function removePackage(
+        packageIndex: number
+    ) {
+
+        setPackages(
+            previous =>
+                previous.filter(
+                    (_, index) => index !== packageIndex
+                )
+        );
+
+    }
+
+
+    function addFeature(
+        packageIndex: number
+    ) {
+
+        setPackages(
+            previous =>
+                previous.map(
+                    (pkg, index) =>
+                        index === packageIndex
+                            ? {
+                                ...pkg,
+                                features: [...pkg.features, ""]
+                            }
+                            : pkg
+                )
+        );
+
+    }
+
+
+    function updateFeature(
+        packageIndex: number,
+        featureIndex: number,
+        value: string
+    ) {
+
+        setPackages(
+            previous =>
+                previous.map(
+                    (pkg, index) => {
+
+                        if (index !== packageIndex) {
+                            return pkg;
+                        }
+
+                        const features = [...pkg.features];
+                        features[featureIndex] = value;
+
+                        return { ...pkg, features };
+
+                    }
+                )
+        );
+
+    }
+
+
+    function removeFeature(
+        packageIndex: number,
+        featureIndex: number
+    ) {
+
+        setPackages(
+            previous =>
+                previous.map(
+                    (pkg, index) => {
+
+                        if (index !== packageIndex) {
+                            return pkg;
+                        }
+
+                        return {
+                            ...pkg,
+                            features: pkg.features.filter(
+                                (_, feature) => feature !== featureIndex
+                            )
+                        };
+
+                    }
+                )
+        );
+
+    }
+
+
+    /*
+     * =========================================================
+     * CANCELLATION POLICY
+     * =========================================================
+     */
+
+    function updateProcessingDays(value: string) {
+
+        setPricing(previous => ({
+            ...previous,
+            cancellationPolicy: {
+                processingDays: Number(value),
+                refundRules:
+                    previous.cancellationPolicy?.refundRules ?? []
+            }
+        }));
+
+    }
+
+
+    function addRefundRule() {
+
+        const newRule: RefundRule = {
+            minDaysBeforeEvent: 0,
+            maxDaysBeforeEvent: null,
+            refundPercentage: 0
+        };
+
+        setPricing(previous => ({
+            ...previous,
+            cancellationPolicy: {
+                processingDays:
+                    previous.cancellationPolicy?.processingDays ?? 0,
+                refundRules: [
+                    ...(previous.cancellationPolicy?.refundRules ?? []),
+                    newRule
+                ]
+            }
+        }));
+
+    }
+
+
+    function updateRefundRule(
+        index: number,
+        field: keyof RefundRule,
+        value: number | null
+    ) {
+
+        setPricing(previous => {
+
+            const updatedRules = [
+                ...(previous.cancellationPolicy?.refundRules ?? [])
+            ];
+
+            updatedRules[index] = {
+                ...updatedRules[index],
+                [field]: value
+            };
+
+            return {
+                ...previous,
+                cancellationPolicy: {
+                    processingDays:
+                        previous.cancellationPolicy?.processingDays ?? 0,
+                    refundRules: updatedRules
+                }
+            };
+
+        });
+
+    }
+
+
+    function removeRefundRule(index: number) {
+
+        setPricing(previous => ({
+            ...previous,
+            cancellationPolicy: {
+                processingDays:
+                    previous.cancellationPolicy?.processingDays ?? 0,
+                refundRules:
+                    (previous.cancellationPolicy?.refundRules ?? [])
+                        .filter((_, ruleIndex) => ruleIndex !== index)
+            }
+        }));
+
+    }
+
+
+    function validateRefundRules(): boolean {
+
+        const rules =
+            pricing.cancellationPolicy?.refundRules ?? [];
+
+        for (let index = 0; index < rules.length; index++) {
+
+            const rule = rules[index];
+
+            if (rule.minDaysBeforeEvent < 0) {
+                toast.error(
+                    `Refund Rule ${index + 1}: From Days cannot be negative.`
+                );
+                return false;
+            }
+
+            if (
+                rule.maxDaysBeforeEvent !== null &&
+                rule.maxDaysBeforeEvent < rule.minDaysBeforeEvent
+            ) {
+                toast.error(
+                    `Refund Rule ${index + 1}: To Days must be greater than or equal to From Days.`
+                );
+                return false;
+            }
+
+            if (
+                rule.refundPercentage < 0 ||
+                rule.refundPercentage > 100
+            ) {
+                toast.error(
+                    `Refund Rule ${index + 1}: Refund percentage must be between 0 and 100.`
+                );
+                return false;
+            }
+        }
+
+        return true;
+
+    }
+
+
+    const sortedPackages = [
+        ...packages
+    ];
+
+
+    /*
+     * =========================================================
      * ACTIVE PACKAGE COUNT
      * =========================================================
      */
@@ -1429,11 +1396,7 @@ const VendorPricing = () => {
 
         return (
 
-            <div className="vendor-pricing-loading">
-
-                Loading Pricing...
-
-            </div>
+            <Loader label="Loading pricing configuration" />
 
         );
 
@@ -1507,6 +1470,174 @@ const VendorPricing = () => {
                 MAIN GRID
             ================================================= */}
 
+
+
+            {/* =================================================
+                PRICING VERSION HISTORY
+            ================================================= */}
+
+            <section className="pricing-card pricing-version-history">
+
+                <div className="section-header">
+
+                    <div>
+
+                        <h3>
+                            Pricing Versions
+                        </h3>
+
+                        <p className="section-description">
+                            View and load previously created pricing configurations.
+                        </p>
+
+                    </div>
+
+                    <span className="version-count">
+                        {pricingVersions.length}
+                        {" "}
+                        {pricingVersions.length === 1
+                            ? "version"
+                            : "versions"}
+                    </span>
+
+                </div>
+
+
+                {pricingVersions.length === 0 ? (
+
+                    <div className="version-empty-state">
+                        No pricing versions have been created yet.
+                    </div>
+
+                ) : (
+
+                    <div className="pricing-version-table-wrapper">
+
+                        <table className="pricing-version-table">
+
+                            <thead>
+
+                                <tr>
+                                    <th>Version</th>
+                                    <th>Effective From</th>
+                                    <th>Effective Until</th>
+                                    <th>Base Amount</th>
+                                    <th>Created Date</th>
+                                    <th>Created By</th>
+                                    <th>Action</th>
+                                </tr>
+
+                            </thead>
+
+                            <tbody>
+
+                                {pricingVersions.map(
+                                    version => {
+
+                                        const selected =
+                                            selectedPricingId ===
+                                            version.id;
+
+                                        const current =
+                                            pricing.id ===
+                                            version.id;
+
+                                        return (
+                                            <tr
+                                                key={version.id}
+                                                className={
+                                                    selected
+                                                        ? "selected"
+                                                        : ""
+                                                }
+                                            >
+
+                                                <td>
+                                                    <div className="version-cell">
+
+                                                        <strong>
+                                                            v{version.version}
+                                                        </strong>
+
+                                                        {current && (
+                                                            <span className="current-version-badge">
+                                                                Current
+                                                            </span>
+                                                        )}
+
+                                                    </div>
+                                                </td>
+
+                                                <td>
+                                                    {formatVersionDate(
+                                                        version.effectiveFrom
+                                                    )}
+                                                </td>
+
+                                                <td>
+                                                    {formatVersionDate(
+                                                        version.effectiveUntil
+                                                    )}
+                                                </td>
+
+                                                <td>
+                                                    ₹{Number(
+                                                        version.baseAmount ?? 0
+                                                    ).toLocaleString(
+                                                        "en-IN",
+                                                        {
+                                                            minimumFractionDigits: 2,
+                                                            maximumFractionDigits: 2
+                                                        }
+                                                    )}
+                                                </td>
+
+                                                <td>
+                                                    {formatVersionDateTime(
+                                                        version.createdAt
+                                                    )}
+                                                </td>
+
+                                                <td>
+                                                    {version.createdBy || "—"}
+                                                </td>
+
+                                                <td>
+                                                    <button
+                                                        type="button"
+                                                        className="view-version-btn"
+                                                        disabled={selected}
+                                                        onClick={() =>
+                                                            selectPricingVersion(
+                                                                version.id
+                                                            )
+
+                                                        }
+                                                    >
+                                                        {selected
+                                                            ? "Selected"
+                                                            : "View"}
+                                                    </button>
+                                                </td>
+
+                                            </tr>
+
+                                        );
+
+                                    }
+                                )}
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
+
+                )}
+
+            </section>
+
+
             <div className="pricing-grid">
 
 
@@ -1521,438 +1652,413 @@ const VendorPricing = () => {
                         SERVICE PACKAGES
                     ================================================= */}
 
+                    {isStayService && (
+                    <section className="pricing-card package-card-section">
+                        <div className="package-section-header">
+                            <div>
+                                <h3>Resource Types</h3>
+                                <p>Configure separately reservable physical units for this service.</p>
+                            </div>
+                        </div>
+                        <div className="package-eligibility-config">
+                            <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "end" }}>
+                                <label style={{ flex: "1 1 220px" }}>Resource type name
+                                    <input value={resourceTypeName} onChange={e => setResourceTypeName(e.target.value)} placeholder="e.g. Big Hall, Small Hall" />
+                                </label>
+                                <label>Physical quantity
+                                    <NumericInput  min={1} max={100} value={resourceTypeQuantity} onChange={e => setResourceTypeQuantity(Math.max(1, Number(e.target.value) || 1))} />
+                                </label>
+                                <button type="button" className="add-package-btn" onClick={addResourceType}>+ Add Resource Type</button>
+                            </div>
+                            {resourceTypes.map(type => (
+                                <div key={type.id} className="package-eligibility-option" style={{ justifyContent: "space-between" }}>
+                                    <span><strong>{type.name}</strong> · {type.quantity} physical unit(s)</span>
+                                    <button type="button" className="remove-feature-btn" onClick={() => removeResourceType(type.id)}>Remove</button>
+                                </div>
+                            ))}
+                            {resourceTypes.length === 0 && <p className="package-eligibility-help">No resource types configured. Existing slot-capacity behavior remains active.</p>}
+                        </div>
+                    </section>
+                    )}
+
                     <section className="pricing-card package-card-section">
 
                         <div className="package-section-header">
 
                             <div>
-
-                                <h3>
-                                    Service Packages
-                                </h3>
-
+                                <h3>Service Packages</h3>
                                 <p>
-                                    Create your own packages with custom names,
-                                    prices and features.
+                                    Create as many package options as your service requires.
                                 </p>
-
                             </div>
 
-
-                            <div className="package-header-actions">
-
+                            <div className="package-section-actions">
                                 <div className="package-count">
-
-                                    {
-                                        activePackageCount
-                                    }
-
-                                    {" "}
-
-                                    {
-                                        activePackageCount === 1
-                                            ? "active"
-                                            : "active packages"
-                                    }
-
+                                    {packages.length} {packages.length === 1 ? "package" : "packages"}
                                 </div>
 
-
-                                <button
-                                    type="button"
-                                    className="add-package-btn"
-                                    onClick={addPackage}
-                                >
-                                    + Create Package
-                                </button>
-
+                                {isStayService ? (
+                                    <>
+                                        <button
+                                            type="button"
+                                            className="add-package-btn"
+                                            onClick={() => addPackage("STANDARD")}
+                                        >
+                                            + Create Resource Type Package
+                                        </button>
+                                        <button
+                                            type="button"
+                                            className="add-package-btn"
+                                            onClick={() => addPackage("FIXED_DURATION")}
+                                        >
+                                            + Create Fixed-Duration Package
+                                        </button>
+                                    </>
+                                ) : (
+                                    <button
+                                        type="button"
+                                        className="add-package-btn"
+                                        onClick={() => addPackage("STANDARD")}
+                                    >
+                                        + Create Package
+                                    </button>
+                                )}
                             </div>
 
                         </div>
 
+                        {packages.length === 0 ? (
 
-                        {
-                            sortedPackages.length === 0 ? (
+                            <div className="package-empty-state">
 
-                                <div className="packages-empty-state">
+                                <strong>No packages created yet</strong>
+                                <p>
+                                    Create your first package with a name, price and optional features.
+                                </p>
+                            </div>
 
-                                    <div className="packages-empty-icon">
-                                        +
-                                    </div>
+                        ) : (
 
-                                    <h4>
-                                        No Packages Created
-                                    </h4>
+                            <MobileCarousel className="package-editor-grid" ariaLabel="Service packages" paginationPosition="top">
 
-                                    <p>
-                                        Create a package to offer customers
-                                        different pricing options.
-                                    </p>
+                                {packages.map((pkg, packageIndex) => {
 
-                                    <button
-                                        type="button"
-                                        className="add-package-btn"
-                                        onClick={addPackage}
-                                    >
-                                        + Create Your First Package
-                                    </button>
+                                    const isActive = Boolean(pkg.active);
 
-                                </div>
+                                    return (
 
-                            ) : (
+                                        <div
+                                            key={pkg.id ?? `new-package-${packageIndex}`}
+                                            className={`service-package-card ${isActive ? "active" : "inactive"}`}
+                                        >
 
-                                <div className="package-editor-grid">
+                                            <div className="package-card-header">
+                                                <div className="package-card-title-area">
 
-                                    {
-                                        sortedPackages.map(
-                                            (
-                                                pkg,
-                                                index
-                                            ) => {
+                                                    <label className="package-toggle">
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={isActive}
+                                                            onChange={() => togglePackage(packageIndex)}
+                                                        />
+                                                        <span className="package-checkmark" />
+                                                    </label>
 
-                                                const packageId =
-                                                    pkg.id ??
-                                                    `package-${index}`;
+                                                    <div className="package-title-fields">
+                                                        <label>Package Name</label>
+                                                        <input
+                                                            type="text"
+                                                            value={pkg.name ?? ""}
+                                                            placeholder="e.g. Premium Wedding Package"
+                                                            onChange={e =>
+                                                                updatePackage(
+                                                                    packageIndex,
+                                                                    "name",
+                                                                    e.target.value
+                                                                )
+                                                            }
+                                                        />
+                                                    </div>
 
+                                                </div>
+                                            </div>
 
-                                                return (
+                                            {isActive ? (
 
-                                                    <div
-                                                        key={packageId}
-                                                        className={
-                                                            `service-package-card ${
-                                                                pkg.active
-                                                                    ? "active"
-                                                                    : "inactive"
-                                                            }`
-                                                        }
-                                                    >
+                                                <>
+                                                    <div className="package-price-field">
+                                                        <label>{isStayService ? "Price per complete package combination" : "Package Price"}</label>
+                                                        <div className="package-price-input">
+                                                            <span>₹</span>
+                                                            <NumericInput
 
-                                                        {/* =========================
-                                                            PACKAGE HEADER
-                                                        ========================= */}
+                                                                min="0"
+                                                                step="0.01"
+                                                                value={pkg.price ?? 0}
+                                                                onChange={e =>
+                                                                    updatePackage(
+                                                                        packageIndex,
+                                                                        "price",
+                                                                        Number(e.target.value)
+                                                                    )
+                                                                }
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                    {isStayService && <p className="package-eligibility-help">This price applies to one complete room composition. The customer-selected quantity multiplies the price by the number of complete combinations.</p>}
 
-                                                        <div className="package-card-header">
+                                                    {pkg.packageType === "FIXED_DURATION" ? (
+                                                        <div className="package-eligibility-config">
+                                                            <div className="package-features-header"><h5>Fixed-Duration Package</h5></div>
+                                                            <label>Included {isStayService ? "nights" : "days"}
+                                                                <NumericInput  min="1" max="31" value={pkg.includedDuration ?? 3}
+                                                                    onChange={e => updatePackage(packageIndex, "includedDuration", Math.max(1, Math.min(31, Number(e.target.value) || 1)))} />
+                                                            </label>
+                                                            <p className="package-eligibility-help">Customers cannot change this duration. Checkout is calculated from the selected start date.</p>
+                                                        </div>
+                                                    ) : (
+                                                    <div className="package-eligibility-config">
+                                                        <div className="package-features-header"><h5>Duration & Pricing</h5></div>
+                                                        <label>
+                                                            Price calculation
+                                                            <select
+                                                                value={pkg.pricingBasis ?? "FIXED"}
+                                                                onChange={e => updatePackage(packageIndex, "pricingBasis", e.target.value)}
+                                                            >
+                                                                <option value="PER_DAY">Per day</option>
+                                                                <option value="PER_NIGHT">Per night</option>
+                                                                <option value="FIXED">Flat price per booking</option>
+                                                            </select>
+                                                        </label>
+                                                        <div className="package-duration-fields stay-duration-fields">
+                                                            <label className="stay-duration-field">
+                                                                Minimum {pkg.pricingBasis === "PER_NIGHT" ? "nights" : "days"}
+                                                                <NumericInput  min="1" max="31"
+                                                                    value={pkg.minimumDuration ?? 1}
+                                                                    onChange={e => updatePackage(packageIndex, "minimumDuration", Math.max(1, Math.min(31, Number(e.target.value) || 1)))}
+                                                                />
+                                                            </label>
+                                                            <label className="stay-duration-field">
+                                                                Maximum {pkg.pricingBasis === "PER_NIGHT" ? "nights" : "days"}
+                                                                <NumericInput  min={pkg.minimumDuration ?? 1} max="31"
+                                                                    value={pkg.maximumDuration ?? 31}
+                                                                    onChange={e => updatePackage(packageIndex, "maximumDuration", Math.max(pkg.minimumDuration ?? 1, Math.min(31, Number(e.target.value) || 1)))}
+                                                                />
+                                                            </label>
+                                                        </div>
+                                                        <p className="package-eligibility-help">
+                                                            Per-day and per-night prices are multiplied by the selected duration. Fixed pricing is charged once.
+                                                        </p>
+                                                    </div>
+                                                    )}
 
-                                                            <div className="package-card-title-area">
+                                                    {isStayService && (
+                                                        <div className="package-eligibility-config">
+                                                            <div className="package-features-header"><h5>Room composition</h5></div>
+                                                            <p className="package-eligibility-help">Define the rooms included in one complete package. For example, 2 Premium + 1 Gold. Customers can book multiple complete combinations; all included rooms are held together.</p>
+                                                            {(pkg.resourceRequirements ?? (pkg.resourceTypeId ? [{ resourceTypeId: pkg.resourceTypeId, quantity: 1 }] : [])).map((requirement, requirementIndex) => (
+                                                                <div className="package-duration-fields stay-room-composition-row" key={`${requirement.resourceTypeId}-${requirementIndex}`}>
+                                                                    <label className="stay-room-type-field">
+                                                                        Room type
+                                                                        <select value={requirement.resourceTypeId} onChange={e => updatePackageResourceRequirement(packageIndex, requirementIndex, "resourceTypeId", e.target.value)}>
+                                                                            {resourceTypes.filter(type => type.active !== false).map(type => <option key={type.id} value={type.id}>{type.name} ({type.quantity} total)</option>)}
+                                                                        </select>
+                                                                    </label>
+                                                                    <label className="stay-room-quantity-field">
+                                                                        Rooms in package
+                                                                        <NumericInput  min="1" max="100" value={requirement.quantity} onChange={e => updatePackageResourceRequirement(packageIndex, requirementIndex, "quantity", Math.max(1, Math.min(100, Math.floor(Number(e.target.value) || 1))))} />
+                                                                    </label>
+                                                                    <button type="button" className="remove-package-room-btn" onClick={() => removePackageResourceRequirement(packageIndex, requirementIndex)}>Remove</button>
+                                                                </div>
+                                                            ))}
+                                                            <button type="button" className="add-package-btn stay-add-room-type-btn" onClick={() => addPackageResourceRequirement(packageIndex)} disabled={resourceTypes.filter(type => type.active !== false).length <= (pkg.resourceRequirements ?? []).length}>+ Add Room Type</button>
+                                                        </div>
+                                                    )}
+                                                    <div className="package-eligibility-config">
+                                                        <div className="package-features-header">
+                                                            <h5>{isStayService ? "Booking Slots & Room Capacity" : "Booking Time Configuration"}</h5>
+                                                        </div>
+                                                        <p className="package-eligibility-help">
+                                                            {isStayService
+                                                                ? "Assign this STAY package to one or more active booking slots. Slots control check-in timing and vendor date blocks; physical room availability is calculated from the Resource Types above."
+                                                                : "Select which slots customers may use with this package. Leave all unchecked to allow all active slots."}
+                                                        </p>
+                                                        {bookingSlots.length === 0 ? (
+                                                            <p className="package-eligibility-help">No active booking slots configured yet.</p>
+                                                        ) : bookingSlots.map(slot => (
+                                                            <label className="package-eligibility-option" key={slot.id}>
+                                                                <input
+                                                                    type="checkbox"
+                                                                    checked={(pkg.slotIds ?? []).includes(slot.id)}
+                                                                    onChange={() => togglePackageId(packageIndex, "slotIds", slot.id)}
+                                                                />
+                                                                <span>{isStayService
+                                                                    ? `${slot.slotName} · ${slot.maxBookings} room(s) available`
+                                                                    : `${slot.slotName} (${slot.startTime}–${slot.endTime})`}</span>
+                                                            </label>
+                                                        ))}
+                                                    </div>
 
-                                                                <label className="package-toggle">
+                                                    {isStayService && (
+                                                        <div className="package-eligibility-config stay-package-capacity-config">
+                                                            <div className="package-features-header">
+                                                                <h5>Guests Per Room</h5>
+                                                            </div>
+                                                            <p className="package-eligibility-help">
+                                                                Set the maximum guests allowed in each room. Customers select the number of rooms; availability is checked across the full stay.
+                                                            </p>
+                                                            <label className="stay-max-guests-field">
+                                                                <span className="stay-max-guests-label">Maximum guests per room</span>
+                                                                <NumericInput
+                                                                    className="stay-max-guests-input"
 
+                                                                    min="1"
+                                                                    step="1"
+                                                                    value={pkg.maxGuestsPerRoom ?? ""}
+                                                                    onChange={e => setPackages(previous => previous.map((current, index) => index === packageIndex ? { ...current, maxGuestsPerRoom: e.target.value === "" ? undefined : Math.max(1, Math.floor(Number(e.target.value) || 1)) } : current))}
+                                                                />
+                                                            </label>
+                                                        </div>
+                                                    )}
+
+                                                    {isCateringService && (
+                                                        <div className="package-catering-config">
+                                                            <div className="package-catering-config-info">
+                                                                <strong>Catering Menu</strong>
+
+                                                                <p>
+                                                                    {pkg.cateringPackageMenu
+                                                                        ? "Package menu configured"
+                                                                        : "Choose dishes and customer selection limits"}
+                                                                </p>
+                                                            </div>
+
+                                                            <button
+                                                                type="button"
+                                                                className="configure-catering-menu-btn"
+                                                                onClick={() => setMenuPackageIndex(packageIndex)}
+                                                            >
+                                                                🍽 Configure Catering Menu
+                                                            </button>
+                                                        </div>
+                                                    )}
+
+                                                    <div className="package-features-section">
+                                                        <div className="package-features-header">
+                                                            <h5>Features</h5>
+                                                            <button
+                                                                type="button"
+                                                                className="add-feature-btn"
+                                                                onClick={() => addFeature(packageIndex)}
+                                                            >
+                                                                + Add Feature
+                                                            </button>
+                                                        </div>
+
+                                                        <div className="package-feature-list">
+                                                            {pkg.features.map((feature, featureIndex) => (
+                                                                <div
+                                                                    key={featureIndex}
+                                                                    className="package-feature-item"
+                                                                >
+                                                                    <span className="package-feature-bullet" aria-hidden="true">•</span>
                                                                     <input
-                                                                        type="checkbox"
-                                                                        checked={
-                                                                            pkg.active
-                                                                        }
-                                                                        onChange={() =>
-                                                                            togglePackage(
-                                                                                packageId
+                                                                        type="text"
+                                                                        value={feature}
+                                                                        placeholder="Enter feature"
+                                                                        onChange={e =>
+                                                                            updateFeature(
+                                                                                packageIndex,
+                                                                                featureIndex,
+                                                                                e.target.value
                                                                             )
                                                                         }
                                                                     />
-
-                                                                    <span className="package-checkmark" />
-
-                                                                </label>
-
-
-                                                                <div>
-
-                                                                    <span className="package-number">
-                                                                        Package {index + 1}
-                                                                    </span>
-
-                                                                    <h4>
-                                                                        {
-                                                                            pkg.name.trim()
-                                                                                ? pkg.name
-                                                                                : "Untitled Package"
-                                                                        }
-                                                                    </h4>
-
-                                                                    <span>
-                                                                        {
-                                                                            pkg.active
-                                                                                ? "Active Package"
-                                                                                : "Inactive Package"
-                                                                        }
-                                                                    </span>
-
-                                                                </div>
-
-                                                            </div>
-
-                                                        </div>
-
-
-                                                        {/* =========================
-                                                            ACTIVE PACKAGE
-                                                        ========================= */}
-
-                                                        {
-                                                            pkg.active ? (
-
-                                                                <>
-
-                                                                    {/* =========================
-                                                                        PACKAGE NAME
-                                                                    ========================= */}
-
-                                                                    <div className="package-price-field">
-
-                                                                        <label>
-                                                                            Package Name
-                                                                        </label>
-
-                                                                        <input
-                                                                            type="text"
-                                                                            value={
-                                                                                pkg.name
-                                                                            }
-                                                                            placeholder="e.g. Premium Wedding Package"
-                                                                            onChange={e =>
-                                                                                updatePackage(
-                                                                                    packageId,
-                                                                                    "name",
-                                                                                    e.target.value
-                                                                                )
-                                                                            }
-                                                                        />
-
-                                                                    </div>
-
-
-                                                                    {/* =========================
-                                                                        PRICE
-                                                                    ========================= */}
-
-                                                                    <div className="package-price-field">
-
-                                                                        <label>
-                                                                            Package Price
-                                                                        </label>
-
-                                                                        <div className="package-price-input">
-
-                                                                            <span>
-                                                                                ₹
-                                                                            </span>
-
-                                                                            <input
-                                                                                type="number"
-                                                                                min="0"
-                                                                                step="0.01"
-                                                                                value={
-                                                                                    pkg.price
-                                                                                }
-                                                                                onChange={e =>
-                                                                                    updatePackage(
-                                                                                        packageId,
-                                                                                        "price",
-                                                                                        Number(
-                                                                                            e.target.value
-                                                                                        )
-                                                                                    )
-                                                                                }
-                                                                            />
-
-                                                                        </div>
-
-                                                                    </div>
-
-
-                                                                    {/* =========================
-                                                                        FEATURES
-                                                                    ========================= */}
-
-                                                                    <div className="package-features-section">
-
-                                                                        <div className="package-features-header">
-
-                                                                            <h5>
-                                                                                Features
-                                                                            </h5>
-
-
-                                                                            <button
-                                                                                type="button"
-                                                                                className="add-feature-btn"
-                                                                                onClick={() =>
-                                                                                    addFeature(
-                                                                                        packageId
-                                                                                    )
-                                                                                }
-                                                                            >
-                                                                                + Add Feature
-                                                                            </button>
-
-                                                                        </div>
-
-
-                                                                        <div className="package-feature-list">
-
-                                                                            {
-                                                                                pkg.features.map(
-                                                                                    (
-                                                                                        feature,
-                                                                                        featureIndex
-                                                                                    ) => (
-
-                                                                                        <div
-                                                                                            key={
-                                                                                                featureIndex
-                                                                                            }
-                                                                                            className="package-feature-item"
-                                                                                        >
-
-                                                                                            <input
-                                                                                                type="text"
-                                                                                                value={
-                                                                                                    feature
-                                                                                                }
-                                                                                                placeholder="Enter feature"
-                                                                                                onChange={e =>
-                                                                                                    updateFeature(
-                                                                                                        packageId,
-                                                                                                        featureIndex,
-                                                                                                        e.target.value
-                                                                                                    )
-                                                                                                }
-                                                                                            />
-
-
-                                                                                            <button
-                                                                                                type="button"
-                                                                                                className="remove-feature-btn"
-                                                                                                onClick={() =>
-                                                                                                    removeFeature(
-                                                                                                        packageId,
-                                                                                                        featureIndex
-                                                                                                    )
-                                                                                                }
-                                                                                                aria-label="Remove feature"
-                                                                                            >
-                                                                                                ×
-                                                                                            </button>
-
-                                                                                        </div>
-
-                                                                                    )
-                                                                                )
-                                                                            }
-
-
-                                                                            {
-                                                                                pkg.features.length ===
-                                                                                0 && (
-
-                                                                                    <div className="no-features">
-
-                                                                                        No features added yet.
-
-                                                                                    </div>
-
-                                                                                )
-                                                                            }
-
-                                                                        </div>
-
-                                                                    </div>
-
-
-                                                                    {/* =========================
-                                                                        REMOVE PACKAGE
-                                                                    ========================= */}
-
-                                                                    <div className="package-card-footer">
-
-                                                                        <button
-                                                                            type="button"
-                                                                            className="remove-package-btn"
-                                                                            onClick={() =>
-                                                                                removePackage(
-                                                                                    packageId
-                                                                                )
-                                                                            }
-                                                                        >
-                                                                            🗑 Remove Package
-                                                                        </button>
-
-                                                                    </div>
-
-                                                                </>
-
-                                                            ) : (
-
-                                                                /* =========================
-                                                                   INACTIVE PACKAGE
-                                                                ========================= */
-
-                                                                <div className="inactive-package-content">
-
-                                                                    <div className="inactive-package-icon">
-                                                                        +
-                                                                    </div>
-
-
-                                                                    <p>
-                                                                        Enable this package
-                                                                        to configure its
-                                                                        price and features.
-                                                                    </p>
-
-
                                                                     <button
                                                                         type="button"
-                                                                        className="enable-package-btn"
+                                                                        className="remove-feature-btn"
                                                                         onClick={() =>
-                                                                            togglePackage(
-                                                                                packageId
+                                                                            removeFeature(
+                                                                                packageIndex,
+                                                                                featureIndex
                                                                             )
                                                                         }
+                                                                        aria-label="Remove feature"
                                                                     >
-                                                                        Enable Package
+                                                                        ×
                                                                     </button>
-
                                                                 </div>
+                                                            ))}
 
-                                                            )
-                                                        }
-
+                                                            {pkg.features.length === 0 && (
+                                                                <div className="no-features">
+                                                                    No features added yet.
+                                                                </div>
+                                                            )}
+                                                        </div>
                                                     </div>
 
-                                                );
+                                                    <div className="package-card-footer">
+                                                        <button
+                                                            type="button"
+                                                            className="remove-package-btn"
+                                                            onClick={() => removePackage(packageIndex)}
+                                                        >
+                                                            🗑 Remove Package
+                                                        </button>
+                                                    </div>
+                                                </>
 
-                                            }
-                                        )
-                                    }
+                                            ) : (
 
-                                </div>
+                                                <div className="inactive-package-content">
+                                                    <div className="inactive-package-icon">+</div>
+                                                    <p>
+                                                        This package is inactive and will not be shown to customers.
+                                                    </p>
+                                                    <button
+                                                        type="button"
+                                                        className="enable-package-btn"
+                                                        onClick={() => togglePackage(packageIndex)}
+                                                    >
+                                                        Enable Package
+                                                    </button>
+                                                </div>
 
-                            )
-                        }
+                                            )}
 
+                                        </div>
+
+                                    );
+
+                                })}
+
+                            </MobileCarousel>
+
+                        )}
+
+                        {isCateringService && menuPackageIndex !== null && (
+                            <CateringPackageMenuModal
+                                packageName={packages[menuPackageIndex]?.name ?? ""}
+                                menuItems={cateringMenuItems}
+                                initialMenu={
+                                    packages[menuPackageIndex]?.cateringPackageMenu
+                                }
+                                onSave={menu =>
+                                    updatePackageCateringMenu(menuPackageIndex, menu)
+                                }
+                                onClose={() => setMenuPackageIndex(null)}
+                            />
+                        )}
 
                         <div className="package-info-banner">
-
-                            <span className="package-info-icon">
-                                ⓘ
-                            </span>
-
-
+                            <span className="package-info-icon">ⓘ</span>
                             <div>
-
-                                <strong>
-                                    Package Configuration
-                                </strong>
-
+                                <strong>Package configuration</strong>
                                 <p>
-                                    Create as many packages as your service
-                                    requires. Customers will see only the
-                                    packages you mark as active.
+                                    Package names, prices and features are completely vendor-defined. You can create any number of packages, and customers will see only the active packages.
                                 </p>
-
                             </div>
-
                         </div>
 
                     </section>
@@ -1978,9 +2084,9 @@ const VendorPricing = () => {
                                 </label>
 
 
-                                <input
+                                <NumericInput
 
-                                    type="number"
+
 
                                     min="0"
 
@@ -2006,21 +2112,10 @@ const VendorPricing = () => {
                                 </label>
 
 
-                                <input
-
-                                    type="date"
-
-                                    value={
-                                        pricing.effectiveFrom ??
-                                        ""
-                                    }
-
-                                    onChange={e =>
-                                        updateEffectiveFrom(
-                                            e.target.value
-                                        )
-                                    }
-
+                                <DateField
+                                    value={pricing.effectiveFrom ?? ""}
+                                    onChange={updateEffectiveFrom}
+                                    ariaLabel="Pricing effective from"
                                 />
 
                             </div>
@@ -2033,21 +2128,11 @@ const VendorPricing = () => {
                                 </label>
 
 
-                                <input
-
-                                    type="date"
-
-                                    value={
-                                        pricing.effectiveUntil ??
-                                        ""
-                                    }
-
-                                    onChange={e =>
-                                        updateEffectiveUntil(
-                                            e.target.value
-                                        )
-                                    }
-
+                                <DateField
+                                    value={pricing.effectiveUntil ?? ""}
+                                    minDate={pricing.effectiveFrom ?? undefined}
+                                    onChange={updateEffectiveUntil}
+                                    ariaLabel="Pricing effective until"
                                 />
 
                             </div>
@@ -2084,7 +2169,7 @@ const VendorPricing = () => {
 
                         {
                             pricing.pricingHeads.length ===
-                            0 ? (
+                                0 ? (
 
                                 <div className="empty-pricing-state">
 
@@ -2175,9 +2260,9 @@ const VendorPricing = () => {
                                             </select>
 
 
-                                            <input
+                                            <NumericInput
 
-                                                type="number"
+
 
                                                 value={
                                                     head.value
@@ -2252,7 +2337,7 @@ const VendorPricing = () => {
 
                         {
                             pricing.discounts.length ===
-                            0 ? (
+                                0 ? (
 
                                 <div className="empty-pricing-state">
 
@@ -2324,9 +2409,9 @@ const VendorPricing = () => {
                                             </select>
 
 
-                                            <input
+                                            <NumericInput
 
-                                                type="number"
+
 
                                                 value={
                                                     discount.value
@@ -2401,8 +2486,8 @@ const VendorPricing = () => {
                                 onChange={e =>
                                     updateAdvancePaymentType(
                                         e.target.value as
-                                            | "PERCENTAGE"
-                                            | "FIXED_AMOUNT"
+                                        | "PERCENTAGE"
+                                        | "FIXED_AMOUNT"
                                     )
                                 }
 
@@ -2411,6 +2496,7 @@ const VendorPricing = () => {
                                 <option value="PERCENTAGE">
                                     Percentage
                                 </option>
+
 
                                 <option value="FIXED_AMOUNT">
                                     Fixed Amount
@@ -2428,7 +2514,7 @@ const VendorPricing = () => {
                                 {
                                     pricing.paymentConfiguration
                                         ?.advancePaymentType ===
-                                    "FIXED_AMOUNT"
+                                        "FIXED_AMOUNT"
 
                                         ? "Advance Amount (₹)"
 
@@ -2438,16 +2524,16 @@ const VendorPricing = () => {
                             </label>
 
 
-                            <input
+                            <NumericInput
 
-                                type="number"
+
 
                                 min="0"
 
                                 max={
                                     pricing.paymentConfiguration
                                         ?.advancePaymentType ===
-                                    "PERCENTAGE"
+                                        "PERCENTAGE"
 
                                         ? 100
 
@@ -2526,9 +2612,9 @@ const VendorPricing = () => {
                             </label>
 
 
-                            <input
+                            <NumericInput
 
-                                type="number"
+
 
                                 min="0"
 
@@ -2557,6 +2643,7 @@ const VendorPricing = () => {
                         {/* =================================================
                             REFUND RULES
                         ================================================= */}
+
                         <div className="refund-rules-header">
 
                             <div>
@@ -2637,8 +2724,8 @@ const VendorPricing = () => {
                                                             From Days
                                                         </label>
 
-                                                        <input
-                                                            type="number"
+                                                        <NumericInput
+
                                                             min="0"
                                                             value={
                                                                 rule.minDaysBeforeEvent
@@ -2663,12 +2750,12 @@ const VendorPricing = () => {
                                                             To Days
                                                         </label>
 
-                                                        <input
-                                                            type="number"
+                                                        <NumericInput
+
                                                             min="0"
                                                             value={
                                                                 rule.maxDaysBeforeEvent ===
-                                                                null
+                                                                    null
                                                                     ? ""
                                                                     : rule.maxDaysBeforeEvent
                                                             }
@@ -2697,8 +2784,8 @@ const VendorPricing = () => {
 
                                                         <div className="percentage-input">
 
-                                                            <input
-                                                                type="number"
+                                                            <NumericInput
+
                                                                 min="0"
                                                                 max="100"
                                                                 value={
@@ -2746,8 +2833,6 @@ const VendorPricing = () => {
 
                             )
                         }
-
-
 
                     </section>
 
@@ -2832,7 +2917,7 @@ const VendorPricing = () => {
 
                                                 {
                                                     head.calculationType ===
-                                                    "FIXED"
+                                                        "FIXED"
 
                                                         ? `₹${Number(
                                                             head.value ||
@@ -2890,7 +2975,7 @@ const VendorPricing = () => {
 
                                                 {
                                                     discount.discountType ===
-                                                    "FIXED"
+                                                        "FIXED"
 
                                                         ? `- ₹${Number(
                                                             discount.value ||
@@ -2929,7 +3014,7 @@ const VendorPricing = () => {
                                 pkg =>
                                     pkg.active
                             ).length ===
-                            0 ? (
+                                0 ? (
 
                                 <div className="summary-empty">
 
@@ -2947,49 +3032,64 @@ const VendorPricing = () => {
                                     )
 
                                     .map(
-                                        pkg => (
-
-                                            <div
-                                                key={
-                                                    pkg.id ??
-                                                    pkg.name
-                                                }
-                                                className="package-summary-row"
-                                            >
-
-                                                <div>
-
-                                                    <span className="package-summary-dot" />
+                                        pkg => {
 
 
-                                                    <span>
+                                            return (
+
+                                                <div
+
+                                                    key={
+                                                        pkg.id ??
+                                                        pkg.name
+                                                    }
+
+                                                    className="package-summary-row"
+
+                                                >
+
+                                                    <div>
+
+                                                        <span
+
+                                                            className="package-summary-dot"
+
+                                                        />
+
+
+                                                        <span>
+
+                                                            {
+                                                                pkg.name
+                                                            }
+
+                                                            {" "}
+                                                            Package
+
+                                                        </span>
+
+                                                    </div>
+
+
+                                                    <strong>
+
+                                                        ₹
                                                         {
-                                                            pkg.name.trim()
-                                                                ? pkg.name
-                                                                : "Untitled Package"
+                                                            Number(
+                                                                pkg.price ||
+                                                                0
+                                                            ).toLocaleString(
+                                                                "en-IN"
+                                                            )
                                                         }
-                                                    </span>
+
+                                                    </strong>
 
                                                 </div>
 
+                                            );
 
-                                                <strong>
-
-                                                    ₹
-                                                    {
-                                                        Number(
-                                                            pkg.price ||
-                                                            0
-                                                        ).toLocaleString(
-                                                            "en-IN"
-                                                        )
-                                                    }
-
-                                                </strong>
-
-                                            </div>
-
-                                        )
+                                        }
                                     )
 
                             )
@@ -3013,30 +3113,37 @@ const VendorPricing = () => {
                                 {
                                     pricing.paymentConfiguration
                                         ?.advancePaymentValue !== null &&
-                                    pricing.paymentConfiguration
-                                        ?.advancePaymentValue !== undefined &&
-                                    Number(
                                         pricing.paymentConfiguration
-                                            .advancePaymentValue
-                                    ) > 0
+                                            ?.advancePaymentValue !== undefined &&
+                                        Number(
+                                            pricing.paymentConfiguration
+                                                .advancePaymentValue
+                                        ) > 0
+                                        ? (
 
-                                        ? pricing.paymentConfiguration
-                                            .advancePaymentType ===
+                                            pricing
+                                                .paymentConfiguration
+                                                ?.advancePaymentType ===
                                             "FIXED_AMOUNT"
 
-                                            ? `₹${Number(
-                                                pricing.paymentConfiguration
-                                                    .advancePaymentValue
-                                            ).toLocaleString(
-                                                "en-IN"
-                                            )}`
+                                                ? `₹${Number(
+                                                    pricing
+                                                        .paymentConfiguration
+                                                        ?.advancePaymentValue
+                                                ).toLocaleString(
+                                                    "en-IN"
+                                                )}`
 
-                                            : `${Number(
-                                                pricing.paymentConfiguration
-                                                    .advancePaymentValue
-                                            )}%`
+                                                : `${Number(
+                                                    pricing
+                                                        .paymentConfiguration
+                                                        ?.advancePaymentValue
+                                                )}%`
+
+                                        )
 
                                         : "Not Configured"
+
                                 }
 
                             </strong>
@@ -3128,10 +3235,9 @@ const VendorPricing = () => {
 
                             <p>
 
-                                Create package names, prices and features that
-                                match your service offerings. Customers will see
-                                only the packages you activate. Cancellation rules
-                                are defined entirely by you.
+                                Create package names, prices and features that match your service offerings.
+                                Customers will see only the packages you activate.
+                                Cancellation rules are defined entirely by you.
 
                             </p>
 
@@ -3148,6 +3254,7 @@ const VendorPricing = () => {
     );
 
 };
+
 
 
 export default VendorPricing;

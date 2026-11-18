@@ -16,4 +16,7 @@ public class LoginRequest {
     @NotBlank
     private String password;
 
+    /** Set only after the user confirms replacing an existing login. */
+    private boolean replaceExistingSession;
+
 }

@@ -1,11 +1,7 @@
-spring:
 
+spring:
   application:
     name: booking-backend
-
-  data:
-    mongodb:
-      uri: mongodb://127.0.0.1:27017/Catalog
 
   servlet:
     multipart:
@@ -25,13 +21,3 @@ logging:
   pattern:
     console: "%d{yyyy-MM-dd'T'HH:mm:ss.SSSXXX} %-5level [correlationId=%X{correlationId:-}] [userId=%X{userId:-} role=%X{role:-} vendorId=%X{vendorId:-}] %logger{36} - %msg%n"
 
-jwt:
-  secret: 4A6B4D6E5A715564586E3272357538782F413F4428472B4B6250655368566D5971
-  expiration: 3600000
-
-app:
-  upload:
-    path: C://workspace//DqBooking//booking-backend//src//main//resources
-    base-url: http://localhost:8080/uploads
-    image-max-size-mb: 5
-    video-max-size-mb: 50

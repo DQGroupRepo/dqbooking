@@ -1,9 +1,9 @@
-import api from "../api/axiosConfig";
+import api from "../api/axios";
 
-import type { VendorDetail }
-    from "../types/VendorDetail";
+import type { VendorDetail } from "../types/VendorDetail";
+import type { VendorPricingForDate } from "../types/VendorPricingForDate";
 
-class VendorDetailService {
+const VendorDetailService = {
 
     async getById(
         serviceId: string
@@ -15,9 +15,26 @@ class VendorDetailService {
             );
 
         return response.data;
+    },
 
+    async getPricingForDate(
+        serviceId: string,
+        eventDate: string
+    ): Promise<VendorPricingForDate> {
+
+        const response =
+            await api.get<VendorPricingForDate>(
+                `/customer/services/${serviceId}/pricing`,
+                {
+                    params: {
+                        eventDate
+                    }
+                }
+            );
+
+        return response.data;
     }
 
-}
+};
 
-export default new VendorDetailService();
+export default VendorDetailService;

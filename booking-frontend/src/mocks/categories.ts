@@ -10,7 +10,7 @@ export const categories = [
 
   {
     icon: "💄",
-    title: "Bridal Makeup",
+    title: "Beauty & Makeup",
     category: "MAKEUP",
     description: "Professional artists",
     link: "/categories"
@@ -34,7 +34,7 @@ export const categories = [
 
   {
     icon: "🌸",
-    title: "Floral Decor",
+    title: "Decor & Styling",
     category: "DECORATION",
     description: "Beautiful decorations",
     link: "/categories"
@@ -46,6 +46,13 @@ export const categories = [
     category: "CATERING",
     description: "Delicious food services",
     link: "/categories"
-  }
+  },
+  {
+    icon: "🛏️",
+    title: "Stays",
+    category: "STAY",
+    description: "Rooms, resorts and day packages",
+    link: "/categories"
+  },
 
 ];

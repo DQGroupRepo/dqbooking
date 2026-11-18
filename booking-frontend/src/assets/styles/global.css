@@ -1,5 +1,5 @@
 /* =====================================
-   EVENTNEST GLOBAL STYLE SYSTEM
+   DQBooking GLOBAL STYLE SYSTEM
 ===================================== */
 
 
@@ -1896,16 +1896,6 @@ footer {
 
 
 
-.1booking-card {
-
-    position:relative;
-
-    top:0;
-
-}
-
-
-
 .review-layout {
 
     grid-template-columns:1fr;
@@ -2921,3 +2911,8 @@ cursor:pointer;
 background:#dc2626;
 
 }
+
+/* Keep numeric fields editable by keyboard without browser spinner controls. */
+input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }

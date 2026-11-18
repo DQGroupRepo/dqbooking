@@ -20,7 +20,7 @@ const CategoryCard = ({
   return (
 
     <Link
-      to={`${link}?category=${category}`}
+      to={`${link}?category=${encodeURIComponent(category)}`}
       className="category-link"
     >
 

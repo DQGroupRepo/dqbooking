@@ -1,3 +1,4 @@
+import Loader from "../../components/common/Loader";
 import {
 
     useEffect,
@@ -61,7 +62,7 @@ export default function VendorRevenue(){
 
     if(!summary){
 
-        return <h2>Loading...</h2>;
+        return <Loader />;
 
     }
 

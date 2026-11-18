@@ -1,10 +1,10 @@
+import { clearAuthSession, getAuthToken } from "../util/authStorage";
 import axios from "axios";
 
 
 const api = axios.create({
 
-    baseURL:
-        import.meta.env.VITE_API_BASE_URL,
+    baseURL: "https://dqbooking-z0gb.onrender.com/api",
 
     headers: {
 
@@ -27,9 +27,7 @@ api.interceptors.request.use(
     config => {
 
         const token =
-            localStorage.getItem(
-                "eventnest_token"
-            );
+            getAuthToken();
 
 
         if (token) {
@@ -75,9 +73,7 @@ api.interceptors.response.use(
         if (status === 401) {
 
             const currentToken =
-                localStorage.getItem(
-                    "eventnest_token"
-                );
+                getAuthToken();
 
 
             /*

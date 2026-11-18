@@ -1,5 +1,6 @@
 import Input from "../../../common/ui/Input/Input";
 import SectionHeader from "../../../common/ui/SectionHeader/SectionHeader";
+import TagChipSelector from "../TagChipSelector";
 
 import type {
     VendorServiceForm
@@ -8,6 +9,10 @@ import type {
 interface Props {
 
     formData: VendorServiceForm;
+
+    onCategoryTagsChange: (values: string[]) => void;
+
+    onLocationTagsChange: (values: string[]) => void;
 
     handleChange: (
         e: React.ChangeEvent<
@@ -23,9 +28,14 @@ export default function BasicInfoSection({
 
     formData,
 
-    handleChange
+    handleChange,
+    onCategoryTagsChange,
+    onLocationTagsChange
 
 }: Props) {
+
+    const isPhotography =
+        formData.category.trim().toLowerCase().replace(/[\s_-]+/g, "") === "photography";
 
     return (
 
@@ -83,39 +93,22 @@ export default function BasicInfoSection({
 
             />
 
+            <TagChipSelector label="Category tags" mode="CATEGORY" parentCategory={formData.category.toUpperCase()} values={formData.categoryTags} onChange={onCategoryTagsChange} />
 
-            <div className="two-column">
-
-                <Input
-
-                    name="capacity"
-
-                    type="number"
-
-                    label="Maximum Capacity"
-
-                    value={formData.capacity}
-
-                    onChange={handleChange}
-
-                />
+            <TagChipSelector label="Location tags" mode="LOCATION" values={formData.locationTags} onChange={onLocationTagsChange} />
 
 
-                <Input
-
-                    name="durationHours"
-
-                    type="number"
-
-                    label="Duration (Hours)"
-
-                    value={formData.durationHours}
-
-                    onChange={handleChange}
-
-                />
-
-            </div>
+            {!isPhotography && (
+                <div className="two-column">
+                    <Input
+                        name="capacity"
+                        type="number"
+                        label="Maximum Capacity"
+                        value={formData.capacity}
+                        onChange={handleChange}
+                    />
+                </div>
+            )}
 
         </>
 

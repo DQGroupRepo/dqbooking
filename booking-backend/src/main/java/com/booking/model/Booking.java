@@ -1,6 +1,9 @@
 package com.booking.model;
 
 import com.booking.model.embedded.BookingPricingSnapshot;
+import com.booking.model.embedded.BookingSelectedCateringDish;
+import com.booking.model.embedded.BookingTimeInterval;
+import com.booking.model.embedded.ResourceAllocation;
 import com.booking.model.enums.BookingStatus;
 import com.booking.model.enums.PaymentStatus;
 import lombok.Getter;
@@ -8,8 +11,9 @@ import lombok.Setter;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Getter
 @Setter
@@ -65,7 +69,52 @@ public class Booking extends BaseEntity {
      * =========================================
      */
 
-    private LocalDate eventDate;
+    /** Inclusive start of the requested service interval (property-local time). */
+    private LocalDateTime bookingFrom;
+
+    /** Exclusive end of the requested service interval (property-local time). */
+    private LocalDateTime bookingTo;
+
+    /** Exact occupied intervals for recurring multi-day bookings. */
+    private List<BookingTimeInterval> bookingIntervals = new ArrayList<>();
+
+    /** STANDARD_SLOT, ROOM_STAY or DAY_PACKAGE. */
+    private String bookingType = "STANDARD_SLOT";
+
+    /** Deprecated legacy snapshot field; new STAY bookings leave this null. */
+    private String roomTypeId;
+
+    /** Number of rooms requested for ROOM_STAY bookings; consumes slot capacity. */
+    private Integer roomQuantity;
+
+    /*
+     * =========================================
+     * BOOKING SLOT SNAPSHOT
+     * =========================================
+     *
+     * The selected slot is stored as a snapshot
+     * at booking time.
+     *
+     * slotId identifies the original slot.
+     * slotName/time values preserve what the
+     * customer actually booked even if the vendor
+     * later modifies the slot configuration.
+     */
+
+    private String slotId;
+
+    /** Generic physical inventory allocation snapshot. */
+    private String resourceTypeId;
+    private List<String> resourceIds = new ArrayList<>();
+
+    /** All physical allocations for combined STAY package inventory. */
+    private List<ResourceAllocation> resourceAllocations = new ArrayList<>();
+
+    private String slotName;
+
+    private String slotStartTime;
+
+    private String slotEndTime;
 
     private Integer guestCount;
 
@@ -169,5 +218,23 @@ public class Booking extends BaseEntity {
     private String packageId;
 
     private String packageType;
+
+    /*
+     * =========================================
+     * SELECTED CATERING DISHES
+     * =========================================
+     *
+     * Catering-only booking snapshot.
+     *
+     * Stores the exact dishes selected by the
+     * customer from the selected catering package.
+     *
+     * These are snapshots and must not depend on
+     * the vendor's current catering menu/package.
+     *
+     * Empty for non-catering bookings.
+     */
+    private List<BookingSelectedCateringDish>
+            selectedCateringDishes = new ArrayList<>();
 
 }

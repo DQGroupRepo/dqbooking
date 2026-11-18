@@ -5,7 +5,6 @@ import com.booking.model.enums.DiscountType;
 import com.booking.model.enums.ServiceCategory;
 import com.booking.model.enums.ServiceDiscoveryTag;
 import com.booking.model.enums.ServiceModerationStatus;
-import com.booking.model.embedded.CateringDetails;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -68,7 +67,9 @@ public class VendorService extends BaseEntity {
 
     private List<String> imageUrls;
 
-    private List<String> amenities;
+    private List<String> facilities = new ArrayList<>();
+
+    private List<String> amenities = new ArrayList<>();
 
     private List<ServiceDetailSection> detailSections =
             new ArrayList<>();
@@ -81,6 +82,7 @@ public class VendorService extends BaseEntity {
      */
 
     private String location;
+
 
     /*
      * =========================================
@@ -97,20 +99,18 @@ public class VendorService extends BaseEntity {
 
     /*
      * =========================================
-     * SERVICE PACKAGES
-     * =========================================
-     */
-
-    private List<ServicePackage> packages;
-
-
-    /*
-     * =========================================
      * DISCOVERY
      * =========================================
      */
 
     private Set<ServiceDiscoveryTag> discoveryTags;
+
+    /** Vendor-selected search tags. Search uses these tags only. */
+    private List<ServiceTag> tags = new ArrayList<>();
+
     private CateringDetails cateringDetails;
+
+    /** Optional generic physical inventory. Empty preserves legacy availability. */
+    private List<ServiceResourceType> resourceTypes = new ArrayList<>();
 
 }

@@ -271,7 +271,7 @@ const BookingCard = ({
                         <FaCalendarAlt />
 
                         {
-                            firstBooking.eventDate
+                            firstBooking.bookingFrom.split("T")[0]
                         }
 
                     </span>

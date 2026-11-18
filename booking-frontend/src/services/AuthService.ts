@@ -8,6 +8,8 @@ export interface LoginRequest {
 
     password: string;
 
+    replaceExistingSession?: boolean;
+
 }
 
 
@@ -20,6 +22,10 @@ export interface LoginResponse {
     role: string;
 
     name: string;
+
+    requiresConfirmation?: boolean;
+
+    message?: string;
 
 }
 

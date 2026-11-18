@@ -24,6 +24,10 @@ public class AvailabilityOverrideResponse {
 
     private String reason;
 
+    /** Canonical name consumed by the current frontend. */
+    private Integer capacityOverride;
+
+    /** Legacy response field retained for older clients. */
     private Integer maxBookingsOverride;
 
     private LocalDateTime createdAt;

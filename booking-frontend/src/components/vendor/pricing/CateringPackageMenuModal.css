@@ -1,0 +1,227 @@
+
+.catering-menu-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: rgba(15, 23, 42, 0.58);
+}
+
+.catering-menu-modal {
+    display: flex;
+    flex-direction: column;
+    width: min(900px, 100%);
+    max-height: 90vh;
+    overflow: hidden;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 16px;
+    box-shadow: 0 24px 70px rgba(15, 23, 42, 0.25);
+}
+
+.catering-menu-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 20px;
+    padding: 22px 24px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.catering-menu-modal-header h2 {
+    margin: 0 0 6px;
+    color: #0f172a;
+    font-size: 21px;
+}
+
+.catering-menu-modal-header p {
+    margin: 0;
+    color: #64748b;
+    font-size: 13px;
+}
+
+.catering-menu-close {
+    flex-shrink: 0;
+    width: 34px;
+    height: 34px;
+    border: 0;
+    border-radius: 8px;
+    background: #f1f5f9;
+    color: #475569;
+    font-size: 25px;
+    cursor: pointer;
+}
+
+.catering-menu-modal-body {
+    padding: 20px 24px;
+    overflow-y: auto;
+}
+
+.catering-menu-section {
+    padding: 18px 0;
+    border-bottom: 1px solid #edf1f5;
+}
+
+.catering-menu-section:first-child {
+    padding-top: 0;
+}
+
+.catering-menu-section:last-child {
+    border-bottom: 0;
+}
+
+.catering-menu-section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 14px;
+}
+
+.catering-menu-section-header h3 {
+    margin: 0 0 4px;
+    color: #0f172a;
+    font-size: 15px;
+}
+
+.catering-menu-section-header p {
+    margin: 0;
+    color: #64748b;
+    font-size: 12px;
+}
+
+.catering-limit-field {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #475569;
+    font-size: 12px;
+}
+
+.catering-limit-field input {
+    width: 76px;
+    padding: 8px 10px;
+    border: 1px solid #cbd5e1;
+    border-radius: 7px;
+    outline: none;
+}
+
+.catering-limit-field input:focus {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.catering-menu-dishes {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 9px;
+}
+
+.catering-menu-dish {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    padding: 11px 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    color: #334155;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.catering-menu-dish:has(input:checked) {
+    border-color: #93c5fd;
+    background: #eff6ff;
+}
+
+.catering-menu-dish input {
+    accent-color: #2563eb;
+    flex-shrink: 0;
+}
+
+.catering-menu-dish span {
+    overflow-wrap: anywhere;
+}
+
+.catering-menu-dish small {
+    margin-left: auto;
+    color: #64748b;
+    font-size: 10px;
+}
+
+.catering-menu-empty {
+    padding: 14px;
+    border-radius: 8px;
+    background: #f8fafc;
+    color: #94a3b8;
+    font-size: 12px;
+}
+
+.catering-menu-error {
+    padding: 10px 12px;
+    border-radius: 8px;
+    background: #fef2f2;
+    color: #b91c1c;
+    font-size: 12px;
+}
+
+.catering-menu-modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 16px 24px;
+    border-top: 1px solid #e5e7eb;
+}
+
+.catering-menu-cancel,
+.catering-menu-save {
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.catering-menu-cancel {
+    border: 1px solid #d1d5db;
+    background: #fff;
+    color: #374151;
+}
+
+.catering-menu-save {
+    border: 1px solid #2563eb;
+    background: #2563eb;
+    color: #fff;
+}
+
+@media (max-width: 600px) {
+    .catering-menu-overlay {
+        padding: 10px;
+    }
+
+    .catering-menu-modal {
+        max-height: 95vh;
+    }
+
+    .catering-menu-modal-header,
+    .catering-menu-modal-body {
+        padding: 16px;
+    }
+
+    .catering-menu-section-header {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .catering-menu-dishes {
+        grid-template-columns: 1fr;
+    }
+
+    .catering-menu-modal-footer {
+        padding: 14px 16px;
+    }
+}

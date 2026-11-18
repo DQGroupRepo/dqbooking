@@ -1,6 +1,8 @@
 import type { CartItem } from "../types/CartItem";
+import BookingAvailabilityService from "./BookingAvailabilityService";
 
 const CART_STORAGE_KEY = "eventnest_cart";
+const CART_ID_STORAGE_KEY = "eventnest_cart_id";
 
 class CartService {
 
@@ -87,36 +89,168 @@ class CartService {
 
     /*
      * =========================================
-     * ADD ITEM
+     * CART ID
      * =========================================
+     *
+     * Stable identifier shared by holds created
+     * for this browser cart.
      */
 
-    addItem(
-        item: CartItem
-    ): CartItem[] {
-console.log("addItem:", item);
-        const cart =
-            this.getCart();
+    getOrCreateCartId(): string {
 
-        const alreadyExists =
-            cart.some(
-                cartItem =>
-                    cartItem.serviceId ===
-                    item.serviceId
-            );
+        let cartId = localStorage.getItem(CART_ID_STORAGE_KEY);
 
-        if (!alreadyExists) {
+        if (!cartId) {
+            cartId = `cart-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
-            cart.push(item);
-
+            localStorage.setItem(CART_ID_STORAGE_KEY, cartId);
         }
 
-        this.saveCart(
-            cart
+        return cartId;
+    }
+
+
+    /*
+     * =========================================
+     * RELEASE HOLD (BEST EFFORT)
+     * =========================================
+     *
+     * The backend remains authoritative. If release
+     * fails, the hold expires automatically after
+     * its five-minute lifetime.
+     */
+
+    private async releaseHold(item: CartItem): Promise<void> {
+
+        const holdIds = Array.from(new Set([
+            ...(item.holds ?? []).map(hold => hold.holdId),
+            ...(item.holdId ? [item.holdId] : [])
+        ].filter(Boolean)));
+
+        await Promise.all(holdIds.map(async holdId => {
+            try {
+                await BookingAvailabilityService.releaseHold(item.serviceId, holdId);
+            } catch (error) {
+                console.warn(
+                    `Could not release hold ${holdId}; it will expire automatically.`,
+                    error
+                );
+            }
+        }));
+    }
+
+
+    private async releaseHolds(items: CartItem[]): Promise<void> {
+        await Promise.all(items.map(item => this.releaseHold(item)));
+    }
+
+
+    private withoutBundleAssociation(item: CartItem): CartItem {
+
+        const {
+            bundleId: _bundleId,
+            bundleName: _bundleName,
+            bundleDescription: _bundleDescription,
+            bundleServiceIds: _bundleServiceIds,
+            bundleDiscountType: _bundleDiscountType,
+            bundleDiscountValue: _bundleDiscountValue,
+            bundleEnabled: _bundleEnabled,
+            ...normalItem
+        } = item;
+
+        return normalItem;
+    }
+
+
+    /*
+     * =========================================
+     * ADD / REPLACE ITEM
+     * =========================================
+     *
+     * Call only after the customer confirms a
+     * duplicate and the new hold has been secured.
+     * Save the new cart first, then release the old
+     * hold. A failed local save therefore does not
+     * discard the previous booking.
+     */
+
+    async replaceItem(item: CartItem): Promise<CartItem[]> {
+
+        const cart = this.getCart();
+        const requirementsKey = (value: CartItem) => JSON.stringify(
+            (value.resourceRequirements ?? [])
+                .map(requirement => `${requirement.resourceTypeId}:${requirement.quantity}`)
+                .sort()
         );
+        const sameBookingSelection = (cartItem: CartItem) =>
+            String(item.category ?? "").toUpperCase() === "STAY" &&
+            !cartItem.bundleId && !item.bundleId &&
+            cartItem.serviceId === item.serviceId &&
+            cartItem.slotId === item.slotId &&
+            cartItem.packageId === item.packageId &&
+            (cartItem.bookingFrom ?? cartItem.eventDate ?? "").slice(0, 16) ===
+                (item.bookingFrom ?? item.eventDate ?? "").slice(0, 16) &&
+            (cartItem.bookingTo ?? cartItem.eventDate ?? "").slice(0, 16) ===
+                (item.bookingTo ?? item.eventDate ?? "").slice(0, 16) &&
+            requirementsKey(cartItem) === requirementsKey(item);
+        const existingIndex = cart.findIndex(sameBookingSelection);
 
-        return cart;
+        if (existingIndex >= 0) {
+            const existing = cart[existingIndex];
+            const existingHolds = existing.holds?.length
+                ? existing.holds
+                : existing.holdId
+                    ? [{ holdId: existing.holdId, roomQuantity: existing.roomQuantity, quantity: existing.quantity, expiresAt: existing.holdExpiresAt, price: existing.price }]
+                    : [];
+            const newHolds = item.holds?.length
+                ? item.holds
+                : item.holdId
+                    ? [{ holdId: item.holdId, roomQuantity: item.roomQuantity, quantity: item.quantity, expiresAt: item.holdExpiresAt, price: item.price }]
+                    : [];
+            const mergedHolds = [...existingHolds, ...newHolds].filter(
+                (hold, index, all) => all.findIndex(candidate => candidate.holdId === hold.holdId) === index
+            );
+            const mergedRoomQuantity = mergedHolds.reduce(
+                (sum, hold) => sum + Number(hold.roomQuantity ?? hold.quantity ?? 1), 0
+            );
+            const mergedQuantity = mergedHolds.reduce(
+                (sum, hold) => sum + Number(hold.quantity ?? hold.roomQuantity ?? 1), 0
+            );
+            const merged: CartItem = {
+                ...existing,
+                holds: mergedHolds,
+                holdId: mergedHolds[0]?.holdId,
+                holdExpiresAt: mergedHolds.reduce<string | undefined>((earliest, hold) => {
+                    if (!hold.expiresAt) return earliest;
+                    return !earliest || Date.parse(hold.expiresAt) < Date.parse(earliest)
+                        ? hold.expiresAt : earliest;
+                }, undefined),
+                roomQuantity: existing.bookingType === "ROOM_STAY" ? mergedRoomQuantity : existing.roomQuantity,
+                quantity: mergedQuantity,
+                price: mergedHolds.reduce((sum, hold) => sum + Number(hold.price ?? 0), 0) ||
+                    Number(existing.price) + Number(item.price)
+            };
+            const nextCart = [...cart];
+            nextCart[existingIndex] = merged;
+            this.saveCart(nextCart);
+            return nextCart;
+        }
 
+        const nextCart = [...cart, item];
+        this.saveCart(nextCart);
+        return nextCart;
+    }
+
+    /*
+     * ADD ITEM COMPATIBILITY ALIAS
+     *
+     * New booking flows should ask for duplicate confirmation
+     * before calling this method. It delegates to replaceItem
+     * so an existing hold is never silently orphaned.
+     */
+
+    async addItem(item: CartItem): Promise<CartItem[]> {
+        return this.replaceItem(item);
     }
 
 
@@ -125,32 +259,71 @@ console.log("addItem:", item);
      * REMOVE ITEM
      * =========================================
      *
-     * Removes only one service.
-     *
-     * If that service belongs to a bundle,
-     * the caller can separately remove the
-     * bundle association from the remaining
-     * services.
+     * Releases the removed service's hold. If it was
+     * part of a bundle, the remaining members become
+     * normal services so an incomplete bundle cannot
+     * retain a discount association.
      */
 
-    removeItem(
-        serviceId: string
-    ): CartItem[] {
+    async removeItem(serviceId: string, holdId?: string): Promise<CartItem[]> {
+        const cart = this.getCart();
+        const removed = cart.filter(item => item.serviceId === serviceId &&
+            (!holdId || item.holdId === holdId));
+        const removedBundleIds = new Set(removed.map(item => item.bundleId).filter((id): id is string => Boolean(id)));
+        const nextCart = cart
+            .filter(item => !(item.serviceId === serviceId && (!holdId || item.holdId === holdId)))
+            .map(item => item.bundleId && removedBundleIds.has(item.bundleId)
+                ? this.withoutBundleAssociation(item)
+                : item);
+        this.saveCart(nextCart);
+        await this.releaseHolds(removed);
+        return nextCart;
+    }
 
-        const cart =
-            this.getCart()
-                .filter(
-                    item =>
-                        item.serviceId !==
-                        serviceId
-                );
+    // Remove one underlying hold when the backend reports that specific hold
+    // as expired. Other holds represented by the same visible cart line remain.
+    async removeHold(serviceId: string, holdId: string): Promise<CartItem[]> {
+        const cart = this.getCart();
+        const removed: CartItem[] = [];
+        const nextCart: CartItem[] = [];
 
-        this.saveCart(
-            cart
-        );
-
-        return cart;
-
+        cart.forEach(item => {
+            if (item.serviceId !== serviceId) {
+                nextCart.push(item);
+                return;
+            }
+            const holds = item.holds?.length
+                ? item.holds
+                : item.holdId
+                    ? [{ holdId: item.holdId, roomQuantity: item.roomQuantity, quantity: item.quantity, expiresAt: item.holdExpiresAt, price: item.price }]
+                    : [];
+            const matching = holds.filter(hold => hold.holdId === holdId);
+            if (!matching.length) {
+                nextCart.push(item);
+                return;
+            }
+            removed.push({ ...item, holds: matching, holdId: matching[0].holdId });
+            const remaining = holds.filter(hold => hold.holdId !== holdId);
+            if (!remaining.length) return;
+            const roomQuantity = remaining.reduce((sum, hold) => sum + Number(hold.roomQuantity ?? hold.quantity ?? 1), 0);
+            const quantity = remaining.reduce((sum, hold) => sum + Number(hold.quantity ?? hold.roomQuantity ?? 1), 0);
+            const remainingPrice = remaining.reduce((sum, hold) => sum + Number(hold.price ?? 0), 0);
+            nextCart.push({
+                ...item,
+                holds: remaining,
+                holdId: remaining[0].holdId,
+                holdExpiresAt: remaining.reduce<string | undefined>((earliest, hold) => {
+                    if (!hold.expiresAt) return earliest;
+                    return !earliest || Date.parse(hold.expiresAt) < Date.parse(earliest) ? hold.expiresAt : earliest;
+                }, undefined),
+                roomQuantity: item.bookingType === "ROOM_STAY" ? roomQuantity : item.roomQuantity,
+                quantity,
+                price: remainingPrice || item.price
+            });
+        });
+        this.saveCart(nextCart);
+        await this.releaseHolds(removed);
+        return nextCart;
     }
 
 
@@ -172,67 +345,25 @@ console.log("addItem:", item);
      * Bundle discount -> removed
      */
 
-    removeItemFromBundle(
+    async removeItemFromBundle(
         serviceId: string,
         bundleId: string
-    ): CartItem[] {
+    ): Promise<CartItem[]> {
 
-        const cart =
-            this.getCart()
-                .filter(
-                    item =>
-                        item.serviceId !==
-                        serviceId
-                )
-                .map(
-                    item => {
+        const cart = this.getCart();
+        const removed = cart.filter(item => item.serviceId === serviceId && item.bundleId === bundleId);
+        const nextCart = cart
+            .filter(item => !(item.serviceId === serviceId && item.bundleId === bundleId))
+            .map(item =>
+                item.bundleId === bundleId
+                    ? this.withoutBundleAssociation(item)
+                    : item
+            );
 
-                        if (
-                            item.bundleId !==
-                            bundleId
-                        ) {
+        this.saveCart(nextCart);
+        await this.releaseHolds(removed);
 
-                            return item;
-
-                        }
-
-                        const {
-                            bundleId:
-                                _bundleId,
-
-                            bundleName:
-                                _bundleName,
-
-                            bundleDescription:
-                                _bundleDescription,
-
-                            bundleServiceIds:
-                                _bundleServiceIds,
-
-                            bundleDiscountType:
-                                _bundleDiscountType,
-
-                            bundleDiscountValue:
-                                _bundleDiscountValue,
-
-                            bundleEnabled:
-                                _bundleEnabled,
-
-                            ...normalItem
-
-                        } = item;
-
-                        return normalItem;
-
-                    }
-                );
-
-        this.saveCart(
-            cart
-        );
-
-        return cart;
-
+        return nextCart;
     }
 
 
@@ -245,24 +376,16 @@ console.log("addItem:", item);
      * the specified bundle.
      */
 
-    removeBundle(
-        bundleId: string
-    ): CartItem[] {
+    async removeBundle(bundleId: string): Promise<CartItem[]> {
 
-        const cart =
-            this.getCart()
-                .filter(
-                    item =>
-                        item.bundleId !==
-                        bundleId
-                );
+        const cart = this.getCart();
+        const removed = cart.filter(item => item.bundleId === bundleId);
+        const nextCart = cart.filter(item => item.bundleId !== bundleId);
 
-        this.saveCart(
-            cart
-        );
+        this.saveCart(nextCart);
+        await this.releaseHolds(removed);
 
-        return cart;
-
+        return nextCart;
     }
 
 
@@ -272,24 +395,20 @@ console.log("addItem:", item);
      * =========================================
      */
 
-    clearCart(): void {
+    async clearCart(authToken?: string | null): Promise<void> {
 
-        localStorage.removeItem(
-            CART_STORAGE_KEY
-        );
+        const cart = this.getCart();
 
+        // Clear locally immediately so the UI cannot continue to use stale
+        // holds; release calls are best-effort and holds expire as fallback.
+        localStorage.removeItem(CART_STORAGE_KEY);
+        localStorage.removeItem(CART_ID_STORAGE_KEY);
+        window.dispatchEvent(new Event("cartUpdated"));
 
-        /*
-         * Notify Header and other
-         * components that cart changed.
-         */
-
-        window.dispatchEvent(
-            new Event(
-                "cartUpdated"
-            )
-        );
-
+        // Authentication is supplied by the shared Axios request interceptor.
+        // Retain the optional argument for compatibility with existing callers.
+        void authToken;
+        await this.releaseHolds(cart);
     }
 
 
@@ -305,6 +424,20 @@ console.log("addItem:", item);
 
     }
 
+
+    /**
+     * Returns the cart line's gross amount before bundle discount.
+     * Catering prices are stored per guest, so multiply by the selected
+     * guest count here. Other categories retain their existing price rules.
+     */
+    getItemTotalPrice(item: CartItem): number {
+        const basePrice = Number(item.price) || 0;
+        const category = String(item.category ?? "").trim().toUpperCase();
+        if (category === "CATERING") {
+            return basePrice * Math.max(1, Number(item.guestCount) || 1);
+        }
+        return basePrice;
+    }
 
     /*
      * =========================================
@@ -323,9 +456,7 @@ console.log("addItem:", item);
                     item
                 ) =>
                     total +
-                    Number(
-                        item.price
-                    ),
+                    this.getItemTotalPrice(item),
                 0
             );
 
@@ -476,9 +607,7 @@ console.log("isBundleComplete:", cart);
                     item
                 ) =>
                     total +
-                    Number(
-                        item.price
-                    ),
+                    this.getItemTotalPrice(item),
                 0
             );
 

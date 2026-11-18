@@ -1,3 +1,5 @@
+import MobileCarousel from "../../components/common/MobileCarousel/MobileCarousel";
+import Loader from "../../components/common/Loader";
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { FaPlus } from "react-icons/fa";
@@ -141,9 +143,9 @@ export default function ManageBookingSlots() {
 
         }
 
-        catch {
+        catch (error) {
 
-             if (
+            if (
                 axios.isAxiosError(error) &&
                 error.response?.status === 403
             ) {
@@ -209,7 +211,7 @@ export default function ManageBookingSlots() {
 
         }
 
-        catch {
+        catch (error) {
 
             if (
                 axios.isAxiosError(error) &&
@@ -230,7 +232,7 @@ export default function ManageBookingSlots() {
 
     if (loading) {
 
-        return <h2>Loading...</h2>;
+        return <Loader />;
 
     }
 
@@ -250,7 +252,7 @@ export default function ManageBookingSlots() {
 
             </div>
 
-            <div className="slot-summary">
+            <MobileCarousel className="slot-summary" ariaLabel="Booking slot statistics" itemsPerPage={2}>
 
                 <div className="summary-card">
 
@@ -284,7 +286,7 @@ export default function ManageBookingSlots() {
 
                 </div>
 
-            </div>
+            </MobileCarousel>
 
             {
 
@@ -302,15 +304,15 @@ export default function ManageBookingSlots() {
 
                             <p>
 
-                                 Define booking slots so customers can choose their preferred time when making a reservation.
+                                Define booking slots so customers can choose their preferred time when making a reservation.
 
 
                             </p>
-                              <Button onClick={handleAdd}>
+                            <Button onClick={handleAdd}>
 
-                                    Create First Slot
+                                Create First Slot
 
-                                </Button>
+                            </Button>
 
                         </div>
 
@@ -320,48 +322,34 @@ export default function ManageBookingSlots() {
 
                     (
 
-                        <div className="slots-grid">
-
-                            {
-
-                                slots.map(slot => (
-
-                                    <BookingSlotCard
-
-                                        key={slot.id}
-
-                                        slot={slot}
-
-                                        onEdit={handleEdit}
-
-                                        onDelete={handleDelete}
-
-                                        onToggleStatus={handleToggleStatus}
-
-                                    />
-
-                                ))
-
-                            }
-
-                        </div>
+                        <MobileCarousel className="slots-grid" ariaLabel="Booking slots">
+                            {slots.map(slot => (
+                                <BookingSlotCard
+                                    key={slot.id}
+                                    slot={slot}
+                                    onEdit={handleEdit}
+                                    onDelete={handleDelete}
+                                    onToggleStatus={handleToggleStatus}
+                                />
+                            ))}
+                        </MobileCarousel>
 
                     )
 
             }
-        <BookingSlotModal
+            <BookingSlotModal
 
-            serviceId={serviceId!}
+                serviceId={serviceId!}
 
-            slot={selectedSlot}
+                slot={selectedSlot}
 
-            open={showModal}
+                open={showModal}
 
-            onClose={() => setShowModal(false)}
+                onClose={() => setShowModal(false)}
 
-            onSaved={loadSlots}
+                onSaved={loadSlots}
 
-        />
+            />
 
         </section>
 

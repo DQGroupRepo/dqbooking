@@ -1,3 +1,5 @@
+import MobileCarousel from "../../components/common/MobileCarousel/MobileCarousel";
+import Loader from "../../components/common/Loader";
 import { useEffect, useState } from "react";
 
 import {
@@ -89,6 +91,9 @@ export default function VendorServiceProfile() {
 
 
     const [amenities, setAmenities] =
+        useState<string[]>([]);
+
+    const [facilities, setFacilities] =
         useState<string[]>([]);
 
 
@@ -213,6 +218,10 @@ export default function VendorServiceProfile() {
 
             setAmenities(
                 response.amenities ?? []
+            );
+
+            setFacilities(
+                response.facilities ?? []
             );
 
 
@@ -360,9 +369,7 @@ export default function VendorServiceProfile() {
 
         return (
 
-            <h2>
-                Loading...
-            </h2>
+            <Loader />
 
         );
 
@@ -380,7 +387,7 @@ export default function VendorServiceProfile() {
         service as VendorService & {
 
             detailSections?:
-                ServiceDetailSection[];
+            ServiceDetailSection[];
 
         };
 
@@ -574,7 +581,7 @@ export default function VendorServiceProfile() {
             {/* STATS */}
 
 
-            <div className="stats-grid">
+            <MobileCarousel className="stats-grid" ariaLabel="Service overview summary" itemsPerPage={2}>
 
 
                 <div className="stat-card">
@@ -592,7 +599,7 @@ export default function VendorServiceProfile() {
                         ₹
                         {
                             Number(
-                                service.price ?? 0
+                                service.startingPrice ?? 0
                             ).toLocaleString()
                         }
 
@@ -678,7 +685,7 @@ export default function VendorServiceProfile() {
                 </div>
 
 
-            </div>
+            </MobileCarousel>
 
 
             <div className="content-grid">
@@ -981,7 +988,7 @@ export default function VendorServiceProfile() {
                         {
 
                             service.packages &&
-                            service.packages.length > 0
+                                service.packages.length > 0
 
                                 ? (
 
@@ -991,7 +998,7 @@ export default function VendorServiceProfile() {
                                         {
 
                                             service.packages.map(
-                                                pkg => (
+                                                (pkg, index) => (
 
                                                     <div
 
@@ -1000,10 +1007,9 @@ export default function VendorServiceProfile() {
                                                         }
 
                                                         className={
-                                                            `package-card ${
-                                                                !pkg.active
-                                                                    ? "inactive-package"
-                                                                    : ""
+                                                            `package-card ${!pkg.active
+                                                                ? "inactive-package"
+                                                                : ""
                                                             }`
                                                         }
 
@@ -1014,7 +1020,7 @@ export default function VendorServiceProfile() {
 
 
                                                             {
-                                                                pkg.type
+                                                                pkg.name || "Package"
                                                             }
 
 
@@ -1134,6 +1140,22 @@ export default function VendorServiceProfile() {
                 <div className="right-column">
 
 
+                    {/* FACILITIES */}
+
+                    <div className="card">
+                        <h2>Facilities</h2>
+                        {facilities.length > 0 ? (
+                            facilities.map(item => (
+                                <div key={item} className="amenity">
+                                    <FaCheckCircle />
+                                    {item}
+                                </div>
+                            ))
+                        ) : (
+                            <p>No facilities available.</p>
+                        )}
+                    </div>
+
                     {/* AMENITIES */}
 
 
@@ -1234,6 +1256,18 @@ export default function VendorServiceProfile() {
 
 
                     <div className="service-actions">
+
+                        {
+                            ["STAY", "STAYS"].includes(
+                                String(service.category ?? "").trim().toUpperCase()
+                            ) && (
+                                <Button
+                                    onClick={() => navigate(`/vendor/services/${serviceId}/room-types`)}
+                                >
+                                    Manage Room Types
+                                </Button>
+                            )
+                        }
 
 
                         <Button

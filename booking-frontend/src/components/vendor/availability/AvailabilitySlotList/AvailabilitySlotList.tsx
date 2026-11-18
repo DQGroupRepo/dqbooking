@@ -1,5 +1,5 @@
-import type { BookingSlot } from "../../../types/BookingSlot";
-import type { AvailabilityOverride } from "../../../types/AvailabilityOverride";
+import type { BookingSlot } from "../../../../types/BookingSlot";
+import type { AvailabilityOverride } from "../../../../types/AvailabilityOverride";
 
 import AvailabilitySlotCard
     from "../AvailabilitySlotCard/AvailabilitySlotCard";
@@ -14,6 +14,8 @@ interface Props {
 
     onManage: (slot: BookingSlot) => void;
 
+    isStayService?: boolean;
+
 }
 
 export default function AvailabilitySlotList({
@@ -24,7 +26,9 @@ export default function AvailabilitySlotList({
 
     overrides,
 
-    onManage
+    onManage,
+
+    isStayService = false
 
 }: Props) {
 

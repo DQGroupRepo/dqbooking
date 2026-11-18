@@ -1,6 +1,7 @@
+import NumericInput from "../../../../common/ui/NumericInput";
 import { useState } from "react";
 
-import type { CateringMenuItem } from "../../../../types/CateringMenuItem";
+import type { CateringMenuItem } from "../../../../../types/CateringMenuItem";
 
 
 interface Props {
@@ -84,6 +85,8 @@ export default function CateringCustomDishForm({
         pricePerPerson,
         setPricePerPerson
     ] = useState("");
+
+    const trimmedName = dishName.trim();
 
     const newItem: CateringMenuItem = {
         id: `custom-${Date.now()}-${Math.random()
@@ -257,8 +260,8 @@ export default function CateringCustomDishForm({
                         Price / Person
                     </label>
 
-                    <input
-                        type="number"
+                    <NumericInput
+
                         min="0"
                         step="0.01"
                         value={pricePerPerson}

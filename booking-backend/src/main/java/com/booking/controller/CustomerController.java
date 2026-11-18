@@ -2,10 +2,12 @@ package com.booking.controller;
 
 import com.booking.dto.customer.VendorDetailResponse;
 import com.booking.dto.customer.VendorListingResponse;
+import com.booking.dto.customer.VendorPricingForDateResponse;
 import com.booking.service.CustomerService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -30,14 +32,16 @@ public class CustomerController {
 
     @GetMapping("/services")
     public List<VendorListingResponse> getServices(
-            @RequestParam(required = false)
-            String category
+            @RequestParam(required = false) String category,
+            @RequestParam(required = false) String categoryTag,
+            @RequestParam(required = false) String location,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size
     ) throws Exception {
-
-        return customerService.getVendorListings(
-                category
-        );
-
+        if ((categoryTag != null && !categoryTag.isBlank()) || (location != null && !location.isBlank())) {
+            return customerService.searchListings(categoryTag, location, page, size);
+        }
+        return customerService.getVendorListings(category);
     }
 
 
@@ -108,6 +112,19 @@ public class CustomerController {
 
         return customerService.getWeddingVideography();
 
+    }
+
+    @GetMapping("/services/{serviceId}/pricing")
+    public VendorPricingForDateResponse getPricingForDate(
+            @PathVariable String serviceId,
+            @RequestParam LocalDate eventDate
+    ) {
+
+        return customerService
+                .getPricingForEventDate(
+                        serviceId,
+                        eventDate
+                );
     }
 
 }

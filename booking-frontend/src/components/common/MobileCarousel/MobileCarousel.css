@@ -1,0 +1,115 @@
+/* Desktop: retain each consumer's original grid/flex layout. */
+.dq-mobile-carousel { min-width: 0; }
+.dq-mobile-carousel__viewport { display: contents; }
+.dq-mobile-carousel__page,
+.dq-mobile-carousel__page-content,
+.dq-mobile-carousel__card { display: contents; }
+.dq-mobile-carousel__pagination { display: none; }
+
+@media (max-width: 900px) {
+    .dq-mobile-carousel { width: 100%; min-width: 0; }
+    .dq-mobile-carousel__viewport {
+        display: flex;
+        flex-wrap: nowrap;
+        gap: 12px;
+        width: 100%;
+        min-width: 0;
+        overflow-x: auto;
+        overflow-y: hidden;
+        scroll-snap-type: x mandatory;
+        scroll-behavior: smooth;
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior-x: contain;
+        scrollbar-width: none;
+    }
+    .dq-mobile-carousel__viewport::-webkit-scrollbar { display: none; }
+    .dq-mobile-carousel__page {
+        display: block;
+        flex: 0 0 100%;
+        width: 100%;
+        min-width: 0;
+        box-sizing: border-box;
+        scroll-snap-align: start;
+        scroll-snap-stop: always;
+    }
+    .dq-mobile-carousel__page-content {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        gap: 12px;
+        width: 100%;
+        min-width: 0;
+    }
+    .dq-mobile-carousel__page-content.is-multi-card {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .dq-mobile-carousel__card {
+        display: block;
+        min-width: 0;
+        width: 100%;
+        box-sizing: border-box;
+    }
+    .dq-mobile-carousel__pagination {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 10px;
+        min-height: 30px;
+        padding: 5px 0 8px;
+    }
+    .dq-mobile-carousel__dots {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 7px;
+    }
+    .dq-mobile-carousel__dot {
+        width: 7px;
+        height: 7px;
+        padding: 0;
+        border: 0;
+        border-radius: 50%;
+        background: #b8c8d8;
+        cursor: pointer;
+        transition: width .18s ease, background-color .18s ease;
+    }
+    .dq-mobile-carousel__dot.is-active {
+        width: 21px;
+        border-radius: 99px;
+        background: #0b557f;
+    }
+    .dq-mobile-carousel__count {
+        color: #64748b;
+        font-size: 11px;
+        line-height: 1;
+        white-space: nowrap;
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    .dq-mobile-carousel__viewport { scroll-behavior: auto; }
+    .dq-mobile-carousel__dot { transition: none; }
+}
+
+@media (max-width: 420px) {
+    .dq-mobile-carousel__page-content.is-multi-card {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+
+@media (max-width: 900px) {
+    .dq-mobile-carousel__page-content,
+    .dq-mobile-carousel__card { min-width: 0; max-width: 100%; box-sizing: border-box; }
+    .dq-mobile-carousel__page-content > *,
+    .dq-mobile-carousel__card > * { min-width: 0; max-width: 100%; box-sizing: border-box; }
+}
+
+@media (max-width: 900px) {
+    .dq-mobile-carousel {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: stretch;
+        min-width: 0;
+    }
+    .dq-mobile-carousel__viewport { flex: 0 0 auto; }
+    .dq-mobile-carousel__pagination { flex: 0 0 auto; width: 100%; box-sizing: border-box; }
+}

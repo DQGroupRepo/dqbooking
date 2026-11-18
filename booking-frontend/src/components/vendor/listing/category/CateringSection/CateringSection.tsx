@@ -1,14 +1,15 @@
+import NumericInput from "../../../../common/ui/NumericInput";
 import { useEffect, useMemo, useState } from "react";
 
-import type { VendorServiceForm } from "../../../../types/VendorServiceForm";
+import type { VendorServiceForm } from "../../../../../types/VendorServiceForm";
 
-import type { CateringDish } from "../../../../types/CateringDish";
+import type { CateringDish } from "../../../../../types/CateringDish";
 
-import type { CateringMenuItem } from "../../../../types/CateringMenuItem";
+import type { CateringMenuItem } from "../../../../../types/CateringMenuItem";
 
 import CateringCustomDishForm from "./CateringCustomDishForm";
 
-import type { CateringMenuOption } from "../../../../types/CateringMenuOption";
+import type { CateringMenuOption } from "../../../../../types/CateringMenuOption";
 
 import VendorCateringMenuService from "../../../../../services/VendorCateringMenuService";
 
@@ -20,7 +21,8 @@ interface Props {
     formData: VendorServiceForm;
 
     onCateringDetailsChange: (
-        details: VendorServiceForm["cateringDetails"]
+        field: string,
+        value: boolean | string[]
     ) => void;
 
     onCateringMenuItemsChange: (
@@ -205,7 +207,7 @@ export default function CateringSection({
         showCustomDishForm,
         setShowCustomDishForm
     ] = useState(false);
-console.log("CateringSection SERVICE ID:", serviceId);
+    console.log("CateringSection SERVICE ID:", serviceId);
     /*
      * =====================================
      * MENU STATE
@@ -864,7 +866,7 @@ console.log("CateringSection SERVICE ID:", serviceId);
 
                         return (
                             foodType ===
-                                "vegetarian"
+                            "vegetarian"
                         );
 
                     }
@@ -876,7 +878,7 @@ console.log("CateringSection SERVICE ID:", serviceId);
 
                         return (
                             foodType ===
-                                "non-vegetarian"
+                            "non-vegetarian"
                         );
 
                     }
@@ -1114,11 +1116,10 @@ console.log("CateringSection SERVICE ID:", serviceId);
 
                         <label
                             className={
-                                `catering-option ${
-                                    cateringDetails
-                                        .vegetarian
-                                        ? "selected"
-                                        : ""
+                                `catering-option ${cateringDetails
+                                    .vegetarian
+                                    ? "selected"
+                                    : ""
                                 }`
                             }
                         >
@@ -1148,17 +1149,15 @@ console.log("CateringSection SERVICE ID:", serviceId);
 
                         <label
                             className={
-                                `catering-option ${
-                                    cateringDetails
-                                        .nonVegetarian
-                                        ? "selected"
-                                        : ""
+                                `catering-option ${cateringDetails
+                                    .nonVegetarian
+                                    ? "selected"
+                                    : ""
                                 }`
                             }
                         >
 
                             <input
-                                type="radio"
                                 type="radio"
                                 checked={
                                     cateringDetails
@@ -1223,10 +1222,9 @@ console.log("CateringSection SERVICE ID:", serviceId);
                                         <label
                                             key={cuisine}
                                             className={
-                                                `catering-cuisine-option ${
-                                                    selected
-                                                        ? "selected"
-                                                        : ""
+                                                `catering-cuisine-option ${selected
+                                                    ? "selected"
+                                                    : ""
                                                 }`
                                             }
                                         >
@@ -1443,8 +1441,9 @@ console.log("CateringSection SERVICE ID:", serviceId);
 
                                                 <div className="catering-custom-dish-price">
 
-                                                    <input
-                                                        type="number"
+
+                                                    <NumericInput
+
                                                         min="0"
                                                         step="0.01"
                                                         value={
@@ -1458,6 +1457,7 @@ console.log("CateringSection SERVICE ID:", serviceId);
                                                         }
                                                         className="catering-menu-price-input"
                                                     />
+
 
                                                     <span>
                                                         / person
@@ -1505,7 +1505,7 @@ console.log("CateringSection SERVICE ID:", serviceId);
                             cuisine={selectedMenuCuisine}
                             defaultFoodType={
                                 formData.cateringDetails?.vegetarian &&
-                                !formData.cateringDetails?.nonVegetarian
+                                    !formData.cateringDetails?.nonVegetarian
                                     ? "Vegetarian"
                                     : "Non-Vegetarian"
                             }
@@ -1608,7 +1608,7 @@ console.log("CateringSection SERVICE ID:", serviceId);
 
                                         const collapsed =
                                             collapsedCategories[
-                                                category.key
+                                            category.key
                                             ] ?? false;
 
 
@@ -1677,10 +1677,9 @@ console.log("CateringSection SERVICE ID:", serviceId);
 
                                                         <span
                                                             className={
-                                                                `catering-menu-category-arrow ${
-                                                                    collapsed
-                                                                        ? "collapsed"
-                                                                        : ""
+                                                                `catering-menu-category-arrow ${collapsed
+                                                                    ? "collapsed"
+                                                                    : ""
                                                                 }`
                                                             }
                                                         >
@@ -1735,10 +1734,9 @@ console.log("CateringSection SERVICE ID:", serviceId);
                                                                                     dish.id
                                                                                 }
                                                                                 className={
-                                                                                    `catering-menu-dish-row ${
-                                                                                        selected
-                                                                                            ? "selected"
-                                                                                            : ""
+                                                                                    `catering-menu-dish-row ${selected
+                                                                                        ? "selected"
+                                                                                        : ""
                                                                                     }`
                                                                                 }
                                                                             >
@@ -1781,8 +1779,8 @@ console.log("CateringSection SERVICE ID:", serviceId);
 
                                                                                 <div className="catering-menu-price-wrapper">
 
-                                                                                    <input
-                                                                                        type="number"
+                                                                                    <NumericInput
+
                                                                                         min="0"
                                                                                         step="0.01"
                                                                                         placeholder="0.00"

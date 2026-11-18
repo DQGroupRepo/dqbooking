@@ -1,7 +1,9 @@
 import {
+    useEffect,
     useMemo,
     useState
 } from "react";
+import type { FormEvent } from "react";
 
 import {
     useNavigate
@@ -9,9 +11,18 @@ import {
 
 import type {
     BookingStats
-} from "../../../types/BookingStats";
+} from "../../../../types/BookingStats";
+
+import VendorServiceService from "../../../../services/VendorServiceService";
+import VendorEnquiryService from "../../../../services/VendorEnquiryService";
+import type { VendorService } from "../../../../types/VendorService";
+import type {
+    CreateVendorEnquiryRequest,
+    VendorEnquiry
+} from "../../../../types/VendorEnquiry";
 
 import styles from "./BookingCalendar.module.css";
+import DateField from "../../../common/DateField/DateField";
 
 
 interface Props {
@@ -104,6 +115,14 @@ const formatSelectedDate = (
     );
 };
 
+const formatBookingDate = (value?: string): string => {
+    if (!value) return "";
+    const key = toDateKey(value);
+    if (!key) return "";
+    const [year, month, day] = key.split("-").map(Number);
+    return new Date(year, month - 1, day).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+};
+
 
 const formatCurrency = (
     amount: number
@@ -156,6 +175,182 @@ export default function BookingCalendar({
         )
     );
 
+    const [showEnquiryForm, setShowEnquiryForm] = useState(false);
+    const [showBookServiceModal, setShowBookServiceModal] = useState(false);
+    const [selectedBookServiceId, setSelectedBookServiceId] = useState("");
+    const [bookServiceError, setBookServiceError] = useState("");
+    const [indiaClockNow, setIndiaClockNow] = useState(() => new Date());
+    const [vendorServices, setVendorServices] = useState<VendorService[]>([]);
+    const [enquiries, setEnquiries] = useState<VendorEnquiry[]>([]);
+    const [enquiriesLoading, setEnquiriesLoading] = useState(false);
+    const [servicesLoading, setServicesLoading] = useState(false);
+    const [enquirySaving, setEnquirySaving] = useState(false);
+    const [enquiryError, setEnquiryError] = useState("");
+    const [enquiryForm, setEnquiryForm] = useState({
+        customerName: "",
+        contactNumber: "",
+        serviceId: "",
+        notes: "",
+        followUpDate: ""
+    });
+
+    useEffect(() => {
+        const timer = window.setInterval(() => setIndiaClockNow(new Date()), 30_000);
+        return () => window.clearInterval(timer);
+    }, []);
+
+    const getEarliestFollowUpDate = () => {
+        const parts = new Intl.DateTimeFormat("en-US", {
+            timeZone: "Asia/Kolkata",
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit",
+            hour: "2-digit",
+            hourCycle: "h23"
+        }).formatToParts(indiaClockNow);
+
+        const value = (type: string) =>
+            Number(parts.find(part => part.type === type)?.value ?? 0);
+
+        const year = value("year");
+        const month = value("month");
+        const day = value("day") + (value("hour") >= 13 ? 1 : 0);
+        const earliest = new Date(Date.UTC(year, month - 1, day));
+
+        return [
+            earliest.getUTCFullYear(),
+            String(earliest.getUTCMonth() + 1).padStart(2, "0"),
+            String(earliest.getUTCDate()).padStart(2, "0")
+        ].join("-");
+    };
+
+    useEffect(() => {
+        let cancelled = false;
+        setEnquiriesLoading(true);
+
+        VendorEnquiryService.getByEventDate(getDateKey(selectedDate))
+            .then(data => {
+                if (!cancelled) setEnquiries(data);
+            })
+            .catch(error => {
+                console.error("Failed to load vendor enquiries:", error);
+                if (!cancelled) setEnquiries([]);
+            })
+            .finally(() => {
+                if (!cancelled) setEnquiriesLoading(false);
+            });
+
+        return () => {
+            cancelled = true;
+        };
+    }, [selectedDate]);
+
+    useEffect(() => {
+        if (!showEnquiryForm && !showBookServiceModal) return;
+
+        let cancelled = false;
+        setServicesLoading(true);
+        setEnquiryError("");
+
+        VendorServiceService.getServices()
+            .then(data => {
+                if (cancelled) return;
+                const available = data.filter(service => service.active);
+                setVendorServices(available);
+                setEnquiryForm(current => ({
+                    ...current,
+                    serviceId: current.serviceId || available[0]?.id || ""
+                }));
+                setSelectedBookServiceId(current => current || available[0]?.id || "");
+            })
+            .catch(error => {
+                console.error("Failed to load vendor services:", error);
+                if (!cancelled) {
+                    setVendorServices([]);
+                    setEnquiryError("Unable to load your services. Please try again.");
+                    setBookServiceError("Unable to load your services. Please try again.");
+                }
+            })
+            .finally(() => {
+                if (!cancelled) setServicesLoading(false);
+            });
+
+        return () => {
+            cancelled = true;
+        };
+    }, [showEnquiryForm, showBookServiceModal]);
+
+    const openBookServiceModal = () => {
+        setBookServiceError("");
+        setSelectedBookServiceId(vendorServices[0]?.id || "");
+        setShowBookServiceModal(true);
+    };
+
+    const continueToServiceBooking = () => {
+        if (!selectedBookServiceId) {
+            setBookServiceError("Please select one of your services.");
+            return;
+        }
+
+        setShowBookServiceModal(false);
+        navigate(`/vendor/${selectedBookServiceId}`, {
+            state: {
+                vendorCalendarEventDate: getDateKey(selectedDate),
+                fromVendorCalendar: true
+            }
+        });
+    };
+
+    const openEnquiryForm = () => {
+        setEnquiryError("");
+        setEnquiryForm({
+            customerName: "",
+            contactNumber: "",
+            serviceId: "",
+            notes: "",
+            followUpDate: ""
+        });
+        setShowEnquiryForm(true);
+    };
+
+    const handleCreateEnquiry = async (event: FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+        setEnquiryError("");
+
+        if (!enquiryForm.serviceId) {
+            setEnquiryError("Please select one of your services.");
+            return;
+        }
+
+        const payload: CreateVendorEnquiryRequest = {
+            customerName: enquiryForm.customerName.trim(),
+            contactNumber: enquiryForm.contactNumber.trim(),
+            serviceId: enquiryForm.serviceId,
+            eventDate: getDateKey(selectedDate),
+            notes: enquiryForm.notes.trim(),
+            ...(enquiryForm.followUpDate
+                ? { followUpDate: enquiryForm.followUpDate }
+                : {})
+        };
+
+        setEnquirySaving(true);
+        try {
+            await VendorEnquiryService.create(payload);
+            const updated = await VendorEnquiryService.getByEventDate(getDateKey(selectedDate));
+            setEnquiries(updated);
+            setShowEnquiryForm(false);
+        } catch (error: unknown) {
+            console.error("Failed to create vendor enquiry:", error);
+            const responseMessage =
+                typeof error === "object" && error !== null && "response" in error
+                    ? (error as { response?: { data?: { message?: string } } }).response?.data?.message
+                    : undefined;
+            setEnquiryError(responseMessage || "Unable to save the enquiry. Please check the details and try again.");
+        } finally {
+            setEnquirySaving(false);
+        }
+    };
+
 
     /*
      * =========================================
@@ -173,31 +368,35 @@ export default function BookingCalendar({
                 > = {};
 
 
-            bookings.forEach(
-                booking => {
+            bookings.forEach(booking => {
+                const isStay =
+                    String(booking.serviceCategory ?? "").toUpperCase() === "STAY" ||
+                    String(booking.serviceCategory ?? "").toUpperCase() === "STAYS" ||
+                    String(booking.bookingType ?? "").toUpperCase() === "ROOM_STAY";
 
-                    const key =
-                        toDateKey(
-                            booking.eventDate
-                        );
+                const fromKey = toDateKey(booking.bookingFrom ?? "");
+                const toKey = toDateKey(booking.bookingTo ?? "");
 
-
-                    if (!key) {
-                        return;
+                // STAY occupies calendar display dates inclusively, including
+                // checkout. Inventory validation separately excludes checkout.
+                if (isStay && fromKey && toKey) {
+                    const [fy, fm, fd] = fromKey.split("-").map(Number);
+                    const [ty, tm, td] = toKey.split("-").map(Number);
+                    const cursor = new Date(fy, fm - 1, fd);
+                    const last = new Date(ty, tm - 1, td);
+                    while (cursor <= last) {
+                        const key = getDateKey(cursor);
+                        (grouped[key] ??= []).push(booking);
+                        cursor.setDate(cursor.getDate() + 1);
                     }
-
-
-                    if (!grouped[key]) {
-                        grouped[key] = [];
-                    }
-
-
-                    grouped[key].push(
-                        booking
-                    );
-
+                    return;
                 }
-            );
+
+                // Preserve the existing eventDate grouping for all other
+                // categories; bookingFrom is only a compatibility fallback.
+                const key = toDateKey(booking.eventDate || booking.bookingFrom || "");
+                if (key) (grouped[key] ??= []).push(booking);
+            });
 
 
             return grouped;
@@ -534,6 +733,20 @@ export default function BookingCalendar({
                             Today
                         </button>
 
+                        <button
+                            type="button"
+                            onClick={openEnquiryForm}
+                        >
+                            + Add Enquiry
+                        </button>
+
+                        <button
+                            type="button"
+                            onClick={openBookServiceModal}
+                            className={styles.bookServiceButton}
+                        >
+                            + Book
+                        </button>
 
                         <button
                             type="button"
@@ -1018,6 +1231,29 @@ export default function BookingCalendar({
                                             </div>
 
 
+                                            <div className={styles.bookingSchedule}>
+                                                <div>
+                                                    <span>Booking dates</span>
+                                                    <strong>
+                                                        {formatBookingDate(booking.bookingFrom || booking.eventDate)}
+                                                        {booking.bookingTo && toDateKey(booking.bookingTo) !== toDateKey(booking.bookingFrom || booking.eventDate)
+                                                            ? ` – ${formatBookingDate(booking.bookingTo)}` : ""}
+                                                    </strong>
+                                                </div>
+                                                {(booking.slotName || booking.slotStartTime || booking.slotEndTime) && (
+                                                    <div>
+                                                        <span>Time slot</span>
+                                                        <strong>{booking.slotName || "Selected slot"}{(booking.slotStartTime || booking.slotEndTime) ? ` (${booking.slotStartTime ?? ""}${booking.slotEndTime ? ` – ${booking.slotEndTime}` : ""})` : ""}</strong>
+                                                    </div>
+                                                )}
+                                                {String(booking.serviceCategory ?? "").toUpperCase() === "STAY" && (
+                                                    <div>
+                                                        <span>Room</span>
+                                                        <strong>{[booking.resourceTypeName, booking.roomQuantity ? `Qty ${booking.roomQuantity}` : "", ...(booking.resourceNames ?? [])].filter(Boolean).join(" · ") || "Room allocation details unavailable"}</strong>
+                                                    </div>
+                                                )}
+                                            </div>
+
                                             <div
                                                 className={
                                                     styles.paymentRow
@@ -1113,7 +1349,289 @@ export default function BookingCalendar({
                     )
                 }
 
+                <section className={styles.enquirySection}>
+                    <div className={styles.enquirySectionHeader}>
+                        <div>
+                            <h3>Enquiries on this date</h3>
+                            <p>
+                                {enquiriesLoading
+                                    ? "Loading enquiries..."
+                                    : `${enquiries.length} ${enquiries.length === 1 ? "enquiry" : "enquiries"}`}
+                            </p>
+                        </div>
+                        <button type="button" onClick={openEnquiryForm}>
+                            + Add
+                        </button>
+                    </div>
+
+                    {!enquiriesLoading && enquiries.length === 0 ? (
+                        <p className={styles.noEnquiries}>
+                            No enquiries recorded for this event date.
+                        </p>
+                    ) : (
+                        <div className={styles.enquiryList}>
+                            {enquiries.map(enquiry => (
+                                <article key={enquiry.id} className={styles.enquiryCard}>
+                                    <div className={styles.enquiryCardTop}>
+                                        <strong>{enquiry.customerName}</strong>
+                                        <span>{enquiry.serviceName}</span>
+                                    </div>
+                                    <div className={styles.enquiryContact}>
+                                        {enquiry.contactNumber}
+                                    </div>
+                                    {enquiry.notes && (
+                                        <p className={styles.enquiryNotes}>{enquiry.notes}</p>
+                                    )}
+                                    {enquiry.followUpDate && (
+                                        <div className={styles.followUpLabel}>
+                                            Follow-up: {new Date(`${enquiry.followUpDate}T00:00:00`).toLocaleDateString("en-IN")}
+                                            {enquiry.reminderSentAt ? " · Reminder sent" : " · Reminder pending"}
+                                        </div>
+                                    )}
+                                </article>
+                            ))}
+                        </div>
+                    )}
+                </section>
+
             </div>
+
+            {showBookServiceModal && (
+                <div
+                    className={styles.enquiryModalBackdrop}
+                    role="presentation"
+                    onMouseDown={event => {
+                        if (event.target === event.currentTarget) {
+                            setShowBookServiceModal(false);
+                        }
+                    }}
+                >
+                    <section
+                        className={styles.enquiryModal}
+                        role="dialog"
+                        aria-modal="true"
+                        aria-labelledby="book-service-modal-title"
+                    >
+                        <div className={styles.enquiryModalHeader}>
+                            <div>
+                                <h2 id="book-service-modal-title">Create a Booking</h2>
+                                <p>Select one of your services for {formatSelectedDate(selectedDate)}.</p>
+                            </div>
+                            <button
+                                type="button"
+                                className={styles.enquiryClose}
+                                onClick={() => setShowBookServiceModal(false)}
+                                aria-label="Close service selection"
+                            >
+                                ×
+                            </button>
+                        </div>
+
+                        <div className={styles.enquiryFormGrid}>
+                            <label className={styles.fullWidth}>
+                                Your services
+                                <select
+                                    value={selectedBookServiceId}
+                                    onChange={event => {
+                                        setSelectedBookServiceId(event.target.value);
+                                        setBookServiceError("");
+                                    }}
+                                    disabled={servicesLoading || vendorServices.length === 0}
+                                >
+                                    <option value="">
+                                        {servicesLoading ? "Loading your services..." : "Select a service"}
+                                    </option>
+                                    {vendorServices.map(service => (
+                                        <option key={service.id} value={service.id}>
+                                            {service.serviceName}
+                                        </option>
+                                    ))}
+                                </select>
+                                {!servicesLoading && vendorServices.length === 0 && (
+                                    <small>No active services are available in your vendor account.</small>
+                                )}
+                            </label>
+                        </div>
+
+                        {bookServiceError && (
+                            <div className={styles.enquiryError} role="alert">{bookServiceError}</div>
+                        )}
+
+                        <div className={styles.enquiryModalActions}>
+                            <button
+                                type="button"
+                                className={styles.enquiryCancelButton}
+                                onClick={() => setShowBookServiceModal(false)}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="button"
+                                className={styles.enquirySaveButton}
+                                onClick={continueToServiceBooking}
+                                disabled={servicesLoading || vendorServices.length === 0}
+                            >
+                                Continue to Booking
+                            </button>
+                        </div>
+                    </section>
+                </div>
+            )}
+
+            {showEnquiryForm && (
+                <div
+                    className={styles.enquiryModalBackdrop}
+                    role="presentation"
+                    onMouseDown={event => {
+                        if (event.target === event.currentTarget) {
+                            setShowEnquiryForm(false);
+                        }
+                    }}
+                >
+                    <section
+                        className={styles.enquiryModal}
+                        role="dialog"
+                        aria-modal="true"
+                        aria-labelledby="enquiry-modal-title"
+                    >
+                        <div className={styles.enquiryModalHeader}>
+                            <div>
+                                <h2 id="enquiry-modal-title">Add Customer Enquiry</h2>
+                                <p>Record an enquiry for {formatSelectedDate(selectedDate)}.</p>
+                            </div>
+                            <button
+                                type="button"
+                                className={styles.enquiryClose}
+                                onClick={() => setShowEnquiryForm(false)}
+                                aria-label="Close enquiry form"
+                            >
+                                ×
+                            </button>
+                        </div>
+
+                        <form onSubmit={handleCreateEnquiry}>
+                            <div className={styles.enquiryFormGrid}>
+                                <label>
+                                    Customer name
+                                    <input
+                                        required
+                                        maxLength={120}
+                                        value={enquiryForm.customerName}
+                                        onChange={event => setEnquiryForm(current => ({
+                                            ...current,
+                                            customerName: event.target.value
+                                        }))}
+                                        placeholder="Enter customer name"
+                                    />
+                                </label>
+
+                                <label>
+                                    Contact number
+                                    <input
+                                        required
+                                        minLength={7}
+                                        maxLength={20}
+                                        value={enquiryForm.contactNumber}
+                                        onChange={event => setEnquiryForm(current => ({
+                                            ...current,
+                                            contactNumber: event.target.value
+                                        }))}
+                                        placeholder="Enter contact number"
+                                    />
+                                </label>
+
+                                <label className={styles.fullWidth}>
+                                    Service
+                                    <select
+                                        required
+                                        value={enquiryForm.serviceId}
+                                        onChange={event => setEnquiryForm(current => ({
+                                            ...current,
+                                            serviceId: event.target.value
+                                        }))}
+                                        disabled={servicesLoading || vendorServices.length === 0}
+                                    >
+                                        <option value="">
+                                            {servicesLoading ? "Loading your services..." : "Select a service"}
+                                        </option>
+                                        {vendorServices.map(service => (
+                                            <option key={service.id} value={service.id}>
+                                                {service.serviceName}
+                                            </option>
+                                        ))}
+                                    </select>
+                                    {!servicesLoading && vendorServices.length === 0 && (
+                                        <small>No active services are available in your vendor account.</small>
+                                    )}
+                                </label>
+
+                                <label>
+                                    Event date
+                                    <DateField
+                                        value={getDateKey(selectedDate)}
+                                        readOnly
+                                        ariaLabel="Event date"
+                                    />
+                                </label>
+
+                                <label>
+                                    Follow-up date <span>(optional)</span>
+                                    <DateField
+                                        minDate={getEarliestFollowUpDate()}
+                                        value={enquiryForm.followUpDate}
+                                        onChange={date => setEnquiryForm(current => ({
+                                            ...current,
+                                            followUpDate: date
+                                        }))}
+                                        ariaLabel="Follow-up date"
+                                    />
+                                    <small>
+                                        Reminders are sent at 5:00 AM or 1:00 PM, whichever is the next scheduled run.
+                                    </small>
+                                </label>
+
+                                <label className={styles.fullWidth}>
+                                    Notes <span>(optional)</span>
+                                    <textarea
+                                        rows={4}
+                                        maxLength={2000}
+                                        value={enquiryForm.notes}
+                                        onChange={event => setEnquiryForm(current => ({
+                                            ...current,
+                                            notes: event.target.value
+                                        }))}
+                                        placeholder="Add enquiry details or discussion notes..."
+                                    />
+                                </label>
+                            </div>
+
+                            {enquiryError && (
+                                <div className={styles.enquiryError} role="alert">
+                                    {enquiryError}
+                                </div>
+                            )}
+
+                            <div className={styles.enquiryModalActions}>
+                                <button
+                                    type="button"
+                                    className={styles.enquiryCancelButton}
+                                    onClick={() => setShowEnquiryForm(false)}
+                                    disabled={enquirySaving}
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    className={styles.enquirySaveButton}
+                                    disabled={enquirySaving || servicesLoading || vendorServices.length === 0}
+                                >
+                                    {enquirySaving ? "Saving..." : "Save Enquiry"}
+                                </button>
+                            </div>
+                        </form>
+                    </section>
+                </div>
+            )}
 
         </div>
 

@@ -1,36 +1,34 @@
 package com.booking.service;
 
+import com.booking.dto.customer.VendorPricingForDateResponse;
 import com.booking.dto.pricing.VendorServicePricingRequest;
 import com.booking.dto.pricing.VendorServicePricingResponse;
+import com.booking.dto.pricing.VendorServicePricingVersionResponse;
+
+import java.time.LocalDate;
+import java.util.List;
 
 public interface VendorServicePricingService {
 
-    /*
-     * Create a new pricing version.
-     */
     VendorServicePricingResponse createPricing(
             VendorServicePricingRequest request
     );
 
+    VendorServicePricingResponse getPricing(
+            String pricingId
+    );
 
-    /*
-     * Get pricing by pricing ID.
-     */
     VendorServicePricingResponse getPricingById(
             String pricingId
     );
 
-
-    /*
-     * Get the current/latest pricing configuration
-     * for a service.
-     */
     VendorServicePricingResponse getCurrentPricing(
             String serviceId
     );
 
-    VendorServicePricingResponse getPricing(
-            String pricingId
+    List<VendorServicePricingVersionResponse>
+    getPricingVersions(
+            String serviceId
     );
 
 }

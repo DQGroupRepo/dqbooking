@@ -1,23 +1,26 @@
 export interface BookingSlot {
+  id: string;
 
-    id: string;
+  serviceId: string;
 
-    serviceId: string;
+  slotName: string;
 
-    slotName: string;
+  resourceTypeId?: string | null;
+  bookingPattern?: "DAILY_RECURRING" | "CONTINUOUS";
 
-    startTime: string;
+  startTime: string;
 
-    endTime: string;
+  endTime: string;
 
-    maxBookings: number;
+  maxBookings: number;
 
-    displayOrder: number;
+  allowOverlap?: boolean;
 
-    active: boolean;
+  displayOrder: number;
 
-    createdAt?: string;
+  active: boolean;
 
-    updatedAt?: string;
+  createdAt?: string;
 
+  updatedAt?: string;
 }

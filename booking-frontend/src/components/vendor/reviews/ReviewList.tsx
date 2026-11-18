@@ -1,14 +1,15 @@
 import { useState } from "react";
 
 import type { Review } from "../../../types/Review";
+import RatingStars from "../../common/RatingStars";
 
 import Button from "../../common/ui/Button/Button";
 
 import "./ReviewList.css";
 
-interface Props{
+interface Props {
 
-    reviews:Review[];
+    reviews: Review[];
 
 }
 
@@ -16,19 +17,19 @@ export default function ReviewList({
 
     reviews
 
-}:Props){
+}: Props) {
 
-    const [replyingId,setReplyingId]=useState<number|null>(null);
+    const [replyingId, setReplyingId] = useState<string | null>(null);
 
-    const [reply,setReply]=useState("");
+    const [reply, setReply] = useState("");
 
-    return(
+    return (
 
         <div className="review-list">
 
             {
 
-                reviews.map(review=>(
+                reviews.map(review => (
 
                     <div
 
@@ -58,7 +59,7 @@ export default function ReviewList({
 
                             <div className="review-rating">
 
-                                {"⭐".repeat(review.rating)}
+                                <RatingStars value={review.rating} size="medium" />
 
                             </div>
 
@@ -66,7 +67,7 @@ export default function ReviewList({
 
                         <p className="review-date">
 
-                            {review.date}
+                            {review.reviewDate}
 
                         </p>
 
@@ -102,7 +103,7 @@ export default function ReviewList({
 
                         {
 
-                            replyingId===review.id ? (
+                            replyingId === review.id ? (
 
                                 <div className="reply-box">
 
@@ -114,7 +115,7 @@ export default function ReviewList({
 
                                         placeholder="Write your reply..."
 
-                                        onChange={(e)=>
+                                        onChange={(e) =>
 
                                             setReply(
 
@@ -138,7 +139,7 @@ export default function ReviewList({
 
                                             variant="secondary"
 
-                                            onClick={()=>{
+                                            onClick={() => {
 
                                                 setReplyingId(null);
 
@@ -162,7 +163,7 @@ export default function ReviewList({
 
                                     <Button
 
-                                        onClick={()=>
+                                        onClick={() =>
 
                                             setReplyingId(review.id)
 

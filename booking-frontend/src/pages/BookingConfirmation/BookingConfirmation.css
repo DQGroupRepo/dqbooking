@@ -252,3 +252,12 @@
     }
 
 }
+
+.booking-service-summary h3 { margin: 0 0 12px; color: #123b59; font-size: 1.08rem; }
+.booking-service-summary p { margin: 8px 0; color: #526174; line-height: 1.5; overflow-wrap: anywhere; }
+.booking-service-summary p:last-child { margin-bottom: 0; }
+.booking-group-pricing h3 { margin: 0 0 14px; color: #172b4d; }
+@media (max-width: 600px) {
+    .booking-service-summary { padding: 15px; margin-bottom: 12px; }
+    .booking-service-summary p { font-size: .9rem; }
+}

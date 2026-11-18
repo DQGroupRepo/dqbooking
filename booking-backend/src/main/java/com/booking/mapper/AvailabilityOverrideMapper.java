@@ -16,10 +16,13 @@ public interface AvailabilityOverrideMapper {
             CreateAvailabilityOverrideRequest request
     );
 
+    @Mapping(source = "capacityOverride", target = "maxBookingsOverride")
+    @Mapping(source = "capacityOverride", target = "capacityOverride")
     AvailabilityOverrideResponse toResponse(
             AvailabilityOverride entity
     );
 
+    @IterableMapping(elementTargetType = AvailabilityOverrideResponse.class)
     List<AvailabilityOverrideResponse> toResponseList(
             List<AvailabilityOverride> entities
     );

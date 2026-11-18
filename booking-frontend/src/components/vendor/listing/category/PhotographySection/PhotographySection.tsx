@@ -77,11 +77,11 @@ export default function PhotographySection({
 
             <SectionHeader
 
-                            title="Photography Details"
+                title="Photography Details"
 
-                            subtitle="Photography package details."
+                subtitle="Photography package details."
 
-                        />
+            />
 
 
 

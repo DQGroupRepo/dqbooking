@@ -17,6 +17,9 @@ import com.booking.model.enums.BookingStatus;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
+import java.util.ArrayList;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 
 @Component
@@ -68,6 +71,9 @@ public class BookingMapperImpl
 
         String serviceCategory =
                 null;
+        String resourceTypeName = null;
+        List<String> resourceIds = new ArrayList<>();
+        List<String> resourceNames = new ArrayList<>();
 
 
         /*
@@ -106,6 +112,41 @@ public class BookingMapperImpl
                             .getCategory()
                             .name();
 
+        }
+
+        // Physical room information is exposed only for STAY services.
+        if ("STAY".equals(serviceCategory) && vendorService != null) {
+            List<String> typeNames = new ArrayList<>();
+            if (booking.getResourceAllocations() != null) {
+                booking.getResourceAllocations().forEach(allocation -> {
+                    if (allocation.getResourceIds() != null) resourceIds.addAll(allocation.getResourceIds());
+                    if (vendorService.getResourceTypes() != null) {
+                        vendorService.getResourceTypes().stream()
+                                .filter(type -> Objects.equals(type.getId(), allocation.getResourceTypeId()))
+                                .findFirst().ifPresent(type -> {
+                                    if (type.getName() != null && !typeNames.contains(type.getName())) typeNames.add(type.getName());
+                                    if (type.getUnits() != null && allocation.getResourceIds() != null) {
+                                        allocation.getResourceIds().forEach(id -> type.getUnits().stream()
+                                                .filter(unit -> Objects.equals(unit.getId(), id))
+                                                .findFirst().ifPresent(unit -> resourceNames.add(
+                                                        unit.getName() == null || unit.getName().isBlank() ? id : unit.getName())));
+                                    }
+                                });
+                    }
+                });
+            }
+            if (resourceIds.isEmpty() && booking.getResourceIds() != null) resourceIds.addAll(booking.getResourceIds());
+            if (typeNames.isEmpty() && booking.getResourceTypeId() != null && vendorService.getResourceTypes() != null) {
+                vendorService.getResourceTypes().stream().filter(type -> Objects.equals(type.getId(), booking.getResourceTypeId()))
+                        .findFirst().ifPresent(type -> {
+                            if (type.getName() != null) typeNames.add(type.getName());
+                            if (type.getUnits() != null) type.getUnits().stream()
+                                    .filter(unit -> resourceIds.contains(unit.getId()))
+                                    .forEach(unit -> resourceNames.add(unit.getName() == null ? unit.getId() : unit.getName()));
+                        });
+            }
+            if (!typeNames.isEmpty()) resourceTypeName = String.join(", ", typeNames);
+            if (resourceNames.isEmpty()) resourceNames.addAll(resourceIds);
         }
 
 
@@ -149,10 +190,24 @@ public class BookingMapperImpl
                 .totalAmount(
                         booking.getTotalAmount()
                 )
-
-                .eventDate(
-                        booking.getEventDate()
+                .bookingFrom(booking.getBookingFrom())
+                .bookingTo(
+                        booking.getBookingTo()
                 )
+                .eventDate(
+                        booking.getBookingFrom() == null ? null : booking.getBookingFrom().toLocalDate()
+                )
+                .bookingType(
+                        booking.getBookingType()
+                )
+                .slotId(booking.getSlotId())
+                .slotName(booking.getSlotName())
+                .slotStartTime(booking.getSlotStartTime())
+                .slotEndTime(booking.getSlotEndTime())
+                .roomQuantity(booking.getRoomQuantity())
+                .resourceTypeName(resourceTypeName)
+                .resourceIds(resourceIds)
+                .resourceNames(resourceNames)
 
                 .guestCount(
                         booking.getGuestCount()

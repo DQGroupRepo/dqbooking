@@ -1,12 +1,12 @@
 import styles from "./BookingStatsCard.module.css";
 
-interface Props{
+interface Props {
 
-    title:string;
+    title: string;
 
-    value:number;
+    value: number;
 
-    color:string;
+    color?: string;
 
 }
 
@@ -18,14 +18,14 @@ export default function BookingStatsCard({
 
     color
 
-}:Props){
+}: Props) {
 
-    return(
+    return (
 
         <div
             className={styles.card}
             style={{
-                borderTop:`4px solid ${color}`
+                borderTop: `4px solid ${color}`
             }}
         >
 

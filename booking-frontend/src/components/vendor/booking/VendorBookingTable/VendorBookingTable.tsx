@@ -7,7 +7,7 @@ import styles
 
 import type {
     RecentBooking
-} from "../../../types/RecentBooking";
+} from "../../../../types/RecentBooking";
 
 
 interface VendorBookingTableProps {
@@ -137,6 +137,7 @@ export default function VendorBookingTable({
 
                     : (
 
+                        <div className={styles.tableScroll}>
                         <table
                             className={
                                 styles.table
@@ -309,6 +310,7 @@ export default function VendorBookingTable({
 
 
                         </table>
+                        </div>
 
                     )
 

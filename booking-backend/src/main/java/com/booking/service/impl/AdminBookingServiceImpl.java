@@ -105,11 +105,8 @@ public class AdminBookingServiceImpl
                         booking.getServiceName()
                 )
 
-                .eventDate(
-                        booking.getEventDate() != null
-                                ? booking.getEventDate().toString()
-                                : null
-                )
+                .bookingFrom(booking.getBookingFrom())
+                .bookingTo(booking.getBookingTo())
 
                 .guestCount(
                         booking.getGuestCount()

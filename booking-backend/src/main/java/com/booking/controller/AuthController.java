@@ -6,6 +6,7 @@ import com.booking.dto.register.RegisterRequest;
 import com.booking.dto.register.VendorRegisterRequest;
 import com.booking.dto.register.VendorRegisterResponse;
 import com.booking.service.impl.AuthService;
+import com.booking.security.JwtService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
@@ -19,6 +20,8 @@ import com.booking.model.User;
 public class AuthController {
 
     private final AuthService authService;
+
+    private final JwtService jwtService;
 
     @PostMapping("/login")
     public LoginResponse login(
@@ -53,6 +56,18 @@ public class AuthController {
                 request
         );
 
+    }
+
+    @PostMapping("/logout")
+    public void logout(Authentication authentication,
+                       @RequestHeader(value = "Authorization", required = false) String authorization) {
+        if (authentication == null || !(authentication.getPrincipal() instanceof User user)) return;
+        String sessionId = null;
+        if (authorization != null && authorization.startsWith("Bearer ")) {
+            // The filter has already validated this token.
+            sessionId = jwtService.extractSessionId(authorization.substring(7));
+        }
+        authService.logout(user.getId(), sessionId);
     }
 
     @GetMapping("/me")

@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import Loader from "../../components/common/Loader";
+import { useEffect, useRef, useState } from "react";
 import {
     useLocation,
     useNavigate,
@@ -17,6 +18,7 @@ import VendorServiceDetails
 import VendorDetailService from "../../services/VendorDetailService";
 import BundleService from "../../services/BundleService";
 import type { ServicePackage } from "../../types/ServicePackage";
+import type { CartSelectedCateringDish } from "../../types/CartItem";
 
 import type { VendorDetail as VendorDetailType } from "../../types/VendorDetail";
 
@@ -56,6 +58,7 @@ const VendorDetail = () => {
         selectedPackage,
         setSelectedPackage
     ] = useState<ServicePackage | null>(null);
+
     /*
      * =========================================
      * VENDOR
@@ -76,6 +79,44 @@ const VendorDetail = () => {
         useState<Bundle[]>([]);
 
 
+    const [pricingPackages, setPricingPackages] =
+        useState<ServicePackage[]>([]);
+
+    const [pricingLoading, setPricingLoading] =
+        useState(false);
+
+    const [selectedEventDate, setSelectedEventDate] =
+        useState("");
+
+    const [selectedSlotId, setSelectedSlotId] =
+        useState<string | null>(null);
+    const [selectedSlotResourceTypeId, setSelectedSlotResourceTypeId] =
+        useState<string | null>(null);
+    const [packageSelectionVersion, setPackageSelectionVersion] = useState(0);
+    const [selectedCateringDishes, setSelectedCateringDishes] =
+        useState<CartSelectedCateringDish[]>([]);
+
+    // Anchor for bringing date-specific package choices into view.
+    const packagesSectionRef = useRef<HTMLDivElement>(null);
+
+    const scrollToPackages = () => {
+        packagesSectionRef.current?.scrollIntoView({
+            behavior: "smooth",
+            block: "start"
+        });
+    };
+
+    const scrollToPackagesIfNeeded = () => {
+        const section = packagesSectionRef.current;
+        if (!section) return;
+
+        const rect = section.getBoundingClientRect();
+        const headingIsVisible = rect.top >= 0 && rect.top < window.innerHeight;
+
+        if (!headingIsVisible) {
+            scrollToPackages();
+        }
+    };
     /*
      * =========================================
      * LOAD DATA
@@ -93,6 +134,76 @@ const VendorDetail = () => {
         }
 
     }, [serviceId]);
+
+    const handleEventDateChange = async (
+        date: string
+    ) => {
+
+        // A package selected for a previous date
+        // must never remain selected.
+        setSelectedPackage(null);
+        setSelectedCateringDishes([]);
+
+        setSelectedEventDate(date);
+
+        if (!serviceId || !date) {
+            setPricingPackages([]);
+            return;
+        }
+
+        try {
+
+            setPricingLoading(true);
+
+            const data =
+                await VendorDetailService.getPricingForDate(
+                    serviceId,
+                    date
+                );
+
+            console.log(
+                "Pricing loaded for event date:",
+                data
+            );
+
+            const packages = (data.packages ?? []).map((pkg) => ({
+                ...pkg,
+                // Only use a backend-provided persisted ID. Never invent one in the browser.
+                id: typeof pkg.id === "string" && pkg.id.trim()
+                    ? pkg.id.trim()
+                    : undefined
+            }));
+
+            const packagesWithoutIds = packages.filter((pkg) => !pkg.id);
+            if (packagesWithoutIds.length > 0) {
+                console.error(
+                    "Pricing API returned packages without persisted IDs. Check PricingMapperImpl.java.",
+                    packagesWithoutIds
+                );
+            }
+
+            setPricingPackages(packages);
+
+        } catch (error) {
+
+            console.error(
+                "Failed to load pricing for event date:",
+                error
+            );
+
+            setPricingPackages([]);
+
+        } finally {
+
+            setPricingLoading(false);
+
+            // Wait for React to render the newly loaded packages before scrolling.
+            window.requestAnimationFrame(() => {
+                window.requestAnimationFrame(scrollToPackages);
+            });
+
+        }
+    };
 
 
     /*
@@ -128,11 +239,26 @@ const VendorDetail = () => {
     const handlePackageSelect = (
         pkg: ServicePackage
     ) => {
+        if (!pkg.id || !pkg.id.trim()) {
+            console.error(
+                "Cannot select this package because the pricing API did not return its persisted ID.",
+                pkg
+            );
+            return;
+        }
 
-        setSelectedPackage(
-            pkg
-        );
-
+        const nextPackageId = pkg.id.trim();
+        if (selectedPackage?.id !== nextPackageId) {
+            setSelectedCateringDishes([]);
+        }
+        setSelectedPackage({
+            ...pkg,
+            id: nextPackageId
+        });
+        // Package changes invalidate the prior slot selection.
+        setSelectedSlotId(null);
+        setSelectedSlotResourceTypeId(null);
+        setPackageSelectionVersion(version => version + 1);
     };
 
 
@@ -291,8 +417,8 @@ const VendorDetail = () => {
 
     if (!vendor) {
 
-        return (
-            <h2>Loading...</h2>
+    return (
+            <Loader />
         );
 
     }
@@ -303,6 +429,15 @@ const VendorDetail = () => {
      * UI
      * =========================================
      */
+
+    const isStayService = ["STAY", "STAYS"].includes(String(vendor?.category ?? "").trim().toUpperCase());
+    const activeResourceTypes = isStayService
+        ? (vendor?.resourceTypes ?? []).filter(type => type.active !== false)
+        : [];
+    const fixedDurationPackages = pricingPackages.filter(pkg => pkg.packageType === "FIXED_DURATION");
+    const regularPricingPackages = pricingPackages.filter(pkg => pkg.packageType !== "FIXED_DURATION");
+    // Stay customers select a complete package composition, not a resource type first.
+    const visiblePricingPackages = regularPricingPackages;
 
     return (
 
@@ -325,66 +460,79 @@ const VendorDetail = () => {
             )}
 
 
-            <VendorGallery
-                vendor={vendor}
-            />
-
-
-            <section className="section">
-
+            <section className="section vendor-detail-page">
                 <div className="container vendor-layout">
-
                     <div className="vendor-detail-main">
-
-                        <VendorInfo
-                            vendor={vendor}
-                        />
-
-                        <VendorServiceDetails
-                                vendor={vendor}
-                            />
-
-
-                        <VendorAmenities
-                            vendor={vendor}
-                        />
-
-
-                        <VendorPackages
-                            packages={vendor.packages ?? []}
-                            selectedPackageId={
-                                selectedPackage
-                                    ? selectedPackage.id
-                                    : undefined
-                            }
-                            onSelectPackage={
-                                handlePackageSelect
-                            }
-                        />
-
-
-                        <VendorReviews />
-
+                        <VendorGallery vendor={vendor} />
+                        <VendorInfo vendor={vendor} />
                     </div>
 
+                    <div className="vendor-detail-main-lower">
+                        <div className="vendor-detail-information">
+                            <VendorServiceDetails vendor={vendor} />
+                        </div>
+                        <VendorAmenities vendor={vendor} />
 
-                    <BookingCard
-                        vendor={vendor}
+                        <BookingCard
+                            vendor={vendor}
+                            serviceId={serviceId}
+                            bundles={bundles}
+                            selectedPackage={selectedPackage}
+                            selectedCateringDishes={selectedCateringDishes}
+                            packageSelectionVersion={packageSelectionVersion}
+                            selectedResourceTypeId={null}
+                            onEventDateChange={handleEventDateChange}
+                            onClearSelectedPackage={() => {
+                                setSelectedPackage(null);
+                                setSelectedCateringDishes([]);
+                            }}
+                            onSelectedSlotChange={(slotId, resourceTypeId) => {
+                                setSelectedSlotId(slotId);
+                                setSelectedSlotResourceTypeId(resourceTypeId ?? null);
+                                if (slotId) scrollToPackagesIfNeeded();
+                            }}
+                        />
 
-                        serviceId={
-                            serviceId
-                        }
-
-                        bundles={
-                            bundles
-                        }
-
-                       selectedPackage={selectedPackage}
-
-                    />
-
+                        <div ref={packagesSectionRef} className="vendor-packages-anchor">
+                            {!selectedEventDate ? (
+                                <div className="pricing-date-message">
+                                    <div className="pricing-date-icon">📅</div>
+                                    <h3>Packages &amp; Pricing</h3>
+                                    <p>Select your event date to see the exact price and available packages.</p>
+                                    <span>Pricing may vary depending on the date and season.</span>
+                                </div>
+                            ) : pricingLoading ? (
+                                <div className="pricing-loading">Loading packages and prices...</div>
+                            ) : pricingPackages.length === 0 ? (
+                                <div className="pricing-unavailable">
+                                    <div className="pricing-unavailable-icon">📅</div>
+                                    <h3>Pricing Not Available</h3>
+                                    <p>No packages or pricing are available for <strong>{" "}{selectedEventDate}</strong>.</p>
+                                    <span>Please select another event date to check available pricing.</span>
+                                </div>
+                            ) : (
+                                <>
+                                    {visiblePricingPackages.length > 0 ? (
+                                        <VendorPackages packages={visiblePricingPackages} selectedPackage={selectedPackage} selectedSlotId={selectedSlotId} selectedSlotResourceTypeId={selectedSlotResourceTypeId} isStay={isStayService} resourceTypes={activeResourceTypes} onSelectPackage={handlePackageSelect} onSelectedCateringDishesChange={setSelectedCateringDishes} />
+                                    ) : (
+                                        <div className="pricing-unavailable">
+                                            <h3>No packages available</h3>
+                                            <p>Please select another date or contact the vendor.</p>
+                                        </div>
+                                    )}
+                                    {fixedDurationPackages.length > 0 && (
+                                        <section className="fixed-duration-packages">
+                                            <h2>Fixed-Duration Packages</h2>
+                                            <p>Packages with a predefined duration and price.</p>
+                                            <VendorPackages packages={fixedDurationPackages} selectedPackage={selectedPackage} selectedSlotId={selectedSlotId} selectedSlotResourceTypeId={selectedSlotResourceTypeId} isStay={isStayService} resourceTypes={activeResourceTypes} onSelectPackage={handlePackageSelect} onSelectedCateringDishesChange={setSelectedCateringDishes} />
+                                        </section>
+                                    )}
+                                </>
+                            )}
+                        </div>
+                        <VendorReviews />
+                    </div>
                 </div>
-
             </section>
 
         </>

@@ -1,6 +1,6 @@
 import "./CustomerInfo.css";
 
-import type { BookingResponse } from "../../types/Booking";
+import type { BookingResponse } from "../../../types/Booking";
 
 type Props = {
     booking: BookingResponse;

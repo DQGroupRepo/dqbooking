@@ -1,7 +1,5 @@
 package com.booking.dto.booking;
 
-import com.booking.dto.pricing.DiscountSnapshot;
-import com.booking.dto.pricing.PricingHeadSnapshot;
 import com.booking.model.embedded.BookingDiscountSnapshot;
 import com.booking.model.embedded.BookingPricingHeadSnapshot;
 import com.booking.model.enums.BookingStatus;
@@ -34,9 +32,40 @@ public class CustomerBookingDetailsResponse {
 
     private String vendorEmail;
 
+    private String customerName;
+
+    private String customerPhone;
+
+    private String customerEmail;
+
+    /** True only when the authenticated vendor may cancel this vendor-created booking. */
+    private Boolean vendorCanCancel;
+
     private LocalDate bookingDate;
 
-    private LocalDate eventDate;
+    private LocalDateTime bookingFrom;
+
+    private LocalDateTime bookingTo;
+
+    private String serviceCategory;
+
+    private String bookingType;
+
+    private Integer roomQuantity;
+
+    private String slotId;
+
+    private String slotName;
+
+    private String slotStartTime;
+
+    private String slotEndTime;
+
+    private String resourceTypeName;
+
+    private List<String> resourceIds;
+
+    private List<String> resourceNames;
 
     private Integer guestCount;
 

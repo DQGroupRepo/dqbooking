@@ -5,7 +5,7 @@ import com.booking.model.enums.BookingStatus;
 import org.springframework.data.mongodb.repository.Aggregation;
 import org.springframework.data.mongodb.repository.MongoRepository;
 
-import java.time.LocalDate;
+
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -20,10 +20,10 @@ public interface BookingRepository extends MongoRepository<Booking, String> {
             BookingStatus status
     );
 
-    List<Booking> findByVendorIdAndEventDateBetween(
+    List<Booking> findByVendorIdAndBookingFromBetween(
             String vendorId,
-            LocalDate start,
-            LocalDate end
+            LocalDateTime start,
+            LocalDateTime end
     );
 
     List<Booking> findTop5ByVendorIdOrderByCreatedTsDesc(
@@ -31,6 +31,7 @@ public interface BookingRepository extends MongoRepository<Booking, String> {
     );
 
     List<Booking> findByServiceId(String serviceId);
+
 
     List<Booking> findByCustomerIdOrderByCreatedTsDesc(
             String customerId
@@ -96,6 +97,14 @@ public interface BookingRepository extends MongoRepository<Booking, String> {
     })
     List<AdminRevenueTrendProjection> findMonthlyRevenueTrend(
             LocalDateTime startDate
+    );
+
+    long countByServiceIdAndSlotIdAndBookingFromBetweenAndStatusIn(
+            String serviceId,
+            String slotId,
+            LocalDateTime start,
+            LocalDateTime end,
+            List<BookingStatus> statuses
     );
 
 

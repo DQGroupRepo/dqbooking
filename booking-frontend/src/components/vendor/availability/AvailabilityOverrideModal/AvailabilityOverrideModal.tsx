@@ -1,3 +1,4 @@
+import NumericInput from "../../../common/ui/NumericInput";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 
@@ -5,9 +6,9 @@ import AvailabilityOverrideService
     from "../../../../services/AvailabilityOverrideService";
 
 import type { AvailabilityOverride }
-    from "../../../types/AvailabilityOverride";
+    from "../../../../types/AvailabilityOverride";
 
-import type { BookingSlot } from "../../../types/BookingSlot";
+import type { BookingSlot } from "../../../../types/BookingSlot";
 
 import Button from "../../../common/ui/Button/Button";
 
@@ -25,9 +26,12 @@ interface Props {
 
     selectedDate: Date;
 
-    slot: BookingSlot;
+    slot?: BookingSlot;
+
 
     override?: AvailabilityOverride;
+
+    isStayService?: boolean;
 
 }
 
@@ -45,7 +49,10 @@ export default function AvailabilityOverrideModal({
 
     slot,
 
-    override
+
+    override,
+
+    isStayService = false
 
 }: Props) {
 
@@ -126,7 +133,7 @@ export default function AvailabilityOverrideModal({
 
             const request = {
 
-                slotId: slot.id,
+                slotId: slot?.id ?? null,
 
                 date: selectedDate
                     .toISOString()
@@ -149,13 +156,13 @@ export default function AvailabilityOverrideModal({
             if (override) {
 
                 await AvailabilityOverrideService.updateOverride(
-
                     serviceId,
-
                     override.id,
-
-                    request
-
+                    {
+                        blocked,
+                        reason,
+                        capacityOverride: isStayService || capacity === "" ? null : Number(capacity)
+                    }
                 );
 
             }
@@ -163,11 +170,8 @@ export default function AvailabilityOverrideModal({
             else {
 
                 await AvailabilityOverrideService.createOverride(
-
                     serviceId,
-
                     request
-
                 );
 
             }
@@ -206,7 +210,7 @@ export default function AvailabilityOverrideModal({
 
                     <strong>
 
-                        {slot.slotName}
+                        {slot?.slotName}
 
                     </strong>
 
@@ -250,13 +254,13 @@ export default function AvailabilityOverrideModal({
 
                 </label>
 
-                <label>
+                {!isStayService && <label>
 
                     Capacity Override
 
-                    <input
+                    <NumericInput
 
-                        type="number"
+
 
                         value={capacity}
 
@@ -276,7 +280,7 @@ export default function AvailabilityOverrideModal({
 
                     />
 
-                </label>
+                </label>}
 
                 <div className="modal-actions">
 

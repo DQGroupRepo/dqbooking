@@ -1,0 +1,30 @@
+.rating-stars {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    line-height: 1;
+    white-space: nowrap;
+    vertical-align: middle;
+}
+.rating-stars__item {
+    display: inline-block;
+    position: relative;
+    color: #d8dee8;
+    line-height: 1;
+}
+.rating-stars__empty,
+.rating-stars__fill {
+    display: block;
+    font-family: Arial, sans-serif;
+    line-height: 1;
+}
+.rating-stars__fill {
+    position: absolute;
+    inset: 0 auto 0 0;
+    overflow: hidden;
+    color: #f5a623;
+    white-space: nowrap;
+}
+.rating-stars--small { font-size: 15px; gap: 2px; }
+.rating-stars--medium { font-size: 20px; }
+.rating-stars--large { font-size: 28px; gap: 4px; }

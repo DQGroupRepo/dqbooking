@@ -1,62 +1,21 @@
 import Button from "../../../common/ui/Button/Button";
-interface Props{
 
-    onSaveDraft?:()=>void;
-    publishing?:boolean;
+interface Props {
+    publishing?: boolean;
     isEditMode?: boolean;
-
 }
 
 export default function FormActions({
-
-    onSaveDraft,
-
     publishing,
-
-    isEditMode = false
-
+    isEditMode = false,
 }: Props) {
-
-    return(
-
+    return (
         <div className="form-actions">
-
-            <Button
-
-                variant="secondary"
-
-                type="button"
-
-                onClick={onSaveDraft}
-
-            >
-
-                Save Draft
-
+            <Button type="submit" disabled={publishing}>
+                {publishing
+                    ? (isEditMode ? "Updating..." : "Publishing...")
+                    : (isEditMode ? "Update Service" : "Publish Listing")}
             </Button>
-
-            <Button
-
-                type="submit"
-
-                disabled={publishing}
-
-            >
-
-                {
-
-                    publishing
-
-                        ? (isEditMode ? "Updating..." : "Publishing...")
-
-                        : (isEditMode ? "Update Service" : "Publish Listing")
-
-                }
-
-            </Button>
-
         </div>
-
     );
-
 }

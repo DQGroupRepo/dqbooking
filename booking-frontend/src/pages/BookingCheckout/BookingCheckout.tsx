@@ -1,19 +1,13 @@
-import {
-    useEffect,
-    useMemo,
-    useState
-} from "react";
+import { useEffect, useMemo, useState } from "react";
 
-import {
-    useLocation,
-    useNavigate
-} from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 
 import toast from "react-hot-toast";
 
 import api from "../../api/axiosConfig";
 
 import CartService from "../../services/CartService";
+import BookingAvailabilityService from "../../services/BookingAvailabilityService";
 
 import type { CartItem } from "../../types/CartItem";
 
@@ -41,7 +35,26 @@ interface BookingLocationState {
 
     serviceId?: string;
 
+    slotId?: string;
+
+    slotStartTime?: string;
+
+    slotEndTime?: string;
+
+    bookingFrom?: string;
+
+    bookingTo?: string;
+
+    bookingType?: "STANDARD_SLOT" | "ROOM_STAY" | "DAY_PACKAGE";
+
+
+    roomQuantity?: number;
+
+    holdId?: string;
+
     packageId?: string;
+
+    selectedCateringDishes?: BookingSelectedCateringDishRequest[];
 
     eventDate?: string;
 
@@ -59,9 +72,9 @@ interface PricingHead {
     name: string;
 
     calculationType:
-        | "FIXED"
-        | "PERCENTAGE"
-        | string;
+    | "FIXED"
+    | "PERCENTAGE"
+    | string;
 
     value: number;
 
@@ -79,9 +92,9 @@ interface Discount {
     name: string;
 
     discountType:
-        | "FIXED"
-        | "PERCENTAGE"
-        | string;
+    | "FIXED"
+    | "PERCENTAGE"
+    | string;
 
     value: number;
 
@@ -163,16 +176,38 @@ interface BookingBundleItemRequest {
 
 }
 
+interface BookingSelectedCateringDishRequest {
+
+    dishId?: string;
+
+    menuItemId?: string;
+
+    name: string;
+
+    category: string;
+
+    foodType: string;
+
+    custom: boolean;
+}
+
 
 interface BookingServiceItemRequest {
 
     serviceId: string;
 
+    slotId?: string;
+
+    holdId?: string;
+
     packageId?: string;
 
-    eventDate: string;
-
-    guestCount: number;
+    bookingFrom: string;
+    bookingTo: string;
+    bookingType?: "STANDARD_SLOT" | "ROOM_STAY" | "DAY_PACKAGE";
+    roomQuantity?: number;
+    guestCount?: number;
+    selectedCateringDishes?: BookingSelectedCateringDishRequest[];
 
 }
 
@@ -230,6 +265,141 @@ interface CartItemPricing {
 }
 
 
+const EMPTY_CART: CartItem[] = [];
+
+
+const getCartLineKey = (item: CartItem): string =>
+    item.holdId || [item.serviceId, item.slotId ?? "no-slot", item.packageId ?? "no-package",
+        item.bookingFrom ?? item.eventDate ?? "", item.bookingTo ?? item.eventDate ?? ""].join("::");
+
+const getCartItemHolds = (item: CartItem) => {
+    if (item.holds?.length) return item.holds;
+    return item.holdId
+        ? [{ holdId: item.holdId, roomQuantity: item.roomQuantity, quantity: item.quantity, expiresAt: item.holdExpiresAt }]
+        : [];
+};
+
+const getCartPricingMultiplier = (item: CartItem): number => {
+    // Catering guest multiplication is performed by the pricing API using
+    // guestCount; do not multiply the returned result a second time here.
+    if (String(item.category ?? "").toUpperCase() === "CATERING") return 1;
+    const quantity = Math.max(1, Number(item.roomQuantity ?? item.quantity ?? 1));
+    if (item.packageType === "FIXED_DURATION") return quantity;
+
+    const from = (item.bookingFrom ?? item.eventDate ?? "").slice(0, 10);
+    const to = (item.bookingTo ?? item.eventDate ?? from).slice(0, 10);
+    let duration = 1;
+    if (from && to) {
+        const start = new Date(`${from}T00:00:00`).getTime();
+        const end = new Date(`${to}T00:00:00`).getTime();
+        const days = Math.max(0, Math.round((end - start) / 86400000));
+        duration = item.pricingBasis === "PER_NIGHT"
+            ? Math.max(1, days)
+            : item.pricingBasis === "PER_DAY"
+                ? Math.max(1, days + (String(item.category ?? "").toUpperCase() === "STAY" ? 0 : 1))
+                : 1;
+    }
+    return quantity * duration;
+};
+
+const scaleCartPricing = (pricing: PricingCalculationResult, multiplier: number): PricingCalculationResult => ({
+    ...pricing,
+    baseAmount: pricing.baseAmount * multiplier,
+    subtotal: pricing.subtotal * multiplier,
+    discountAmount: pricing.discountAmount * multiplier,
+    totalAmount: pricing.totalAmount * multiplier,
+    advanceAmount: pricing.advanceAmount * multiplier,
+    balanceAmount: pricing.balanceAmount * multiplier,
+    pricingHeads: (pricing.pricingHeads ?? []).map(head => ({
+        ...head,
+        calculatedAmount: head.calculatedAmount * multiplier
+    })),
+    discounts: (pricing.discounts ?? []).map(discount => ({
+        ...discount,
+        calculatedAmount: discount.calculatedAmount * multiplier
+    }))
+});
+
+function addCalendarDay(date: string): string {
+    const [year, month, day] = date.split("-").map(Number);
+    const value = new Date(year, month - 1, day);
+    value.setDate(value.getDate() + 1);
+    return `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, "0")}-${String(value.getDate()).padStart(2, "0")}`;
+}
+
+function localDateTime(date: string, time: string): string {
+    return `${date}T${time.length === 5 ? `${time}:00` : time}`;
+}
+
+function resolveBookingInterval(item: {
+    bookingFrom?: string;
+    bookingTo?: string;
+    eventDate?: string;
+    slotStartTime?: string;
+    slotEndTime?: string;
+}): { bookingFrom: string; bookingTo: string } {
+    if (item.bookingFrom && item.bookingTo) {
+        return { bookingFrom: item.bookingFrom, bookingTo: item.bookingTo };
+    }
+    if (!item.eventDate || !item.slotStartTime || !item.slotEndTime) {
+        throw new Error("The selected cart item is missing its booking date or slot times. Please select the slot again.");
+    }
+    const overnight = item.slotEndTime <= item.slotStartTime;
+    return {
+        bookingFrom: localDateTime(item.eventDate, item.slotStartTime),
+        bookingTo: localDateTime(overnight ? addCalendarDay(item.eventDate) : item.eventDate, item.slotEndTime)
+    };
+}
+
+async function renewExpiredCartHold(item: CartItem, expiredHoldId?: string): Promise<CartItem[]> {
+    const interval = resolveBookingInterval(item);
+    const oldHoldId = expiredHoldId || item.holdId || item.holds?.[0]?.holdId;
+    const expiredHold = (item.holds ?? []).find(hold => hold.holdId === oldHoldId);
+    const quantity = Math.max(1, Number(expiredHold?.quantity ?? expiredHold?.roomQuantity ?? item.quantity ?? item.roomQuantity ?? 1));
+    const roomQuantity = Math.max(1, Number(expiredHold?.roomQuantity ?? item.roomQuantity ?? quantity));
+    const renewed = await BookingAvailabilityService.holdSlot({
+        cartId: CartService.getOrCreateCartId(),
+        serviceId: item.serviceId,
+        slotId: item.slotId,
+        packageId: item.packageId,
+        // Package composition is authoritative on the server. Do not resend
+        // resourceRequirements here, especially for STAY packages.
+        bookingFrom: interval.bookingFrom,
+        bookingTo: interval.bookingTo,
+        bookingIntervals: item.bookingIntervals,
+        bookingType: item.bookingType || "STANDARD_SLOT",
+        roomQuantity,
+        quantity
+    });
+
+    const cart = CartService.getCart();
+    const updated = cart.map(cartItem => {
+        if (cartItem.serviceId !== item.serviceId || cartItem.slotId !== item.slotId ||
+            cartItem.packageId !== item.packageId ||
+            (cartItem.bookingFrom ?? cartItem.eventDate ?? "") !== (item.bookingFrom ?? item.eventDate ?? "") ||
+            (cartItem.bookingTo ?? cartItem.eventDate ?? "") !== (item.bookingTo ?? item.eventDate ?? "")) return cartItem;
+
+        const existingHolds = cartItem.holds?.length ? [...cartItem.holds] :
+            cartItem.holdId ? [{ holdId: cartItem.holdId, roomQuantity: cartItem.roomQuantity, quantity: cartItem.quantity, expiresAt: cartItem.holdExpiresAt, price: cartItem.price }] : [];
+        const targetIndex = oldHoldId ? existingHolds.findIndex(hold => hold.holdId === oldHoldId) : 0;
+        const newHold = { holdId: renewed.holdId, roomQuantity, quantity, expiresAt: renewed.expiresAt, price: cartItem.price };
+        if (targetIndex >= 0 && existingHolds.length) existingHolds[targetIndex] = newHold;
+        else existingHolds.push(newHold);
+        return {
+            ...cartItem,
+            holds: existingHolds,
+            holdId: existingHolds[0]?.holdId ?? renewed.holdId,
+            holdExpiresAt: existingHolds.reduce<string | undefined>((earliest, hold) => {
+                if (!hold.expiresAt) return earliest;
+                return !earliest || Date.parse(hold.expiresAt) < Date.parse(earliest) ? hold.expiresAt : earliest;
+            }, undefined)
+        };
+    });
+    CartService.saveCart(updated);
+    return updated;
+}
+
+
 const BookingCheckout = () => {
 
     const location =
@@ -251,8 +421,18 @@ const BookingCheckout = () => {
      * =========================================
      */
 
-    const cart =
-        state?.cart ?? [];
+    // Keep the normalized cart reference stable between renders. Returning a
+    // new [] on every render can retrigger pricing effects indefinitely.
+    // Router state is runtime data, so validate it before using array methods.
+    const cart: CartItem[] = useMemo(() => {
+        if (Array.isArray(state?.cart)) {
+            return state.cart;
+        }
+
+        return state?.cart != null
+            ? CartService.getCart()
+            : EMPTY_CART;
+    }, [state?.cart]);
 
 
     const isCartCheckout =
@@ -309,7 +489,7 @@ const BookingCheckout = () => {
         paymentPreference,
         setPaymentPreference
     ] = useState(
-        "PAY_AFTER_CONFIRMATION"
+        "PAY_BY_CASH"
     );
 
 
@@ -420,7 +600,7 @@ const BookingCheckout = () => {
 
                     const pricing =
                         cartItemPricing[
-                            item.serviceId
+                        getCartLineKey(item)
                         ];
 
 
@@ -441,6 +621,15 @@ const BookingCheckout = () => {
             cartItemPricing
         ]);
 
+
+    const cartPricingTotal = useMemo(() => cart.reduce((total, item) => {
+        const pricing = cartItemPricing[getCartLineKey(item)];
+        const isCompletedBundle = !!item.bundleId && CartService.isBundleComplete(item.bundleId);
+        const amount = isCompletedBundle
+            ? (pricing?.subtotal ?? item.price)
+            : (pricing?.totalAmount ?? pricing?.subtotal ?? item.price);
+        return total + Number(amount);
+    }, 0), [cart, cartItemPricing]);
 
     /*
      * =========================================
@@ -533,19 +722,8 @@ const BookingCheckout = () => {
                                 item
                             ) => {
 
-                                const pricing =
-                                    cartItemPricing[
-                                        item.serviceId
-                                    ];
-
-
-                                return (
-                                    total +
-                                    Number(
-                                        pricing?.subtotal ??
-                                        item.price
-                                    )
-                                );
+                                const pricing = cartItemPricing[getCartLineKey(item)];
+                                return total + Number(pricing?.subtotal ?? item.packagePrice ?? item.price);
 
                             },
                             0
@@ -640,17 +818,7 @@ const BookingCheckout = () => {
                     bundleItems.forEach(
                         item => {
 
-                            const itemPricing =
-                                cartItemPricing[
-                                    item.serviceId
-                                ];
-
-
-                            const itemPrice =
-                                Number(
-                                    itemPricing?.subtotal ??
-                                    item.price
-                                );
+                            const itemPrice = Number(cartItemPricing[getCartLineKey(item)]?.subtotal ?? item.packagePrice ?? item.price);
 
 
                             if (
@@ -658,7 +826,7 @@ const BookingCheckout = () => {
                             ) {
 
                                 discountMap.set(
-                                    item.serviceId,
+                                    getCartLineKey(item),
                                     0
                                 );
 
@@ -678,7 +846,7 @@ const BookingCheckout = () => {
 
 
                             discountMap.set(
-                                item.serviceId,
+                                getCartLineKey(item),
                                 itemDiscount
                             );
 
@@ -734,19 +902,16 @@ const BookingCheckout = () => {
      * =========================================
      */
 
+    // Includes normal service discounts plus any separately qualifying bundle discount.
+    const localTotalDiscount = Math.max(
+        0,
+        cartSubtotal - cartPricingTotal + localTotalBundleDiscount
+    );
+
     const localBundleFinalTotal =
         useMemo(() => {
-
-            return Math.max(
-                0,
-                cartSubtotal -
-                localTotalBundleDiscount
-            );
-
-        }, [
-            cartSubtotal,
-            localTotalBundleDiscount
-        ]);
+            return Math.max(0, cartPricingTotal - localTotalBundleDiscount);
+        }, [cartPricingTotal, localTotalBundleDiscount]);
 
 
     /*
@@ -786,7 +951,7 @@ const BookingCheckout = () => {
      * the remaining bundle services.
      */
 
-    const handleRemoveService = (
+    const handleRemoveService = async (
         item: CartItem
     ) => {
 
@@ -798,7 +963,7 @@ const BookingCheckout = () => {
         ) {
 
             updatedCart =
-                CartService.removeItemFromBundle(
+                await CartService.removeItemFromBundle(
                     item.serviceId,
                     item.bundleId
                 );
@@ -806,14 +971,15 @@ const BookingCheckout = () => {
         } else {
 
             updatedCart =
-                CartService.removeItem(
-                    item.serviceId
+                await CartService.removeItem(
+                    item.serviceId,
+                    item.holdId
                 );
 
         }
 
 
-        setCart(
+        setCurrentCart(
             updatedCart
         );
 
@@ -836,7 +1002,7 @@ const BookingCheckout = () => {
         setCurrentCart
     ] =
         useState<CartItem[]>(
-            cart
+            Array.isArray(cart) ? cart : []
         );
 
 
@@ -848,7 +1014,7 @@ const BookingCheckout = () => {
     useEffect(() => {
 
         setCurrentCart(
-            cart
+            Array.isArray(cart) ? cart : []
         );
 
     }, [
@@ -867,8 +1033,13 @@ const BookingCheckout = () => {
      * below through displayCart.
      */
 
-    const displayCart =
-        currentCart;
+    // Keep render paths safe even if stale state or an unexpected caller
+    // ever supplies a non-array value. CartService.getCart() also validates
+    // persisted cart data, so use it as a recovery source when appropriate.
+    const displayCart: CartItem[] =
+        Array.isArray(currentCart)
+            ? currentCart
+            : (isCartCheckout ? CartService.getCart() : []);
 
 
     const isDisplayCartCheckout =
@@ -941,7 +1112,7 @@ const BookingCheckout = () => {
 
                 }
                 catch (
-                    err: any
+                err: any
                 ) {
 
                     console.error(
@@ -1081,55 +1252,58 @@ const BookingCheckout = () => {
                             Array.from(
                                 bundleGroups.entries()
                             )
-                            .map(
-                                async ([
-                                    bundleId,
-                                    items
-                                ]) => {
+                                .map(
+                                    async ([
+                                        bundleId,
+                                        items
+                                    ]) => {
 
-                                    try {
+                                        try {
 
-                                        const response =
-                                            await api.post<BundleCalculationResponse>(
-                                                "/bundles/calculate",
-                                                {
+                                            const response =
+                                                await api.post<BundleCalculationResponse>(
+                                                    "/bundles/calculate",
+                                                    {
 
-                                                    bundleId,
+                                                        bundleId,
 
-                                                    items:
-                                                        items.map(
-                                                            item => ({
+                                                        items:
+                                                            items.map(
+                                                                item => ({
 
-                                                                serviceId:
-                                                                    item.serviceId,
+                                                                    serviceId:
+                                                                        item.serviceId,
 
-                                                                packageId:
-                                                                    item.packageId
+                                                                    packageId:
+                                                                        item.packageId,
+                                                                    ...resolveBookingInterval(item),
+                                                                    guestCount: item.guestCount,
+                                                                    roomQuantity: item.roomQuantity ?? item.quantity ?? 1
 
-                                                            })
-                                                        )
+                                                                })
+                                                            )
 
-                                                }
+                                                    }
+                                                );
+
+
+                                            return response.data;
+
+                                        }
+                                        catch (error) {
+
+                                            console.error(
+                                                `Bundle calculation failed for ${bundleId}:`,
+                                                error
                                             );
 
 
-                                        return response.data;
+                                            return null;
+
+                                        }
 
                                     }
-                                    catch (error) {
-
-                                        console.error(
-                                            `Bundle calculation failed for ${bundleId}:`,
-                                            error
-                                        );
-
-
-                                        return null;
-
-                                    }
-
-                                }
-                            )
+                                )
 
                         );
 
@@ -1352,7 +1526,9 @@ const BookingCheckout = () => {
 
                                                         packageId:
                                                             item.packageId ||
-                                                            undefined
+                                                            undefined,
+                                                        guestCount: String(item.category ?? "").toUpperCase() === "CATERING"
+                                                            ? Math.max(1, Number(item.guestCount ?? 1)) : undefined
 
                                                     }
                                                 }
@@ -1361,11 +1537,11 @@ const BookingCheckout = () => {
 
                                         return {
 
-                                            serviceId:
-                                                item.serviceId,
+                                            cartLineKey:
+                                                getCartLineKey(item),
 
                                             pricing:
-                                                response.data
+                                                scaleCartPricing(response.data, getCartPricingMultiplier(item))
 
                                         };
 
@@ -1406,7 +1582,7 @@ const BookingCheckout = () => {
 
 
                             pricingMap[
-                                entry.serviceId
+                                entry.cartLineKey
                             ] =
                                 entry.pricing;
 
@@ -1461,7 +1637,7 @@ const BookingCheckout = () => {
         useMemo(() => {
 
             switch (
-                paymentPreference
+            paymentPreference
             ) {
 
                 case "ADVANCE_PAYMENT":
@@ -1572,23 +1748,40 @@ const BookingCheckout = () => {
 
         return (
 
-            <section className="checkout-section">
+            <section className="checkout-section" style={{ padding: "56px 16px 72px", minHeight: "52vh", background: "#f7f9fc" }}>
 
-                <div className="container">
+                <div className="container" style={{ maxWidth: 760, margin: "0 auto" }}>
 
-                    <h2>
-                        Your cart is empty.
-                    </h2>
+                    <div style={{ background: "#fff", border: "1px solid #e5eaf1", borderRadius: 18, padding: "clamp(24px, 5vw, 42px)", textAlign: "center", boxShadow: "0 12px 32px rgba(20, 43, 74, 0.07)" }}>
 
+                        <div aria-hidden="true" style={{ width: 64, height: 64, margin: "0 auto 18px", borderRadius: "50%", display: "grid", placeItems: "center", background: "#fff4e5", color: "#a85d00", fontSize: 30 }}>!</div>
 
-                    <button
-                        className="cancel-button"
-                        onClick={() =>
-                            navigate("/cart")
-                        }
-                    >
-                        ← Back To Cart
-                    </button>
+                        <h2 style={{ margin: "0 0 12px", color: "#142b4a", fontSize: "clamp(22px, 3vw, 30px)" }}>
+                            Your booking hold has expired
+                        </h2>
+
+                        <p style={{ margin: "0 auto 12px", maxWidth: 560, color: "#526176", lineHeight: 1.65 }}>
+                            The time slot you selected was held temporarily, and your hold is no longer valid. Another customer may have reserved it.
+                        </p>
+
+                        <p style={{ margin: "0 auto 26px", maxWidth: 560, color: "#526176", lineHeight: 1.65 }}>
+                            Please return to your cart, choose the service, date and time again, and add it to your cart to continue. Other available services can be selected again as needed.
+                        </p>
+
+                        <button
+                            type="button"
+                            className="cancel-button"
+                            onClick={() => navigate("/cart", { replace: true })}
+                            style={{ display: "inline-flex", justifyContent: "center", alignItems: "center", minHeight: 48, minWidth: 190, padding: "12px 24px", border: 0, borderRadius: 10, background: "#f4b323", color: "#142b4a", fontWeight: 700, cursor: "pointer" }}
+                        >
+                            ← Return to Cart
+                        </button>
+
+                        <p style={{ margin: "18px 0 0", color: "#7b8797", fontSize: 13 }}>
+                            No booking has been submitted for the expired hold.
+                        </p>
+
+                    </div>
 
                 </div>
 
@@ -1733,22 +1926,27 @@ const BookingCheckout = () => {
                                 }
 
 
-                                bundleRequest.items.push({
-
-                                    serviceId:
-                                        item.serviceId,
-
-                                    packageId:
-                                        item.packageId,
-
-                                    eventDate:
-                                        item.eventDate || "",
-
-                                    guestCount:
-                                        Number(
-                                            item.guestCount
-                                        )
-
+                                const holds = getCartItemHolds(item);
+                                (holds.length ? holds : [undefined]).forEach(hold => {
+                                    bundleRequest!.items.push({
+                                        serviceId: item.serviceId,
+                                        slotId: item.slotId,
+                                        holdId: hold?.holdId,
+                                        packageId: item.packageId,
+                                        ...resolveBookingInterval(item),
+                                        bookingType: item.bookingType || "STANDARD_SLOT",
+                                        roomQuantity: hold?.roomQuantity ?? item.roomQuantity,
+                                        guestCount: String(item.category ?? "").toUpperCase() === "STAY"
+                                            ? undefined : Number(item.guestCount ?? 1),
+                                        selectedCateringDishes: item.selectedCateringDishes?.map(dish => ({
+                                            dishId: dish.dishId ?? dish.id,
+                                            menuItemId: dish.menuItemId,
+                                            name: dish.name,
+                                            category: dish.category,
+                                            foodType: dish.foodType,
+                                            custom: dish.custom
+                                        }))
+                                    });
                                 });
 
 
@@ -1763,22 +1961,27 @@ const BookingCheckout = () => {
                              * =========================================
                              */
 
-                            serviceRequests.push({
-
-                                serviceId:
-                                    item.serviceId,
-
-                                packageId:
-                                    item.packageId,
-
-                                eventDate:
-                                    item.eventDate || "",
-
-                                guestCount:
-                                    Number(
-                                        item.guestCount
-                                    )
-
+                            const holds = getCartItemHolds(item);
+                            (holds.length ? holds : [undefined]).forEach(hold => {
+                                serviceRequests.push({
+                                    serviceId: item.serviceId,
+                                    slotId: item.slotId,
+                                    holdId: hold?.holdId,
+                                    packageId: item.packageId,
+                                    ...resolveBookingInterval(item),
+                                    bookingType: item.bookingType || "STANDARD_SLOT",
+                                    roomQuantity: hold?.roomQuantity ?? item.roomQuantity,
+                                    guestCount: String(item.category ?? "").toUpperCase() === "STAY"
+                                        ? undefined : Number(item.guestCount ?? 1),
+                                    selectedCateringDishes: item.selectedCateringDishes?.map(dish => ({
+                                        dishId: dish.dishId ?? dish.id,
+                                        menuItemId: dish.menuItemId,
+                                        name: dish.name,
+                                        category: dish.category,
+                                        foodType: dish.foodType,
+                                        custom: dish.custom
+                                    }))
+                                });
                             });
 
                         }
@@ -1910,7 +2113,7 @@ const BookingCheckout = () => {
 
                 }
                 catch (
-                    err: any
+                err: any
                 ) {
 
                     console.error(
@@ -1928,14 +2131,125 @@ const BookingCheckout = () => {
                     );
 
 
-                    const message =
-                        err?.response?.data?.message ||
-                        "Unable to submit booking request. Please try again.";
+                    const responseData =
+                        err?.response?.data;
 
+                    const isExpiredHold =
+                        responseData?.code ===
+                        "BOOKING_HOLD_EXPIRED";
 
-                    toast.error(
-                        message
-                    );
+                    if (isExpiredHold) {
+
+                        const expiredServiceId =
+                            responseData?.serviceId;
+
+                        const expiredSlotId =
+                            responseData?.slotId;
+
+                        const expiredEventDate =
+                            responseData?.eventDate;
+
+                        console.warn(
+                            "Expired booking hold detected:",
+                            {
+                                serviceId:
+                                    expiredServiceId,
+
+                                slotId:
+                                    expiredSlotId,
+
+                                eventDate:
+                                    expiredEventDate
+                            }
+                        );
+
+                        /*
+                         * Remove ONLY the expired item.
+                         *
+                         * Other cart items remain untouched.
+                         */
+                        const expiredPackageId = responseData?.packageId;
+                        const expiredBookingFrom = responseData?.bookingFrom;
+                        const expiredBookingTo = responseData?.bookingTo;
+                        const expiredHoldId = responseData?.holdId;
+
+                        const expiredItem = displayCart.find((item) => {
+                            if (item.serviceId !== expiredServiceId) {
+                                return false;
+                            }
+
+                            // Preserve strict matching for ordinary slot bookings.
+                            if (expiredSlotId != null && expiredSlotId !== "") {
+                                return (
+                                    item.slotId === expiredSlotId &&
+                                    (!expiredEventDate || item.eventDate === expiredEventDate) &&
+                                    (!expiredHoldId || item.holdId === expiredHoldId || item.holds?.some(hold => hold.holdId === expiredHoldId))
+                                );
+                            }
+
+                            // Compatibility path for legacy cart items that do not carry a slot ID.
+                            if (item.slotId) {
+                                return false;
+                            }
+
+                            const cartItem = item as CartItem & {
+                                bookingFrom?: string;
+                                bookingTo?: string;
+                            };
+
+                            if (expiredHoldId && item.holdId && item.holdId !== expiredHoldId &&
+                                !item.holds?.some(hold => hold.holdId === expiredHoldId)) {
+                                return false;
+                            }
+
+                            if (expiredPackageId && item.packageId !== expiredPackageId) {
+                                return false;
+                            }
+
+                            if (expiredEventDate && item.eventDate && item.eventDate !== expiredEventDate) {
+                                return false;
+                            }
+
+                            if (expiredBookingFrom && cartItem.bookingFrom && cartItem.bookingFrom !== expiredBookingFrom) {
+                                return false;
+                            }
+
+                            if (expiredBookingTo && cartItem.bookingTo && cartItem.bookingTo !== expiredBookingTo) {
+                                return false;
+                            }
+
+                            return true;
+                        });
+
+                        if (expiredItem) {
+                            const shouldContinue = window.confirm(
+                                "Your selected time slot has expired. Would you like us to check availability and refresh your booking hold?"
+                            );
+
+                            if (shouldContinue) {
+                                try {
+                                    const updatedCart = await renewExpiredCartHold(expiredItem, expiredHoldId);
+                                    setCurrentCart(updatedCart);
+                                    toast.success("Availability confirmed and your booking hold has been refreshed. You can continue checkout.");
+                                } catch (renewError: any) {
+                                    console.error("Failed to refresh expired booking hold:", renewError?.response?.data ?? renewError);
+                                    toast.error(renewError?.response?.data?.message || "This slot is no longer available. Please return to the service and select another slot.");
+                                }
+                            } else {
+                                toast("Your cart was left unchanged. You can return and choose another slot when ready.");
+                            }
+                        }
+                    }
+                    else {
+
+                        const message =
+                            responseData?.message ||
+                            "Unable to submit booking request. Please try again.";
+
+                        toast.error(
+                            message
+                        );
+                    }
 
                 }
                 finally {
@@ -1975,16 +2289,31 @@ const BookingCheckout = () => {
                         {
 
                             serviceId,
+                            slotId:
+                               state?.slotId ?? "",
+
+                            holdId:
+                               state?.holdId,
 
                             packageId,
 
-                            eventDate,
+                            ...resolveBookingInterval({
+                                bookingFrom: state?.bookingFrom,
+                                bookingTo: state?.bookingTo,
+                                eventDate,
+                                slotStartTime: state?.slotStartTime ?? displayCart.find(item => item.serviceId === serviceId && item.slotId === state?.slotId)?.slotStartTime,
+                                slotEndTime: state?.slotEndTime ?? displayCart.find(item => item.serviceId === serviceId && item.slotId === state?.slotId)?.slotEndTime
+                            }),
+                            bookingType: state?.bookingType || "STANDARD_SLOT",
+                            roomQuantity: state?.roomQuantity,
 
                             guestCount:
-                                Number(
-                                    guests
-                                )
+                                state?.bookingType === "ROOM_STAY"
+                                    ? undefined
+                                    : Number(guests),
 
+                            selectedCateringDishes:
+                                state?.selectedCateringDishes
                         }
 
                     ],
@@ -2052,7 +2381,7 @@ const BookingCheckout = () => {
 
             }
             catch (
-                err: any
+            err: any
             ) {
 
                 console.error(
@@ -2070,14 +2399,125 @@ const BookingCheckout = () => {
                 );
 
 
-                const message =
-                    err?.response?.data?.message ||
-                    "Unable to submit booking request. Please try again.";
+                const responseData =
+                    err?.response?.data;
 
+                const isExpiredHold =
+                    responseData?.code ===
+                    "BOOKING_HOLD_EXPIRED";
 
-                toast.error(
-                    message
-                );
+                if (isExpiredHold) {
+
+                    const expiredServiceId =
+                        responseData?.serviceId;
+
+                    const expiredSlotId =
+                        responseData?.slotId;
+
+                    const expiredEventDate =
+                        responseData?.eventDate;
+
+                    console.warn(
+                        "Expired booking hold detected:",
+                        {
+                            serviceId:
+                                expiredServiceId,
+
+                            slotId:
+                                expiredSlotId,
+
+                            eventDate:
+                                expiredEventDate
+                        }
+                    );
+
+                    /*
+                     * Remove ONLY the expired item.
+                     *
+                     * Other cart items remain untouched.
+                     */
+                    const expiredPackageId = responseData?.packageId;
+                        const expiredBookingFrom = responseData?.bookingFrom;
+                        const expiredBookingTo = responseData?.bookingTo;
+                        const expiredHoldId = responseData?.holdId;
+
+                        const expiredItem = displayCart.find((item) => {
+                            if (item.serviceId !== expiredServiceId) {
+                                return false;
+                            }
+
+                            // Preserve strict matching for ordinary slot bookings.
+                            if (expiredSlotId != null && expiredSlotId !== "") {
+                                return (
+                                    item.slotId === expiredSlotId &&
+                                    (!expiredEventDate || item.eventDate === expiredEventDate) &&
+                                    (!expiredHoldId || item.holdId === expiredHoldId || item.holds?.some(hold => hold.holdId === expiredHoldId))
+                                );
+                            }
+
+                            // Compatibility path for legacy cart items that do not carry a slot ID.
+                            if (item.slotId) {
+                                return false;
+                            }
+
+                            const cartItem = item as CartItem & {
+                                bookingFrom?: string;
+                                bookingTo?: string;
+                            };
+
+                            if (expiredHoldId && item.holdId && item.holdId !== expiredHoldId &&
+                                !item.holds?.some(hold => hold.holdId === expiredHoldId)) {
+                                return false;
+                            }
+
+                            if (expiredPackageId && item.packageId !== expiredPackageId) {
+                                return false;
+                            }
+
+                            if (expiredEventDate && item.eventDate && item.eventDate !== expiredEventDate) {
+                                return false;
+                            }
+
+                            if (expiredBookingFrom && cartItem.bookingFrom && cartItem.bookingFrom !== expiredBookingFrom) {
+                                return false;
+                            }
+
+                            if (expiredBookingTo && cartItem.bookingTo && cartItem.bookingTo !== expiredBookingTo) {
+                                return false;
+                            }
+
+                            return true;
+                        });
+
+                    if (expiredItem) {
+                        const shouldContinue = window.confirm(
+                            "Your selected time slot has expired. Would you like us to check availability and refresh your booking hold?"
+                        );
+
+                        if (shouldContinue) {
+                            try {
+                                const updatedCart = await renewExpiredCartHold(expiredItem, expiredHoldId);
+                                setCurrentCart(updatedCart);
+                                toast.success("Availability confirmed and your booking hold has been refreshed. You can continue checkout.");
+                            } catch (renewError: any) {
+                                console.error("Failed to refresh expired booking hold:", renewError?.response?.data ?? renewError);
+                                toast.error(renewError?.response?.data?.message || "This slot is no longer available. Please return to the service and select another slot.");
+                            }
+                        } else {
+                            toast("Your cart was left unchanged. You can return and choose another slot when ready.");
+                        }
+                    }
+                }
+                else {
+
+                    const message =
+                        responseData?.message ||
+                        "Unable to submit booking request. Please try again.";
+
+                    toast.error(
+                        message
+                    );
+                }
 
             }
             finally {
@@ -2144,12 +2584,12 @@ const BookingCheckout = () => {
 
     const bundleDiscount =
         bundlePricing?.totalDiscount ??
-        0;
+        localTotalBundleDiscount;
 
 
     const bundleFinalTotal =
         bundlePricing?.finalTotal ??
-        cartSubtotal;
+        localBundleFinalTotal;
 
 
     /*
@@ -2215,46 +2655,32 @@ const BookingCheckout = () => {
                                             displayCart.map(
                                                 item => {
 
-                                                    const bundleItem =
-                                                        bundlePricing?.items?.find(
-                                                            bundle =>
-                                                                bundle.serviceId ===
-                                                                item.serviceId
-                                                        );
-
-
                                                     const itemPricing =
                                                         cartItemPricing[
-                                                            item.serviceId
+                                                        getCartLineKey(item)
                                                         ];
 
 
                                                     const originalAmount =
-                                                        bundleItem?.originalAmount ??
-                                                        itemPricing?.subtotal ??
-                                                        Number(
-                                                            item.price
-                                                        );
+                                                        Number(itemPricing?.subtotal ?? item.price);
 
 
-                                                    const finalAmount =
-                                                        bundleItem?.finalAmount ??
-                                                        itemPricing?.totalAmount ??
-                                                        Number(
-                                                            item.price
-                                                        );
-
-
-                                                    const discountAmount =
-                                                        bundleItem?.discountAmount ??
-                                                        0;
+                                                    const lineBundleDiscount = localBundleDiscounts.get(getCartLineKey(item)) ?? 0;
+                                                    const isCompletedBundleItem = !!item.bundleId && CartService.isBundleComplete(item.bundleId);
+                                                    const amountBeforeDiscount = isCompletedBundleItem
+                                                        ? originalAmount
+                                                        : Number(itemPricing?.totalAmount ?? itemPricing?.subtotal ?? item.price);
+                                                    const finalAmount = Math.max(0, amountBeforeDiscount - lineBundleDiscount);
+                                                    const discountAmount = isCompletedBundleItem
+                                                        ? lineBundleDiscount
+                                                        : Number(itemPricing?.discountAmount ?? 0) + lineBundleDiscount;
 
 
                                                     return (
 
                                                         <div
                                                             key={
-                                                                item.serviceId
+                                                                getCartLineKey(item)
                                                             }
                                                             className="checkout-cart-item"
                                                         >
@@ -2318,6 +2744,12 @@ const BookingCheckout = () => {
 
                                                                 </div>
 
+
+                                                                {String(item.category ?? "").toUpperCase() === "STAY" && Number(item.roomQuantity ?? 1) >= 1 && (
+                                                                    <div className="checkout-service-category">
+                                                                        {`Quantity: ${Number(item.roomQuantity)} package combinations`}
+                                                                    </div>
+                                                                )}
 
                                                                 {/* EVENT DATE */}
 
@@ -2413,7 +2845,7 @@ const BookingCheckout = () => {
                                                                             <span className="service-bundle-discount">
 
                                                                                 <strong>
-                                                                                    Bundle Discount:
+                                                                                    Discount:
                                                                                 </strong>{" "}
 
                                                                                 -
@@ -2502,7 +2934,7 @@ const BookingCheckout = () => {
                                                                         {/* NORMAL DISCOUNTS */}
 
                                                                         {
-                                                                            itemPricing.discounts.map(
+                                                                            (isCompletedBundleItem ? [] : itemPricing.discounts).map(
                                                                                 (
                                                                                     discount,
                                                                                     index
@@ -2538,20 +2970,25 @@ const BookingCheckout = () => {
                                                                         }
 
 
+                                                                        {isCompletedBundleItem && lineBundleDiscount > 0 && (
+                                                                            <div className="checkout-pricing-row discount-row">
+                                                                                <span>Bundle Discount</span>
+                                                                                <strong>-{formatCurrency(lineBundleDiscount)}</strong>
+                                                                            </div>
+                                                                        )}
+
                                                                         {/* SUBTOTAL */}
 
                                                                         <div className="checkout-pricing-row">
 
                                                                             <span>
-                                                                                Subtotal
+                                                                                Total after discounts
                                                                             </span>
 
 
                                                                             <strong>
                                                                                 {
-                                                                                    formatCurrency(
-                                                                                        itemPricing.subtotal
-                                                                                    )
+                                                                                    formatCurrency(finalAmount)
                                                                                 }
                                                                             </strong>
 
@@ -2805,10 +3242,10 @@ const BookingCheckout = () => {
                                 <input
                                     type="radio"
                                     name="payment"
-                                    value="PAY_AFTER_CONFIRMATION"
+                                    value="PAY_BY_CASH"
                                     checked={
                                         paymentPreference ===
-                                        "PAY_AFTER_CONFIRMATION"
+                                        "PAY_BY_CASH"
                                     }
                                     onChange={(e) =>
                                         setPaymentPreference(
@@ -2817,7 +3254,7 @@ const BookingCheckout = () => {
                                     }
                                 />
 
-                                Pay After Vendor Confirmation
+                                Pay by Cash
 
                             </label>
 
@@ -2901,15 +3338,12 @@ const BookingCheckout = () => {
                                                 item => {
 
                                                     const itemDiscount =
-                                                        localBundleDiscounts.get(
-                                                            item.serviceId
-                                                        ) ??
-                                                        0;
+                                                        localBundleDiscounts.get(getCartLineKey(item)) ?? 0;
 
 
                                                     const itemPricing =
                                                         cartItemPricing[
-                                                            item.serviceId
+                                                        getCartLineKey(item)
                                                         ];
 
 
@@ -2923,8 +3357,7 @@ const BookingCheckout = () => {
                                                     const itemFinalPrice =
                                                         Math.max(
                                                             0,
-                                                            itemOriginalPrice -
-                                                            itemDiscount
+                                                            Number(itemPricing?.totalAmount ?? itemOriginalPrice) - itemDiscount
                                                         );
 
 
@@ -2933,7 +3366,7 @@ const BookingCheckout = () => {
                                                         <div
                                                             className="summary-row"
                                                             key={
-                                                                item.serviceId
+                                                                getCartLineKey(item)
                                                             }
                                                         >
 
@@ -2987,16 +3420,16 @@ const BookingCheckout = () => {
 
 
                                         {/* =================================
-                                            BUNDLE DISCOUNT
+                                            DISCOUNTS
                                         ================================= */}
 
                                         {
-                                            localTotalBundleDiscount > 0 && (
+                                            localTotalDiscount > 0 && (
 
                                                 <div className="summary-row discount-row">
 
                                                     <span>
-                                                        Bundle Discount
+                                                        Discount
                                                     </span>
 
 
@@ -3004,7 +3437,7 @@ const BookingCheckout = () => {
                                                         -
                                                         {
                                                             formatCurrency(
-                                                                localTotalBundleDiscount
+                                                                localTotalDiscount
                                                             )
                                                         }
                                                     </strong>
@@ -3041,12 +3474,11 @@ const BookingCheckout = () => {
 
 
                                         {
-                                            localTotalBundleDiscount <= 0 && (
+                                            localTotalDiscount <= 0 && (
 
                                                 <p className="payment-message">
 
-                                                    No bundle discount applies
-                                                    to the selected services.
+                                                    Individual service discounts are already included in the displayed totals.
 
                                                 </p>
 

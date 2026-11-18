@@ -1,0 +1,7 @@
+.support-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 18px; margin-top: 22px; }
+.support-card { padding: 24px; border: 1px solid #e3e8ef; border-radius: 16px; background: #fff; }
+.support-card h3 { margin: 0 0 10px; }
+.support-card p { color: #64748b; line-height: 1.55; }
+.support-card__link { display: inline-flex; margin-top: 8px; padding: 10px 16px; border-radius: 8px; background: #0876bd; color: #fff; font-weight: 600; text-decoration: none; }
+.support-card__link:hover { background: #075f99; }
+.app-version { margin-top: 28px; color: #718096; font-size: .9rem; text-align: center; }

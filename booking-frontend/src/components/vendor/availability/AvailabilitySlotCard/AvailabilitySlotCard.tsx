@@ -4,8 +4,8 @@ import {
     FaCog
 } from "react-icons/fa";
 
-import type { BookingSlot } from "../../../types/BookingSlot";
-import type { AvailabilityOverride } from "../../../types/AvailabilityOverride";
+import type { BookingSlot } from "../../../../types/BookingSlot";
+import type { AvailabilityOverride } from "../../../../types/AvailabilityOverride";
 
 import formatTime from "../../../../util/timeFormatter";
 
@@ -19,6 +19,8 @@ interface Props {
 
     onManage: () => void;
 
+    isStayService?: boolean;
+
 }
 
 export default function AvailabilitySlotCard({
@@ -27,7 +29,9 @@ export default function AvailabilitySlotCard({
 
     override,
 
-    onManage
+    onManage,
+
+    isStayService = false
 
 }: Props) {
 
@@ -107,7 +111,7 @@ export default function AvailabilitySlotCard({
 
             </div>
 
-            <div className="availability-slot-body">
+            {!isStayService && <div className="availability-slot-body">
 
                 <div>
 
@@ -163,7 +167,7 @@ export default function AvailabilitySlotCard({
 
                 }
 
-            </div>
+            </div>}
 
             <button
 

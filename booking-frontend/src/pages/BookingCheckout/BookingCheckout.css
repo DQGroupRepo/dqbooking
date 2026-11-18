@@ -865,3 +865,84 @@
     }
 
 }
+
+/* Refined selected-service cards: readable hierarchy and responsive spacing. */
+.checkout-cart-item {
+    margin: 14px 0;
+    padding: 20px 46px 20px 20px;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    background: #fff;
+    box-shadow: 0 3px 12px rgba(15, 40, 70, 0.045);
+}
+
+.checkout-cart-item:last-child { border-bottom: 1px solid #e2e8f0; }
+.checkout-service-first-row { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
+.checkout-service-info { width: 100%; max-width: 100%; gap: 5px; }
+.checkout-service-name { font-size: 16px; }
+.checkout-service-vendor { font-size: 12px; }
+.checkout-service-event-date,
+.checkout-service-guests { color: #475569; font-size: 13px; line-height: 1.5; }
+.checkout-service-event-date strong,
+.checkout-service-guests strong { color: #1e293b; }
+.checkout-service-second-row { margin-top: 14px; padding-top: 12px; border-top: 1px solid #edf1f5; }
+.checkout-service-pricing { gap: 12px 22px; margin-top: 0; font-size: 13px; }
+.checkout-service-pricing-details { margin-top: 12px; padding: 12px 14px; border-radius: 9px; background: #f8fafc; }
+.remove-service-button { position: absolute; top: 18px; right: 14px; border: 0; border-radius: 8px; background: #fff1f2; color: #dc2626; width: 34px; height: 34px; cursor: pointer; }
+.total-bundle-discount-row { display: flex; justify-content: space-between; gap: 12px; padding: 12px 0; color: #047857; border-top: 1px solid #e5e7eb; }
+
+@media (max-width: 768px) {
+    .checkout-cart-item { padding: 16px 42px 16px 14px; }
+    .checkout-service-pricing { gap: 8px 14px; }
+}
+@media (max-width: 600px) {
+    .checkout-section { padding: 28px 0; }
+    .checkout-card, .booking-summary { padding: 16px; }
+    .checkout-cart-item { padding: 14px 38px 14px 12px; }
+    .checkout-service-name { font-size: 15px; }
+    .checkout-service-event-date, .checkout-service-guests { font-size: 12px; }
+    .checkout-service-pricing { align-items: flex-start; flex-direction: column; gap: 6px; }
+    .remove-service-button { top: 12px; right: 8px; }
+}
+
+/* Keep each pricing component distinct and readable in the selected-service card. */
+.checkout-service-pricing-details .checkout-pricing-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 5px 0;
+    line-height: 1.45;
+}
+
+.checkout-service-pricing-details .checkout-pricing-row span {
+    min-width: 0;
+}
+
+.checkout-service-pricing-details .checkout-pricing-row strong {
+    flex: 0 0 auto;
+    text-align: right;
+    white-space: nowrap;
+}
+
+.checkout-service-pricing-details .checkout-pricing-row.discount-row {
+    color: #059669;
+}
+
+.checkout-service-pricing-details .checkout-pricing-row:last-child {
+    margin-top: 5px;
+    padding-top: 9px;
+    border-top: 1px solid #e2e8f0;
+    font-weight: 700;
+}
+
+@media (max-width: 600px) {
+    .checkout-service-pricing-details {
+        padding: 10px 12px;
+    }
+
+    .checkout-service-pricing-details .checkout-pricing-row {
+        gap: 10px;
+        font-size: 12px;
+    }
+}

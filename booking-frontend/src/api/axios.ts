@@ -1,20 +1,13 @@
+import { clearAuthSession, getAuthToken } from "../util/authStorage";
 import axios from "axios";
 
-
 const api = axios.create({
+  baseURL: "https://dqbooking-z0gb.onrender.com/api",
 
-    baseURL:
-        "http://localhost:8080/api",
-
-    headers: {
-
-        "Content-Type":
-            "application/json"
-
-    }
-
+  headers: {
+    "Content-Type": "application/json",
+  },
 });
-
 
 /*
  * =========================================
@@ -25,37 +18,20 @@ const api = axios.create({
  */
 
 api.interceptors.request.use(
+  (config) => {
+    const token = getAuthToken();
 
-    (config) => {
-
-        const token =
-            localStorage.getItem(
-                "eventnest_token"
-            );
-
-
-        if (token) {
-
-            config.headers.Authorization =
-                `Bearer ${token}`;
-
-        }
-
-
-        return config;
-
-    },
-
-    (error) => {
-
-        return Promise.reject(
-            error
-        );
-
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
     }
 
-);
+    return config;
+  },
 
+  (error) => {
+    return Promise.reject(error);
+  },
+);
 
 /*
  * =========================================
@@ -66,66 +42,35 @@ api.interceptors.request.use(
  */
 
 api.interceptors.response.use(
+  (response) => response,
 
-    (response) =>
-        response,
+  (error) => {
+    /*
+     * Do not automatically redirect from
+     * the login endpoint itself.
+     */
 
-    (error) => {
+    const requestUrl = error.config?.url ?? "";
 
-        /*
-         * Do not automatically redirect from
-         * the login endpoint itself.
-         */
+    if (error.response?.status === 401 && !requestUrl.includes("/auth/login")) {
+      /*
+       * Remove only authentication data.
+       *
+       * Avoid localStorage.clear() because
+       * other application data may exist.
+       */
 
-        const requestUrl =
-            error.config?.url ?? "";
+      clearAuthSession();
 
+      /*
+       * Notify AuthContext.
+       */
 
-        if (
-            error.response?.status === 401 &&
-            !requestUrl.includes(
-                "/auth/login"
-            )
-        ) {
-
-            /*
-             * Remove only authentication data.
-             *
-             * Avoid localStorage.clear() because
-             * other application data may exist.
-             */
-
-            localStorage.removeItem(
-                "eventnest_token"
-            );
-
-            localStorage.removeItem(
-                "eventnest_user"
-            );
-
-
-            /*
-             * Notify AuthContext.
-             */
-
-            window.dispatchEvent(
-
-                new Event(
-                    "eventnest-auth-expired"
-                )
-
-            );
-
-        }
-
-
-        return Promise.reject(
-            error
-        );
-
+      window.dispatchEvent(new Event("eventnest-auth-expired"));
     }
 
+    return Promise.reject(error);
+  },
 );
-
 
 export default api;

@@ -6,6 +6,7 @@ import lombok.Getter;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Getter
 @Builder
@@ -23,6 +24,8 @@ public class PaymentHistoryResponse {
 
     private PaymentStatus paymentStatus;
 
-    private LocalDate eventDate;
+    private LocalDateTime bookingFrom;
+
+    private LocalDateTime bookingTo;
 
 }

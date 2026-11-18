@@ -27,7 +27,20 @@ interface BookingResponse {
 
     venue: string;
 
-    eventDate: string;
+    eventDate?: string;
+    bookingFrom?: string;
+    bookingTo?: string;
+    serviceCategory?: string;
+    bookingType?: string;
+    roomQuantity?: number;
+    slotId?: string;
+    slotName?: string;
+    slotStartTime?: string;
+    slotEndTime?: string;
+    resourceTypeName?: string;
+    resourceIds?: string[];
+    resourceNames?: string[];
+    vendorCanCancel?: boolean;
 
     guestCount: number;
 
@@ -72,9 +85,26 @@ interface BookingDetailsResponse {
 
     vendorEmail: string;
 
+    customerName?: string | null;
+    customerPhone?: string | null;
+    customerEmail?: string | null;
+
     bookingDate: string;
 
     eventDate: string;
+    bookingFrom?: string;
+    bookingTo?: string;
+    serviceCategory?: string;
+    bookingType?: string;
+    roomQuantity?: number;
+    slotId?: string;
+    slotName?: string;
+    slotStartTime?: string;
+    slotEndTime?: string;
+    resourceTypeName?: string;
+    resourceIds?: string[];
+    resourceNames?: string[];
+    vendorCanCancel?: boolean;
 
     guestCount: number;
 
@@ -225,7 +255,21 @@ class BookingStatsService {
                 booking.venue,
 
             eventDate:
-                booking.eventDate,
+                booking.eventDate ?? booking.bookingFrom?.slice(0, 10) ?? "",
+
+            bookingFrom: booking.bookingFrom,
+            bookingTo: booking.bookingTo,
+            serviceCategory: booking.serviceCategory,
+            bookingType: booking.bookingType,
+            roomQuantity: booking.roomQuantity,
+            slotId: booking.slotId,
+            slotName: booking.slotName,
+            slotStartTime: booking.slotStartTime,
+            slotEndTime: booking.slotEndTime,
+            resourceTypeName: booking.resourceTypeName,
+            resourceIds: booking.resourceIds,
+            resourceNames: booking.resourceNames,
+            vendorCanCancel: booking.vendorCanCancel,
 
             guestCount:
                 booking.guestCount,
@@ -273,20 +317,9 @@ class BookingStatsService {
                 booking.bookingNumber,
 
 
-            /*
-             * Customer information is not
-             * currently included in the
-             * details response.
-             */
-
-            customerName:
-                "",
-
-            customerPhone:
-                "",
-
-            customerEmail:
-                "",
+            customerName: booking.customerName ?? "",
+            customerPhone: booking.customerPhone ?? "",
+            customerEmail: booking.customerEmail ?? "",
 
 
             serviceName:
@@ -303,7 +336,21 @@ class BookingStatsService {
 
 
             eventDate:
-                booking.eventDate,
+                booking.eventDate ?? booking.bookingFrom?.slice(0, 10) ?? "",
+
+            bookingFrom: booking.bookingFrom,
+            bookingTo: booking.bookingTo,
+            serviceCategory: booking.serviceCategory,
+            bookingType: booking.bookingType,
+            roomQuantity: booking.roomQuantity,
+            slotId: booking.slotId,
+            slotName: booking.slotName,
+            slotStartTime: booking.slotStartTime,
+            slotEndTime: booking.slotEndTime,
+            resourceTypeName: booking.resourceTypeName,
+            resourceIds: booking.resourceIds,
+            resourceNames: booking.resourceNames,
+            vendorCanCancel: booking.vendorCanCancel,
 
             guestCount:
                 booking.guestCount,

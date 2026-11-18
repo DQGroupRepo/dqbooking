@@ -156,3 +156,304 @@
     }
 
 }
+
+/* Horizontal testimonial rail; review content remains the existing hardcoded sample data. */
+.vendor-reviews { margin-top: 34px; }
+.vendor-reviews h2 { color: #4b2d1c; margin-bottom: 16px; }
+.reviews-carousel {
+    display: flex;
+    gap: 14px;
+    width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 2px 2px 14px;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+    scrollbar-width: thin;
+    scrollbar-color: #d9ad88 #f8eee5;
+}
+.review-card {
+    flex: 0 0 calc(50% - 7px);
+    min-width: 260px;
+    width: auto;
+    margin: 0;
+    padding: 20px;
+    border: 1px solid #efdfd0;
+    border-radius: 14px;
+    background: #fffdfb;
+    box-shadow: 0 4px 14px rgba(93,58,31,.045);
+    scroll-snap-align: start;
+}
+.review-stars { color: #d58a27; }
+.review-card p { color: #695748; }
+.review-card strong { color: #4b2d1c; }
+@media (max-width: 600px) {
+    .vendor-reviews { margin-top: 26px; }
+    .vendor-reviews h2 { font-size: 22px; margin-bottom: 12px; }
+    .review-card { flex-basis: 86%; min-width: 0; padding: 17px; }
+}
+
+/* Horizontal review rail, retaining the current hardcoded review entries. */
+.vendor-reviews { min-width: 0; }
+.vendor-reviews h2 { color: #0b3550; }
+.reviews-carousel {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 14px;
+    width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 2px 2px 13px;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+    scrollbar-width: thin;
+    scrollbar-color: #78aabd #e7eef4;
+}
+.review-card {
+    flex: 0 0 min(48%, 350px);
+    min-width: 260px;
+    width: auto;
+    margin: 0;
+    padding: 19px;
+    border: 1px solid #dce6ef;
+    border-radius: 14px;
+    background: #fff;
+    box-shadow: 0 4px 14px rgba(12,48,74,.045);
+    scroll-snap-align: start;
+}
+.review-stars { color: #e58a28; }
+.review-card p { color: #526579; }
+.review-card strong { color: #0b3550; }
+@media (max-width: 600px) { .review-card { flex-basis: 86%; min-width: 0; } }
+
+/* Final review rail: align with package section and keep testimonials horizontal. */
+.vendor-detail-page .vendor-reviews {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    margin: 30px 0 0;
+    padding: 0;
+    align-self: stretch;
+    box-sizing: border-box;
+    text-align: left;
+    font-family: Inter, "Segoe UI", Arial, sans-serif;
+}
+.vendor-detail-page .vendor-reviews h2 {
+    margin: 0 0 14px;
+    color: #0b3550;
+    text-align: left;
+    font-family: Inter, "Segoe UI", Arial, sans-serif;
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.025em;
+}
+.vendor-detail-page .vendor-reviews .reviews-carousel {
+    display: flex !important;
+    flex-direction: row;
+    flex-wrap: nowrap !important;
+    align-items: stretch;
+    justify-content: flex-start;
+    gap: 14px;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    padding: 2px 2px 14px;
+    margin: 0;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: #7895b0 #e7edf4;
+}
+.vendor-detail-page .vendor-reviews .review-card {
+    display: flex;
+    flex: 0 0 min(48%, 350px);
+    flex-direction: column;
+    width: auto;
+    min-width: 260px;
+    max-width: 350px;
+    margin: 0;
+    padding: 19px;
+    border: 1px solid #dce6ef;
+    border-radius: 14px;
+    background: #fff;
+    box-shadow: 0 4px 14px rgba(12,48,74,.045);
+    scroll-snap-align: start;
+    box-sizing: border-box;
+}
+.vendor-detail-page .vendor-reviews .review-stars { color: #e58a28; }
+.vendor-detail-page .vendor-reviews .review-card p { color: #526579; }
+.vendor-detail-page .vendor-reviews .review-card strong { color: #0b3550; }
+@media (max-width: 600px) {
+    .vendor-detail-page .vendor-reviews .review-card { flex-basis: 86%; min-width: 0; }
+}
+
+
+/* =========================================================
+   FINAL REVIEW WIDTH / ALIGNMENT CORRECTION
+   Keep the review section the full width of the package column.
+   Preserve card proportions; do not turn the rail into a narrow list.
+   ========================================================= */
+.vendor-detail-page .vendor-reviews {
+    display: block;
+    width: 100% !important;
+    max-width: none !important;
+    min-width: 0;
+    margin: 30px 0 0 !important;
+    padding: 0;
+    box-sizing: border-box;
+    align-self: stretch;
+}
+
+.vendor-detail-page .vendor-reviews h2 {
+    width: 100%;
+    margin: 0 0 14px;
+    text-align: left;
+}
+
+.vendor-detail-page .vendor-reviews .reviews-carousel {
+    display: flex !important;
+    width: 100% !important;
+    max-width: none !important;
+    flex-flow: row nowrap !important;
+    justify-content: flex-start;
+    align-items: stretch;
+    gap: 16px;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    margin: 0;
+    padding: 2px 2px 14px;
+    box-sizing: border-box;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: #7895b0 #e8eef4;
+}
+
+.vendor-detail-page .vendor-reviews .review-card {
+    display: flex;
+    flex: 0 0 min(48%, 350px) !important;
+    width: auto !important;
+    min-width: 300px;
+    max-width: 350px !important;
+    min-height: 150px;
+    margin: 0 !important;
+    padding: 20px;
+    box-sizing: border-box;
+    border: 1px solid #dce6ef;
+    border-radius: 14px;
+    background: #fff;
+    box-shadow: 0 4px 14px rgba(12, 48, 74, .06);
+    scroll-snap-align: start;
+}
+
+.vendor-detail-page .vendor-reviews .reviews-carousel::-webkit-scrollbar {
+    height: 7px;
+}
+.vendor-detail-page .vendor-reviews .reviews-carousel::-webkit-scrollbar-track {
+    background: #e8eef4;
+    border-radius: 999px;
+}
+.vendor-detail-page .vendor-reviews .reviews-carousel::-webkit-scrollbar-thumb {
+    background: #7895b0;
+    border: 1px solid #e8eef4;
+    border-radius: 999px;
+}
+.vendor-detail-page .vendor-reviews .reviews-carousel::-webkit-scrollbar-thumb:hover {
+    background: #14558a;
+}
+
+@media (max-width: 600px) {
+    .vendor-detail-page .vendor-reviews .review-card {
+        flex: 0 0 min(86vw, 350px) !important;
+        min-width: min(86vw, 350px);
+    }
+}
+
+
+/* Latest fix: the component now renders this real carousel wrapper. */
+.vendor-detail-page .vendor-reviews {
+    display: block;
+    width: 100%;
+    max-width: none;
+    min-width: 0;
+    margin: 30px 0 0;
+    padding: 0;
+    box-sizing: border-box;
+    text-align: left;
+}
+
+.vendor-detail-page .vendor-reviews h2 {
+    width: 100%;
+    margin: 0 0 16px;
+    text-align: left;
+}
+
+.vendor-detail-page .vendor-reviews .reviews-carousel {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: stretch;
+    justify-content: flex-start;
+    gap: 16px;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    margin: 0;
+    padding: 2px 2px 14px;
+    box-sizing: border-box;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+    scrollbar-width: thin;
+    scrollbar-color: #7895b0 #e8eef4;
+}
+
+.vendor-detail-page .vendor-reviews .review-card {
+    display: flex;
+    flex: 0 0 350px;
+    flex-direction: column;
+    width: 350px;
+    min-width: 300px;
+    max-width: 350px;
+    min-height: 150px;
+    margin: 0;
+    padding: 20px;
+    box-sizing: border-box;
+    border: 1px solid #dce6ef;
+    border-radius: 14px;
+    background: #fff;
+    box-shadow: 0 4px 14px rgba(12, 48, 74, .06);
+    scroll-snap-align: start;
+}
+
+.vendor-detail-page .vendor-reviews .review-card p {
+    flex: 1;
+}
+
+.vendor-detail-page .vendor-reviews .reviews-carousel::-webkit-scrollbar {
+    height: 7px;
+}
+.vendor-detail-page .vendor-reviews .reviews-carousel::-webkit-scrollbar-track {
+    background: #e8eef4;
+    border-radius: 999px;
+}
+.vendor-detail-page .vendor-reviews .reviews-carousel::-webkit-scrollbar-thumb {
+    background: #7895b0;
+    border: 1px solid #e8eef4;
+    border-radius: 999px;
+}
+.vendor-detail-page .vendor-reviews .reviews-carousel::-webkit-scrollbar-thumb:hover {
+    background: #14558a;
+}
+
+@media (max-width: 600px) {
+    .vendor-detail-page .vendor-reviews .review-card {
+        flex: 0 0 min(86vw, 350px);
+        width: min(86vw, 350px);
+        min-width: min(86vw, 350px);
+    }
+}

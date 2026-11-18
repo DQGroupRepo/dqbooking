@@ -1,24 +1,15 @@
 import api from "../api/axiosConfig";
 
-import type { FeaturedService }
-    from "../types/FeaturedService";
-
+import type { VendorListing } from "../types/VendorListing";
 
 class CustomerServiceService {
+  async getFeaturedServices(): Promise<VendorListing[]> {
+    const response = await api.get<VendorListing[]>(
+      "/customer/services/featured",
+    );
 
-    async getFeaturedServices():
-        Promise<FeaturedService[]> {
-
-        const response =
-            await api.get<FeaturedService[]>(
-                "/customer/services/featured"
-            );
-
-        return response.data;
-
-    }
-
+    return response.data;
+  }
 }
-
 
 export default new CustomerServiceService();

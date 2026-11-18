@@ -93,3 +93,77 @@
     background:#e9e9e9;
 
 }
+
+@media (max-width: 700px) {
+    .service-workspace {
+        padding: 14px 12px 22px;
+        min-width: 0;
+        overflow: hidden;
+    }
+
+    .workspace-header {
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 12px;
+    }
+
+    .workspace-header > div {
+        min-width: 0;
+        flex: 1 1 auto;
+    }
+
+    .workspace-header h1 {
+        font-size: 20px;
+        line-height: 1.2;
+    }
+
+    .workspace-header p {
+        margin: 4px 0 0;
+        font-size: 12px;
+        line-height: 1.35;
+    }
+
+    .workspace-back-btn {
+        flex: 0 0 auto;
+        max-width: 112px;
+        padding: 8px 10px;
+        border: 1px solid #dbe5ef;
+        border-radius: 9px;
+        background: #fff;
+        color: #0f4c81;
+        font-size: 11px;
+        line-height: 1.25;
+        white-space: normal;
+    }
+
+    .workspace-tabs {
+        display: flex;
+        flex-wrap: nowrap;
+        gap: 4px;
+        margin: 0 -12px 18px;
+        padding: 0 12px;
+        overflow-x: auto;
+        overflow-y: hidden;
+        border-bottom: 1px solid #e5edf5;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        scroll-snap-type: x proximity;
+    }
+
+    .workspace-tabs::-webkit-scrollbar {
+        display: none;
+    }
+
+    .workspace-tabs a {
+        flex: 0 0 auto;
+        padding: 11px 13px 10px;
+        font-size: 12px;
+        white-space: nowrap;
+        scroll-snap-align: start;
+    }
+
+    .workspace-content {
+        min-height: 0;
+        min-width: 0;
+    }
+}

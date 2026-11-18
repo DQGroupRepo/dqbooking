@@ -61,55 +61,38 @@ public class AvailabilityOverrideServiceImpl
                     );
                 });
 
-        BookingSlot slot = bookingSlotRepository.findById(
-                        request.getSlotId())
-                .orElseThrow(() -> {
-                    log.warn(
-                            "Cannot create availability override. Booking slot not found slotId={}",
-                            request.getSlotId()
-                    );
-
-                    return new ResourceNotFoundException(
-                            "Booking Slot not found."
-                    );
-                });
-
-        if (!slot.getServiceId().equals(serviceId)) {
-
-            log.warn(
-                    "Booking slot does not belong to service serviceId={} slotId={}",
-                    serviceId,
-                    request.getSlotId()
-            );
-
+        boolean hasSlot = request.getSlotId() != null && !request.getSlotId().isBlank();
+        boolean hasRoomType = request.getRoomTypeId() != null && !request.getRoomTypeId().isBlank();
+        if (!hasSlot || hasRoomType) {
             throw new IllegalArgumentException(
-                    "Booking Slot does not belong to this service."
-            );
+                    "Availability overrides must target a booking slot. Room-type overrides are no longer supported.");
         }
 
-        validateOverride(request.getCapacityOverride());
+        BookingSlot slot = bookingSlotRepository.findById(request.getSlotId())
+                .orElseThrow(() -> new ResourceNotFoundException("Booking Slot not found."));
+        if (!serviceId.equals(slot.getServiceId())) {
+            throw new IllegalArgumentException("Booking Slot does not belong to this service.");
+        }
+        if (repository.existsByServiceIdAndSlotIdAndDate(serviceId, request.getSlotId(), request.getDate())) {
+            throw new ResourceAlreadyExistsException("Availability override already exists.");
+        }
 
-        if (repository.existsByServiceIdAndSlotIdAndDate(
-                serviceId,
-                request.getSlotId(),
-                request.getDate())) {
-
-            log.warn(
-                    "Availability override already exists serviceId={} slotId={} date={}",
-                    serviceId,
-                    request.getSlotId(),
-                    request.getDate()
-            );
-
-            throw new ResourceAlreadyExistsException(
-                    "Availability override already exists."
-            );
+        boolean isStay = service.getCategory() == com.booking.model.enums.ServiceCategory.STAY;
+        if (!isStay) {
+            validateOverride(request.getCapacityOverride());
         }
 
         AvailabilityOverride override =
                 mapper.toEntity(request);
+        if (isStay) {
+            override.setCapacityOverride(null);
+        }
 
         override.setServiceId(service.getId());
+        // STAY uses physical Resource Type inventory; its slot override is
+        // block-only. Non-STAY services retain slot capacity overrides.
+        override.setRoomTypeId(null);
+        override.setSlotId(request.getSlotId());
 
         override = repository.save(override);
 
@@ -137,12 +120,20 @@ public class AvailabilityOverrideServiceImpl
         AvailabilityOverride override =
                 getOverrideEntity(overrideId);
 
-        validateOverride(request.getCapacityOverride());
+        VendorService service = vendorServiceRepository.findById(override.getServiceId())
+                .orElseThrow(() -> new ResourceNotFoundException("Vendor Service not found."));
+        boolean isStay = service.getCategory() == com.booking.model.enums.ServiceCategory.STAY;
+        if (!isStay) {
+            validateOverride(request.getCapacityOverride());
+        }
 
         mapper.updateEntity(
                 override,
                 request
         );
+        if (isStay) {
+            override.setCapacityOverride(null);
+        }
 
         override = repository.save(override);
 

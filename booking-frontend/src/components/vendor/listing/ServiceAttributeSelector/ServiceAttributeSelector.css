@@ -1,0 +1,103 @@
+.service-attribute-selector {
+  margin: 18px 0 26px;
+  padding: 18px 20px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: #fff;
+}
+.service-attribute-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.service-attribute-heading h3 {
+  margin: 0 0 5px;
+  color: #202938;
+  font-size: 16px;
+  font-weight: 650;
+}
+.service-attribute-heading p {
+  margin: 0;
+  color: #687386;
+  font-size: 13px;
+}
+.service-attribute-heading > span {
+  color: #667085;
+  font-size: 12px;
+  white-space: nowrap;
+}
+.service-attribute-selected,
+.service-attribute-suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.service-attribute-selected {
+  margin-bottom: 14px;
+}
+.service-attribute-chip {
+  border: 1px solid #d8dee8;
+  border-radius: 20px;
+  padding: 7px 12px;
+  background: #fff;
+  color: #344054;
+  font-size: 13px;
+  line-height: 1.25;
+  cursor: pointer;
+  transition: background .15s ease, border-color .15s ease, color .15s ease;
+}
+.service-attribute-chip:hover {
+  border-color: #64748b;
+  background: #f8fafc;
+}
+.service-attribute-chip.selected {
+  border-color: #b7c9ee;
+  background: #eef4ff;
+  color: #244a85;
+}
+.service-attribute-search {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 13px;
+}
+.service-attribute-search input {
+  flex: 1;
+  min-width: 0;
+  height: 42px;
+  padding: 0 12px;
+  border: 1px solid #d0d5dd;
+  border-radius: 8px;
+  outline: none;
+  font: inherit;
+  font-size: 14px;
+}
+.service-attribute-search input:focus {
+  border-color: #6687c8;
+  box-shadow: 0 0 0 3px rgba(77, 117, 190, .12);
+}
+.service-attribute-search > button {
+  border: 0;
+  border-radius: 8px;
+  padding: 0 13px;
+  background: #253f70;
+  color: #fff;
+  font-size: 13px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.service-attribute-search > button:disabled {
+  opacity: .6;
+  cursor: wait;
+}
+.service-attribute-empty {
+  color: #8a94a5;
+  font-size: 13px;
+  padding: 5px 0;
+}
+@media (max-width: 600px) {
+  .service-attribute-selector { padding: 15px; }
+  .service-attribute-search { flex-direction: column; }
+  .service-attribute-search > button { min-height: 40px; }
+}

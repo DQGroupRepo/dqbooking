@@ -1,3 +1,4 @@
+import RatingStars from "../common/RatingStars";
 import "./VendorReviews.css";
 
 
@@ -41,16 +42,18 @@ const VendorReviews = () => {
 
 
 
-      {reviews.map((review,index)=>(
+      <div className="reviews-carousel" aria-label="Customer reviews">
 
-        <div
-          className="review-card"
-          key={index}
-        >
+        {reviews.map((review,index)=>(
+
+          <div
+            className="review-card"
+            key={index}
+          >
 
           <div className="review-stars">
 
-            {"⭐".repeat(review.rating)}
+            <RatingStars value={review.rating} size="medium" />
 
           </div>
 
@@ -65,10 +68,11 @@ const VendorReviews = () => {
           </strong>
 
 
-        </div>
+          </div>
 
-      ))}
+        ))}
 
+      </div>
 
     </section>
 

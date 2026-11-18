@@ -1,3 +1,4 @@
+import MobileCarousel from "../../../common/MobileCarousel/MobileCarousel";
 import "./AvailabilitySummary.css";
 
 interface Props{
@@ -10,6 +11,8 @@ interface Props{
 
     availableCapacity:number;
 
+    isStayService?: boolean;
+
 }
 
 export default function AvailabilitySummary({
@@ -20,13 +23,15 @@ export default function AvailabilitySummary({
 
     blockedSlots,
 
-    availableCapacity
+    availableCapacity,
+
+    isStayService = false
 
 }:Props){
 
     return(
 
-        <div className="availability-summary">
+        <MobileCarousel className="availability-summary" ariaLabel="Availability summary" itemsPerPage={2}>
 
             <div className="summary-card">
 
@@ -60,15 +65,15 @@ export default function AvailabilitySummary({
 
             </div>
 
-            <div className="summary-card">
+            {!isStayService && <div className="summary-card">
 
                 <span>Available Capacity</span>
 
                 <h3>{availableCapacity}</h3>
 
-            </div>
+            </div>}
 
-        </div>
+        </MobileCarousel>
 
     );
 

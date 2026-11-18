@@ -5,6 +5,7 @@ import com.booking.model.embedded.Availability;
 import com.booking.model.embedded.BookingSettings;
 import com.booking.model.embedded.ContactInfo;
 import com.booking.model.embedded.ServicePackage;
+import com.booking.model.embedded.ServiceResourceType;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -39,6 +40,8 @@ public class VendorDetailResponse {
 
     private List<String> imageUrls;
 
+    private List<String> facilities;
+
     private List<String> amenities;
 
     private List<ServiceDetailSectionResponse> detailSections;
@@ -52,5 +55,7 @@ public class VendorDetailResponse {
     private String location;
 
     private List<ServicePackage> packages;
+
+    private List<ServiceResourceType> resourceTypes;
 
 }

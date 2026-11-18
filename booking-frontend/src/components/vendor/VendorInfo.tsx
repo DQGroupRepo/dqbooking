@@ -1,4 +1,5 @@
 import type { VendorDetail } from "../../types/VendorDetail";
+import RatingStars from "../common/RatingStars";
 import "./VendorInfo.css";
 
 
@@ -31,9 +32,7 @@ const VendorInfo = ({ vendor }: Props) => {
 
       <div className="rating-large">
 
-        <span>
-          ⭐⭐⭐⭐⭐
-        </span>
+        <RatingStars value={Number(vendor.rating ?? 0)} size="large" />
 
         <span className="rating-text">
           {vendor.rating}

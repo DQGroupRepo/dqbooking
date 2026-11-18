@@ -1,3 +1,4 @@
+import Loader from "../../common/Loader";
 import { useEffect, useState } from "react";
 
 import SectionHeader from "../../common/ui/SectionHeader/SectionHeader";
@@ -58,7 +59,7 @@ export default function NotificationSettings(){
 
     if(!profile){
 
-        return <h2>Loading...</h2>;
+        return <Loader />;
 
     }
 

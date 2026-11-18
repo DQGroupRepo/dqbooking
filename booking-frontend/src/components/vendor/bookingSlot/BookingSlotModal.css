@@ -1,55 +1,93 @@
-.slot-modal-overlay{
-
-    position:fixed;
-
-    inset:0;
-
-    background:rgba(0,0,0,.45);
-
-    display:flex;
-
-    justify-content:center;
-
-    align-items:center;
-
-    z-index:1000;
-
+.slot-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    padding: 16px;
+    overflow-y: auto;
 }
 
-.slot-modal{
-
-    background:white;
-
-    width:480px;
-
-    max-width:95%;
-
-    border-radius:12px;
-
-    padding:30px;
-
-    display:flex;
-
-    flex-direction:column;
-
-    gap:20px;
-
-    box-shadow:0 10px 40px rgba(0,0,0,.25);
-
+.slot-modal {
+    box-sizing: border-box;
+    background: white;
+    width: 480px;
+    max-width: 100%;
+    max-height: calc(100vh - 32px);
+    overflow-y: auto;
+    border-radius: 12px;
+    padding: 30px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.25);
 }
 
-.slot-modal h2{
-
-    margin:0;
-
+.slot-modal h2 {
+    margin: 0;
 }
 
-.slot-modal-actions{
+.slot-duration-preview {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 6px 10px;
+    margin-top: -8px;
+    padding: 12px 14px;
+    border: 1px solid #dce8f8;
+    border-radius: 10px;
+    background: #f5f9ff;
+    color: #163b70;
+}
 
-    display:flex;
+.slot-duration-label {
+    width: 100%;
+    font-size: 12px;
+    color: #5d6f88;
+}
 
-    justify-content:flex-end;
+.slot-duration-preview strong {
+    font-size: 20px;
+    line-height: 1.2;
+}
 
-    gap:12px;
+.slot-duration-detail {
+    font-size: 13px;
+    color: #52657e;
+}
 
+.slot-duration-preview.overnight {
+    border-color: #f1d7a8;
+    background: #fff9ed;
+    color: #7a4a00;
+}
+
+.slot-duration-error {
+    margin: -8px 0 0;
+    color: #b42318;
+    font-size: 12px;
+}
+
+.slot-modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+@media (max-width: 480px) {
+    .slot-modal {
+        padding: 20px 16px;
+        gap: 14px;
+    }
+
+    .slot-modal-actions {
+        width: 100%;
+    }
+
+    .slot-modal-actions > * {
+        flex: 1;
+    }
 }

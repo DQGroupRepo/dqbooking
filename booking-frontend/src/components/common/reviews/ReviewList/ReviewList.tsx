@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 
 import VendorReviewService from "../../../../services/VendorReviewService";
-import type { VendorReview } from "../../../types/VendorReview";
+import type { Review } from "../../../../types/Review";
+import RatingStars from "../../RatingStars";
 
 import styles from "./ReviewList.module.css";
 
@@ -10,6 +11,8 @@ interface Props {
     title?: string;
 
     limit?: number;
+
+    serviceId: string;
 
     layout?: "grid" | "list";
 
@@ -21,22 +24,24 @@ export default function ReviewList({
 
     limit,
 
+    serviceId,
+
     layout = "list"
 
 }: Props) {
 
-    const [reviews, setReviews] = useState<VendorReview[]>([]);
+    const [reviews, setReviews] = useState<Review[]>([]);
 
     useEffect(() => {
 
         loadReviews();
 
-    }, []);
+    }, [serviceId, limit]);
 
     async function loadReviews() {
 
         const data =
-            await VendorReviewService.getReviews();
+            await VendorReviewService.getReviews(serviceId);
 
         setReviews(limit ? data.slice(0, limit) : data);
 
@@ -65,7 +70,7 @@ export default function ReviewList({
 
                         <div className={styles.stars}>
 
-                            {"⭐".repeat(review.rating)}
+                            <RatingStars value={review.rating} size="medium" />
 
                         </div>
 

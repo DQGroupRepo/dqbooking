@@ -10,7 +10,7 @@ const AdminSidebar = () => {
 
             <div className="admin-sidebar-header">
 
-                <h2>EventNest</h2>
+                <h2>DQBookings</h2>
 
                 <span>Admin Panel</span>
 

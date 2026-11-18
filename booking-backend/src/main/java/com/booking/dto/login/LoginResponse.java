@@ -15,4 +15,8 @@ public class LoginResponse {
 
     private String name;
 
+    private boolean requiresConfirmation;
+
+    private String message;
+
 }
