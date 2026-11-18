@@ -77,6 +77,7 @@ public class SecurityConfig {
 
                         .requestMatchers(
                                 "/api/health",
+                                "/api/monitoring/vendor-count",
                                 "/api/auth/login",
                                 "/api/auth/register",
                                 "/api/auth/vendor/register",
