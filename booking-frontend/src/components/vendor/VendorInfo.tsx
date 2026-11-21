@@ -1,5 +1,6 @@
 import type { VendorDetail } from "../../types/VendorDetail";
 import RatingStars from "../common/RatingStars";
+import LocationBadge from "../common/LocationBadge";
 import "./VendorInfo.css";
 
 
@@ -45,11 +46,7 @@ const VendorInfo = ({ vendor }: Props) => {
 
 
 
-      <p className="location">
-
-        📍 {vendor.city}
-
-      </p>
+      <LocationBadge city={vendor.city} variant="detail" />
 
 
 

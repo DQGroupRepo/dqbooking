@@ -8,6 +8,7 @@ interface InputProps {
     placeholder?: string;
     type?: string;
     onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    disabled?: boolean;
 }
 
 export default function Input({
@@ -17,6 +18,7 @@ export default function Input({
     value,
     type = "text",
     onChange,
+    disabled = false,
 }: InputProps) {
 
     return (
@@ -26,7 +28,7 @@ export default function Input({
             {type === "number" ? (
                 <NumericInput name={name} value={value} placeholder={placeholder} onChange={onChange} />
             ) : (
-                <input name={name} type={type} value={value} placeholder={placeholder} onChange={onChange} />
+                <input name={name} type={type} value={value} placeholder={placeholder} onChange={onChange} disabled={disabled} />
             )}
         </div>
     );

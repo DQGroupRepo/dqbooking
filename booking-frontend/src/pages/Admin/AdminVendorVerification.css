@@ -933,3 +933,85 @@
     }
 
 }
+/* Vendor Settings approval review */
+.admin-settings-review-modal { max-width: 900px; width: min(900px, calc(100vw - 28px)); max-height: 88vh; overflow: auto; }
+.settings-review-list { display: grid; gap: 12px; margin: 16px 0; }
+.settings-review-item { border: 1px solid #d9dee7; border-radius: 10px; padding: 12px; min-width: 0; }
+.settings-review-select { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; }
+.settings-review-select small { color: #687386; margin-left: auto; }
+.settings-review-values { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 12px; }
+.settings-review-values > div { min-width: 0; background: #f7f8fa; border-radius: 8px; padding: 10px; overflow-wrap: anywhere; }
+.settings-review-values small { color: #687386; }
+.settings-review-values p { margin: 6px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.settings-review-thumb { display: block; max-width: 150px; max-height: 110px; object-fit: contain; margin-top: 6px; }
+.settings-review-actions { display: grid; grid-template-columns: minmax(260px, 1fr) auto auto; gap: 12px; align-items: end; padding-top: 14px; border-top: 1px solid #e5e9f0; }
+.settings-rejection-reason { min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.settings-rejection-reason label { color: #263247; font-size: .88rem; font-weight: 600; }
+.settings-review-actions textarea { display: block; box-sizing: border-box; width: 100%; min-width: 0; min-height: 76px; padding: 11px 12px; border: 1px solid #bfc9d8; border-radius: 8px; background: #fff; color: #263247; font: inherit; font-size: .9rem; line-height: 1.4; resize: vertical; outline: none; }
+.settings-review-actions textarea:focus { border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37, 99, 235, .12); }
+.settings-rejection-reason > small { color: #667085; line-height: 1.4; }
+.settings-rejection-alert { margin: 0; color: #a33a20; font-size: .82rem; font-weight: 600; }
+.settings-review-actions button { min-height: 40px; white-space: nowrap; }
+.settings-review-actions button:disabled { opacity: .48; cursor: not-allowed; }
+.settings-approval-note { display: block; color: #6b7280; font-size: .88rem; line-height: 1.45; margin: 0 0 12px; }
+@media (max-width: 640px) {
+  .settings-review-values { grid-template-columns: 1fr; }
+  .settings-review-actions { grid-template-columns: 1fr 1fr; align-items: stretch; }
+  .settings-rejection-reason { grid-column: 1 / -1; }
+  .settings-review-actions button { width: 100%; }
+  .settings-review-select small { margin-left: 0; width: 100%; }
+  .admin-vendor-actions { flex-wrap: wrap; }
+}
+
+
+/* Settings review modal: keep content and rejection controls clear of the edges. */
+.admin-settings-review-modal {
+    box-sizing: border-box;
+    padding: 0 16px 16px;
+}
+
+.admin-settings-review-modal .admin-modal-header {
+    margin-left: -16px;
+    margin-right: -16px;
+    padding-left: 20px;
+    padding-right: 20px;
+}
+
+.admin-settings-review-modal .settings-review-list {
+    padding: 0 2px;
+}
+
+.admin-settings-review-modal .settings-review-actions {
+    box-sizing: border-box;
+    width: 100%;
+    padding: 16px 2px 2px;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+}
+
+.admin-settings-review-modal .settings-rejection-reason {
+    width: 100%;
+}
+
+.admin-settings-review-modal .settings-review-actions textarea {
+    max-width: 100%;
+}
+
+@media (max-width: 760px) {
+    .admin-settings-review-modal {
+        padding-left: 12px;
+        padding-right: 12px;
+    }
+
+    .admin-settings-review-modal .admin-modal-header {
+        margin-left: -12px;
+        margin-right: -12px;
+    }
+
+    .admin-settings-review-modal .settings-review-actions {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .admin-settings-review-modal .settings-rejection-reason {
+        grid-column: 1 / -1;
+    }
+}

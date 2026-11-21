@@ -78,7 +78,8 @@ export default function BookingSlotModal({
                 endTime: "",
                 maxBookings: 1,
                 displayOrder: 1,
-                bookingPattern: "DAILY_RECURRING"
+                bookingPattern: "DAILY_RECURRING",
+                resourceTypeId: undefined
             });
             return;
         }
@@ -89,9 +90,34 @@ export default function BookingSlotModal({
             endTime: slot.endTime,
             maxBookings: slot.maxBookings,
             displayOrder: slot.displayOrder,
-            bookingPattern: slot.bookingPattern ?? "DAILY_RECURRING"
+            bookingPattern: slot.bookingPattern ?? "DAILY_RECURRING",
+            resourceTypeId: slot.resourceTypeId
         });
     }, [slot, open]);
+
+    useEffect(() => {
+        if (!open || !serviceId) return;
+        let cancelled = false;
+        (async () => {
+            try {
+                const service = await VendorServiceService.getServiceById(serviceId);
+                const category = String(service.category ?? "").trim().toUpperCase();
+                const supportsResources = ["STAY", "STAYS", "HALL", "HALLS"].includes(category);
+                const types = supportsResources
+                    ? await VendorServiceService.getResourceTypes(serviceId)
+                    : [];
+                if (!cancelled) setResourceTypes(types ?? []);
+            } catch (error) {
+                if (!cancelled) {
+                    console.error("Failed to load slot resource types", error);
+                    setResourceTypes([]);
+                }
+            }
+        })();
+        return () => {
+            cancelled = true;
+        };
+    }, [serviceId, open]);
 
     function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
         const { name, value, type } = e.target;
@@ -127,6 +153,10 @@ export default function BookingSlotModal({
         }
         if (formData.displayOrder <= 0) {
             toast.error("Display Order must be greater than zero.");
+            return;
+        }
+        if (resourceTypes.length > 0 && !formData.resourceTypeId) {
+            toast.error("Select a Resource Type for this booking slot.");
             return;
         }
 

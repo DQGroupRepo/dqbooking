@@ -389,6 +389,8 @@ public class VendorServicePricingServiceImpl
     ) {
         if (packages == null || packages.isEmpty()) return;
         boolean isStay = service.getCategory() == ServiceCategory.STAY;
+        boolean usesResourceTypes = service.getCategory() != null
+                && service.getCategory().supportsResourceTypes();
 
         for (ServicePackageRequest pkg : packages) {
             if (pkg == null || !pkg.isActive()) continue;
@@ -404,20 +406,20 @@ public class VendorServicePricingServiceImpl
                     }
                 }
             }
-            if (!isStay && ((pkg.getResourceTypeId() != null && !pkg.getResourceTypeId().isBlank())
+            if (!usesResourceTypes && ((pkg.getResourceTypeId() != null && !pkg.getResourceTypeId().isBlank())
                     || (pkg.getResourceRequirements() != null && !pkg.getResourceRequirements().isEmpty()))) {
-                throw new IllegalArgumentException("Resource Types and physical room allocation are supported only for STAY services.");
+                throw new IllegalArgumentException("Resource Types and physical resource allocation are supported only for STAY and HALL services.");
             }
-            if (isStay) {
-                if (pkg.getMaxGuestsPerRoom() == null || pkg.getMaxGuestsPerRoom() < 1) {
+            if (usesResourceTypes) {
+                if (isStay && (pkg.getMaxGuestsPerRoom() == null || pkg.getMaxGuestsPerRoom() < 1)) {
                     throw new IllegalArgumentException(
                             "Every active STAY package must define at least one guest per room.");
                 }
-                if (pkg.getSlotIds() == null || pkg.getSlotIds().isEmpty()) {
+                if (isStay && (pkg.getSlotIds() == null || pkg.getSlotIds().isEmpty())) {
                     throw new IllegalArgumentException(
                             "Every active STAY package must be assigned to at least one booking slot.");
                 }
-                // Every active STAY package must consume one or more configured resource types.
+                // Each resource-managed package consumes one or more configured physical resource types.
                 java.util.List<com.booking.model.embedded.ResourceTypeRequirement> requirements =
                         pkg.getResourceRequirements() == null ? new java.util.ArrayList<>()
                                 : new java.util.ArrayList<>(pkg.getResourceRequirements());
@@ -428,7 +430,7 @@ public class VendorServicePricingServiceImpl
                     requirements.add(legacy);
                 }
                 if (requirements.isEmpty()) {
-                    throw new IllegalArgumentException("Every active STAY package must include at least one Resource Type.");
+                    throw new IllegalArgumentException("Every active resource-managed package must include at least one Resource Type.");
                 }
                 java.util.Set<String> seen = new java.util.HashSet<>();
                 for (var requirement : requirements) {
@@ -445,10 +447,10 @@ public class VendorServicePricingServiceImpl
                     if (configuredType == null)
                         throw new IllegalArgumentException("A package references an inactive or unknown Resource Type.");
                     if (configuredType.getQuantity() == null || requirement.getQuantity() > configuredType.getQuantity())
-                        throw new IllegalArgumentException("A package cannot require more rooms of a type than the vendor has configured.");
+                        throw new IllegalArgumentException("A package cannot require more physical units of a resource type than the vendor has configured.");
                 }
                 pkg.setResourceRequirements(requirements);
-                // STAY bookings always consume capacity from a selected booking slot.
+                // Physical resources are allocated against the selected booking slot.
                 pkg.setRequiresSlot(true);
             }
         }

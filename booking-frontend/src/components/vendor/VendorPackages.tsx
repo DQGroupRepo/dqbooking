@@ -50,6 +50,7 @@ interface Props {
     selectedSlotId?: string | null;
     selectedSlotResourceTypeId?: string | null;
     isStay?: boolean;
+    usesResourceTypes?: boolean;
     resourceTypes?: { id: string; name: string }[];
     onSelectPackage: (pkg: ServicePackage) => void;
     onSelectedCateringDishesChange?: (dishes: SelectedCateringDish[]) => void;
@@ -63,6 +64,7 @@ const VendorPackages = ({
     selectedSlotId,
     selectedSlotResourceTypeId,
     isStay = false,
+    usesResourceTypes = false,
     resourceTypes = [],
     onSelectPackage,
     onSelectedCateringDishesChange
@@ -329,12 +331,10 @@ const VendorPackages = ({
                                 selectedSlotId && pkg.slotIds?.length > 0 &&
                                 !pkg.slotIds.includes(selectedSlotId)
                             );
-                            // In Stay, a slot assigned to a physical resource type can
-                            // only be used by packages that include that type. A combined
-                            // package remains compatible when it includes the slot's type
-                            // alongside its other required room types.
+                            // Resource-managed services can only use slots whose
+                            // assigned resource type is included in the package composition.
                             const resourceTypeIsExcludedByPackage = Boolean(
-                                isStay && selectedSlotId && selectedSlotResourceTypeId &&
+                                usesResourceTypes && selectedSlotId && selectedSlotResourceTypeId &&
                                 !packageResourceTypeIds.includes(selectedSlotResourceTypeId)
                             );
                             const incompatibleWithSlot = slotIsExcludedByPackage || resourceTypeIsExcludedByPackage;
@@ -395,16 +395,16 @@ const VendorPackages = ({
                                         </h4>
 
 
-                                        {isStay && (pkg.resourceRequirements?.length || pkg.resourceTypeId) && (
+                                        {usesResourceTypes && (pkg.resourceRequirements?.length || pkg.resourceTypeId) && (
                                             <div className="package-room-composition">
-                                                <strong>Included rooms</strong>
+                                                <strong>{isStay ? "Included rooms" : "Included resources"}</strong>
                                                 <ul>
                                                     {(pkg.resourceRequirements?.length
                                                         ? pkg.resourceRequirements
                                                         : [{ resourceTypeId: pkg.resourceTypeId!, quantity: 1 }]
                                                     ).map((requirement, requirementIndex) => (
                                                         <li key={`${requirement.resourceTypeId}-${requirementIndex}`}>
-                                                            {(resourceTypes.find(type => type.id === requirement.resourceTypeId)?.name ?? "Room type")}
+                                                            {(resourceTypes.find(type => type.id === requirement.resourceTypeId)?.name ?? (isStay ? "Room type" : "Resource type"))}
                                                             {` × ${requirement.quantity}`}
                                                         </li>
                                                     ))}

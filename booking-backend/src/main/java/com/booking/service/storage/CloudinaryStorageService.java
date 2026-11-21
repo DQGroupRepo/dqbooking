@@ -11,6 +11,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.net.URI;
+import java.util.regex.Pattern;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -55,8 +57,10 @@ public class CloudinaryStorageService implements StorageService {
                 uploadedUrls.add(uploadImages(file));
             } else if (contentType.startsWith("video/")) {
                 uploadedUrls.add(uploadVideo(file));
+            } else if ("application/pdf".equalsIgnoreCase(contentType)) {
+                uploadedUrls.add(uploadRaw(file));
             } else {
-                log.error("Invalid file type. Please upload an image or a video.");
+                log.error("Invalid file type. Please upload an image, PDF or video.");
             }
         }
         return uploadedUrls;
@@ -84,6 +88,16 @@ public class CloudinaryStorageService implements StorageService {
             throw new RuntimeException(e);
         }
         return secureUrl;
+    }
+
+    private String uploadRaw(MultipartFile file) {
+        try {
+            Map<?, ?> response = cloudinary.uploader().upload(file.getBytes(), ObjectUtils.asMap(
+                    "resource_type", "raw", "use_filename", true, "unique_filename", true, "overwrite", false));
+            return response.get("secure_url").toString();
+        } catch (IOException ex) {
+            throw new RuntimeException("Unable to upload document: " + file.getOriginalFilename(), ex);
+        }
     }
 
     private String uploadImages(MultipartFile file){
@@ -114,19 +128,30 @@ public class CloudinaryStorageService implements StorageService {
 
 
     @Override
-    public void delete(
-
-            String imageUrl
-
-    ) {
-
-
-        // TODO:
-
-        // Implement Cloudinary deletion
-
-        // using public_id when required.
-
+    public void delete(String fileUrl) {
+        if (fileUrl == null || fileUrl.isBlank()) return;
+        try {
+            URI uri = URI.create(fileUrl);
+            String path = uri.getPath();
+            int uploadIndex = path.indexOf("/upload/");
+            if (uploadIndex < 0) {
+                log.warn("Skipping Cloudinary delete for a URL that is not an upload URL");
+                return;
+            }
+            String resourceType = path.substring(0, uploadIndex).contains("/raw") ? "raw" : "image";
+            String publicId = path.substring(uploadIndex + "/upload/".length());
+            publicId = publicId.replaceFirst("^v\\d+/", "");
+            if (resourceType.equals("image")) {
+                int extension = publicId.lastIndexOf('.');
+                if (extension > publicId.lastIndexOf('/')) publicId = publicId.substring(0, extension);
+            }
+            if (publicId.isBlank()) return;
+            Map<?, ?> result = cloudinary.uploader().destroy(publicId,
+                    ObjectUtils.asMap("resource_type", resourceType, "invalidate", true));
+            log.info("Cloudinary asset deletion requested resourceType={} result={}", resourceType, result.get("result"));
+        } catch (Exception ex) {
+            throw new IllegalStateException("Unable to delete the uploaded file from Cloudinary.", ex);
+        }
     }
 
 }

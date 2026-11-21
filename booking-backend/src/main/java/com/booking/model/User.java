@@ -36,6 +36,19 @@ public class User extends BaseEntity {
     /** Expiry of the active JWT session; prevents stale sessions blocking login. */
     private LocalDateTime activeSessionExpiresAt;
 
+    // Vendor settings persisted on the canonical vendor user document.
+    private String state, pincode, logo;
+    private String accountHolder, bankName, accountNumber, ifsc, upiId, payoutMethod;
+    private String gstNumber, panNumber, businessLicense;
+    private String gstCertificateUrl, panCardUrl, businessLicenseUrl;
+    private Boolean emailNotifications = true, smsNotifications = false;
+    private Boolean bookingAlerts = true, reviewAlerts = true, paymentAlerts = true, marketingEmails = false;
+    private String passwordResetOtpHash;
+    private LocalDateTime passwordResetOtpExpiresAt;
+    private int passwordResetOtpAttempts = 0;
+    private LocalDateTime passwordResetOtpRequestedAt;
+
+
     /*
      * =========================================
      * VENDOR PROFILE

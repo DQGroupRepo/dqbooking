@@ -23,6 +23,12 @@ public class VendorProfileMapperImpl
                 .city(vendor.getCity())
                 .address(vendor.getAddress())
                 .description(vendor.getDescription())
+                .email(vendor.getEmail()).state(vendor.getState()).pincode(vendor.getPincode()).logo(vendor.getLogo())
+                .accountHolder(vendor.getAccountHolder()).bankName(vendor.getBankName()).accountNumber(vendor.getAccountNumber()).ifsc(vendor.getIfsc()).upiId(vendor.getUpiId()).payoutMethod(vendor.getPayoutMethod())
+                .gstNumber(vendor.getGstNumber()).panNumber(vendor.getPanNumber()).businessLicense(vendor.getBusinessLicense())
+                .gstCertificateUrl(vendor.getGstCertificateUrl()).panCardUrl(vendor.getPanCardUrl()).businessLicenseUrl(vendor.getBusinessLicenseUrl())
+                .emailNotifications(vendor.getEmailNotifications()).smsNotifications(vendor.getSmsNotifications()).bookingAlerts(vendor.getBookingAlerts()).reviewAlerts(vendor.getReviewAlerts()).paymentAlerts(vendor.getPaymentAlerts()).marketingEmails(vendor.getMarketingEmails())
+                .verificationStatus(vendor.getVerificationStatus())
                 .build();
 
     }
@@ -80,9 +86,18 @@ public class VendorProfileMapperImpl
                 request.getAddress()
         );
 
-        vendor.setDescription(
-                request.getDescription()
-        );
+        vendor.setDescription(request.getDescription());
+        vendor.setState(request.getState()); vendor.setPincode(request.getPincode()); vendor.setLogo(request.getLogo());
+        vendor.setAccountHolder(request.getAccountHolder()); vendor.setBankName(request.getBankName());
+        vendor.setAccountNumber(request.getAccountNumber()); vendor.setIfsc(request.getIfsc()); vendor.setUpiId(request.getUpiId()); vendor.setPayoutMethod(request.getPayoutMethod());
+        vendor.setGstNumber(request.getGstNumber()); vendor.setPanNumber(request.getPanNumber()); vendor.setBusinessLicense(request.getBusinessLicense());
+        vendor.setGstCertificateUrl(request.getGstCertificateUrl()); vendor.setPanCardUrl(request.getPanCardUrl()); vendor.setBusinessLicenseUrl(request.getBusinessLicenseUrl());
+        if (request.getEmailNotifications()!=null) vendor.setEmailNotifications(request.getEmailNotifications());
+        if (request.getSmsNotifications()!=null) vendor.setSmsNotifications(request.getSmsNotifications());
+        if (request.getBookingAlerts()!=null) vendor.setBookingAlerts(request.getBookingAlerts());
+        if (request.getReviewAlerts()!=null) vendor.setReviewAlerts(request.getReviewAlerts());
+        if (request.getPaymentAlerts()!=null) vendor.setPaymentAlerts(request.getPaymentAlerts());
+        if (request.getMarketingEmails()!=null) vendor.setMarketingEmails(request.getMarketingEmails());
 
     }
 

@@ -157,14 +157,14 @@ const Register = () => {
       );
 
 
+      const responseData = err?.response?.data;
+
       setError(
-
-        err.response?.data?.message ||
-
-        err.response?.data ||
-
-        "Registration failed"
-
+        typeof responseData?.message === "string"
+          ? responseData.message
+          : typeof responseData === "string"
+            ? responseData
+            : "Registration failed. Please try again."
       );
 
 

@@ -157,6 +157,7 @@ const VendorPricing = () => {
 
     const [isCateringService, setIsCateringService] = useState(false);
     const [isStayService, setIsStayService] = useState(false);
+    const [isResourceService, setIsResourceService] = useState(false);
     const [bookingSlots, setBookingSlots] = useState<BookingSlot[]>([]);
     const [resourceTypes, setResourceTypes] = useState<ServiceResourceType[]>([]);
     const [resourceTypeName, setResourceTypeName] = useState("");
@@ -248,10 +249,12 @@ const VendorPricing = () => {
                 const category = service.category?.toLowerCase().trim();
                 const isCatering = category === "catering";
                 const isStay = category === "stay" || category === "stays";
+                const usesResourceTypes = isStay || category === "hall" || category === "halls";
 
                 setIsCateringService(isCatering);
                 setIsStayService(isStay);
-                const savedResourceTypes = isStay
+                setIsResourceService(usesResourceTypes);
+                const savedResourceTypes = usesResourceTypes
                     ? await VendorServiceService.getResourceTypes(serviceId!)
                     : [];
                 if (!cancelled) setResourceTypes(savedResourceTypes);
@@ -739,14 +742,16 @@ const VendorPricing = () => {
              * There is no separate package API call.
              */
 
-            if (!isStayService && packages.some(pkg => pkg.active && pkg.requiresSlot === false)) {
+            if (!isResourceService && packages.some(pkg => pkg.active && pkg.requiresSlot === false)) {
                 toast.error("Packages without predefined slots are supported only for Stays services.");
                 setSaving(false);
                 return;
             }
 
-            if (isStayService) {
-                const invalidStayPackage = packages.find(pkg => pkg.active && (!Number.isInteger(Number(pkg.maxGuestsPerRoom)) || Number(pkg.maxGuestsPerRoom) < 1));
+            if (isResourceService) {
+                const invalidStayPackage = isStayService
+                    ? packages.find(pkg => pkg.active && (!Number.isInteger(Number(pkg.maxGuestsPerRoom)) || Number(pkg.maxGuestsPerRoom) < 1))
+                    : undefined;
                 if (invalidStayPackage) {
                     toast.error(`Enter a maximum of at least one guest per room for package "${invalidStayPackage.name || "Untitled"}".`);
                     setSaving(false);
@@ -760,11 +765,13 @@ const VendorPricing = () => {
                 }
                 const invalidInventoryPackage = packages.find(pkg => pkg.active && (pkg.resourceRequirements ?? []).some(item => !item.resourceTypeId || !Number.isInteger(Number(item.quantity)) || Number(item.quantity) < 1));
                 if (invalidInventoryPackage) {
-                    toast.error(`Check the room composition for package "${invalidInventoryPackage.name || "Untitled"}".`);
+                    toast.error(`Check the ${isStayService ? "room" : "resource"} composition for package "${invalidInventoryPackage.name || "Untitled"}".`);
                     setSaving(false);
                     return;
                 }
-                const unassignedStayPackage = packages.find(pkg => pkg.active && !(pkg.slotIds ?? []).length);
+                const unassignedStayPackage = isStayService
+                    ? packages.find(pkg => pkg.active && !(pkg.slotIds ?? []).length)
+                    : undefined;
                 if (unassignedStayPackage) {
                     toast.error(`Assign at least one booking slot to package "${unassignedStayPackage.name || "Untitled"}".`);
                     setSaving(false);
@@ -1652,7 +1659,7 @@ const VendorPricing = () => {
                         SERVICE PACKAGES
                     ================================================= */}
 
-                    {isStayService && (
+                    {isResourceService && (
                     <section className="pricing-card package-card-section">
                         <div className="package-section-header">
                             <div>
@@ -1676,7 +1683,7 @@ const VendorPricing = () => {
                                     <button type="button" className="remove-feature-btn" onClick={() => removeResourceType(type.id)}>Remove</button>
                                 </div>
                             ))}
-                            {resourceTypes.length === 0 && <p className="package-eligibility-help">No resource types configured. Existing slot-capacity behavior remains active.</p>}
+                            {resourceTypes.length === 0 && <p className="package-eligibility-help">No Resource Types configured yet. Add at least one physical resource before saving resource-based packages.</p>}
                         </div>
                     </section>
                     )}
@@ -1697,22 +1704,24 @@ const VendorPricing = () => {
                                     {packages.length} {packages.length === 1 ? "package" : "packages"}
                                 </div>
 
-                                {isStayService ? (
+                                {isResourceService ? (
                                     <>
                                         <button
                                             type="button"
                                             className="add-package-btn"
                                             onClick={() => addPackage("STANDARD")}
                                         >
-                                            + Create Resource Type Package
+                                            + Create Resource Package
                                         </button>
-                                        <button
-                                            type="button"
-                                            className="add-package-btn"
-                                            onClick={() => addPackage("FIXED_DURATION")}
-                                        >
-                                            + Create Fixed-Duration Package
-                                        </button>
+                                        {isStayService && (
+                                            <button
+                                                type="button"
+                                                className="add-package-btn"
+                                                onClick={() => addPackage("FIXED_DURATION")}
+                                            >
+                                                + Create Fixed-Duration Package
+                                            </button>
+                                        )}
                                     </>
                                 ) : (
                                     <button
@@ -1852,36 +1861,40 @@ const VendorPricing = () => {
                                                     </div>
                                                     )}
 
-                                                    {isStayService && (
+                                                    {isResourceService && (
                                                         <div className="package-eligibility-config">
-                                                            <div className="package-features-header"><h5>Room composition</h5></div>
-                                                            <p className="package-eligibility-help">Define the rooms included in one complete package. For example, 2 Premium + 1 Gold. Customers can book multiple complete combinations; all included rooms are held together.</p>
+                                                            <div className="package-features-header"><h5>{isStayService ? "Room composition" : "Resource composition"}</h5></div>
+                                                            <p className="package-eligibility-help">{isStayService
+                                                                ? "Define the rooms included in one complete package. For example, 2 Premium + 1 Gold. Customers can book multiple complete combinations; all included rooms are held together."
+                                                                : "Define the physical resources included in this package. Each selected resource is reserved for the configured booking slot and interval."}</p>
                                                             {(pkg.resourceRequirements ?? (pkg.resourceTypeId ? [{ resourceTypeId: pkg.resourceTypeId, quantity: 1 }] : [])).map((requirement, requirementIndex) => (
                                                                 <div className="package-duration-fields stay-room-composition-row" key={`${requirement.resourceTypeId}-${requirementIndex}`}>
                                                                     <label className="stay-room-type-field">
-                                                                        Room type
+                                                                        {isStayService ? "Room type" : "Resource type"}
                                                                         <select value={requirement.resourceTypeId} onChange={e => updatePackageResourceRequirement(packageIndex, requirementIndex, "resourceTypeId", e.target.value)}>
                                                                             {resourceTypes.filter(type => type.active !== false).map(type => <option key={type.id} value={type.id}>{type.name} ({type.quantity} total)</option>)}
                                                                         </select>
                                                                     </label>
                                                                     <label className="stay-room-quantity-field">
-                                                                        Rooms in package
+                                                                        {isStayService ? "Rooms in package" : "Units in package"}
                                                                         <NumericInput  min="1" max="100" value={requirement.quantity} onChange={e => updatePackageResourceRequirement(packageIndex, requirementIndex, "quantity", Math.max(1, Math.min(100, Math.floor(Number(e.target.value) || 1))))} />
                                                                     </label>
                                                                     <button type="button" className="remove-package-room-btn" onClick={() => removePackageResourceRequirement(packageIndex, requirementIndex)}>Remove</button>
                                                                 </div>
                                                             ))}
-                                                            <button type="button" className="add-package-btn stay-add-room-type-btn" onClick={() => addPackageResourceRequirement(packageIndex)} disabled={resourceTypes.filter(type => type.active !== false).length <= (pkg.resourceRequirements ?? []).length}>+ Add Room Type</button>
+                                                            <button type="button" className="add-package-btn stay-add-room-type-btn" onClick={() => addPackageResourceRequirement(packageIndex)} disabled={resourceTypes.filter(type => type.active !== false).length <= (pkg.resourceRequirements ?? []).length}>+ Add {isStayService ? "Room Type" : "Resource Type"}</button>
                                                         </div>
                                                     )}
                                                     <div className="package-eligibility-config">
                                                         <div className="package-features-header">
-                                                            <h5>{isStayService ? "Booking Slots & Room Capacity" : "Booking Time Configuration"}</h5>
+                                                            <h5>{isResourceService ? "Booking Slots & Resource Availability" : "Booking Time Configuration"}</h5>
                                                         </div>
                                                         <p className="package-eligibility-help">
                                                             {isStayService
                                                                 ? "Assign this STAY package to one or more active booking slots. Slots control check-in timing and vendor date blocks; physical room availability is calculated from the Resource Types above."
-                                                                : "Select which slots customers may use with this package. Leave all unchecked to allow all active slots."}
+                                                                : isResourceService
+                                                                    ? "Select the booking slots customers may use with this resource package. Configure the slot times to match the sessions you offer."
+                                                                    : "Select which slots customers may use with this package. Leave all unchecked to allow all active slots."}
                                                         </p>
                                                         {bookingSlots.length === 0 ? (
                                                             <p className="package-eligibility-help">No active booking slots configured yet.</p>

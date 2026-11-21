@@ -43,10 +43,14 @@ public class MediaValidator {
 
                 maxSizeMb = videoMaxSizeMb;
 
+            } else if ("application/pdf".equalsIgnoreCase(contentType)) {
+
+                maxSizeMb = imageMaxSizeMb;
+
             } else {
 
                 throw new IllegalArgumentException(
-                        "Only image and video files are allowed."
+                        "Only image, PDF and video files are allowed."
                 );
 
             }

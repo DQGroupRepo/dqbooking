@@ -13,6 +13,13 @@ public interface UserRepository extends MongoRepository<User, String> {
 
     Optional<User> findByEmail(String email);
 
+    Optional<User> findByEmailIgnoreCase(String email);
+
+    // Used by registration to prevent duplicate accounts across roles.
+    boolean existsByEmailIgnoreCase(String email);
+
+    boolean existsByPhone(String phone);
+
     long countByRole(Role role);
 
     long countByRoleAndDeletedFalse(Role role);

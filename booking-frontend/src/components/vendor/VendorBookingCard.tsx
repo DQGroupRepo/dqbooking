@@ -136,16 +136,27 @@ const BookingCard = ({
 
     // Keep every slot visible. Incompatible options remain clickable so the
     // customer can switch selections without being trapped by a filter.
-    const eligibleSlots = slots.filter(slot =>
-        // Match backend validation: a slot with no explicit resourceTypeId
-        // remains eligible when it is explicitly included in the package's
-        // slotIds. Only reject a slot when it is assigned to a different type.
-        (!selectedPackage?.resourceTypeId ||
-            !slot.resourceTypeId ||
-            slot.resourceTypeId === selectedPackage.resourceTypeId) &&
-        (!selectedPackage?.slotIds?.length ||
-            selectedPackage.slotIds.includes(slot.slotId))
+    const usesResourceTypes = ["STAY", "STAYS", "HALL", "HALLS"].includes(
+        String(vendor.category ?? "").trim().toUpperCase()
     );
+    const eligibleSlots = slots.filter(slot => {
+        const packageResourceTypeIds = selectedPackage?.resourceRequirements?.length
+            ? selectedPackage.resourceRequirements.map(requirement => requirement.resourceTypeId)
+            : selectedPackage?.resourceTypeId
+                ? [selectedPackage.resourceTypeId]
+                : [];
+
+        // Package slotIds is the authoritative package-to-slot mapping.
+        // A booking slot may not have its own resourceTypeId; in that case,
+        // keep it eligible when the package explicitly includes that slot.
+        // If a slot does carry a resourceTypeId, ensure the package includes it.
+        const resourceTypeMatches = !usesResourceTypes || !selectedPackage
+            || !slot.resourceTypeId
+            || packageResourceTypeIds.includes(slot.resourceTypeId);
+
+        return resourceTypeMatches &&
+            (!selectedPackage?.slotIds?.length || selectedPackage.slotIds.includes(slot.slotId));
+    });
 
 
     const [selectedSlot, setSelectedSlot] =
@@ -413,7 +424,7 @@ const BookingCard = ({
     const loadAvailabilityForPackage = async (date: string): Promise<SlotAvailability[]> => {
         if (!serviceId) return [];
         const requirements = getPackageResourceRequirements();
-        if (!isStay || requirements.length === 0) {
+        if (!usesResourceTypes || requirements.length === 0) {
             return BookingAvailabilityService.getSlotAvailability(
                 serviceId, date, selectedPackage?.resourceTypeId ?? selectedResourceTypeId
             );
