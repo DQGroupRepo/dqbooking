@@ -430,8 +430,10 @@ const VendorDetail = () => {
      * =========================================
      */
 
-    const isStayService = ["STAY", "STAYS"].includes(String(vendor?.category ?? "").trim().toUpperCase());
-    const activeResourceTypes = isStayService
+    const category = String(vendor?.category ?? "").trim().toUpperCase();
+    const isStayService = ["STAY", "STAYS"].includes(category);
+    const usesResourceTypes = isStayService || ["HALL", "HALLS"].includes(category);
+    const activeResourceTypes = usesResourceTypes
         ? (vendor?.resourceTypes ?? []).filter(type => type.active !== false)
         : [];
     const fixedDurationPackages = pricingPackages.filter(pkg => pkg.packageType === "FIXED_DURATION");
@@ -513,7 +515,7 @@ const VendorDetail = () => {
                             ) : (
                                 <>
                                     {visiblePricingPackages.length > 0 ? (
-                                        <VendorPackages packages={visiblePricingPackages} selectedPackage={selectedPackage} selectedSlotId={selectedSlotId} selectedSlotResourceTypeId={selectedSlotResourceTypeId} isStay={isStayService} resourceTypes={activeResourceTypes} onSelectPackage={handlePackageSelect} onSelectedCateringDishesChange={setSelectedCateringDishes} />
+                                        <VendorPackages packages={visiblePricingPackages} selectedPackage={selectedPackage} selectedSlotId={selectedSlotId} selectedSlotResourceTypeId={selectedSlotResourceTypeId} isStay={isStayService} usesResourceTypes={usesResourceTypes} resourceTypes={activeResourceTypes} onSelectPackage={handlePackageSelect} onSelectedCateringDishesChange={setSelectedCateringDishes} />
                                     ) : (
                                         <div className="pricing-unavailable">
                                             <h3>No packages available</h3>
@@ -524,7 +526,7 @@ const VendorDetail = () => {
                                         <section className="fixed-duration-packages">
                                             <h2>Fixed-Duration Packages</h2>
                                             <p>Packages with a predefined duration and price.</p>
-                                            <VendorPackages packages={fixedDurationPackages} selectedPackage={selectedPackage} selectedSlotId={selectedSlotId} selectedSlotResourceTypeId={selectedSlotResourceTypeId} isStay={isStayService} resourceTypes={activeResourceTypes} onSelectPackage={handlePackageSelect} onSelectedCateringDishesChange={setSelectedCateringDishes} />
+                                            <VendorPackages packages={fixedDurationPackages} selectedPackage={selectedPackage} selectedSlotId={selectedSlotId} selectedSlotResourceTypeId={selectedSlotResourceTypeId} isStay={isStayService} usesResourceTypes={usesResourceTypes} resourceTypes={activeResourceTypes} onSelectPackage={handlePackageSelect} onSelectedCateringDishesChange={setSelectedCateringDishes} />
                                         </section>
                                     )}
                                 </>

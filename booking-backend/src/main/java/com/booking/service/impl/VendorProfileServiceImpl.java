@@ -98,6 +98,22 @@ public class VendorProfileServiceImpl
                             );
                         });
 
+        // Approval-controlled values must never be overwritten by the immediate
+        // profile update endpoint. They are staged through VendorSettingsApprovalService.
+        request.setLogo(vendor.getLogo());
+        request.setAccountHolder(vendor.getAccountHolder());
+        request.setBankName(vendor.getBankName());
+        request.setAccountNumber(vendor.getAccountNumber());
+        request.setIfsc(vendor.getIfsc());
+        request.setUpiId(vendor.getUpiId());
+        request.setPayoutMethod(vendor.getPayoutMethod());
+        request.setGstNumber(vendor.getGstNumber());
+        request.setPanNumber(vendor.getPanNumber());
+        request.setBusinessLicense(vendor.getBusinessLicense());
+        request.setGstCertificateUrl(vendor.getGstCertificateUrl());
+        request.setPanCardUrl(vendor.getPanCardUrl());
+        request.setBusinessLicenseUrl(vendor.getBusinessLicenseUrl());
+
         mapper.updateEntity(
                 vendor,
                 request

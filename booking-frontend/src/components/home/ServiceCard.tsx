@@ -7,6 +7,7 @@ import type {
 } from "../../types/VendorListing";
 
 import RatingStars from "../common/RatingStars";
+import LocationBadge from "../common/LocationBadge";
 import "./ServiceCard.css";
 
 
@@ -64,11 +65,7 @@ const ServiceCard = ({
                 </h3>
 
 
-                <p>
-
-                    📍 {city}
-
-                </p>
+                <LocationBadge city={city} variant="card" />
 
 
                 {

@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import type { VendorListing } from "../../types/VendorListing";
 import RatingStars from "../common/RatingStars";
+import LocationBadge from "../common/LocationBadge";
 import "./VendorCard.css";
 
 interface VendorCardProps {
@@ -87,19 +88,18 @@ const VendorCard = ({
 
                    )}
 
-                   <p className="vendor-location">
-                       📍 {vendor.city}
-                   </p>
-
                </div>
 
 
-                {vendor.capacity && (
-
-                    <p>
-                        Capacity: {vendor.capacity} Guests
-                    </p>
-
+                {(vendor.city || vendor.capacity) && (
+                    <div className="vendor-location-capacity">
+                        <LocationBadge city={vendor.city} variant="compact" />
+                        {vendor.capacity && (
+                            <p className="vendor-capacity">
+                                Capacity: {vendor.capacity} Guests
+                            </p>
+                        )}
+                    </div>
                 )}
 
 

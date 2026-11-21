@@ -9,7 +9,6 @@ import com.booking.repository.BookingRepository;
 import com.booking.repository.BookingHoldRepository;
 import com.booking.model.enums.BookingHoldStatus;
 import com.booking.model.enums.BookingStatus;
-import com.booking.model.enums.ServiceCategory;
 import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -26,8 +25,8 @@ public class ServiceResourceTypeController {
     @GetMapping
     public List<ServiceResourceType> getResourceTypes(@PathVariable String serviceId) {
         VendorService service = findService(serviceId);
-        if (service.getCategory() != ServiceCategory.STAY)
-            throw new IllegalArgumentException("Resource Types are supported only for STAY services.");
+        if (service.getCategory() == null || !service.getCategory().supportsResourceTypes())
+            throw new IllegalArgumentException("Resource Types are supported only for STAY and HALL services.");
         return service.getResourceTypes() == null ? List.of() : service.getResourceTypes();
     }
 
@@ -36,8 +35,8 @@ public class ServiceResourceTypeController {
             @PathVariable String serviceId,
             @RequestBody UpdateServiceResourceTypesRequest request) {
         VendorService service = findService(serviceId);
-        if (service.getCategory() != ServiceCategory.STAY)
-            throw new IllegalArgumentException("Resource Types are supported only for STAY services.");
+        if (service.getCategory() == null || !service.getCategory().supportsResourceTypes())
+            throw new IllegalArgumentException("Resource Types are supported only for STAY and HALL services.");
         List<ServiceResourceType> types = request.getResourceTypes() == null
                 ? new ArrayList<>() : request.getResourceTypes();
         Set<String> ids = new HashSet<>();

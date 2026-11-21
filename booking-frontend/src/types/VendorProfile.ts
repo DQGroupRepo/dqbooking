@@ -76,5 +76,9 @@ export interface VendorProfile {
     marketingEmails: boolean;
 
     description: string;
+    gstCertificateUrl: string;
+    panCardUrl: string;
+    businessLicenseUrl: string;
+    payoutMethod: string;
 
 }

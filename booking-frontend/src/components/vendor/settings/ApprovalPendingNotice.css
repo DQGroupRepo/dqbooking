@@ -1,0 +1,4 @@
+.approval-pending-notice { display:block; box-sizing:border-box; width:100%; margin:7px 0 13px; padding:9px 12px; border:1px solid #f0d38a; border-left:4px solid #d99a16; border-radius:7px; background:#fff9e9; color:#684b12; font-size:.84rem; line-height:1.45; overflow-wrap:anywhere; }
+.approval-pending-notice strong { font-weight:700; }
+.approval-pending-notice a,.pending-document-view { color:#1557a0; font-weight:600; text-decoration:underline; }
+.pending-document-view { padding:0; border:0; background:transparent; cursor:pointer; font:inherit; }

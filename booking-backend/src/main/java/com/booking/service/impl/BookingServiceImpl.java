@@ -1558,9 +1558,11 @@ public class BookingServiceImpl implements BookingService
             BookingServiceItemRequest item
     ) {
         boolean isStay = service.getCategory() == com.booking.model.enums.ServiceCategory.STAY;
+        boolean usesResourceTypes = service.getCategory() != null
+                && service.getCategory().supportsResourceTypes();
         if (selectedPackage == null) {
-            if (isStay) {
-                throw new IllegalArgumentException("A package is required for STAY bookings.");
+            if (isStay || usesResourceTypes) {
+                throw new IllegalArgumentException("A package is required for this resource-managed service.");
             }
             if (item.getSlotId() == null || item.getSlotId().isBlank()) {
                 throw new IllegalArgumentException("A booking slot or an explicitly configured slot-free package is required.");
@@ -1568,7 +1570,7 @@ public class BookingServiceImpl implements BookingService
             return;
         }
 
-        boolean requiresSlot = isStay || !Boolean.FALSE.equals(selectedPackage.getRequiresSlot());
+        boolean requiresSlot = usesResourceTypes || !Boolean.FALSE.equals(selectedPackage.getRequiresSlot());
         String slotId = item.getSlotId();
 
         if (!requiresSlot && !isStay) {
@@ -1585,6 +1587,16 @@ public class BookingServiceImpl implements BookingService
         if (requiresSlot && allowedSlots != null && !allowedSlots.isEmpty()
                 && !allowedSlots.contains(slotId)) {
             throw new IllegalArgumentException("The selected booking slot is not available for this package.");
+        }
+
+        if (usesResourceTypes) {
+            boolean hasRequirements = selectedPackage.getResourceRequirements() != null
+                    && !selectedPackage.getResourceRequirements().isEmpty();
+            boolean hasLegacyResourceType = selectedPackage.getResourceTypeId() != null
+                    && !selectedPackage.getResourceTypeId().isBlank();
+            if (!hasRequirements && !hasLegacyResourceType) {
+                throw new IllegalArgumentException("The selected package must include at least one Resource Type.");
+            }
         }
 
         if (isStay) {
@@ -2241,7 +2253,8 @@ public class BookingServiceImpl implements BookingService
             allocatedResourceIds.addAll(booking.getResourceIds());
         }
         String resourceTypeName = null;
-        if ("STAY".equals(serviceCategory) && bookingService != null && bookingService.getResourceTypes() != null) {
+        if (("STAY".equals(serviceCategory) || "HALL".equals(serviceCategory))
+                && bookingService != null && bookingService.getResourceTypes() != null) {
             List<String> names = new ArrayList<>();
             if (booking.getResourceAllocations() != null) {
                 booking.getResourceAllocations().forEach(allocation -> bookingService.getResourceTypes().stream()

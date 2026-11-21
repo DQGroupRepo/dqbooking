@@ -27,4 +27,6 @@ public class AdminVendorVerificationResponse {
     private VendorVerificationStatus verificationStatus;
 
     private List<AdminVendorServiceResponse> services;
+
+    private long pendingSettingsCount;
 }

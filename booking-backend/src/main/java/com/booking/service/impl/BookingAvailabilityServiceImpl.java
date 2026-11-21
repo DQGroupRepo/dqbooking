@@ -194,6 +194,8 @@ public class BookingAvailabilityServiceImpl
         VendorService service = vendorServiceRepository.findById(request.getServiceId())
                 .orElseThrow(() -> new IllegalArgumentException("Vendor Service not found."));
         boolean isStay = service.getCategory() == ServiceCategory.STAY;
+        boolean usesResourceTypes = service.getCategory() != null
+                && service.getCategory().supportsResourceTypes();
 
         ServicePackage selectedPackage = null;
         if (request.getPackageId() != null && !request.getPackageId().isBlank()) {
@@ -281,44 +283,44 @@ public class BookingAvailabilityServiceImpl
                         (("PER_NIGHT".equals(basis) || isStay) ? "nights." : "days."));
             }
         }
-        // Physical Resource Type inventory is currently a STAY-only feature.
-        // Keep other service categories on their existing slot/package capacity rules.
-        String slotResourceTypeId = isStay && slot != null ? slot.getResourceTypeId() : null;
-        String packageResourceTypeId = isStay && selectedPackage != null
+        // STAY and HALL use physical Resource Type inventory. Other categories
+        // retain their existing slot/package capacity rules.
+        String slotResourceTypeId = usesResourceTypes && slot != null ? slot.getResourceTypeId() : null;
+        String packageResourceTypeId = usesResourceTypes && selectedPackage != null
                 ? selectedPackage.getResourceTypeId() : null;
-        String resourceTypeId = isStay
+        String resourceTypeId = usesResourceTypes
                 ? (request.getResourceTypeId() != null && !request.getResourceTypeId().isBlank()
                 ? request.getResourceTypeId()
                 : (packageResourceTypeId != null ? packageResourceTypeId : slotResourceTypeId))
                 : null;
-        if (isStay && resourceTypeId != null && !resourceTypeId.isBlank()) {
+        List<ResourceTypeRequirement> resourceRequirements = usesResourceTypes
+                ? effectiveRequirements(selectedPackage, request) : List.of();
+        if (usesResourceTypes && resourceTypeId != null && !resourceTypeId.isBlank()) {
             if (packageResourceTypeId != null && !resourceTypeId.equals(packageResourceTypeId))
                 throw new IllegalArgumentException("Selected package does not belong to the selected resource type.");
-            if (slotResourceTypeId != null && !resourceTypeId.equals(slotResourceTypeId))
-                throw new IllegalArgumentException("Selected slot does not belong to the selected resource type.");
         }
-        List<ResourceTypeRequirement> resourceRequirements = isStay
-                ? effectiveRequirements(selectedPackage, request) : List.of();
-        if (!isStay && ((request.getResourceRequirements() != null && !request.getResourceRequirements().isEmpty())
+        if (usesResourceTypes && slotResourceTypeId != null && !slotResourceTypeId.isBlank()
+                && !resourceRequirements.isEmpty()
+                && resourceRequirements.stream().noneMatch(r -> slotResourceTypeId.equals(r.getResourceTypeId()))) {
+            throw new IllegalArgumentException("Selected slot resource type is not included in the selected package.");
+        }
+        if (!usesResourceTypes && ((request.getResourceRequirements() != null && !request.getResourceRequirements().isEmpty())
                 || (selectedPackage != null && selectedPackage.getResourceRequirements() != null
                 && !selectedPackage.getResourceRequirements().isEmpty())
                 || (request.getResourceTypeId() != null && !request.getResourceTypeId().isBlank()))) {
-            // Resource allocation is a STAY-only concern. Ignore any stale or
-            // accidentally submitted STAY fields for other categories so their
-            // existing slot-capacity booking flow continues unchanged.
-            log.warn("Ignoring STAY-only resource allocation fields for non-STAY service. serviceId={} category={}",
+            log.warn("Ignoring resource allocation fields for service without resource inventory. serviceId={} category={}",
                     request.getServiceId(), service.getCategory());
         }
-        if (isStay) {
+        if (usesResourceTypes) {
             if (resourceRequirements.isEmpty()) {
-                throw new IllegalArgumentException("The selected STAY package must include at least one resource type.");
+                throw new IllegalArgumentException("The selected package must include at least one resource type.");
             }
             java.util.Set<String> seenTypes = new java.util.HashSet<>();
             for (ResourceTypeRequirement requirement : resourceRequirements) {
                 if (requirement.getResourceTypeId() == null || requirement.getResourceTypeId().isBlank()
                         || requirement.getQuantity() == null || requirement.getQuantity() < 1
                         || !seenTypes.add(requirement.getResourceTypeId())) {
-                    throw new IllegalArgumentException("Each STAY package resource type must be unique and have a quantity of at least one.");
+                    throw new IllegalArgumentException("Each package resource type must be unique and have a quantity of at least one.");
                 }
             }
         }
@@ -352,17 +354,26 @@ public class BookingAvailabilityServiceImpl
         List<String> holdResourceAllocation = new java.util.ArrayList<>();
         List<ResourceAllocation> holdAllocations = new java.util.ArrayList<>();
         if (slot != null) {
-            if (!isStay) {
+            if (isStay) {
+                // Stay keeps its existing night-based slot-block validation.
+                validateStaySlotNotBlocked(request.getServiceId(), slot, requestedIntervals);
+            } else if (usesResourceTypes) {
+                // Hall uses physical resource inventory. Do not run the legacy
+                // slot-capacity check here: resource-type availability is
+                // validated by allocateResourceUnits below.
+                validateResourceSlotNotBlocked(request.getServiceId(), slot, requestedIntervals);
+            } else {
+                // Categories without physical resources retain legacy capacity validation.
                 validateSlotCapacityForInterval(request.getServiceId(), slot,
                         request.getBookingFrom(), request.getBookingTo(), quantity, now);
-            } else {
-                validateStaySlotNotBlocked(request.getServiceId(), slot, requestedIntervals);
+            }
+            if (usesResourceTypes) {
                 for (ResourceTypeRequirement requirement : resourceRequirements) {
-                    int requiredUnits = Math.multiplyExact(requirement.getQuantity(), roomQuantity);
+                    int requiredUnits = Math.multiplyExact(requirement.getQuantity(), isStay ? roomQuantity : 1);
                     List<String> allocated = allocateResourceUnits(request.getServiceId(), requirement.getResourceTypeId(),
                             requestedIntervals, requiredUnits, now);
                     if (allocated.size() < requiredUnits) {
-                        throw new IllegalStateException("The selected package is no longer available: insufficient rooms for one or more included room types.");
+                        throw new IllegalStateException("The selected package is no longer available: insufficient physical resources for one or more included resource types.");
                     }
                     ResourceAllocation allocation = new ResourceAllocation();
                     allocation.setResourceTypeId(requirement.getResourceTypeId());
@@ -539,14 +550,14 @@ public class BookingAvailabilityServiceImpl
                         slotCapacity
                 );
 
-        boolean isStay = vendorServiceRepository.findById(serviceId)
-                .map(service -> service.getCategory() == ServiceCategory.STAY)
+        boolean usesResourceTypes = vendorServiceRepository.findById(serviceId)
+                .map(service -> service.getCategory() != null && service.getCategory().supportsResourceTypes())
                 .orElse(false);
         String capacityResourceTypeId = requestedResourceTypeId != null && !requestedResourceTypeId.isBlank()
                 ? requestedResourceTypeId : slot.getResourceTypeId();
-        if (isStay) {
-            // STAY inventory is exclusively physical Resource Type inventory.
-            // Slot maxBookings and capacity overrides must never limit room count.
+        if (usesResourceTypes) {
+            // STAY and HALL inventory is exclusively physical Resource Type inventory.
+            // Slot maxBookings and capacity overrides must never limit physical resource count.
             // A slot-level block is still authoritative for the selected date.
             LocalDateTime from = slotStart(date, slot);
             LocalDateTime to = slotEnd(date, slot);
@@ -758,6 +769,29 @@ public class BookingAvailabilityServiceImpl
         }
     }
 
+    /**
+     * Hall/resource-type bookings use physical inventory rather than the
+     * legacy slot maxBookings/capacity calculation. Still honour vendor
+     * blocks for every calendar date touched by each requested interval.
+     *
+     * Intervals are half-open [from, to), so subtracting one nanosecond from
+     * the end avoids treating a midnight checkout/end boundary as another day.
+     */
+    private void validateResourceSlotNotBlocked(String serviceId, BookingSlot slot,
+                                                List<BookingTimeInterval> intervals) {
+        for (BookingTimeInterval interval : intervals) {
+            LocalDate date = interval.getFrom().toLocalDate();
+            LocalDate lastOccupiedDate = interval.getTo().minusNanos(1).toLocalDate();
+            while (!date.isAfter(lastOccupiedDate)) {
+                if (hasVendorBlock(serviceId, slot.getId(), date)) {
+                    throw new IllegalStateException(
+                            "The selected booking slot is blocked by the vendor on " + date + ".");
+                }
+                date = date.plusDays(1);
+            }
+        }
+    }
+
     private List<String> allocateResourceUnits(String serviceId, String resourceTypeId,
                                                List<BookingTimeInterval> intervals,
                                                int quantity, LocalDateTime now) {
@@ -869,9 +903,9 @@ public class BookingAvailabilityServiceImpl
                 if (remaining < quantity) {
                     log.info("Booking hold rejected due to insufficient interval capacity serviceId={} slotId={} date={} requested={} remaining={}",
                             serviceId, slot.getId(), date, quantity, remaining);
-                    throw new IllegalStateException(
-                            "Not enough rooms are available for the entire requested stay. " +
-                                    "Please reduce the room count or choose different dates/slot.");
+                    throw new IllegalStateException(isStay
+                            ? "Not enough rooms are available for the entire requested stay. Please reduce the room count or choose different dates/slot."
+                            : "Not enough physical resources are available for the selected booking interval. Choose another date or slot.");
                 }
             }
             date = date.plusDays(1);

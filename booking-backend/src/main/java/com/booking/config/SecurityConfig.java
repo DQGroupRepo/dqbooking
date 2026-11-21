@@ -81,6 +81,7 @@ public class SecurityConfig {
                                 "/api/auth/login",
                                 "/api/auth/register",
                                 "/api/auth/vendor/register",
+                                "/api/auth/forgot-password/**",
                                 "/api/customer/services",
                                 "/api/customer/services/**",
                                 "/api/tag-directory/categories",

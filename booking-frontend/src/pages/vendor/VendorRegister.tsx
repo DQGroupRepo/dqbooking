@@ -229,14 +229,14 @@ const VendorRegister = () => {
             );
 
 
+            const responseData = err?.response?.data;
+
             setError(
-
-                err.response?.data?.message ||
-
-                err.response?.data ||
-
-                "Vendor registration failed"
-
+                typeof responseData?.message === "string"
+                    ? responseData.message
+                    : typeof responseData === "string"
+                        ? responseData
+                        : "Vendor registration failed. Please try again."
             );
 
         } finally {

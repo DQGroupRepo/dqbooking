@@ -67,6 +67,25 @@
     color: #4a5568;
 }
 
+
+/* Keep the location badge visually separated from the capacity line. */
+.vendor-location-capacity {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    margin-top: 2px;
+}
+
+.vendor-location-capacity .location-badge--compact {
+    margin-top: 0;
+}
+
+.vendor-capacity {
+    margin: 0;
+    line-height: 1.4;
+}
+
 /* =========================================================
    MOBILE VENDOR CARD
    ========================================================= */
@@ -157,6 +176,10 @@
 
         font-size: 12px;
 
+    }
+
+    .vendor-capacity {
+        font-size: 12px;
     }
 
 

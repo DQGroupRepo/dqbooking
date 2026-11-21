@@ -20,6 +20,7 @@ import CategoryListing from "../pages/CategoryListing/CategoryListing";
 import VendorDetail from "../pages/VendorDetail/VendorDetail";
 import BookingCheckout from "../pages/BookingCheckout/BookingCheckout";
 import Login from "../pages/Login/Login";
+import ForgotPassword from "../pages/ForgotPassword/ForgotPassword";
 import Register from "../pages/Register/Register";
 import CreateListing from "../pages/CreateListing/CreateListing";
 import VendorAddService from "../pages/VendorAddService/VendorAddService";
@@ -378,6 +379,8 @@ const AppRoutes = () => {
                         }
                     />
 
+
+                    <Route path="/forgot-password" element={<ForgotPassword />} />
 
                     <Route
                         path="/register"

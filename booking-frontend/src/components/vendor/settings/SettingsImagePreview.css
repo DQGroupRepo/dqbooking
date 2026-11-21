@@ -1,0 +1,13 @@
+.settings-image-trigger { display:inline-flex; align-items:center; justify-content:center; padding:0; border:0; background:transparent; cursor:zoom-in; max-width:100%; }
+.settings-image-trigger img { display:block; max-width:100%; max-height:180px; object-fit:contain; }
+.settings-image-lightbox { position:fixed; inset:0; z-index:10050; display:flex; align-items:center; justify-content:center; padding:60px 5vw; box-sizing:border-box; background:rgba(0,0,0,.88); }
+.settings-image-lightbox-content { width: min(90vw, 1200px); height: min(82vh, 850px); display:flex; align-items:center; justify-content:center; }
+.settings-image-lightbox-content img { max-width:100%; max-height:100%; width:auto; height:auto; object-fit:contain; border-radius:8px; background:#fff; }
+.settings-image-lightbox-close { position:absolute; top:22px; right:28px; width:46px; height:46px; border:0; border-radius:50%; background:rgba(255,255,255,.18); color:#fff; font-size:32px; line-height:1; cursor:pointer; }
+.settings-image-lightbox-close:hover { background:rgba(255,255,255,.32); }
+@media(max-width:600px){ .settings-image-lightbox { padding:58px 12px 24px; } .settings-image-lightbox-close { top:10px; right:12px; } }
+
+.settings-image-trigger.business-logo { width:116px; height:116px; box-sizing:border-box; padding:7px; overflow:hidden; border:1px solid #e2e8f0; border-radius:10px; background:#fff; }
+.settings-image-trigger.business-logo img { width:100%; height:100%; max-height:none; object-fit:contain; }
+.settings-image-trigger.verification-document-thumbnail { width:100%; max-width:150px; height:92px; border-radius:5px; background:#f8fafc; }
+.settings-image-trigger.verification-document-thumbnail img { width:100%; height:100%; max-height:none; object-fit:contain; }

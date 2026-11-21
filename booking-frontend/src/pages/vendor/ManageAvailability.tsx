@@ -121,7 +121,7 @@ export default function ManageAvailability() {
 
             const service = await VendorServiceService.getServiceById(serviceId);
             setIsStayService(
-                ["stay", "stays"].includes(String(service.category ?? "").toLowerCase().trim())
+                ["stay", "stays", "hall", "halls"].includes(String(service.category ?? "").toLowerCase().trim())
             );
 
             const response =

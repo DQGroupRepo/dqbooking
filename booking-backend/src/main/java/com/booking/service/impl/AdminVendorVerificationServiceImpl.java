@@ -13,6 +13,7 @@ import com.booking.model.enums.VendorVerificationStatus;
 import com.booking.repository.UserRepository;
 import com.booking.repository.VendorServiceRepository;
 import com.booking.service.AdminVendorVerificationService;
+import com.booking.service.VendorSettingsApprovalService;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,6 +37,8 @@ public class AdminVendorVerificationServiceImpl
 
     private final VendorServiceRepository
             vendorServiceRepository;
+
+    private final VendorSettingsApprovalService settingsApprovalService;
 
     @Override
     public List<AdminVendorVerificationResponse> getVendors() {
@@ -127,6 +130,10 @@ public class AdminVendorVerificationServiceImpl
 
                 .verificationStatus(
                         vendor.getVerificationStatus()
+                )
+
+                .pendingSettingsCount(
+                        settingsApprovalService.pendingCounts(List.of(vendor.getId())).getOrDefault(vendor.getId(), 0L)
                 )
 
                 .services(
