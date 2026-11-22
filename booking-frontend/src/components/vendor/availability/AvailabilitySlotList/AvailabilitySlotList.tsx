@@ -15,6 +15,7 @@ interface Props {
     onManage: (slot: BookingSlot) => void;
 
     isStayService?: boolean;
+    isCateringService?: boolean;
 
 }
 
@@ -28,7 +29,8 @@ export default function AvailabilitySlotList({
 
     onManage,
 
-    isStayService = false
+    isStayService = false,
+    isCateringService = false
 
 }: Props) {
 
@@ -82,6 +84,8 @@ export default function AvailabilitySlotList({
 
                                             override={override}
 
+                                            isStayService={isStayService}
+                                            isCateringService={isCateringService}
                                             onManage={() =>
 
                                                 onManage(slot)

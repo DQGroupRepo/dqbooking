@@ -59,7 +59,11 @@ const BookingSummary = ({
                                 <>
                                     {booking.resourceTypeName && <p>Room Type: {booking.resourceTypeName}</p>}
                                     {booking.roomQuantity != null && <p>Room Quantity: {booking.roomQuantity}</p>}
-                                    {!!booking.resourceIds?.length && <p>Allocated Rooms: {booking.resourceIds.join(", ")}</p>}
+                                    {!!(booking.resourceNames?.length || booking.resourceIds?.length) && (
+                                        <p>
+                                            Allocated Rooms: {(booking.resourceNames?.length ? booking.resourceNames : booking.resourceIds ?? []).join(", ")}
+                                        </p>
+                                    )}
                                 </>
                             )}
 

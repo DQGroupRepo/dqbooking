@@ -91,6 +91,11 @@ public class CustomerBookingDetailsResponse {
 
     private BigDecimal paidAmount;
 
+    private String packageId;
+    private String packageName;
+    private BigDecimal packagePrice;
+    private List<String> packageFeatures;
+
     private List<BookingPricingHeadSnapshot> pricingHeads;
 
     private List<BookingDiscountSnapshot> discounts;

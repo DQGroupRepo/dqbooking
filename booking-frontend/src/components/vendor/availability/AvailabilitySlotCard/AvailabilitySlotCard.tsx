@@ -20,6 +20,7 @@ interface Props {
     onManage: () => void;
 
     isStayService?: boolean;
+    isCateringService?: boolean;
 
 }
 
@@ -31,7 +32,8 @@ export default function AvailabilitySlotCard({
 
     onManage,
 
-    isStayService = false
+    isStayService = false,
+    isCateringService = false
 
 }: Props) {
 
@@ -119,7 +121,7 @@ export default function AvailabilitySlotCard({
 
                     <span>
 
-                        Capacity
+                        {isCateringService ? "Guest Capacity" : "Capacity"}
 
                     </span>
 

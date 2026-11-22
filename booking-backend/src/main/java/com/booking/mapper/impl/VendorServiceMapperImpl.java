@@ -74,6 +74,9 @@ public class VendorServiceMapperImpl implements VendorServiceMapper {
                         request.getCateringDetails()
                 )
         );
+        if (request.getCategory() == com.booking.model.enums.ServiceCategory.MAKEUP) validateBeautyDetails(request.getBeautyDetails(), request.getBookingSettings());
+        service.setBeautyDetails(request.getCategory() == com.booking.model.enums.ServiceCategory.MAKEUP
+                ? request.getBeautyDetails() : null);
 
         service.setLocation(
                 request.getLocation()
@@ -177,6 +180,8 @@ public class VendorServiceMapperImpl implements VendorServiceMapper {
                         service.getCateringDetails()
                 )
         );
+        response.setBeautyDetails(service.getCategory() == com.booking.model.enums.ServiceCategory.MAKEUP
+                ? service.getBeautyDetails() : null);
 
         response.setLocation(
                 service.getLocation()
@@ -261,6 +266,9 @@ public class VendorServiceMapperImpl implements VendorServiceMapper {
                         request.getCateringDetails()
                 )
         );
+        if (request.getCategory() == com.booking.model.enums.ServiceCategory.MAKEUP) validateBeautyDetails(request.getBeautyDetails(), request.getBookingSettings());
+        entity.setBeautyDetails(request.getCategory() == com.booking.model.enums.ServiceCategory.MAKEUP
+                ? request.getBeautyDetails() : null);
 
         entity.setLocation(
                 request.getLocation()
@@ -286,6 +294,59 @@ public class VendorServiceMapperImpl implements VendorServiceMapper {
         );
     }
 
+
+
+    private void validateBeautyDetails(com.booking.model.embedded.BeautyDetails details,
+                                       com.booking.dto.vendorservice.BookingSettingsDto settings) {
+        if (details == null || details.getOpeningTime() == null || details.getClosingTime() == null
+                || !details.getClosingTime().isAfter(details.getOpeningTime())) {
+            throw new IllegalArgumentException("Configure valid Beauty shop opening and closing times.");
+        }
+        if (settings == null || settings.getMaxSimultaneousBookings() == null || settings.getMaxSimultaneousBookings() < 1) {
+            throw new IllegalArgumentException("Set maximum simultaneous customers to at least one for Beauty services.");
+        }
+        List<com.booking.model.embedded.BeautyServiceItem> services = details.getServices() == null ? List.of() : details.getServices();
+        java.util.Set<String> ids = new java.util.HashSet<>();
+        for (var item : services) {
+            if (item == null || item.getId() == null || item.getId().isBlank() || !ids.add(item.getId())
+                    || item.getName() == null || item.getName().isBlank() || item.getPrice() == null
+                    || item.getPrice().signum() < 0) {
+                throw new IllegalArgumentException("Each Beauty service needs a unique ID, name and non-negative price.");
+            }
+        }
+        long activeCount = services.stream().filter(com.booking.model.embedded.BeautyServiceItem::isActive).count();
+        if (activeCount < 1) throw new IllegalArgumentException("Add at least one active Beauty service before publishing.");
+        List<com.booking.model.embedded.BeautyDurationRule> rules = details.getDurationRules() == null ? List.of() : details.getDurationRules();
+        List<com.booking.model.embedded.BeautyDurationRule> sorted = rules.stream()
+                .sorted(java.util.Comparator.comparing(com.booking.model.embedded.BeautyDurationRule::getMinServices,
+                        java.util.Comparator.nullsFirst(Integer::compareTo))).toList();
+        int expected = 1;
+        for (var rule : sorted) {
+            if (rule.getMinServices() == null || rule.getMaxServices() == null || rule.getDurationMinutes() == null
+                    || rule.getMinServices() != expected || rule.getMaxServices() < rule.getMinServices()
+                    || rule.getDurationMinutes() < 1 || rule.getMaxServices() > activeCount) {
+                throw new IllegalArgumentException("Beauty duration rules must cover every service count from 1 to the number of active services without gaps or overlaps.");
+            }
+            expected = rule.getMaxServices() + 1;
+        }
+        if (activeCount > 0 && expected != activeCount + 1) {
+            throw new IllegalArgumentException("Beauty duration rules must cover every service count from 1 to the number of active services.");
+        }
+        List<com.booking.model.embedded.BeautyBreak> breaks = details.getBreaks() == null ? List.of() : details.getBreaks();
+        var orderedBreaks = breaks.stream().sorted(java.util.Comparator.comparing(com.booking.model.embedded.BeautyBreak::getStartTime,
+                java.util.Comparator.nullsFirst(java.time.LocalTime::compareTo))).toList();
+        java.time.LocalTime previousEnd = details.getOpeningTime();
+        for (var block : orderedBreaks) {
+            if (block.getStartTime() == null || block.getEndTime() == null
+                    || !block.getEndTime().isAfter(block.getStartTime())
+                    || block.getStartTime().isBefore(details.getOpeningTime())
+                    || block.getEndTime().isAfter(details.getClosingTime())
+                    || block.getStartTime().isBefore(previousEnd)) {
+                throw new IllegalArgumentException("Beauty breaks must be valid, within shop hours and non-overlapping.");
+            }
+            previousEnd = block.getEndTime();
+        }
+    }
 
     private List<String> normalizeAttributeValues(List<String> values) {
         if (values == null || values.isEmpty()) {

@@ -35,6 +35,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 
 @Service
@@ -155,6 +156,48 @@ public class BookingAvailabilityServiceImpl
     }
 
     @Override
+    public List<com.booking.dto.availability.BeautyAppointmentOption> getBeautyAppointmentOptions(
+            String serviceId, LocalDate date, Integer durationMinutes) {
+        VendorService service = vendorServiceRepository.findById(serviceId)
+                .orElseThrow(() -> new IllegalArgumentException("Vendor Service not found."));
+        if (service.getCategory() != ServiceCategory.MAKEUP || service.getBeautyDetails() == null) {
+            throw new IllegalArgumentException("Beauty appointment configuration is not available for this service.");
+        }
+        var details = service.getBeautyDetails();
+        int capacity = service.getBookingSettings() == null || service.getBookingSettings().getMaxSimultaneousBookings() == null
+                ? 0 : service.getBookingSettings().getMaxSimultaneousBookings();
+        // Beauty appointment starts are fixed at 30-minute increments. This is
+        // deliberately independent of legacy per-service interval values.
+        final int interval = 30;
+        if (capacity < 1 || durationMinutes == null || durationMinutes < 1 || interval < 1
+                || details.getOpeningTime() == null || details.getClosingTime() == null
+                || !details.getClosingTime().isAfter(details.getOpeningTime())) {
+            throw new IllegalArgumentException("Beauty shop hours, appointment interval and maximum simultaneous customers must be configured.");
+        }
+        LocalDateTime now = LocalDateTime.now();
+        List<Booking> bookings = bookingRepository.findByServiceId(serviceId);
+        List<BookingHold> holds = bookingHoldRepository.findByServiceIdAndStatusAndExpiresAtAfter(
+                serviceId, BookingHoldStatus.ACTIVE, now);
+        java.util.ArrayList<com.booking.dto.availability.BeautyAppointmentOption> result = new java.util.ArrayList<>();
+        for (LocalTime start = details.getOpeningTime(); !start.plusMinutes(durationMinutes).isAfter(details.getClosingTime()); start = start.plusMinutes(interval)) {
+            final LocalTime appointmentStart = start;
+            LocalDateTime from = LocalDateTime.of(date, appointmentStart);
+            LocalDateTime to = from.plusMinutes(durationMinutes);
+            if (!from.isAfter(now)) continue;
+            boolean blocked = details.getBreaks() != null && details.getBreaks().stream().anyMatch(b ->
+                    b.getStartTime() != null && b.getEndTime() != null
+                            && appointmentStart.isBefore(b.getEndTime()) && appointmentStart.plusMinutes(durationMinutes).isAfter(b.getStartTime()));
+            if (blocked) continue;
+            int occupied = peakBeautyOccupancy(from, to, bookings, holds);
+            int remaining = Math.max(0, capacity - occupied);
+            result.add(com.booking.dto.availability.BeautyAppointmentOption.builder()
+                    .startTime(appointmentStart).endTime(appointmentStart.plusMinutes(durationMinutes))
+                    .durationMinutes(durationMinutes).available(remaining > 0).remainingCapacity(remaining).build());
+        }
+        return result;
+    }
+
+    @Override
     public synchronized BookingHoldResponse holdSlot(CreateBookingHoldRequest request) {
         if (request == null) throw new IllegalArgumentException("Booking hold request is required.");
         if (request.getBookingFrom() == null || request.getBookingTo() == null
@@ -194,18 +237,29 @@ public class BookingAvailabilityServiceImpl
         VendorService service = vendorServiceRepository.findById(request.getServiceId())
                 .orElseThrow(() -> new IllegalArgumentException("Vendor Service not found."));
         boolean isStay = service.getCategory() == ServiceCategory.STAY;
+        boolean isBeauty = service.getCategory() == ServiceCategory.MAKEUP;
+        boolean isCatering = service.getCategory() != null
+                && "CATERING".equalsIgnoreCase(service.getCategory().name());
         boolean usesResourceTypes = service.getCategory() != null
                 && service.getCategory().supportsResourceTypes();
+
+        if (isCatering && (request.getGuestCount() == null || request.getGuestCount() < 1)) {
+            throw new IllegalArgumentException("Please provide a valid guest count for Catering.");
+        }
 
         ServicePackage selectedPackage = null;
         if (request.getPackageId() != null && !request.getPackageId().isBlank()) {
             selectedPackage = resolvePackageForHold(request.getServiceId(), request.getPackageId(), request.getBookingFrom().toLocalDate());
         }
 
-        boolean requiresSlot = isStay || selectedPackage == null
-                || !Boolean.FALSE.equals(selectedPackage.getRequiresSlot());
-        if (!requiresSlot && !isStay) {
-            throw new IllegalArgumentException("Slot-free packages are supported only for STAY services.");
+        // Individual Beauty services use generated appointment starts; Beauty fixed
+        // packages use their explicitly configured booking slots. Other categories
+        // keep the pre-existing slot requirement rules unchanged.
+        boolean requiresSlot = isBeauty
+                ? selectedPackage != null
+                : (isStay || selectedPackage == null || !Boolean.FALSE.equals(selectedPackage.getRequiresSlot()));
+        if (!requiresSlot && !isStay && !isBeauty) {
+            throw new IllegalArgumentException("Slot-free packages are supported only for STAY and Beauty services.");
         }
         if (requiresSlot && (request.getSlotId() == null || request.getSlotId().isBlank())) {
             throw new IllegalArgumentException("Booking slot is required for this package.");
@@ -255,6 +309,16 @@ public class BookingAvailabilityServiceImpl
 
         if (selectedPackage != null && !selectedPackage.isActive()) {
             throw new IllegalArgumentException("Selected package is not active.");
+        }
+        if (isBeauty && selectedPackage != null
+                && (selectedPackage.getSlotIds() == null || selectedPackage.getSlotIds().isEmpty())) {
+            throw new IllegalArgumentException("Assign at least one booking slot (for example, Morning or Evening) to this Beauty package.");
+        }
+        // Apply overlapping-customer duration validation only to individual
+        // Beauty appointments. Fixed Beauty packages are governed by their
+        // selected BookingSlot capacity, exactly like other package bookings.
+        if (isBeauty && selectedPackage == null) {
+            validateBeautyAppointment(service, request, null, requestedIntervals);
         }
         if (selectedPackage != null) {
             int durationUnits;
@@ -349,6 +413,10 @@ public class BookingAvailabilityServiceImpl
         } else if (!"STANDARD_SLOT".equals(bookingType) && !"DAY_PACKAGE".equals(bookingType)) {
             throw new IllegalArgumentException("Unsupported booking type: " + bookingType);
         }
+        // Catering slot capacity is measured in guests, not number of bookings.
+        if (isCatering) {
+            quantity = request.getGuestCount();
+        }
 
         LocalDateTime now = LocalDateTime.now();
         List<String> holdResourceAllocation = new java.util.ArrayList<>();
@@ -387,7 +455,7 @@ public class BookingAvailabilityServiceImpl
                     resourceTypeId = null;
                 }
             }
-        } else {
+        } else if (!isBeauty) {
             throw new IllegalArgumentException("A valid booking slot is required.");
         }
 
@@ -395,6 +463,8 @@ public class BookingAvailabilityServiceImpl
         hold.setServiceId(request.getServiceId());
         hold.setSlotId(slot == null ? null : slot.getId());
         hold.setPackageId(selectedPackage == null ? request.getPackageId() : selectedPackage.getId());
+        hold.setSelectedBeautyServiceIds(isBeauty && request.getSelectedBeautyServiceIds() != null
+                ? new java.util.ArrayList<>(request.getSelectedBeautyServiceIds()) : new java.util.ArrayList<>());
         hold.setResourceTypeId(resourceTypeId);
         hold.setResourceIds(holdResourceAllocation);
         hold.setResourceAllocations(holdAllocations);
@@ -405,6 +475,7 @@ public class BookingAvailabilityServiceImpl
         hold.setRoomQuantity(isStay ? roomQuantity : request.getRoomQuantity());
         hold.setCartId(request.getCartId());
         hold.setQuantity(quantity);
+        hold.setGuestCount(isCatering ? request.getGuestCount() : null);
         hold.setStatus(BookingHoldStatus.ACTIVE);
         hold.setExpiresAt(now.plusMinutes(5));
         hold.setCustomerId(customerId);
@@ -427,6 +498,104 @@ public class BookingAvailabilityServiceImpl
                 .quantity(savedHold.getQuantity())
                 .expiresAt(savedHold.getExpiresAt())
                 .build();
+    }
+
+    private void validateBeautyAppointment(VendorService service, CreateBookingHoldRequest request,
+                                           ServicePackage selectedPackage, List<BookingTimeInterval> intervals) {
+        var details = service.getBeautyDetails();
+        if (details == null || details.getOpeningTime() == null || details.getClosingTime() == null) {
+            throw new IllegalArgumentException("Beauty shop hours are not configured.");
+        }
+        int capacity = service.getBookingSettings() == null || service.getBookingSettings().getMaxSimultaneousBookings() == null
+                ? 0 : service.getBookingSettings().getMaxSimultaneousBookings();
+        if (capacity < 1) throw new IllegalArgumentException("Maximum simultaneous customers must be configured for Beauty services.");
+        int expectedDuration;
+        if (selectedPackage != null) {
+            int packageServiceCount = selectedPackage.getFeatures() == null ? 0 : selectedPackage.getFeatures().size();
+            expectedDuration = selectedPackage.getDurationMinutes() != null ? selectedPackage.getDurationMinutes()
+                    : (details.getDurationRules() == null ? 30 : details.getDurationRules().stream()
+                    .filter(rule -> rule.getMinServices() != null && rule.getMaxServices() != null
+                            && packageServiceCount >= rule.getMinServices() && packageServiceCount <= rule.getMaxServices())
+                    .map(rule -> rule.getDurationMinutes() == null ? 0 : rule.getDurationMinutes()).findFirst().orElse(30));
+        } else {
+            List<String> ids = request.getSelectedBeautyServiceIds() == null ? List.of() : request.getSelectedBeautyServiceIds();
+            if (ids.isEmpty()) throw new IllegalArgumentException("Select at least one Beauty service or a fixed package.");
+            long distinct = ids.stream().filter(java.util.Objects::nonNull).distinct().count();
+            if (distinct != ids.size()) throw new IllegalArgumentException("Duplicate Beauty services are not allowed.");
+            long activeCount = details.getServices() == null ? 0 : details.getServices().stream()
+                    .filter(item -> item.isActive() && ids.contains(item.getId())).count();
+            if (activeCount != ids.size()) throw new IllegalArgumentException("One or more selected Beauty services are unavailable.");
+            expectedDuration = details.getDurationRules() == null ? 0 : details.getDurationRules().stream()
+                    .filter(rule -> rule.getMinServices() != null && rule.getMaxServices() != null
+                            && ids.size() >= rule.getMinServices() && ids.size() <= rule.getMaxServices())
+                    .map(rule -> rule.getDurationMinutes() == null ? 0 : rule.getDurationMinutes())
+                    .findFirst().orElse(0);
+        }
+        if (expectedDuration < 1 || intervals.size() != 1
+                || java.time.Duration.between(request.getBookingFrom(), request.getBookingTo()).toMinutes() != expectedDuration) {
+            throw new IllegalArgumentException("Selected Beauty services/package does not match a configured appointment duration.");
+        }
+        LocalTime start = request.getBookingFrom().toLocalTime();
+        LocalTime end = request.getBookingTo().toLocalTime();
+        final int appointmentInterval = 30;
+        long offsetMinutes = java.time.Duration.between(details.getOpeningTime(), start).toMinutes();
+        if (appointmentInterval < 1 || offsetMinutes < 0 || offsetMinutes % appointmentInterval != 0) {
+            throw new IllegalArgumentException("Select an appointment start time matching the configured start interval.");
+        }
+        if (!request.getBookingFrom().toLocalDate().equals(request.getBookingTo().toLocalDate())
+                || start.isBefore(details.getOpeningTime()) || end.isAfter(details.getClosingTime())) {
+            throw new IllegalArgumentException("Beauty appointment must fit within the shop opening hours on the selected date.");
+        }
+        if (details.getBreaks() != null && details.getBreaks().stream().anyMatch(b -> b.getStartTime() != null && b.getEndTime() != null
+                && start.isBefore(b.getEndTime()) && end.isAfter(b.getStartTime()))) {
+            throw new IllegalArgumentException("The selected Beauty appointment overlaps a shop break or blocked time.");
+        }
+        // Recheck overlapping bookings and live holds while the synchronized hold operation is executing.
+        LocalDateTime now = LocalDateTime.now();
+        List<Booking> existingBookings = bookingRepository.findByServiceId(service.getId());
+        List<BookingHold> existingHolds = bookingHoldRepository.findByServiceIdAndStatusAndExpiresAtAfter(
+                service.getId(), BookingHoldStatus.ACTIVE, now);
+        int peakOccupied = peakBeautyOccupancy(request.getBookingFrom(), request.getBookingTo(), existingBookings, existingHolds);
+        if (peakOccupied >= capacity) throw new IllegalStateException("This appointment time is no longer available. Please select another time.");
+    }
+
+    /** Returns the maximum number of existing Beauty appointments overlapping any instant in [from,to). */
+    private int peakBeautyOccupancy(LocalDateTime from, LocalDateTime to,
+                                    List<Booking> bookings, List<BookingHold> holds) {
+        java.util.TreeMap<LocalDateTime, Integer> events = new java.util.TreeMap<>();
+        if (bookings != null) {
+            for (Booking booking : bookings) {
+                if (booking == null || booking.getStatus() == BookingStatus.CANCELLED
+                        || booking.getStatus() == BookingStatus.REJECTED
+                        || booking.getPackageId() != null && !booking.getPackageId().isBlank()
+                        || booking.getBookingFrom() == null || booking.getBookingTo() == null) continue;
+                addBeautyOccupancyEvents(events, from, to, booking.getBookingFrom(), booking.getBookingTo());
+            }
+        }
+        if (holds != null) {
+            for (BookingHold hold : holds) {
+                if (hold == null || hold.getPackageId() != null && !hold.getPackageId().isBlank()
+                        || hold.getBookingFrom() == null || hold.getBookingTo() == null) continue;
+                addBeautyOccupancyEvents(events, from, to, hold.getBookingFrom(), hold.getBookingTo());
+            }
+        }
+        int current = 0;
+        int peak = 0;
+        for (Integer delta : events.values()) {
+            current += delta;
+            peak = Math.max(peak, current);
+        }
+        return peak;
+    }
+
+    private void addBeautyOccupancyEvents(java.util.TreeMap<LocalDateTime, Integer> events,
+                                          LocalDateTime requestedFrom, LocalDateTime requestedTo,
+                                          LocalDateTime existingFrom, LocalDateTime existingTo) {
+        LocalDateTime overlapFrom = existingFrom.isAfter(requestedFrom) ? existingFrom : requestedFrom;
+        LocalDateTime overlapTo = existingTo.isBefore(requestedTo) ? existingTo : requestedTo;
+        if (!overlapFrom.isBefore(overlapTo)) return;
+        events.merge(overlapFrom, 1, Integer::sum);
+        events.merge(overlapTo, -1, Integer::sum);
     }
 
     private List<ResourceTypeRequirement> effectiveRequirements(ServicePackage selectedPackage,
@@ -927,9 +1096,10 @@ public class BookingAvailabilityServiceImpl
         BookingSlot slot = bookingSlotRepository.findById(slotId).orElse(null);
         if (slot == null || slot.getStartTime() == null || slot.getEndTime() == null) return 0;
 
-        boolean isStay = vendorServiceRepository.findById(serviceId)
-                .map(service -> service.getCategory() == ServiceCategory.STAY)
-                .orElse(false);
+        VendorService service = vendorServiceRepository.findById(serviceId).orElse(null);
+        boolean isStay = service != null && service.getCategory() == ServiceCategory.STAY;
+        boolean isCatering = service != null && service.getCategory() != null
+                && "CATERING".equalsIgnoreCase(service.getCategory().name());
 
         LocalDateTime requestedFrom = slotStart(date, slot);
         LocalDateTime requestedTo = slotEnd(date, slot);
@@ -964,7 +1134,9 @@ public class BookingAvailabilityServiceImpl
                             || packageIdsForRequestedSlot.isEmpty()
                             || packageIdsForRequestedSlot.contains(b.getPackageId());
                 })
-                .mapToInt(b -> b.getRoomQuantity() != null ? b.getRoomQuantity() : 1)
+                .mapToInt(b -> isCatering
+                        ? (b.getGuestCount() == null ? 1 : Math.max(1, b.getGuestCount()))
+                        : (b.getRoomQuantity() != null ? b.getRoomQuantity() : 1))
                 .sum();
     }
 
@@ -1021,9 +1193,10 @@ public class BookingAvailabilityServiceImpl
         BookingSlot slot = bookingSlotRepository.findById(slotId).orElse(null);
         if (slot == null || slot.getStartTime() == null || slot.getEndTime() == null) return 0;
 
-        boolean isStay = vendorServiceRepository.findById(serviceId)
-                .map(service -> service.getCategory() == ServiceCategory.STAY)
-                .orElse(false);
+        VendorService service = vendorServiceRepository.findById(serviceId).orElse(null);
+        boolean isStay = service != null && service.getCategory() == ServiceCategory.STAY;
+        boolean isCatering = service != null && service.getCategory() != null
+                && "CATERING".equalsIgnoreCase(service.getCategory().name());
 
         LocalDateTime requestedFrom = slotStart(date, slot);
         LocalDateTime requestedTo = slotEnd(date, slot);
@@ -1049,7 +1222,11 @@ public class BookingAvailabilityServiceImpl
                             || packageIdsForRequestedSlot.isEmpty()
                             || packageIdsForRequestedSlot.contains(h.getPackageId());
                 })
-                .mapToInt(h -> h.getQuantity() == null ? 0 : Math.max(0, h.getQuantity()))
+                .mapToInt(h -> isCatering
+                        ? (h.getGuestCount() == null
+                        ? (h.getQuantity() == null ? 0 : Math.max(0, h.getQuantity()))
+                        : Math.max(0, h.getGuestCount()))
+                        : (h.getQuantity() == null ? 0 : Math.max(0, h.getQuantity())))
                 .sum();
     }
 

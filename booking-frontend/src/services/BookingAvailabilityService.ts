@@ -40,6 +40,11 @@ class BookingAvailabilityService {
     }
 
 
+    async getBeautyAppointmentOptions(serviceId: string, date: string, durationMinutes: number): Promise<{ startTime: string; endTime: string; durationMinutes: number; available: boolean; remainingCapacity: number }[]> {
+        const response = await api.get(`/services/${serviceId}/availability/beauty`, { params: { date, durationMinutes } });
+        return response.data;
+    }
+
     /*
      * =========================================
      * HOLD SLOT

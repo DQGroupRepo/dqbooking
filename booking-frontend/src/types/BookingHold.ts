@@ -3,6 +3,7 @@ export interface BookingHoldRequest {
     serviceId: string;
     slotId?: string;
     packageId?: string;
+    selectedBeautyServiceIds?: string[];
     resourceTypeId?: string;
     resourceRequirements?: { resourceTypeId: string; quantity: number }[];
     bookingFrom: string;
@@ -11,6 +12,7 @@ export interface BookingHoldRequest {
     bookingType?: "STANDARD_SLOT" | "ROOM_STAY" | "DAY_PACKAGE";
     roomQuantity?: number;
     quantity: number;
+    guestCount?: number;
 }
 
 export interface BookingResourceAllocation {

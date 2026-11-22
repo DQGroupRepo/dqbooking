@@ -39,6 +39,9 @@ public class ServicePackageRequest {
     @Min(1) @Max(31)
     private Integer includedDuration;
 
+    @Min(1) @Max(1440)
+    private Integer durationMinutes;
+
     private String name;
 
     @NotNull

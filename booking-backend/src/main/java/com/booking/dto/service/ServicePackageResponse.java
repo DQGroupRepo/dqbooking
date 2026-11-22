@@ -29,6 +29,8 @@ public class ServicePackageResponse {
 
     private Integer includedDuration;
 
+    private Integer durationMinutes;
+
     private String name;
 
     private BigDecimal price;

@@ -133,8 +133,28 @@ public class BundleCalculationServiceImpl
                                             item.getBookingFrom().toLocalDate()
                                     );
 
-                            PricingCalculationResult pricing = pricingCalculationService.calculatePrice(
-                                    service.getId(), item.getBookingFrom().toLocalDate(), item.getPackageId(), item.getGuestCount());
+                            PricingCalculationResult pricing;
+                            if (service.getCategory() == ServiceCategory.MAKEUP
+                                    && (item.getPackageId() == null || item.getPackageId().isBlank())) {
+                                if (item.getSelectedBeautyServiceIds() == null || item.getSelectedBeautyServiceIds().isEmpty()
+                                        || service.getBeautyDetails() == null || service.getBeautyDetails().getServices() == null) {
+                                    throw new IllegalArgumentException("Select at least one configured Beauty service for the bundle.");
+                                }
+                                java.util.Set<String> uniqueIds = new java.util.HashSet<>(item.getSelectedBeautyServiceIds());
+                                if (uniqueIds.size() != item.getSelectedBeautyServiceIds().size()) throw new IllegalArgumentException("Duplicate Beauty services are not allowed.");
+                                BigDecimal beautyAmount = BigDecimal.ZERO;
+                                for (String id : item.getSelectedBeautyServiceIds()) {
+                                    var beautyItem = service.getBeautyDetails().getServices().stream()
+                                            .filter(candidate -> candidate.isActive() && id.equals(candidate.getId()))
+                                            .findFirst().orElseThrow(() -> new IllegalArgumentException("A selected Beauty service is unavailable."));
+                                    beautyAmount = beautyAmount.add(beautyItem.getPrice());
+                                }
+                                pricing = pricingCalculationService.calculatePriceWithBaseAmount(
+                                        service.getId(), item.getBookingFrom().toLocalDate(), null, item.getGuestCount(), beautyAmount);
+                            } else {
+                                pricing = pricingCalculationService.calculatePrice(
+                                        service.getId(), item.getBookingFrom().toLocalDate(), item.getPackageId(), item.getGuestCount());
+                            }
                             BigDecimal eligibleAmount = safe(pricing.getSubtotal());
                             if (service.getCategory() == ServiceCategory.STAY) {
                                 int quantity = Math.max(1, item.getRoomQuantity() == null ? 1 : item.getRoomQuantity());

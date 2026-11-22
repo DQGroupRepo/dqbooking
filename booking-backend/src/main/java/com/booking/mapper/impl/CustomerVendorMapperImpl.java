@@ -228,6 +228,7 @@ public class CustomerVendorMapperImpl
                 )
                 .packages(packages)
                 .resourceTypes(service.getResourceTypes())
+                .beautyDetails(service.getCategory() == com.booking.model.enums.ServiceCategory.MAKEUP ? service.getBeautyDetails() : null)
 
                 .build();
     }

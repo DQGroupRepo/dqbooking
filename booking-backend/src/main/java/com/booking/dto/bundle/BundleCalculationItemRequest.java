@@ -25,4 +25,6 @@ public class BundleCalculationItemRequest {
     private Integer guestCount;
 
     private Integer roomQuantity;
+
+    private java.util.List<String> selectedBeautyServiceIds = new java.util.ArrayList<>();
 }

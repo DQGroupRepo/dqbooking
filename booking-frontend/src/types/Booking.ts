@@ -53,8 +53,11 @@ export interface Booking {
   pricing: BookingPricingResponse;
 
   packageId?: string;
+  packageName?: string;
+  packagePrice?: number;
+  packageFeatures?: string[];
 
-  packageType?: "SILVER" | "GOLD" | "PREMIUM";
+  packageType?: "SILVER" | "GOLD" | "PREMIUM" | "FIXED_DURATION";
 
   cancellable?: boolean;
 

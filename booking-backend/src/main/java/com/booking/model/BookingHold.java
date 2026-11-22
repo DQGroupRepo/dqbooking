@@ -25,8 +25,11 @@ public class BookingHold extends BaseEntity {
     private LocalDate eventDate;
     private String packageId;
 
+    /** Selected individual Beauty & Makeup menu item IDs. */
+    private List<String> selectedBeautyServiceIds = new ArrayList<>();
+
     private String resourceTypeId;
-    private java.util.List<String> resourceIds = new java.util.ArrayList<>();
+    private List<String> resourceIds = new ArrayList<>();
 
     /** All physical allocations for combined STAY package inventory. */
     private List<ResourceAllocation> resourceAllocations = new ArrayList<>();
@@ -36,10 +39,13 @@ public class BookingHold extends BaseEntity {
 
     private Integer quantity;
 
+    /** Catering guest count reserved against the selected slot. */
+    private Integer guestCount;
+
     // Booking interval snapshot used by interval-based availability checks.
     private LocalDateTime bookingFrom;
     private LocalDateTime bookingTo;
-    private java.util.List<BookingTimeInterval> bookingIntervals = new java.util.ArrayList<>();
+    private List<BookingTimeInterval> bookingIntervals = new ArrayList<>();
     private String bookingType;
     private Integer roomQuantity;
 

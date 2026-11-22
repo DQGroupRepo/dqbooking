@@ -157,6 +157,7 @@ const VendorPricing = () => {
 
     const [isCateringService, setIsCateringService] = useState(false);
     const [isStayService, setIsStayService] = useState(false);
+    const [isMakeupService, setIsMakeupService] = useState(false);
     const [isResourceService, setIsResourceService] = useState(false);
     const [bookingSlots, setBookingSlots] = useState<BookingSlot[]>([]);
     const [resourceTypes, setResourceTypes] = useState<ServiceResourceType[]>([]);
@@ -249,10 +250,12 @@ const VendorPricing = () => {
                 const category = service.category?.toLowerCase().trim();
                 const isCatering = category === "catering";
                 const isStay = category === "stay" || category === "stays";
+                const isMakeup = category === "makeup";
                 const usesResourceTypes = isStay || category === "hall" || category === "halls";
 
                 setIsCateringService(isCatering);
                 setIsStayService(isStay);
+                setIsMakeupService(isMakeup);
                 setIsResourceService(usesResourceTypes);
                 const savedResourceTypes = usesResourceTypes
                     ? await VendorServiceService.getResourceTypes(serviceId!)
@@ -742,8 +745,8 @@ const VendorPricing = () => {
              * There is no separate package API call.
              */
 
-            if (!isResourceService && packages.some(pkg => pkg.active && pkg.requiresSlot === false)) {
-                toast.error("Packages without predefined slots are supported only for Stays services.");
+            if (!isResourceService && !isMakeupService && packages.some(pkg => pkg.active && pkg.requiresSlot === false)) {
+                toast.error("Packages without predefined slots are supported only for Stays and Beauty services.");
                 setSaving(false);
                 return;
             }
@@ -1053,7 +1056,7 @@ const VendorPricing = () => {
             price: 0,
             features: [],
             active: true,
-            requiresSlot: true,
+            requiresSlot: !isMakeupService,
             slotIds: [],
             pricingBasis: "FIXED",
             minimumDuration: 1,
@@ -1815,6 +1818,13 @@ const VendorPricing = () => {
                                                         </div>
                                                     </div>
                                                     {isStayService && <p className="package-eligibility-help">This price applies to one complete room composition. The customer-selected quantity multiplies the price by the number of complete combinations.</p>}
+                                                    {isMakeupService && <div className="package-eligibility-config">
+                                                        <label>Appointment duration (minutes)
+                                                            <NumericInput min="1" max="1440" value={pkg.durationMinutes ?? 30}
+                                                                onChange={e => updatePackage(packageIndex, "durationMinutes", Math.max(1, Math.min(1440, Number(e.target.value) || 1)))} />
+                                                        </label>
+                                                        <p className="package-eligibility-help">This fixed package occupies one customer capacity position for the full duration. If left unset, duration is derived from the configured duration rule using the number of package features.</p>
+                                                    </div>}
 
                                                     {pkg.packageType === "FIXED_DURATION" ? (
                                                         <div className="package-eligibility-config">

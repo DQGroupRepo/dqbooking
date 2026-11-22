@@ -110,6 +110,9 @@ public class VendorService extends BaseEntity {
 
     private CateringDetails cateringDetails;
 
+    /** Beauty & Makeup appointment menu and shop schedule; null for other categories. */
+    private BeautyDetails beautyDetails;
+
     /** Optional generic physical inventory. Empty preserves legacy availability. */
     private List<ServiceResourceType> resourceTypes = new ArrayList<>();
 

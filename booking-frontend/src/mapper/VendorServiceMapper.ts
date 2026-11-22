@@ -66,6 +66,11 @@ export default class VendorServiceMapper {
 
       detailSections: service.detailSections ?? [],
 
+      beautyDetails: service.category?.toUpperCase() === "MAKEUP" ? (service.beautyDetails ?? {
+        openingTime: "09:00", closingTime: "18:00",
+        services: [], durationRules: [], breaks: [],
+      }) : undefined,
+
       /* CATERING DETAILS */
 
       cateringDetails:
@@ -166,6 +171,8 @@ export default class VendorServiceMapper {
       /* DETAIL SECTIONS */
 
       detailSections: form.detailSections,
+
+      beautyDetails: form.category.toUpperCase() === "MAKEUP" ? form.beautyDetails : undefined,
 
       /* CATERING DETAILS */
 

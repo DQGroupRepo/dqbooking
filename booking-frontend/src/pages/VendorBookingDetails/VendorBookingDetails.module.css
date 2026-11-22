@@ -190,3 +190,9 @@
     .modalActions { flex-direction: column-reverse; }
     .modalActions button { width: 100%; }
 }
+
+
+.packageDetails { margin: 16px 0; padding: 14px; border: 1px solid #dbe7f2; border-radius: 10px; background: #f7fafc; }
+.packageDetails h3 { margin: 0 0 10px; color: #173b5e; font-size: 1rem; }
+.packageDetails p { margin: 7px 0; }
+.packageDetails ul { margin: 6px 0 0; padding-left: 22px; color: #4b5563; }

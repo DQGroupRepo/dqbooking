@@ -32,6 +32,8 @@ public class BookingServiceItemRequest {
 
     private String packageId;
 
+    private List<String> selectedBeautyServiceIds = new ArrayList<>();
+
     @NotNull
     private LocalDateTime bookingFrom;
 

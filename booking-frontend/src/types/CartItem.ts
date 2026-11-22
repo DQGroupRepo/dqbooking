@@ -39,6 +39,9 @@ export interface CartItem {
 
     guestCount?: number;
 
+    selectedBeautyServiceIds?: string[];
+    selectedBeautyServiceNames?: string[];
+
     /*
      * =========================================
      * BOOKING SLOT
@@ -88,6 +91,7 @@ export interface CartItem {
     bundleDiscountValue?: number;
 
     packageId?: string;
+    packageName?: string;
 
     resourceRequirements?: { resourceTypeId: string; quantity: number }[];
 

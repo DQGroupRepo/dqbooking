@@ -61,6 +61,7 @@ export default function BookingSlotModal({
     const isEditMode = !!slot;
     const [saving, setSaving] = useState(false);
     const [resourceTypes, setResourceTypes] = useState<ServiceResourceType[]>([]);
+    const [isCateringService, setIsCateringService] = useState(false);
     const [formData, setFormData] = useState<CreateBookingSlotRequest>({
         slotName: "",
         startTime: "",
@@ -103,6 +104,7 @@ export default function BookingSlotModal({
                 const service = await VendorServiceService.getServiceById(serviceId);
                 const category = String(service.category ?? "").trim().toUpperCase();
                 const supportsResources = ["STAY", "STAYS", "HALL", "HALLS"].includes(category);
+                if (!cancelled) setIsCateringService(category === "CATERING");
                 const types = supportsResources
                     ? await VendorServiceService.getResourceTypes(serviceId)
                     : [];
@@ -111,6 +113,7 @@ export default function BookingSlotModal({
                 if (!cancelled) {
                     console.error("Failed to load slot resource types", error);
                     setResourceTypes([]);
+                    setIsCateringService(false);
                 }
             }
         })();
@@ -148,7 +151,9 @@ export default function BookingSlotModal({
             return;
         }
         if (formData.maxBookings <= 0) {
-            toast.error("Maximum bookings must be at least 1.");
+            toast.error(isCateringService
+                ? "Maximum guests must be at least 1."
+                : "Maximum bookings must be at least 1.");
             return;
         }
         if (formData.displayOrder <= 0) {
@@ -263,7 +268,7 @@ export default function BookingSlotModal({
                 <Input
                     name="maxBookings"
                     type="number"
-                    label="Maximum Bookings"
+                    label={isCateringService ? "Maximum Guests" : "Maximum Bookings"}
                     value={formData.maxBookings.toString()}
                     onChange={handleChange}
                 />

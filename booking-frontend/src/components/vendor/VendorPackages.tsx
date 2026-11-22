@@ -80,6 +80,9 @@ const VendorPackages = ({
     const [menuPackage, setMenuPackage] =
         useState<PackageWithCateringMenu | null>(null);
 
+    const [featuresPackage, setFeaturesPackage] =
+        useState<ServicePackage | null>(null);
+
     // Customer selections stay local to this component until the booking
     // flow explicitly sends them to the cart/booking API.
     const [selectedDishIds, setSelectedDishIds] = useState<
@@ -413,47 +416,19 @@ const VendorPackages = ({
                                         )}
 
                                         <div className="package-feature-area">
-
-                                            {
-                                                pkg.features &&
-                                                pkg.features.length > 0
-                                                    ? (
-
-                                                        <ul className="package-features">
-
-                                                            {
-                                                                pkg.features.map(
-                                                                    (
-                                                                        feature,
-                                                                        featureIndex
-                                                                    ) => (
-
-                                                                        <li
-                                                                            key={
-                                                                                featureIndex
-                                                                            }
-                                                                        >
-                                                                            {feature}
-                                                                        </li>
-
-                                                                    )
-                                                                )
-                                                            }
-
-                                                        </ul>
-
-                                                    )
-                                                    : (
-
-                                                        <div className="package-no-features">
-
-                                                            No additional features
-
-                                                        </div>
-
-                                                    )
-                                            }
-
+                                            {pkg.features && pkg.features.length > 0 ? (
+                                                <button
+                                                    type="button"
+                                                    className="package-included-features-button"
+                                                    onClick={() => setFeaturesPackage(pkg)}
+                                                    aria-label={`View included features for ${pkg.name}`}
+                                                >
+                                                    Included features ({pkg.features.length})
+                                                    <span aria-hidden="true"> ↗</span>
+                                                </button>
+                                            ) : (
+                                                <div className="package-no-features">No additional features</div>
+                                            )}
                                         </div>
 
                                     </div>
@@ -511,6 +486,47 @@ const VendorPackages = ({
 
             </div>
 
+
+            {featuresPackage && (
+                <div
+                    className="package-features-overlay"
+                    onMouseDown={(event) => {
+                        if (event.target === event.currentTarget) setFeaturesPackage(null);
+                    }}
+                >
+                    <section
+                        className="package-features-modal"
+                        role="dialog"
+                        aria-modal="true"
+                        aria-labelledby="package-features-title"
+                    >
+                        <header className="package-features-header">
+                            <div>
+                                <h2 id="package-features-title">Included features</h2>
+                                <p>{featuresPackage.name}</p>
+                            </div>
+                            <button
+                                type="button"
+                                className="package-features-close"
+                                aria-label="Close included features"
+                                onClick={() => setFeaturesPackage(null)}
+                            >
+                                ×
+                            </button>
+                        </header>
+                        <div className="package-features-modal-body">
+                            <ul className="package-features-modal-list">
+                                {(featuresPackage.features ?? []).map((feature, index) => (
+                                    <li key={`${featuresPackage.id ?? featuresPackage.name}-${index}`}>
+                                        <span className="package-feature-check" aria-hidden="true">✓</span>
+                                        <span>{feature}</span>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    </section>
+                </div>
+            )}
 
             {/* =========================================
                 FOOTER

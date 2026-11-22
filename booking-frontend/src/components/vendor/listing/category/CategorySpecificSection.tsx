@@ -3,6 +3,8 @@ import type { VendorServiceForm } from "../../../../types/VendorServiceForm";
 import CateringSection from "./CateringSection/CateringSection";
 import type { CateringMenuItem } from "../../../../types/CateringMenuItem";
 import ServiceAttributeSelector from "../ServiceAttributeSelector/ServiceAttributeSelector";
+import MakeupSection from "./MakeupSection/MakeupSection";
+import type { BeautyDetails } from "../../../../types/BeautyDetails";
 
 interface Props {
   category: string;
@@ -11,6 +13,8 @@ interface Props {
   onDetailChange: (sectionKey: string, attributeKey: string, value: string | boolean) => void;
   onCateringDetailsChange: (field: string, value: boolean | string[]) => void;
   onCateringMenuItemsChange: (items: CateringMenuItem[]) => void;
+  onBeautyDetailsChange: (details: BeautyDetails) => void;
+  onMaxSimultaneousCustomersChange: (value: string) => void;
   facilities: string[];
   onFacilitiesChange: (values: string[]) => void;
   amenities: string[];
@@ -27,13 +31,17 @@ const CategorySpecificSection = ({
   amenities,
   onAmenitiesChange,
   onCateringDetailsChange,
-  onCateringMenuItemsChange
+  onCateringMenuItemsChange,
+  onBeautyDetailsChange,
+  onMaxSimultaneousCustomersChange
 }: Props) => {
   const normalizedCategory = category?.toUpperCase().trim() ?? "";
 
   return (
     <>
-      {normalizedCategory === "CATERING" ? (
+      {normalizedCategory === "MAKEUP" ? (
+        <MakeupSection value={formData.beautyDetails} maxCustomers={formData.maxSimultaneousBookings} onMaxCustomersChange={onMaxSimultaneousCustomersChange} onChange={onBeautyDetailsChange} />
+      ) : normalizedCategory === "CATERING" ? (
         <CateringSection
           formData={formData}
           onCateringDetailsChange={onCateringDetailsChange}

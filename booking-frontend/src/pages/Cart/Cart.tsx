@@ -526,6 +526,17 @@ const Cart = () => {
                                                 }
 
                                             </p>
+                                            {item.packageId && (
+                                                <div className="cart-package-details">
+                                                    <strong>Selected package: {item.packageName || item.packageType || "Package"}</strong>
+                                                    {item.packageFeatures?.length ? <ul>{item.packageFeatures.map((feature, index) => <li key={`${item.packageId}-${index}`}>{feature}</li>)}</ul> : <span>No additional features</span>}
+                                                    {item.packagePrice != null && <span>Package price: ₹{Number(item.packagePrice).toLocaleString("en-IN")}</span>}
+                                                </div>
+                                            )}
+
+                                            {item.selectedBeautyServiceNames?.length ? (
+                                                <p className="cart-item-meta">Selected services: {item.selectedBeautyServiceNames.join(", ")}</p>
+                                            ) : null}
 
 
                                             {
@@ -906,6 +917,13 @@ const Cart = () => {
                                                                 }
 
                                                             </p>
+                                                                    {item.packageId && (
+                                                                        <div className="cart-package-details">
+                                                                            <strong>Selected package: {item.packageName || item.packageType || "Package"}</strong>
+                                                                            {item.packageFeatures?.length ? <ul>{item.packageFeatures.map((feature, index) => <li key={`${item.packageId}-${index}`}>{feature}</li>)}</ul> : <span>No additional features</span>}
+                                                                            {item.packagePrice != null && <span>Package price: ₹{Number(item.packagePrice).toLocaleString("en-IN")}</span>}
+                                                                        </div>
+                                                                    )}
 
 
                                                             {

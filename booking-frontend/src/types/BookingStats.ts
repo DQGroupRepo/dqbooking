@@ -30,6 +30,10 @@ export interface BookingStats {
     resourceIds?: string[];
     resourceNames?: string[];
     vendorCanCancel?: boolean;
+    packageId?: string;
+    packageName?: string;
+    packagePrice?: number;
+    packageFeatures?: string[];
 
     guestCount: number;
 

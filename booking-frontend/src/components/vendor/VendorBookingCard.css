@@ -1366,3 +1366,40 @@ span {
     background: #073654 !important;
     color: #fff;
 }
+
+/* Beauty & Makeup service selection and appointment options */
+.beauty-customer-selection,
+.beauty-appointment-options { display: grid; gap: 10px; margin: 14px 0; }
+.beauty-customer-service { display: flex; align-items: center; gap: 10px; padding: 10px; border: 1px solid var(--border-color, #ddd); border-radius: 8px; cursor: pointer; }
+.beauty-customer-service span { flex: 1; min-width: 0; }
+.beauty-customer-service strong { white-space: nowrap; }
+.beauty-appointment-options-scroll {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 9px;
+    max-height: 330px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 3px 7px 3px 2px;
+    scrollbar-width: thin;
+}
+.beauty-appointment-options-scroll button {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    min-height: 58px;
+    border: 1px solid #d5e0eb;
+    border-radius: 10px;
+    padding: 8px 6px;
+    color: #123b5a;
+    background: #fff;
+    cursor: pointer;
+    transition: background .15s ease, border-color .15s ease;
+}
+.beauty-appointment-options-scroll button strong { font-size: 14px; }
+.beauty-appointment-options-scroll button small { color: #647b91; font-size: 11px; }
+.beauty-appointment-options-scroll button.selected { border: 2px solid #1768c4; background: #eaf3ff; color: #073b70; }
+.beauty-appointment-options-scroll button:disabled { opacity: .45; color: #687786; background: #edf0f3; cursor: not-allowed; }
+@media (max-width: 480px) { .beauty-appointment-options-scroll { grid-template-columns: repeat(2, minmax(0, 1fr)); max-height: 280px; } }

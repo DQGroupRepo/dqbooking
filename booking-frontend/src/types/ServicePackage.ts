@@ -21,6 +21,8 @@ export interface ServicePackage {
   maximumDuration?: number;
   /** Exact duration included in a fixed-duration package (STAY = nights). */
   includedDuration?: number;
+  /** Fixed appointment duration in minutes for Beauty packages. */
+  durationMinutes?: number;
   price: number;
   features: string[];
   active: boolean;

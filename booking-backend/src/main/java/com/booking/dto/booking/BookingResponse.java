@@ -153,4 +153,14 @@ public class BookingResponse extends BaseEntity {
 
     private String packageType;
 
+    /** Immutable package details copied from the booking pricing snapshot. */
+    private String packageName;
+
+    private BigDecimal packagePrice;
+
+    private java.util.List<String> packageFeatures;
+
+    private java.util.List<String> selectedBeautyServiceIds;
+    private java.util.List<String> selectedBeautyServiceNames;
+
 }
