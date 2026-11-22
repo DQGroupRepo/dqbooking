@@ -27,6 +27,9 @@ public class ServicePackage {
     /** Exact included duration for FIXED_DURATION packages (STAY uses nights). */
     private Integer includedDuration;
 
+    /** Optional fixed appointment duration in minutes for Beauty packages. */
+    private Integer durationMinutes;
+
     private String name;
 
     private BigDecimal price;

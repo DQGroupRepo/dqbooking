@@ -195,6 +195,7 @@ public class PricingMapperImpl implements PricingMapper {
         servicePackage.setMinimumDuration(request.getMinimumDuration() == null ? 1 : request.getMinimumDuration());
         servicePackage.setMaximumDuration(request.getMaximumDuration() == null ? 31 : request.getMaximumDuration());
         servicePackage.setIncludedDuration(request.getIncludedDuration());
+        servicePackage.setDurationMinutes(request.getDurationMinutes());
         if ("FIXED_DURATION".equalsIgnoreCase(request.getPackageType())) {
             if (request.getIncludedDuration() == null || request.getIncludedDuration() < 1 || request.getIncludedDuration() > 31) {
                 throw new IllegalArgumentException("A fixed-duration package must have an included duration between 1 and 31.");
@@ -467,11 +468,12 @@ public class PricingMapperImpl implements PricingMapper {
         );
         response.setResourceTypeId(servicePackage.getResourceTypeId());
         response.setResourceRequirements(servicePackage.getResourceRequirements() == null
-                ? java.util.Collections.emptyList() : servicePackage.getResourceRequirements());
+                ? Collections.emptyList() : servicePackage.getResourceRequirements());
         response.setPricingBasis(servicePackage.getPricingBasis() == null ? "FIXED" : servicePackage.getPricingBasis());
         response.setMinimumDuration(servicePackage.getMinimumDuration() == null ? 1 : servicePackage.getMinimumDuration());
         response.setMaximumDuration(servicePackage.getMaximumDuration() == null ? 31 : servicePackage.getMaximumDuration());
         response.setIncludedDuration(servicePackage.getIncludedDuration());
+        response.setDurationMinutes(servicePackage.getDurationMinutes());
 
         response.setName(
                 servicePackage.getName()
@@ -492,7 +494,7 @@ public class PricingMapperImpl implements PricingMapper {
         response.setPackageType(servicePackage.getPackageType());
         response.setRequiresSlot(servicePackage.getRequiresSlot());
         response.setSlotIds(servicePackage.getSlotIds() == null
-                ? java.util.Collections.emptyList() : servicePackage.getSlotIds());
+                ? Collections.emptyList() : servicePackage.getSlotIds());
         response.setMaxGuestsPerRoom(servicePackage.getMaxGuestsPerRoom());
 
         response.setCateringMenu(

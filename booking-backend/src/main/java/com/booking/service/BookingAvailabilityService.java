@@ -35,6 +35,8 @@ public interface BookingAvailabilityService {
             LocalDate date
     );
 
+    List<com.booking.dto.availability.BeautyAppointmentOption> getBeautyAppointmentOptions(String serviceId, LocalDate date, Integer durationMinutes);
+
     BookingHoldResponse holdSlot(
             CreateBookingHoldRequest request
     );

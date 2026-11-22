@@ -42,6 +42,9 @@ export default function ManageAvailability() {
     const [isStayService, setIsStayService] =
         useState(false);
 
+    const [isCateringService, setIsCateringService] =
+        useState(false);
+
     const [showModal, setShowModal] =
         useState(false);
 
@@ -120,9 +123,9 @@ export default function ManageAvailability() {
         try {
 
             const service = await VendorServiceService.getServiceById(serviceId);
-            setIsStayService(
-                ["stay", "stays", "hall", "halls"].includes(String(service.category ?? "").toLowerCase().trim())
-            );
+            const category = String(service.category ?? "").toLowerCase().trim();
+            setIsStayService(["stay", "stays", "hall", "halls"].includes(category));
+            setIsCateringService(category === "catering");
 
             const response =
                 await BookingSlotService.getSlots(serviceId);
@@ -212,6 +215,7 @@ export default function ManageAvailability() {
                         overrides={overrides}
                         onManage={handleManage}
                         isStayService={isStayService}
+                        isCateringService={isCateringService}
                     />
 
                 </div>
@@ -230,6 +234,7 @@ export default function ManageAvailability() {
                         slot={selectedSlot}
                         override={selectedOverride}
                         isStayService={isStayService}
+                        isCateringService={isCateringService}
                     />
 
                 )

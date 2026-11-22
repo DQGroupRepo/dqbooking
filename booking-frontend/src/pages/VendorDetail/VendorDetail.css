@@ -645,3 +645,123 @@
     margin-left: 0;
     margin-right: 0;
 }
+
+/* Beauty & Makeup: individual appointment services sit below fixed packages. */
+.vendor-detail-page .beauty-book-service-section {
+    margin-top: 30px;
+    padding: 24px;
+    border: 1px solid #dce6ef;
+    border-radius: 16px;
+    background: #fff;
+    box-shadow: 0 6px 20px rgba(12, 48, 74, .06);
+}
+.vendor-detail-page .beauty-book-service-heading {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 18px;
+}
+.vendor-detail-page .beauty-book-service-heading h2 {
+    margin: 0 0 6px;
+    color: #102f49;
+    font-size: 24px;
+    line-height: 1.25;
+}
+.vendor-detail-page .beauty-book-service-heading p {
+    margin: 0;
+    color: #647b90;
+    font-size: 14px;
+}
+.vendor-detail-page .beauty-book-service-heading > span {
+    flex: 0 0 auto;
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: #edf5fb;
+    color: #14558a;
+    font-size: 12px;
+    font-weight: 700;
+}
+.vendor-detail-page .beauty-book-service-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    gap: 12px;
+}
+.vendor-detail-page .beauty-book-service-option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    padding: 14px 15px;
+    border: 1px solid #dce6ef;
+    border-radius: 12px;
+    background: #fff;
+    cursor: pointer;
+    transition: border-color .15s ease, background .15s ease;
+}
+.vendor-detail-page .beauty-book-service-option.is-selected {
+    border-color: #14558a;
+    background: #f1f7fc;
+}
+.vendor-detail-page .beauty-book-service-option input {
+    flex: 0 0 auto;
+    width: 17px;
+    height: 17px;
+    margin: 0;
+    accent-color: #14558a;
+}
+.vendor-detail-page .beauty-book-service-name {
+    flex: 1;
+    min-width: 0;
+    color: #173b57;
+    font-size: 14px;
+    font-weight: 600;
+}
+.vendor-detail-page .beauty-book-service-option strong {
+    flex: 0 0 auto;
+    color: #d97706;
+    font-size: 14px;
+}
+.vendor-detail-page .beauty-book-service-summary {
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px 16px;
+    margin-top: 16px;
+    padding-top: 14px;
+    border-top: 1px solid #e6edf3;
+    color: #526b80;
+    font-size: 14px;
+}
+.vendor-detail-page .beauty-book-service-summary strong { color: #102f49; }
+@media (max-width: 600px) {
+    .vendor-detail-page .beauty-book-service-section { padding: 18px 14px; }
+    .vendor-detail-page .beauty-book-service-heading h2 { font-size: 21px; }
+    .vendor-detail-page .beauty-book-service-grid { grid-template-columns: 1fr; }
+}
+
+
+/* Align the individual Beauty service selector with the package list. */
+.vendor-detail-page .beauty-book-service-heading { justify-content: flex-start; text-align: left; }
+.vendor-detail-page .beauty-book-service-heading > div { text-align: left; }
+
+
+/* Keep Beauty's individual-service selector aligned with the package column. */
+.vendor-detail-page .beauty-book-service-section {
+    width: 100%;
+    max-width: 100%;
+    margin-left: 0;
+    margin-right: 0;
+    box-sizing: border-box;
+    text-align: left;
+}
+.vendor-detail-page .beauty-book-service-heading {
+    width: 100%;
+    align-items: flex-start;
+    justify-content: flex-start;
+    text-align: left;
+}
+.vendor-detail-page .beauty-book-service-heading h2,
+.vendor-detail-page .beauty-book-service-heading p {
+    text-align: left;
+}

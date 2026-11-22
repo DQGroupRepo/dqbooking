@@ -316,6 +316,17 @@ public class BookingMapperImpl
                 .packageType(
                         booking.getPackageType()
                 )
+                .packageName(booking.getPricingSnapshot() == null
+                        ? booking.getPackageType()
+                        : booking.getPricingSnapshot().getPackageType())
+                .packagePrice(booking.getPricingSnapshot() == null
+                        ? null
+                        : booking.getPricingSnapshot().getPackagePrice())
+                .packageFeatures(booking.getPricingSnapshot() == null
+                        ? null
+                        : booking.getPricingSnapshot().getPackageFeatures())
+                .selectedBeautyServiceIds(booking.getSelectedBeautyServiceIds())
+                .selectedBeautyServiceNames(booking.getSelectedBeautyServiceNames())
 
                 .build();
 

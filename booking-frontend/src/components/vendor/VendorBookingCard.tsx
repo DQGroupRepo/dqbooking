@@ -33,6 +33,7 @@ interface Props {
     selectedResourceTypeId?: string | null;
 
     selectedCateringDishes?: CartSelectedCateringDish[];
+    selectedBeautyServiceIds?: string[];
 
     onEventDateChange?: (
         date: string
@@ -81,6 +82,7 @@ const BookingCard = ({
     packageSelectionVersion = 0,
     selectedResourceTypeId,
     selectedCateringDishes = [],
+    selectedBeautyServiceIds = [],
     onEventDateChange,
     onClearSelectedPackage,
     onSelectedSlotChange
@@ -123,6 +125,16 @@ const BookingCard = ({
     // Guest count is required only for catering services.
     const isCatering =
         String(vendor.category ?? "").trim().toUpperCase() === "CATERING";
+    const isBeauty = String(vendor.category ?? "").trim().toUpperCase() === "MAKEUP";
+    const [beautyOptions, setBeautyOptions] = useState<{startTime:string;endTime:string;durationMinutes:number;available:boolean;remainingCapacity:number}[]>([]);
+    const [selectedBeautyStart, setSelectedBeautyStart] = useState("");
+    useEffect(() => { if (selectedPackage) setSelectedBeautyStart(""); }, [selectedPackage?.id]);
+    const beautyDetails = vendor.beautyDetails;
+    const beautyDuration = selectedPackage
+        ? (selectedPackage.durationMinutes ?? (beautyDetails?.durationRules ?? []).find(rule => (selectedPackage.features?.length ?? 0) >= rule.minServices && (selectedPackage.features?.length ?? 0) <= rule.maxServices)?.durationMinutes ?? 30)
+        : (beautyDetails?.durationRules ?? []).find(rule => selectedBeautyServiceIds.length >= rule.minServices && selectedBeautyServiceIds.length <= rule.maxServices)?.durationMinutes ?? 0;
+    const selectedBeautyServices = (beautyDetails?.services ?? []).filter(item => selectedBeautyServiceIds.includes(item.id));
+    const beautyIndividualPrice = selectedBeautyServices.reduce((sum,item)=>sum + Number(item.price || 0),0);
 
 
     /*
@@ -163,7 +175,7 @@ const BookingCard = ({
         useState<SlotAvailability | null>(null);
 
     const isStay = ["STAY", "STAYS"].includes(String(vendor.category ?? "").trim().toUpperCase());
-    const requiresSlot = isStay || selectedPackage?.requiresSlot !== false;
+    const requiresSlot = !isBeauty && (isStay || selectedPackage?.requiresSlot !== false);
     const [roomQuantity, setRoomQuantity] = useState(1);
     const [customBookingFrom, setCustomBookingFrom] = useState("");
     const [customBookingTo, setCustomBookingTo] = useState("");
@@ -199,6 +211,17 @@ const BookingCard = ({
     const [slotsLoading, setSlotsLoading] =
         useState(false);
 
+
+    useEffect(() => {
+        if (!isBeauty || !serviceId || !eventDate || beautyDuration < 1) {
+            setBeautyOptions([]); setSelectedBeautyStart(""); return;
+        }
+        let active = true;
+        BookingAvailabilityService.getBeautyAppointmentOptions(serviceId, eventDate, beautyDuration)
+            .then(options => { if (active) { setBeautyOptions(options); setSelectedBeautyStart(current => options.some(o => o.startTime === current && o.available) ? current : ""); } })
+            .catch(error => { if (active) { setBeautyOptions([]); setSelectedBeautyStart(""); setSlotError(error?.response?.data?.message ?? "Unable to load Beauty appointment times."); } });
+        return () => { active = false; };
+    }, [isBeauty, serviceId, eventDate, beautyDuration]);
 
     const [slotError, setSlotError] =
         useState<string | null>(null);
@@ -680,6 +703,9 @@ const BookingCard = ({
             }
 
 
+            if (isBeauty && (!selectedPackage && selectedBeautyServiceIds.length === 0)) { alert("Please select at least one Beauty service or a fixed package."); return false; }
+            if (isBeauty && beautyDuration < 1) { alert("The selected Beauty services do not have a configured duration rule."); return false; }
+            if (isBeauty && !selectedBeautyStart) { alert("Please select an available appointment time."); return false; }
             if (requiresSlot && !selectedSlot) {
                 alert("Please select an available time slot.");
                 return false;
@@ -772,6 +798,9 @@ const BookingCard = ({
             }
 
 
+            if (isBeauty && (!selectedPackage && selectedBeautyServiceIds.length === 0)) { toast.error("Please select at least one Beauty service or a fixed package."); return false; }
+            if (isBeauty && beautyDuration < 1) { toast.error("The selected Beauty services do not have a configured duration rule."); return false; }
+            if (isBeauty && !selectedBeautyStart) { toast.error("Please select an available appointment time."); return false; }
             if (requiresSlot && !selectedSlot) {
                 alert("Please select an available time slot.");
                 return false;
@@ -866,7 +895,7 @@ const BookingCard = ({
 
                 const rangeFrom = isStay ? customBookingFrom : (customBookingFrom || eventDate);
                 const rangeTo = isStay ? customBookingTo : (customBookingTo || eventDate);
-                const recurring = !isStay && selectedSlot?.bookingPattern !== "CONTINUOUS";
+                const recurring = !isStay && !isBeauty && selectedSlot?.bookingPattern !== "CONTINUOUS";
                 const intervalDates: string[] = [];
                 if (rangeFrom && rangeTo && rangeTo >= rangeFrom) {
                     let cursor = rangeFrom;
@@ -897,7 +926,9 @@ const BookingCard = ({
                             )
                         })))
                     : [];
-                const bookingIntervals = isStay
+                const bookingIntervals = isBeauty
+                    ? [{ from: toLocalDateTime(eventDate, selectedBeautyStart), to: toLocalDateTime(eventDate, beautyOptions.find(o => o.startTime === selectedBeautyStart)?.endTime ?? selectedBeautyStart) }]
+                    : isStay
                     ? stayIntervals
                     : recurring
                         ? intervalDates.map(date => ({
@@ -929,13 +960,15 @@ const BookingCard = ({
                         serviceId,
                         slotId: holdSlotId,
                         packageId: selectedPackage?.id,
+                        selectedBeautyServiceIds: isBeauty && !selectedPackage ? selectedBeautyServiceIds : [],
                         // Stay room composition is defined by the selected package on the backend.
                         // Do not send resourceRequirements/resourceTypeId as client overrides.
                         bookingFrom,
                         bookingTo,
                         bookingType: isStay ? "ROOM_STAY" : "STANDARD_SLOT",
                         roomQuantity: isStay ? roomQuantity : undefined,
-                        quantity
+                        quantity,
+                        guestCount: isCatering ? Number(guests) : undefined
                     });
 
                 if (!canReuseHold) {
@@ -972,7 +1005,7 @@ const BookingCard = ({
                     category:
                         vendor.category,
 
-                    price: selectedPackage
+                    price: isBeauty && !selectedPackage ? beautyIndividualPrice : selectedPackage
                         ? Number(selectedPackage.price)
                             * (isStay ? roomQuantity : 1)
                             * (selectedPackage.packageType === "FIXED_DURATION" ? 1 : (
@@ -1042,6 +1075,9 @@ const BookingCard = ({
                     packageId:
                         selectedPackage?.id,
 
+                    packageName:
+                        selectedPackage?.name,
+
                     resourceRequirements: selectedPackage?.resourceRequirements ?? [],
 
                     packageType:
@@ -1067,6 +1103,9 @@ const BookingCard = ({
 
                     selectedCateringDishes:
                         selectedCateringDishes,
+
+                    selectedBeautyServiceIds: isBeauty && !selectedPackage ? selectedBeautyServiceIds : undefined,
+                    selectedBeautyServiceNames: isBeauty && !selectedPackage ? selectedBeautyServices.map(item => item.name) : undefined,
 
 
                     /*
@@ -1354,7 +1393,7 @@ const BookingCard = ({
     const handleBooking =
         () => {
 
-            if (!selectedPackage) {
+            if (!selectedPackage && !(isBeauty && selectedBeautyServiceIds.length > 0)) {
                 return;
             }
 
@@ -1649,7 +1688,7 @@ const BookingCard = ({
                     </div>
                 ) : (
                     <>
-                        <label>From Date</label>
+                        <label>{isBeauty ? "Appointment Date" : "From Date"}</label>
                         <DateField
                             value={eventDate}
                             minDate={getTodayDate()}
@@ -1674,7 +1713,7 @@ const BookingCard = ({
 
                             }}
                         />
-                        <label>To Date</label>
+                        {!isBeauty && <><label>To Date</label>
                         <DateField
                             value={customBookingTo || eventDate}
                             minDate={eventDate || getTodayDate()}
@@ -1683,8 +1722,25 @@ const BookingCard = ({
                         />
                         <p className="package-eligibility-help">
                             Select a date range. Availability is checked for every occupied session.
-                        </p>
+                        </p></>}
                     </>
+                )}
+
+                {isBeauty && selectedPackage && <p className="package-eligibility-help">Fixed package duration: {beautyDuration || "Not configured"} minutes.</p>}
+                {isBeauty && eventDate && beautyDuration > 0 && (
+                    <div className="beauty-appointment-options">
+                        <label>Available appointment times</label>
+                        {beautyOptions.length === 0 ? <p>No appointment times are available for this selection/date.</p> : (
+                            <div className="beauty-appointment-options-scroll" role="listbox" aria-label="Available appointment start times">
+                                {beautyOptions.map(option => (
+                                    <button type="button" role="option" aria-selected={selectedBeautyStart === option.startTime} key={option.startTime} disabled={!option.available} className={selectedBeautyStart === option.startTime ? "selected" : ""} onClick={() => setSelectedBeautyStart(option.startTime)}>
+                                        <strong>{formatTime(option.startTime)}</strong>
+                                        <small>{option.available ? `${option.remainingCapacity} ${option.remainingCapacity === 1 ? "spot" : "spots"} left` : "Unavailable"}</small>
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                    </div>
                 )}
 
                 {
@@ -1986,7 +2042,8 @@ const BookingCard = ({
                     type="button"
                     onClick={handleBooking}
                     disabled={
-                        !selectedPackage ||
+                        (!selectedPackage && !(isBeauty && selectedBeautyServiceIds.length > 0)) ||
+                        (isBeauty && (!selectedBeautyStart || beautyDuration < 1 || !beautyOptions.some(option => option.startTime === selectedBeautyStart && option.available))) ||
                         (requiresSlot && !selectedSlot) ||
                         (requiresSlot && selectedSlot && (!selectedSlot.available || (isStay && (selectedSlot.remainingCapacity ?? 0) < roomQuantity)) && !hasReusableExistingHold(selectedSlot.slotId, eventDate)) ||
                         (isStay && (!customBookingFrom || !customBookingTo || customBookingTo < customBookingFrom)) ||

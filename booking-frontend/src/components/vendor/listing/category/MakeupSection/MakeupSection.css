@@ -1,0 +1,12 @@
+.beauty-config-section { display: grid; gap: 12px; padding: 16px; border: 1px solid var(--border-color, #ddd); border-radius: 10px; margin: 16px 0; }
+.beauty-config-section .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
+.beauty-config-section label { display: grid; gap: 5px; font-size: 14px; }
+.beauty-config-section input:not([type="checkbox"]) { width: 100%; min-width: 0; padding: 9px; border: 1px solid #bbb; border-radius: 6px; }
+.beauty-config-section button { width: fit-content; padding: 7px 12px; border: 1px solid #aaa; border-radius: 6px; background: transparent; cursor: pointer; }
+.beauty-row { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; padding: 8px 0; border-bottom: 1px solid #ddd; }
+.beauty-row label { display: flex; align-items: center; gap: 6px; }
+.beauty-config-section p, .beauty-config-section small { margin: 0; color: #666; font-size: 13px; }
+@media (max-width: 600px) { .beauty-config-section { padding: 12px; } .beauty-row { align-items: flex-start; } }
+
+.beauty-fixed-interval { display: flex; flex-direction: column; justify-content: center; gap: 4px; padding: 10px 12px; border: 1px solid var(--border-color, #dbe3ee); border-radius: 8px; background: var(--surface-muted, #f7f9fc); }
+.beauty-fixed-interval span { color: var(--text-secondary, #64748b); font-size: .85rem; line-height: 1.4; }

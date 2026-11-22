@@ -186,6 +186,19 @@ export default function VendorBookingDetails() {
                             )}
                         </p>
                     )}
+                    {booking.packageId && (
+                        <div className={styles.packageDetails}>
+                            <h3>Selected Package</h3>
+                            <p><strong>Package:</strong> {booking.packageName || "Package"}</p>
+                            {booking.packagePrice != null && <p><strong>Package Price:</strong> ₹{Number(booking.packagePrice).toLocaleString("en-IN")}</p>}
+                            {booking.packageFeatures?.length ? (
+                                <>
+                                    <strong>Included Features:</strong>
+                                    <ul>{booking.packageFeatures.map((feature, index) => <li key={`${booking.packageId}-${index}`}>{feature}</li>)}</ul>
+                                </>
+                            ) : <p>No additional features</p>}
+                        </div>
+                    )}
                     {String(booking.serviceCategory ?? "").toUpperCase() === "STAY" && (
                         <>
                             {booking.resourceTypeName && <p><strong>Room Type:</strong> {booking.resourceTypeName}</p>}

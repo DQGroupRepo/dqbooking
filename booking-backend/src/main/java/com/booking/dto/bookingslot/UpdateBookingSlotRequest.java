@@ -28,7 +28,7 @@ public class UpdateBookingSlotRequest {
 
     @NotNull(message = "Maximum bookings is required.")
     @Min(value = 1, message = "Minimum booking capacity is 1.")
-    @Max(value = 100, message = "Maximum booking capacity is 100.")
+    //@Max(value = 100, message = "Maximum booking capacity is 100.")
     private Integer maxBookings;
 
     @NotNull(message = "Display order is required.")

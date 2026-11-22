@@ -103,6 +103,10 @@ public class Booking extends BaseEntity {
 
     private String slotId;
 
+    /** Selected individual Beauty & Makeup menu item IDs. */
+    private List<String> selectedBeautyServiceIds = new ArrayList<>();
+    private List<String> selectedBeautyServiceNames = new ArrayList<>();
+
     /** Generic physical inventory allocation snapshot. */
     private String resourceTypeId;
     private List<String> resourceIds = new ArrayList<>();

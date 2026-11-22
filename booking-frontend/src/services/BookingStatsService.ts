@@ -41,6 +41,10 @@ interface BookingResponse {
     resourceIds?: string[];
     resourceNames?: string[];
     vendorCanCancel?: boolean;
+    packageId?: string;
+    packageName?: string;
+    packagePrice?: number;
+    packageFeatures?: string[];
 
     guestCount: number;
 
@@ -105,6 +109,10 @@ interface BookingDetailsResponse {
     resourceIds?: string[];
     resourceNames?: string[];
     vendorCanCancel?: boolean;
+    packageId?: string;
+    packageName?: string;
+    packagePrice?: number;
+    packageFeatures?: string[];
 
     guestCount: number;
 
@@ -270,6 +278,10 @@ class BookingStatsService {
             resourceIds: booking.resourceIds,
             resourceNames: booking.resourceNames,
             vendorCanCancel: booking.vendorCanCancel,
+            packageId: booking.packageId,
+            packageName: booking.packageName,
+            packagePrice: booking.packagePrice,
+            packageFeatures: booking.packageFeatures,
 
             guestCount:
                 booking.guestCount,
@@ -351,6 +363,10 @@ class BookingStatsService {
             resourceIds: booking.resourceIds,
             resourceNames: booking.resourceNames,
             vendorCanCancel: booking.vendorCanCancel,
+            packageId: booking.packageId,
+            packageName: booking.packageName,
+            packagePrice: booking.packagePrice,
+            packageFeatures: booking.packageFeatures,
 
             guestCount:
                 booking.guestCount,

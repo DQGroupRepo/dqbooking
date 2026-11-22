@@ -23,6 +23,9 @@ public class CreateBookingHoldRequest {
     /** Required for package-aware holds; omitted by legacy callers for compatibility. */
     private String packageId;
 
+    /** Required for individual MAKEUP appointments; empty for fixed packages. */
+    private List<String> selectedBeautyServiceIds = new java.util.ArrayList<>();
+
     private String resourceTypeId;
 
     /** Optional explicit package composition; accepted only for STAY. */
@@ -44,6 +47,10 @@ public class CreateBookingHoldRequest {
     @NotNull
     @Min(1)
     private Integer quantity = 1;
+
+    /** Required for CATERING: number of guests consuming this slot's capacity. */
+    @Min(1)
+    private Integer guestCount;
 
     @NotBlank
     private String cartId;

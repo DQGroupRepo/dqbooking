@@ -32,6 +32,7 @@ interface Props {
     override?: AvailabilityOverride;
 
     isStayService?: boolean;
+    isCateringService?: boolean;
 
 }
 
@@ -52,7 +53,8 @@ export default function AvailabilityOverrideModal({
 
     override,
 
-    isStayService = false
+    isStayService = false,
+    isCateringService = false
 
 }: Props) {
 
@@ -256,7 +258,7 @@ export default function AvailabilityOverrideModal({
 
                 {!isStayService && <label>
 
-                    Capacity Override
+                    {isCateringService ? "Guest Capacity Override" : "Capacity Override"}
 
                     <NumericInput
 

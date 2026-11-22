@@ -1743,6 +1743,8 @@ const AddService = () => {
                                     onCateringMenuItemsChange={
                                         handleCateringMenuItemsChange
                                     }
+                                    onBeautyDetailsChange={beautyDetails => setFormData(previous => ({ ...previous, beautyDetails }))}
+                                    onMaxSimultaneousCustomersChange={value => setFormData(previous => ({ ...previous, maxSimultaneousBookings: value }))}
                                     serviceId={id}
                                 />
 

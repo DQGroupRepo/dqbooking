@@ -13,6 +13,7 @@ interface Props {
     onEdit: (slot: BookingSlot) => void;
     onDelete: (slot: BookingSlot) => void;
     onToggleStatus: (slot: BookingSlot) => void;
+    isCateringService?: boolean;
 }
 
 function getSlotDuration(startTime: string, endTime: string): {
@@ -48,7 +49,8 @@ export default function BookingSlotCard({
     slot,
     onEdit,
     onDelete,
-    onToggleStatus
+    onToggleStatus,
+    isCateringService = false
 }: Props) {
     const duration = getSlotDuration(slot.startTime, slot.endTime);
 
@@ -85,7 +87,7 @@ export default function BookingSlotCard({
                 <div className="capacity-box">
                     <FaUsers />
                     <div>
-                        <span>Capacity</span>
+                        <span>{isCateringService ? "Guest Capacity" : "Capacity"}</span>
                         <h4>{slot.maxBookings}</h4>
                     </div>
                 </div>

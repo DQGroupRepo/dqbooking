@@ -53,6 +53,13 @@ public class PricingCalculationServiceImpl
             String packageId,
             Integer guestCount
     ) {
+        return calculatePriceWithBaseAmount(serviceId, eventDate, packageId, guestCount, null);
+    }
+
+    @Override
+    public PricingCalculationResult calculatePriceWithBaseAmount(String serviceId, LocalDate eventDate,
+                                                                  String packageId, Integer guestCount,
+                                                                  BigDecimal baseAmountOverride) {
 
         log.info(
                 "Calculating service price serviceId={} eventDate={} packageId={}",
@@ -93,10 +100,9 @@ public class PricingCalculationServiceImpl
                         packageId
                 );
 
-        BigDecimal baseAmount =
-                selectedPackage != null
-                        ? safe(selectedPackage.getPrice())
-                        : safe(pricing.getBaseAmount());
+        BigDecimal baseAmount = baseAmountOverride != null
+                ? safe(baseAmountOverride)
+                : (selectedPackage != null ? safe(selectedPackage.getPrice()) : safe(pricing.getBaseAmount()));
         int cateringGuests = service.getCategory() == com.booking.model.enums.ServiceCategory.CATERING
                 ? Math.max(1, guestCount == null ? 1 : guestCount) : 1;
         if (service.getCategory() == com.booking.model.enums.ServiceCategory.CATERING) {

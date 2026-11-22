@@ -95,6 +95,7 @@ const VendorDetail = () => {
     const [packageSelectionVersion, setPackageSelectionVersion] = useState(0);
     const [selectedCateringDishes, setSelectedCateringDishes] =
         useState<CartSelectedCateringDish[]>([]);
+    const [selectedBeautyServiceIds, setSelectedBeautyServiceIds] = useState<string[]>([]);
 
     // Anchor for bringing date-specific package choices into view.
     const packagesSectionRef = useRef<HTMLDivElement>(null);
@@ -143,6 +144,7 @@ const VendorDetail = () => {
         // must never remain selected.
         setSelectedPackage(null);
         setSelectedCateringDishes([]);
+        setSelectedBeautyServiceIds([]);
 
         setSelectedEventDate(date);
 
@@ -255,6 +257,7 @@ const VendorDetail = () => {
             ...pkg,
             id: nextPackageId
         });
+        setSelectedBeautyServiceIds([]);
         // Package changes invalidate the prior slot selection.
         setSelectedSlotId(null);
         setSelectedSlotResourceTypeId(null);
@@ -431,6 +434,10 @@ const VendorDetail = () => {
      */
 
     const category = String(vendor?.category ?? "").trim().toUpperCase();
+    const isBeautyService = category === "MAKEUP";
+    const activeBeautyServices = (vendor.beautyDetails?.services ?? []).filter(item => item.active);
+    const selectedBeautyDuration = (vendor.beautyDetails?.durationRules ?? []).find(rule => selectedBeautyServiceIds.length >= rule.minServices && selectedBeautyServiceIds.length <= rule.maxServices)?.durationMinutes ?? 0;
+    const selectedBeautyPrice = activeBeautyServices.filter(item => selectedBeautyServiceIds.includes(item.id)).reduce((sum, item) => sum + Number(item.price || 0), 0);
     const isStayService = ["STAY", "STAYS"].includes(category);
     const usesResourceTypes = isStayService || ["HALL", "HALLS"].includes(category);
     const activeResourceTypes = usesResourceTypes
@@ -481,6 +488,7 @@ const VendorDetail = () => {
                             bundles={bundles}
                             selectedPackage={selectedPackage}
                             selectedCateringDishes={selectedCateringDishes}
+                            selectedBeautyServiceIds={selectedBeautyServiceIds}
                             packageSelectionVersion={packageSelectionVersion}
                             selectedResourceTypeId={null}
                             onEventDateChange={handleEventDateChange}
@@ -530,6 +538,44 @@ const VendorDetail = () => {
                                         </section>
                                     )}
                                 </>
+                            )}
+                            {isBeautyService && selectedEventDate && activeBeautyServices.length > 0 && (
+                                <section className="beauty-book-service-section" aria-labelledby="beauty-book-service-title">
+                                    <div className="beauty-book-service-heading">
+                                        <div>
+                                            <h2 id="beauty-book-service-title">Book Service &amp; Visit</h2>
+                                            <p>Select individual services if you don't want to choose a fixed package.</p>
+                                        </div>
+                                        {selectedBeautyServiceIds.length > 0 && <span>{selectedBeautyServiceIds.length} selected</span>}
+                                    </div>
+                                    <div className="beauty-book-service-grid">
+                                        {activeBeautyServices.map(item => (
+                                            <label className={`beauty-book-service-option${selectedBeautyServiceIds.includes(item.id) ? " is-selected" : ""}`} key={item.id}>
+                                                <input
+                                                    type="checkbox"
+                                                    checked={selectedBeautyServiceIds.includes(item.id)}
+                                                    onChange={event => {
+                                                        if (event.target.checked) {
+                                                            setSelectedPackage(null);
+                                                            setSelectedCateringDishes([]);
+                                                            setSelectedBeautyServiceIds(current => [...current, item.id]);
+                                                        } else {
+                                                            setSelectedBeautyServiceIds(current => current.filter(id => id !== item.id));
+                                                        }
+                                                    }}
+                                                />
+                                                <span className="beauty-book-service-name">{item.name}</span>
+                                                <strong>₹{Number(item.price).toLocaleString("en-IN")}</strong>
+                                            </label>
+                                        ))}
+                                    </div>
+                                    {selectedBeautyServiceIds.length > 0 && (
+                                        <div className="beauty-book-service-summary">
+                                            <span>{selectedBeautyDuration > 0 ? `${selectedBeautyDuration} minutes` : "Duration rule not configured for this selection"}</span>
+                                            <strong>Subtotal: ₹{selectedBeautyPrice.toLocaleString("en-IN")}</strong>
+                                        </div>
+                                    )}
+                                </section>
                             )}
                         </div>
                         <VendorReviews />

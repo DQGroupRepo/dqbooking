@@ -15,6 +15,8 @@ import type {
     ServiceDetailSection
 } from "./ServiceDetailSection";
 
+import type { BeautyDetails } from "./BeautyDetails";
+
 import type {
     CateringDetailsForm
 } from "./CateringDetailsForm";
@@ -78,6 +80,8 @@ export interface VendorService {
     detailSections: ServiceDetailSection[];
 
     cateringDetails?: CateringDetailsForm;
+
+    beautyDetails?: BeautyDetails;
 
     location: string;
 

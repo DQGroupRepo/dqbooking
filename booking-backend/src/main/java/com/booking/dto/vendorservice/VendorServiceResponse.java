@@ -6,6 +6,7 @@ import com.booking.model.enums.DiscountType;
 import com.booking.model.enums.ServiceModerationStatus;
 import com.booking.model.embedded.ServiceTag;
 import com.booking.dto.service.CateringDetailsResponse;
+import com.booking.model.embedded.BeautyDetails;
 import jakarta.validation.Valid;
 import lombok.Getter;
 import lombok.Setter;
@@ -78,4 +79,5 @@ public class VendorServiceResponse {
 
     private List<ServicePackageResponse> packages;
     private CateringDetailsResponse cateringDetails;
+    private BeautyDetails beautyDetails;
 }

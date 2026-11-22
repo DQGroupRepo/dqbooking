@@ -202,6 +202,8 @@ interface BookingServiceItemRequest {
 
     packageId?: string;
 
+    selectedBeautyServiceIds?: string[];
+
     bookingFrom: string;
     bookingTo: string;
     bookingType?: "STANDARD_SLOT" | "ROOM_STAY" | "DAY_PACKAGE";
@@ -1933,6 +1935,7 @@ const BookingCheckout = () => {
                                         slotId: item.slotId,
                                         holdId: hold?.holdId,
                                         packageId: item.packageId,
+                                        selectedBeautyServiceIds: item.selectedBeautyServiceIds,
                                         ...resolveBookingInterval(item),
                                         bookingType: item.bookingType || "STANDARD_SLOT",
                                         roomQuantity: hold?.roomQuantity ?? item.roomQuantity,
@@ -1968,6 +1971,7 @@ const BookingCheckout = () => {
                                     slotId: item.slotId,
                                     holdId: hold?.holdId,
                                     packageId: item.packageId,
+                                    selectedBeautyServiceIds: item.selectedBeautyServiceIds,
                                     ...resolveBookingInterval(item),
                                     bookingType: item.bookingType || "STANDARD_SLOT",
                                     roomQuantity: hold?.roomQuantity ?? item.roomQuantity,
@@ -2741,6 +2745,13 @@ const BookingCheckout = () => {
 
                                                                         )
                                                                     }
+                                                                    {item.packageId && (
+                                                                        <div className="checkout-package-details">
+                                                                            <strong>Selected package: {item.packageName || item.packageType || "Package"}</strong>
+                                                                            {item.packageFeatures?.length ? <ul>{item.packageFeatures.map((feature, index) => <li key={`${item.packageId}-${index}`}>{feature}</li>)}</ul> : <span>No additional features</span>}
+                                                                            {item.packagePrice != null && <span>Package price: {formatCurrency(Number(item.packagePrice))}</span>}
+                                                                        </div>
+                                                                    )}
 
                                                                 </div>
 

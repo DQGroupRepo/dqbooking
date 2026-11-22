@@ -6,6 +6,7 @@ import { FaPlus } from "react-icons/fa";
 import toast from "react-hot-toast";
 import axios from "axios";
 
+import VendorServiceService from "../../services/VendorServiceService";
 import BookingSlotService from "../../services/BookingSlotService";
 import type { BookingSlot } from "../../types/BookingSlot";
 
@@ -22,6 +23,7 @@ export default function ManageBookingSlots() {
     const [slots, setSlots] = useState<BookingSlot[]>([]);
 
     const [loading, setLoading] = useState(true);
+    const [isCateringService, setIsCateringService] = useState(false);
 
     const [showModal, setShowModal] = useState(false);
 
@@ -61,6 +63,9 @@ export default function ManageBookingSlots() {
         if (!serviceId) return;
 
         try {
+
+            const service = await VendorServiceService.getServiceById(serviceId);
+            setIsCateringService(String(service.category ?? "").trim().toUpperCase() === "CATERING");
 
             const response =
                 await BookingSlotService.getSlots(serviceId);
@@ -330,6 +335,7 @@ export default function ManageBookingSlots() {
                                     onEdit={handleEdit}
                                     onDelete={handleDelete}
                                     onToggleStatus={handleToggleStatus}
+                    isCateringService={isCateringService}
                                 />
                             ))}
                         </MobileCarousel>
