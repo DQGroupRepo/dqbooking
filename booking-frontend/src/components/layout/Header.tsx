@@ -47,6 +47,8 @@ const Header = () => {
 
     const navigate = useNavigate();
     const location = useLocation();
+    const [showHallSubmenu, setShowHallSubmenu] = useState(false);
+    const eventHallMenuRef = useRef<HTMLDivElement>(null);
 
     const [searchKeyword, setSearchKeyword] = useState("");
     const [selectedCategorySuggestion, setSelectedCategorySuggestion] = useState("");
@@ -68,6 +70,32 @@ const Header = () => {
     const activeDistrictLocations = searchLocations
         .filter(item => item.district?.trim() === activeSearchDistrict && item.name.trim().toLowerCase() !== activeSearchDistrict.trim().toLowerCase())
         .sort((a, b) => a.name.localeCompare(b.name));
+
+    // Close the Event Hall dropdown when the user clicks/taps elsewhere or presses Escape.
+    useEffect(() => {
+        if (!showHallSubmenu) return;
+
+        const handleOutsidePointerDown = (event: PointerEvent) => {
+            const target = event.target;
+            if (target instanceof Node && !eventHallMenuRef.current?.contains(target)) {
+                setShowHallSubmenu(false);
+            }
+        };
+
+        const handleEscape = (event: globalThis.KeyboardEvent) => {
+            if (event.key === "Escape") {
+                setShowHallSubmenu(false);
+            }
+        };
+
+        document.addEventListener("pointerdown", handleOutsidePointerDown);
+        document.addEventListener("keydown", handleEscape);
+
+        return () => {
+            document.removeEventListener("pointerdown", handleOutsidePointerDown);
+            document.removeEventListener("keydown", handleEscape);
+        };
+    }, [showHallSubmenu]);
 
 
     /*
@@ -827,6 +855,10 @@ const Header = () => {
             .get("category")
             ?.toUpperCase();
 
+
+    useEffect(() => {
+        setShowHallSubmenu(false);
+    }, [location.pathname, location.search]);
 
     const isHomeActive =
         location.pathname === "/" &&
@@ -1726,18 +1758,50 @@ const Header = () => {
 
 
                     {/* =================================
-                        VENUES
+                        EVENT HALLS + CATEGORY TAG MENU
                     ================================= */}
 
-                    <Link
-                        to="/categories?category=HALL"
-                        className={`navigation-link ${isCategoryActive("HALL")
-                            ? "active"
-                            : ""
-                            }`}
-                    >
-                        Venues
-                    </Link>
+                    <div ref={eventHallMenuRef} className={`event-hall-nav-item ${isCategoryActive("HALL") ? "active" : ""}`}>
+                        <button
+                            type="button"
+                            className={`navigation-link event-hall-trigger ${isCategoryActive("HALL") ? "active" : ""}`}
+                            aria-haspopup="true"
+                            aria-expanded={showHallSubmenu}
+                            onClick={() => setShowHallSubmenu(open => !open)}
+                            onKeyDown={(event) => {
+                                if (event.key === "Escape") setShowHallSubmenu(false);
+                            }}
+                        >
+                            Event Hall
+                            <FaChevronDown className={`event-hall-chevron ${showHallSubmenu ? "open" : ""}`} />
+                        </button>
+
+                        {showHallSubmenu && (
+                            <div className="event-hall-submenu" role="menu" aria-label="Event Hall categories">
+                                {[
+                                    "All Halls",
+                                    "Convention Center",
+                                    "Kalyana Mandapam",
+                                    "Party Halls",
+                                    "Corporate Meeting Halls",
+                                    "Banquet Halls",
+                                    "Auditoriums"
+                                ].map((tag) => (
+                                    <Link
+                                        key={tag}
+                                        role="menuitem"
+                                        to={tag === "All Halls"
+                                            ? "/categories?category=HALL"
+                                            : `/categories?category=HALL&categoryTag=${encodeURIComponent(tag)}`}
+                                        onClick={() => setShowHallSubmenu(false)}
+                                        className="event-hall-submenu-link"
+                                    >
+                                        {tag}
+                                    </Link>
+                                ))}
+                            </div>
+                        )}
+                    </div>
 
                     {/* =================================
                         STAY

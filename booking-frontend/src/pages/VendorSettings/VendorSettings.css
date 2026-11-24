@@ -565,3 +565,137 @@ grid-template-columns:1fr;
     border-top: 1px solid #e5e7eb;
     background: #fff;
 }
+
+/* Static subscription plan comparison cards. Scoped to the Subscription settings section. */
+.subscription-plans-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 18px;
+    align-items: stretch;
+}
+.subscription-plan-card {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    padding: 22px;
+    border: 1px solid #e1e7ef;
+    border-radius: 14px;
+    background: #fff;
+    box-shadow: 0 3px 12px rgba(15, 23, 42, .05);
+}
+.subscription-plan-card--featured {
+    border: 2px solid #d9974d;
+    padding: 21px;
+    box-shadow: 0 6px 20px rgba(217, 151, 77, .13);
+}
+.subscription-plan-heading {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+    min-height: 54px;
+}
+.subscription-plan-eyebrow {
+    display: block;
+    margin-bottom: 5px;
+    color: #64748b;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .07em;
+    text-transform: uppercase;
+}
+.subscription-plan-heading h2 {
+    margin: 0;
+    color: #123b5a;
+    font-size: 22px;
+    font-weight: 700;
+}
+.subscription-plan-badge {
+    flex: 0 0 auto;
+    padding: 5px 9px;
+    border-radius: 999px;
+    background: #fff2df;
+    color: #9a5a16;
+    font-size: 11px;
+    font-weight: 700;
+}
+.subscription-plan-price {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 7px;
+    margin: 18px 0 16px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #edf0f4;
+}
+.subscription-plan-price strong {
+    color: #123b5a;
+    font-size: 30px;
+    line-height: 1.1;
+}
+.subscription-plan-price span {
+    color: #64748b;
+    font-size: 13px;
+}
+.subscription-plan-highlights,
+.subscription-plan-includes ul {
+    margin: 0;
+    padding-left: 19px;
+    color: #334155;
+    font-size: 13px;
+    line-height: 1.55;
+}
+.subscription-plan-highlights li,
+.subscription-plan-includes li {
+    margin: 0 0 9px;
+    padding-left: 2px;
+}
+.subscription-plan-fee {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    margin: 10px 0 16px;
+    padding: 12px;
+    border-radius: 9px;
+    background: #f3f7fb;
+}
+.subscription-plan-fee span {
+    color: #64748b;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+.subscription-plan-fee strong {
+    color: #123b5a;
+    font-size: 13px;
+    line-height: 1.45;
+}
+.subscription-plan-includes {
+    margin-top: auto;
+    padding-top: 14px;
+    border-top: 1px solid #edf0f4;
+}
+.subscription-plan-includes h3 {
+    margin: 0 0 10px;
+    color: #123b5a;
+    font-size: 14px;
+}
+.subscription-plan-includes li:last-child,
+.subscription-plan-highlights li:last-child {
+    margin-bottom: 0;
+}
+.subscription-plan-note {
+    margin: 14px 2px 0;
+    color: #64748b;
+    font-size: 12px;
+}
+@media (max-width: 1100px) {
+    .subscription-plans-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 650px) {
+    .subscription-plans-grid { grid-template-columns: 1fr; gap: 14px; }
+    .subscription-plan-card,
+    .subscription-plan-card--featured { padding: 18px; }
+    .subscription-plan-heading h2 { font-size: 20px; }
+    .subscription-plan-price strong { font-size: 27px; }
+}
