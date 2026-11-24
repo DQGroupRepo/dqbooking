@@ -1,28 +1,32 @@
+/* Shared location treatment used by Featured Services, vendor cards and detail pages.
+   Keep the location inline: no pill, circle, border or filled background. */
 .location-badge {
     display: inline-flex;
     align-items: center;
-    gap: 7px;
+    gap: 6px;
     width: fit-content;
     max-width: 100%;
     min-width: 0;
     box-sizing: border-box;
-    padding: 7px 11px;
-    border: 1px solid #dce8f2;
-    border-radius: 999px;
-    background: #f1f7fc;
-    color: #315875;
+    padding: 0;
+    margin: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    color: #475569;
     font-size: 13px;
-    font-weight: 600;
-    line-height: 1.2;
-    letter-spacing: .01em;
+    font-weight: 500;
+    line-height: 1.4;
+    letter-spacing: 0;
 }
 
 .location-badge__icon {
-    flex: 0 0 15px;
-    width: 15px;
-    height: 15px;
+    display: block;
+    flex: 0 0 14px;
+    width: 14px;
+    height: 14px;
     fill: none;
-    stroke: #1476a8;
+    stroke: #64748b;
     stroke-width: 1.8;
     stroke-linecap: round;
     stroke-linejoin: round;
@@ -33,19 +37,18 @@
     overflow-wrap: anywhere;
 }
 
+/* Service detail pages use a slightly more prominent, but still unboxed, label. */
 .location-badge--detail {
     margin-top: 13px;
-    padding: 8px 13px;
-    background: #edf6fc;
-    border-color: #d5e7f3;
-    color: #244d6c;
+    color: #334155;
     font-size: 14px;
+    font-weight: 500;
 }
 
 .location-badge--detail .location-badge__icon {
-    width: 17px;
-    height: 17px;
-    flex-basis: 17px;
+    flex-basis: 16px;
+    width: 16px;
+    height: 16px;
 }
 
 .location-badge--card {
@@ -54,18 +57,23 @@
 
 .location-badge--compact {
     margin-top: 5px;
-    padding: 6px 9px;
     font-size: 12px;
-    background: #f5f8fb;
+    gap: 5px;
 }
 
 .location-badge--compact .location-badge__icon {
-    width: 14px;
-    height: 14px;
-    flex-basis: 14px;
+    flex-basis: 13px;
+    width: 13px;
+    height: 13px;
 }
 
 @media (max-width: 480px) {
-    .location-badge--detail { margin-top: 10px; font-size: 13px; }
-    .location-badge--card { font-size: 12px; }
+    .location-badge--detail {
+        margin-top: 10px;
+        font-size: 13px;
+    }
+
+    .location-badge--card {
+        font-size: 12px;
+    }
 }

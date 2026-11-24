@@ -80,8 +80,14 @@ public class CustomerVendorMapperImpl
                         service.getCategory().name()
                 )
 
+                // A listing belongs to a specific service. Prefer the location
+                // configured on that service; the vendor profile city is only a
+                // fallback for older listings without a service location.
                 .city(
-                        vendor.getCity()
+                        service.getLocation() != null
+                                && !service.getLocation().isBlank()
+                                ? service.getLocation()
+                                : vendor.getCity()
                 )
 
                 .startingPrice(

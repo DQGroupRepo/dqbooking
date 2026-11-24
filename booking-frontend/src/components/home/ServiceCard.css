@@ -104,3 +104,20 @@
 
 }
 .service-rating { display:flex; align-items:center; gap:7px; }
+
+/* Keep the location pin and location name on one line in Home service cards.
+   The generic direct-child span rule above should not stack the LocationBadge. */
+.service-content > .location-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    width: fit-content;
+    max-width: 100%;
+    margin: 6px 0 10px;
+    vertical-align: middle;
+}
+
+.service-content > .location-badge .location-badge__icon {
+    display: block;
+    flex: 0 0 14px;
+}

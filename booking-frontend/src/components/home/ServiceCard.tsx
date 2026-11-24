@@ -13,6 +13,7 @@ import "./ServiceCard.css";
 
 const ServiceCard = ({
     serviceId,
+    serviceName,
     businessName,
     description,
     city,
@@ -49,7 +50,7 @@ const ServiceCard = ({
                 }
 
                 alt={
-                    businessName
+                    serviceName || businessName
                 }
 
             />
@@ -60,7 +61,7 @@ const ServiceCard = ({
 
                 <h3>
 
-                    {businessName}
+                    {serviceName || businessName}
 
                 </h3>
 
