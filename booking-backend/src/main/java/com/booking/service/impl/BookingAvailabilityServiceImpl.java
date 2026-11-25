@@ -802,6 +802,7 @@ public class BookingAvailabilityServiceImpl
                 .serviceId(serviceId)
                 .slotName(slot.getSlotName())
                 .resourceTypeId(slot.getResourceTypeId())
+                .bookingPattern(slot.getBookingPattern() == null ? "DAILY_RECURRING" : slot.getBookingPattern())
                 .date(date)
                 .startTime(slot.getStartTime())
                 .endTime(slot.getEndTime())
