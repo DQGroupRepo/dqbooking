@@ -21,4 +21,10 @@ public class BundleCalculationItemRequest {
     private LocalDateTime bookingTo;
 
     private String packageId;
+
+    private Integer guestCount;
+
+    private Integer roomQuantity;
+
+    private java.util.List<String> selectedBeautyServiceIds = new java.util.ArrayList<>();
 }

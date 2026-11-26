@@ -1,0 +1,31 @@
+.date-field { position: relative; width: 100%; min-width: 0; }
+.date-field .date-field__trigger { width: 100%; min-height: 42px; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 9px 12px; border: 1px solid #cfd9e6; border-radius: 10px; background: #fff !important; background-color: #fff !important; background-image: none !important; color: #243b53; font: inherit; text-align: left; cursor: pointer; }
+.date-field__trigger:focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }
+.date-field__trigger:disabled { background: #f4f7fa; color: #64748b; cursor: default; opacity: 1; }
+.date-field__trigger svg { flex: 0 0 auto; color: #64748b; }
+.date-field__placeholder { color: #64748b; }
+.date-field__popover { z-index: 10000; box-sizing: border-box; max-width: calc(100vw - 24px); padding: 10px; border: 1px solid #dbe3ed; border-radius: 12px; background: #fff; box-shadow: 0 12px 32px rgba(15, 23, 42, .16); }
+.date-field__popover .react-calendar { width: 100%; max-width: 100%; border: 0; background: #fff; color: #243b53; font: inherit; }
+.date-field__popover .react-calendar__navigation { display: flex; align-items: stretch; gap: 4px; height: 50px; margin-bottom: 8px; }
+.date-field__popover .react-calendar__navigation button { flex: 0 0 38px; min-width: 0; min-height: 46px; padding: 0 6px; border: 1px solid #dbe3ed; border-radius: 8px; background: #fff; color: #15558a; font-size: 16px; }
+.date-field__popover .react-calendar__navigation button:disabled { background: #f1f5f9; color: #a9b8c8; }
+.date-field__popover .react-calendar__navigation .react-calendar__navigation__label { flex: 1 1 auto; min-width: 0; white-space: nowrap; font-size: 17px; font-weight: 500; }
+.date-field__popover .react-calendar__month-view__weekdays { margin-bottom: 4px; color: #64748b; font-size: 12px; font-weight: 700; text-align: center; text-transform: uppercase; }
+.date-field__popover .react-calendar__month-view__weekdays__weekday { padding: 7px 2px; }
+.date-field__popover .react-calendar__month-view__weekdays abbr { text-decoration: underline dotted; text-underline-offset: 2px; }
+.date-field__popover .react-calendar__tile { min-height: 44px; padding: 8px 2px; border-radius: 8px; background: transparent; color: #243b53; font-size: 15px; }
+.date-field__popover .react-calendar__month-view__days__day--weekend { color: #15558a; }
+.date-field__popover .react-calendar__month-view__days__day--neighboringMonth { color: #a9b8c8; }
+.date-field__popover .react-calendar__tile:disabled { background: #f1f5f9; color: #b8c4d1; }
+.date-field__popover .react-calendar__tile--now { background: #eaf2fb; color: #15558a; }
+.date-field__popover .react-calendar__tile--active { background: #15558a; color: #fff; }
+.date-field__popover .react-calendar__tile:enabled:hover, .date-field__popover .react-calendar__tile:enabled:focus { background: #e7f0fa; color: #153e63; }
+.date-field__popover .react-calendar__tile--active:enabled:hover, .date-field__popover .react-calendar__tile--active:enabled:focus { background: #15558a; color: #fff; }
+.date-field__clear { margin-top: 8px; padding: 5px 8px; border: 0; background: transparent; color: #15558a; cursor: pointer; }
+@media (max-width: 600px) {
+  .date-field__popover { padding: 8px; }
+  .date-field__popover .react-calendar__navigation { gap: 3px; height: 44px; }
+  .date-field__popover .react-calendar__navigation button { flex-basis: 32px; min-height: 40px; padding: 0 3px; }
+  .date-field__popover .react-calendar__navigation .react-calendar__navigation__label { font-size: 15px; }
+  .date-field__popover .react-calendar__tile { min-height: 38px; padding: 6px 1px; font-size: 14px; }
+}

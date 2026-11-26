@@ -39,6 +39,9 @@ export interface CartItem {
 
     guestCount?: number;
 
+    selectedBeautyServiceIds?: string[];
+    selectedBeautyServiceNames?: string[];
+
     /*
      * =========================================
      * BOOKING SLOT
@@ -60,6 +63,10 @@ export interface CartItem {
      */
 
     holdId?: string;
+
+    // Multiple independently-created holds can be represented as one visible
+    // cart line when every booking selection dimension is identical.
+    holds?: { holdId: string; roomQuantity?: number; quantity?: number; expiresAt?: string; price?: number }[];
 
     holdExpiresAt?: string;
 
@@ -84,6 +91,9 @@ export interface CartItem {
     bundleDiscountValue?: number;
 
     packageId?: string;
+    packageName?: string;
+
+    resourceRequirements?: { resourceTypeId: string; quantity: number }[];
 
     packageType?: "SILVER" | "GOLD" | "PREMIUM" | "FIXED_DURATION";
     includedDuration?: number;

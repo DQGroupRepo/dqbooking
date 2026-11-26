@@ -48,3 +48,10 @@
     gap: 28px;
 
 }
+
+@media (max-width: 900px) {
+    .grid { display: block; width: 100%; min-width: 0; }
+    .grid :global(.dq-mobile-carousel__page-content) { grid-template-columns: minmax(0, 1fr); }
+    .grid :global(.dq-mobile-carousel__card) { width: 100%; min-width: 0; }
+    .grid :global(.dq-mobile-carousel__card > *) { width: 100%; min-width: 0; box-sizing: border-box; }
+}

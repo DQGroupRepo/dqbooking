@@ -77,13 +77,20 @@ public class AvailabilityOverrideServiceImpl
             throw new ResourceAlreadyExistsException("Availability override already exists.");
         }
 
-        validateOverride(request.getCapacityOverride());
+        boolean isStay = service.getCategory() == com.booking.model.enums.ServiceCategory.STAY;
+        if (!isStay) {
+            validateOverride(request.getCapacityOverride());
+        }
 
         AvailabilityOverride override =
                 mapper.toEntity(request);
+        if (isStay) {
+            override.setCapacityOverride(null);
+        }
 
         override.setServiceId(service.getId());
-        // Slot capacity is the only supported inventory scope, including STAY.
+        // STAY uses physical Resource Type inventory; its slot override is
+        // block-only. Non-STAY services retain slot capacity overrides.
         override.setRoomTypeId(null);
         override.setSlotId(request.getSlotId());
 
@@ -113,12 +120,20 @@ public class AvailabilityOverrideServiceImpl
         AvailabilityOverride override =
                 getOverrideEntity(overrideId);
 
-        validateOverride(request.getCapacityOverride());
+        VendorService service = vendorServiceRepository.findById(override.getServiceId())
+                .orElseThrow(() -> new ResourceNotFoundException("Vendor Service not found."));
+        boolean isStay = service.getCategory() == com.booking.model.enums.ServiceCategory.STAY;
+        if (!isStay) {
+            validateOverride(request.getCapacityOverride());
+        }
 
         mapper.updateEntity(
                 override,
                 request
         );
+        if (isStay) {
+            override.setCapacityOverride(null);
+        }
 
         override = repository.save(override);
 

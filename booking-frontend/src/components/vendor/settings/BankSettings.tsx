@@ -1,3 +1,4 @@
+import Loader from "../../common/Loader";
 import { useEffect, useState } from "react";
 
 import SectionHeader from "../../common/ui/SectionHeader/SectionHeader";
@@ -12,8 +13,9 @@ import type { VendorProfile } from "../../../types/VendorProfile";
 export default function BankSettings(){
 
     const [profile,setProfile]=useState<VendorProfile>();
+    const [pendingCount,setPendingCount]=useState(0);
 
-    const [payoutMethod,setPayoutMethod]=useState("Bank Transfer");
+
 
     useEffect(()=>{
 
@@ -28,6 +30,8 @@ export default function BankSettings(){
             await VendorProfileService.getProfile();
 
         setProfile(data);
+        const records = await VendorProfileService.getMySettingsRequests();
+        setPendingCount(records.reduce((count, record) => count + (record.items || []).filter((item: any) => item.status === "PENDING").length, 0));
 
     }
 
@@ -53,15 +57,29 @@ export default function BankSettings(){
 
         if(!profile) return;
 
-        await VendorProfileService.updateProfile(profile);
+        try {
+            await VendorProfileService.submitSettingsChanges({
+                accountHolder: profile.accountHolder || "",
+                bankName: profile.bankName || "",
+                accountNumber: profile.accountNumber || "",
+                ifsc: profile.ifsc || "",
+                upiId: profile.upiId || "",
+                payoutMethod: profile.payoutMethod || ""
+            });
 
-        toast.success("Bank details updated.");
+            const pendingRecords = await VendorProfileService.getMySettingsRequests();
+            setPendingCount(pendingRecords.reduce((count, record) => count + (record.items || []).filter((item: any) => item.status === "PENDING").length, 0));
+            toast.success("Bank and payout changes submitted for Admin approval. Current approved details remain active until approval.");
+        } catch (error: any) {
+            const message = error?.response?.data?.message || error?.response?.data?.error || "Failed to submit bank and payout changes for approval.";
+            toast.error(message, { duration: 6000 });
+        }
 
     }
 
     if(!profile){
 
-        return <h2>Loading...</h2>;
+        return <Loader />;
 
     }
 
@@ -78,6 +96,7 @@ export default function BankSettings(){
             />
 
             <div className="settings-form">
+                <p className="settings-approval-note">Bank and payout details are reviewed together as one group. Existing approved details remain active until Admin approval.{pendingCount > 0 ? ` ${pendingCount} change item(s) are currently awaiting review.` : ""}</p>
 
                 <Input
 
@@ -150,15 +169,11 @@ export default function BankSettings(){
 
                                         className="settings-select"
 
-                                        value={payoutMethod}
+                                        value={profile.payoutMethod || "Bank Transfer"}
 
                                         onChange={(e)=>
 
-                                            setPayoutMethod(
-
-                                                e.target.value
-
-                                            )
+                                            setProfile({...profile,payoutMethod:e.target.value})
 
                                         }
 

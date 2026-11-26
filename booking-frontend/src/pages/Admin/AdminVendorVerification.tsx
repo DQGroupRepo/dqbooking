@@ -117,6 +117,12 @@ const AdminVendorVerification = () => {
     ] =
         useState(false);
 
+    const [settingsVendor, setSettingsVendor] = useState<AdminVendorVerificationRecord | null>(null);
+    const [settingsRequests, setSettingsRequests] = useState<any[]>([]);
+    const [selectedSettings, setSelectedSettings] = useState<string[]>([]);
+    const [settingsReason, setSettingsReason] = useState("");
+    const [settingsLoading, setSettingsLoading] = useState(false);
+
 
     /*
      * =========================================
@@ -208,6 +214,38 @@ const AdminVendorVerification = () => {
                 )
         );
 
+    }
+
+    async function openSettingsReview(vendor: AdminVendorVerificationRecord) {
+        try {
+            setSettingsLoading(true);
+            const data = await AdminVendorVerificationService.getPendingSettings(vendor.vendorId);
+            setSettingsVendor(vendor);
+            setSettingsRequests(data);
+            setSelectedSettings(data.flatMap((r: any) => (r.items || []).filter((i: any) => i.status === "PENDING").map((i: any) => `${r.id}:${i.key}`)));
+            setSettingsReason("");
+        } catch (e) {
+            console.error("Unable to load pending settings", e);
+            setError("Unable to load pending settings changes.");
+        } finally { setSettingsLoading(false); }
+    }
+
+    async function decideSettings(action: "APPROVE" | "REJECT") {
+        if (!settingsVendor || selectedSettings.length === 0) return;
+        if (action === "REJECT" && !settingsReason.trim()) { setError("Enter a rejection reason before rejecting changes."); return; }
+        try {
+            setSettingsLoading(true); setError("");
+            await AdminVendorVerificationService.decideSettings(settingsVendor.vendorId, selectedSettings, action, settingsReason);
+            await loadVendors();
+            const remaining = await AdminVendorVerificationService.getPendingSettings(settingsVendor.vendorId);
+            setSettingsRequests(remaining);
+            setSelectedSettings(remaining.flatMap((r: any) => (r.items || []).filter((i: any) => i.status === "PENDING").map((i: any) => `${r.id}:${i.key}`)));
+            setSettingsReason("");
+            if (!remaining.some((r: any) => (r.items || []).some((i: any) => i.status === "PENDING"))) setSettingsVendor(null);
+        } catch (e: any) {
+            console.error("Settings decision failed", e);
+            setError(e?.response?.data?.message || "Unable to process the selected settings changes.");
+        } finally { setSettingsLoading(false); }
     }
 
     /*
@@ -1334,6 +1372,16 @@ const AdminVendorVerification = () => {
                                             </button>
 
 
+                                            <button
+                                                type="button"
+                                                className="admin-action view"
+                                                disabled={settingsLoading || !(vendor as any).pendingSettingsCount}
+                                                onClick={() => openSettingsReview(vendor)}
+                                                title={(vendor as any).pendingSettingsCount ? "Review pending settings" : "No pending settings changes"}
+                                            >
+                                                {(vendor as any).pendingSettingsCount ? `Pending Settings (${(vendor as any).pendingSettingsCount})` : "Approved Settings"}
+                                            </button>
+
                                             {
                                                 renderVendorActions(
                                                     vendor
@@ -1352,6 +1400,57 @@ const AdminVendorVerification = () => {
 
             </div>
 
+
+            {settingsVendor && (
+                <div className="admin-modal-backdrop" onClick={() => setSettingsVendor(null)}>
+                    <div className="admin-vendor-modal admin-settings-review-modal" onClick={e => e.stopPropagation()}>
+                        <div className="admin-modal-header">
+                            <div><h2>Pending Settings Review</h2><p>{settingsVendor.businessName}</p></div>
+                            <button type="button" className="admin-action view" onClick={() => setSettingsVendor(null)}>×</button>
+                        </div>
+                        {settingsLoading && <p>Loading / processing settings...</p>}
+                        <div className="settings-review-list">
+                            {settingsRequests.flatMap((record: any) => (record.items || []).map((item: any) => ({ ...item, selectionKey: `${record.id}:${item.key}` })))
+                                .filter((item: any) => item.status === "PENDING").map((item: any) => (
+                                <div className="settings-review-item" key={item.selectionKey}>
+                                    <label className="settings-review-select">
+                                        <input type="checkbox" checked={selectedSettings.includes(item.selectionKey)} onChange={e => setSelectedSettings(old => e.target.checked ? [...old, item.selectionKey] : old.filter(k => k !== item.selectionKey))} />
+                                        <strong>{item.label}</strong><small>{item.group === "BANK_DETAILS" ? "Bank & payout (atomic group)" : item.group}</small>
+                                    </label>
+                                    <div className="settings-review-values">
+                                        <div><small>Current approved value</small>
+                                            {item.oldValue && /\.(jpg|jpeg|png|webp|gif)(\?|$)/i.test(item.oldValue)
+                                                ? <a href={item.oldValue} target="_blank" rel="noreferrer"><img className="settings-review-thumb" src={item.oldValue} alt={`Current ${item.label}`} /></a>
+                                                : item.oldValue && /\.(pdf)(\?|$)/i.test(item.oldValue)
+                                                    ? <a href={item.oldValue} target="_blank" rel="noreferrer">View current document</a>
+                                                    : <p>{item.oldValue || "—"}</p>}
+                                        </div>
+                                        <div><small>Proposed value</small>
+                                            {item.proposedValue && /\.(jpg|jpeg|png|webp|gif)(\?|$)/i.test(item.proposedValue)
+                                                ? <a href={item.proposedValue} target="_blank" rel="noreferrer"><img className="settings-review-thumb" src={item.proposedValue} alt={item.label} /></a>
+                                                : item.proposedValue && /\.(pdf)(\?|$)/i.test(item.proposedValue)
+                                                    ? <a href={item.proposedValue} target="_blank" rel="noreferrer">View document</a>
+                                                    : <p>{item.proposedValue || "—"}</p>}
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                            {!settingsRequests.some((r: any) => (r.items || []).some((i: any) => i.status === "PENDING")) && <p>No pending settings changes.</p>}
+                        </div>
+                        <div className="settings-review-actions">
+                            <div className="settings-rejection-reason">
+                                <label htmlFor="settings-rejection-reason">Admin rejection reason</label>
+                                <textarea id="settings-rejection-reason" value={settingsReason} onChange={e => setSettingsReason(e.target.value)}
+                                    placeholder="Enter the reason to reject the selected changes" rows={3} aria-describedby="settings-rejection-help" />
+                                <small id="settings-rejection-help">A reason is mandatory for rejection. The vendor will receive this reason in a notification.</small>
+                                {selectedSettings.length > 0 && !settingsReason.trim() && <p className="settings-rejection-alert" role="alert">Enter an Admin reason to enable “Reject selected”.</p>}
+                            </div>
+                            <button type="button" className="admin-action approve" disabled={settingsLoading || !selectedSettings.length} onClick={() => decideSettings("APPROVE")}>Approve selected</button>
+                            <button type="button" className="admin-action reject" disabled={settingsLoading || !selectedSettings.length || !settingsReason.trim()} onClick={() => decideSettings("REJECT")}>Reject selected</button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* VENDOR MODAL */}
 

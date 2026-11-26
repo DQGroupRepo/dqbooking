@@ -13,6 +13,9 @@ import com.booking.model.VendorService;
 import com.booking.model.VendorServicePricing;
 import com.booking.model.enums.ServiceCategory;
 import com.booking.repository.VendorServicePricingRepository;
+import com.booking.repository.UserRepository;
+import com.booking.model.User;
+import org.bson.types.ObjectId;
 import com.booking.repository.BookingSlotRepository;
 import com.booking.model.BookingSlot;
 import com.booking.repository.VendorServiceRepository;
@@ -40,6 +43,8 @@ public class VendorServicePricingServiceImpl
 
     private final VendorServicePricingRepository
             vendorServicePricingRepository;
+
+    private final UserRepository userRepository;
 
     private final VendorServiceRepository
             vendorServiceRepository;
@@ -215,7 +220,7 @@ public class VendorServicePricingServiceImpl
                                                 pricing.getCreatedAt()
                                         )
                                         .createdBy(
-                                                pricing.getCreatedBy()
+                                                resolveCreatedByDisplay(pricing.getCreatedBy())
                                         )
                                         .build()
                 )
@@ -384,6 +389,8 @@ public class VendorServicePricingServiceImpl
     ) {
         if (packages == null || packages.isEmpty()) return;
         boolean isStay = service.getCategory() == ServiceCategory.STAY;
+        boolean usesResourceTypes = service.getCategory() != null
+                && service.getCategory().supportsResourceTypes();
 
         for (ServicePackageRequest pkg : packages) {
             if (pkg == null || !pkg.isActive()) continue;
@@ -399,17 +406,51 @@ public class VendorServicePricingServiceImpl
                     }
                 }
             }
-            if (isStay) {
-                // STAY inventory is managed by slot capacity; Room Type is not part of this flow.
-                if (pkg.getMaxGuestsPerRoom() == null || pkg.getMaxGuestsPerRoom() < 1) {
+            if (!usesResourceTypes && ((pkg.getResourceTypeId() != null && !pkg.getResourceTypeId().isBlank())
+                    || (pkg.getResourceRequirements() != null && !pkg.getResourceRequirements().isEmpty()))) {
+                throw new IllegalArgumentException("Resource Types and physical resource allocation are supported only for STAY and HALL services.");
+            }
+            if (usesResourceTypes) {
+                if (isStay && (pkg.getMaxGuestsPerRoom() == null || pkg.getMaxGuestsPerRoom() < 1)) {
                     throw new IllegalArgumentException(
                             "Every active STAY package must define at least one guest per room.");
                 }
-                if (pkg.getSlotIds() == null || pkg.getSlotIds().isEmpty()) {
+                if (isStay && (pkg.getSlotIds() == null || pkg.getSlotIds().isEmpty())) {
                     throw new IllegalArgumentException(
                             "Every active STAY package must be assigned to at least one booking slot.");
                 }
-                // STAY bookings always consume capacity from a selected booking slot.
+                // Each resource-managed package consumes one or more configured physical resource types.
+                java.util.List<com.booking.model.embedded.ResourceTypeRequirement> requirements =
+                        pkg.getResourceRequirements() == null ? new java.util.ArrayList<>()
+                                : new java.util.ArrayList<>(pkg.getResourceRequirements());
+                if (requirements.isEmpty() && pkg.getResourceTypeId() != null && !pkg.getResourceTypeId().isBlank()) {
+                    com.booking.model.embedded.ResourceTypeRequirement legacy = new com.booking.model.embedded.ResourceTypeRequirement();
+                    legacy.setResourceTypeId(pkg.getResourceTypeId());
+                    legacy.setQuantity(1);
+                    requirements.add(legacy);
+                }
+                if (requirements.isEmpty()) {
+                    throw new IllegalArgumentException("Every active resource-managed package must include at least one Resource Type.");
+                }
+                java.util.Set<String> seen = new java.util.HashSet<>();
+                for (var requirement : requirements) {
+                    if (requirement.getResourceTypeId() == null || requirement.getResourceTypeId().isBlank()
+                            || requirement.getQuantity() == null || requirement.getQuantity() < 1
+                            || !seen.add(requirement.getResourceTypeId())) {
+                        throw new IllegalArgumentException("Each package Resource Type must be unique and have a quantity of at least one.");
+                    }
+                    com.booking.model.embedded.ServiceResourceType configuredType = service.getResourceTypes() == null
+                            ? null : service.getResourceTypes().stream()
+                            .filter(type -> requirement.getResourceTypeId().equals(type.getId())
+                                    && !Boolean.FALSE.equals(type.getActive()))
+                            .findFirst().orElse(null);
+                    if (configuredType == null)
+                        throw new IllegalArgumentException("A package references an inactive or unknown Resource Type.");
+                    if (configuredType.getQuantity() == null || requirement.getQuantity() > configuredType.getQuantity())
+                        throw new IllegalArgumentException("A package cannot require more physical units of a resource type than the vendor has configured.");
+                }
+                pkg.setResourceRequirements(requirements);
+                // Physical resources are allocated against the selected booking slot.
                 pkg.setRequiresSlot(true);
             }
         }
@@ -529,6 +570,38 @@ public class VendorServicePricingServiceImpl
      * principal name. In a JWT setup this is
      * normally the subject/user ID.
      */
+
+
+    /**
+     * Converts the audit user ID into a readable label for pricing history.
+     * Older records may contain a Java object's default toString() value
+     * (for example, com.booking.model.User@...); that value is not an ID and
+     * cannot be resolved, so show a clear legacy label instead of leaking it.
+     */
+    private String resolveCreatedByDisplay(String createdBy) {
+        if (createdBy == null || createdBy.isBlank()) {
+            return "Unknown user";
+        }
+
+        String value = createdBy.trim();
+        if (value.startsWith("com.booking.model.User@")) {
+            return "Vendor (legacy record)";
+        }
+
+        if (ObjectId.isValid(value)) {
+            return userRepository.findById(value)
+                    .map(User::getFullName)
+                    .filter(name -> name != null && !name.isBlank())
+                    .orElseGet(() -> userRepository.findById(value)
+                            .map(User::getEmail)
+                            .filter(email -> email != null && !email.isBlank())
+                            .orElse("Unknown user"));
+        }
+
+        // Preserve already-readable audit labels from older records.
+        return value;
+    }
+
     private String getCurrentUserId() {
 
         Authentication authentication =

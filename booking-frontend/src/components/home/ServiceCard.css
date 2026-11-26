@@ -44,7 +44,7 @@
 }
 
 
-.service-content span {
+.service-content > span {
 
     display:block;
 
@@ -52,6 +52,30 @@
 
     color:#555;
 
+}
+
+/* Keep the five rating stars in a single horizontal row. */
+.service-content .rating-stars {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    margin: 0;
+    white-space: nowrap;
+    vertical-align: middle;
+}
+
+.service-content .rating-stars__item {
+    display: inline-block;
+    position: relative;
+    margin: 0;
+    line-height: 1;
+}
+
+.service-content .rating-stars__empty,
+.service-content .rating-stars__fill {
+    display: block;
+    margin: 0;
+    line-height: 1;
 }
 
 
@@ -78,4 +102,22 @@
 
     cursor:pointer;
 
+}
+.service-rating { display:flex; align-items:center; gap:7px; }
+
+/* Keep the location pin and location name on one line in Home service cards.
+   The generic direct-child span rule above should not stack the LocationBadge. */
+.service-content > .location-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    width: fit-content;
+    max-width: 100%;
+    margin: 6px 0 10px;
+    vertical-align: middle;
+}
+
+.service-content > .location-badge .location-badge__icon {
+    display: block;
+    flex: 0 0 14px;
 }

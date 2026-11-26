@@ -204,7 +204,7 @@ public class CustomerServiceImpl
     }
 
     @Override
-    public List<VendorListingResponse> searchListings(String categoryTag, String locationTag, int page, int size) {
+    public List<VendorListingResponse> searchListings(String category, String categoryTag, String locationTag, int page, int size) {
         // Vocabulary is derived only from tags actually saved on services.
         List<VendorService> all = vendorServiceRepository.findByActiveTrueAndDeletedFalse().stream()
                 .filter(s -> s.getModerationStatus() == ServiceModerationStatus.APPROVED).toList();
@@ -228,6 +228,10 @@ public class CustomerServiceImpl
         }
         final Map<String,Double> cm=categoryMatches, lm=locationMatches;
         List<VendorListingResponse> results = all.stream().filter(service -> {
+                    // Preserve the selected top-level service category while applying its saved tag.
+                    if (category != null && !category.isBlank()
+                            && (service.getCategory() == null
+                            || !service.getCategory().name().equalsIgnoreCase(category.trim()))) return false;
                     if (service.getTags()==null) return false;
                     boolean categoryOk = categoryTag==null || categoryTag.isBlank() || service.getTags().stream().filter(t -> "CATEGORY".equalsIgnoreCase(t.getType()))
                             .anyMatch(t -> tagScore(t,cm)>0);
@@ -244,7 +248,7 @@ public class CustomerServiceImpl
                     return new java.util.AbstractMap.SimpleEntry<>(dto,score);
                 }).filter(Objects::nonNull).sorted((a,b)->Double.compare(b.getValue(),a.getValue()))
                 .skip((long)Math.max(0,page)*Math.max(1,Math.min(size,100))).limit(Math.max(1,Math.min(size,100)))
-                .map(java.util.Map.Entry::getKey).toList();
+                .map(Map.Entry::getKey).toList();
         return results;
     }
 

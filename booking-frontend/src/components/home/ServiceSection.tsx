@@ -62,109 +62,26 @@ const ServiceSection = ({
     ]);
 
 
-    /*
-     * =========================================
-     * DISPLAY SERVICES
-     * =========================================
-     *
-     * 1 service:
-     *
-     * 1, 1, 1
-     *
-     * 2 services:
-     *
-     * 1, 2, 1
-     *
-     * 3+ services:
-     *
-     * Normal 3-card carousel window.
-     */
+    // Fill the three desktop card positions when only one or two eligible
+    // listings exist. Repeated cards are display-only and link to the same
+    // underlying service.
+    const displayServices = useMemo(
+        () => {
+            if (services.length > 3) {
+                return services.slice(startIndex, startIndex + 3);
+            }
 
-    const displayServices =
-        useMemo(
-            () => {
+            if (services.length === 0) {
+                return [];
+            }
 
-                /*
-                 * No services.
-                 */
-
-                if (
-                    services.length === 0
-                ) {
-
-                    return [];
-
-                }
-
-
-                /*
-                 * One service.
-                 *
-                 * Repeat the same service
-                 * three times.
-                 */
-
-                if (
-                    services.length === 1
-                ) {
-
-                    return [
-
-                        services[0],
-
-                        services[0],
-
-                        services[0]
-
-                    ];
-
-                }
-
-
-                /*
-                 * Two services.
-                 *
-                 * Display:
-                 *
-                 * First
-                 * Second
-                 * First
-                 */
-
-                if (
-                    services.length === 2
-                ) {
-
-                    return [
-
-                        services[0],
-
-                        services[1],
-
-                        services[0]
-
-                    ];
-
-                }
-
-
-                /*
-                 * Three or more services.
-                 *
-                 * Display a 3-card window.
-                 */
-
-                return services.slice(
-                    startIndex,
-                    startIndex + 3
-                );
-
-            },
-            [
-                services,
-                startIndex
-            ]
-        );
+            return Array.from(
+                { length: 3 },
+                (_, index) => services[index % services.length]
+            );
+        },
+        [services, startIndex]
+    );
 
 
     /*
@@ -242,6 +159,9 @@ const ServiceSection = ({
 
     }
 
+
+    // Empty discovery sections should not create blank space on the homepage.
+    if (services.length === 0) return null;
 
     return (
 
@@ -346,53 +266,14 @@ const ServiceSection = ({
                     EMPTY STATE
                 ===================================== */}
 
-                {
-                    services.length === 0 ? (
-
-                        <div className="service-empty-state">
-
-                            <p>
-
-                                No services available
-                                at the moment.
-
-                            </p>
-
-                        </div>
-
-                    ) : (
-
-                        <div className="service-grid">
-
-
-                            {
-                                displayServices.map(
-                                    (
-                                        service,
-                                        index
-                                    ) => (
-
-                                        <ServiceCard
-
-                                            key={
-                                                `${service.serviceId}-${index}`
-                                            }
-
-                                            {
-                                                ...service
-                                            }
-
-                                        />
-
-                                    )
-                                )
-                            }
-
-
-                        </div>
-
-                    )
-                }
+                <div className="service-grid">
+                    {displayServices.map((service, index) => (
+                        <ServiceCard
+                            key={`${service.serviceId}-${index}`}
+                            {...service}
+                        />
+                    ))}
+                </div>
 
 
             </div>

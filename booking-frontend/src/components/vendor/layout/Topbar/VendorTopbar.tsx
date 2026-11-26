@@ -1,6 +1,5 @@
 import {
     FaBell,
-    FaSearch,
     FaChevronDown,
     FaUser,
     FaCog,
@@ -625,26 +624,6 @@ export default function VendorTopbar() {
                 <span>
                     {today}
                 </span>
-
-            </div>
-
-
-            {/* =================================
-                CENTER
-            ================================= */}
-
-            <div className="topbar-center">
-
-                <div className="search-box">
-
-                    <FaSearch />
-
-                    <input
-                        type="text"
-                        placeholder="Search bookings, customers..."
-                    />
-
-                </div>
 
             </div>
 

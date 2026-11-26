@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 
 import VendorReviewService from "../../../../services/VendorReviewService";
 import type { Review } from "../../../../types/Review";
+import RatingStars from "../../RatingStars";
 
 import styles from "./ReviewList.module.css";
 
@@ -69,7 +70,7 @@ export default function ReviewList({
 
                         <div className={styles.stars}>
 
-                            {"⭐".repeat(review.rating)}
+                            <RatingStars value={review.rating} size="medium" />
 
                         </div>
 

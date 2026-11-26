@@ -1,13 +1,17 @@
+import { Link } from "react-router-dom";
 import "./Home.css";
-
-import SearchBar
-    from "../../components/search/SearchBar";
 
 import CategoryCard
     from "../../components/home/CategoryCard";
 
 import ServiceSection
     from "../../components/home/ServiceSection";
+
+import MobileCarousel
+    from "../../components/common/MobileCarousel/MobileCarousel";
+
+import RatingStars
+    from "../../components/common/RatingStars";
 
 import {
     categories
@@ -195,9 +199,6 @@ const Home = () => {
                             decorators and event professionals.
                         </p>
 
-
-                        <SearchBar />
-
                     </div>
 
                 </div>
@@ -223,45 +224,21 @@ const Home = () => {
                     </p>
 
 
-                    <div className="category-grid">
-
-                        {
-                            categories.map(
-                                category => (
-
-                                    <CategoryCard
-
-                                        key={
-                                            category.title
-                                        }
-
-                                        icon={
-                                            category.icon
-                                        }
-
-                                        title={
-                                            category.title
-                                        }
-
-                                        description={
-                                            category.description
-                                        }
-
-                                        link={
-                                            category.link
-                                        }
-
-                                        category={
-                                            category.category
-                                        }
-
-                                    />
-
-                                )
-                            )
-                        }
-
-                    </div>
+                    <MobileCarousel
+                        className="category-grid home-category-carousel"
+                        ariaLabel="Service categories"
+                    >
+                        {categories.map(category => (
+                            <CategoryCard
+                                key={category.category}
+                                icon={category.icon}
+                                title={category.title}
+                                description={category.description}
+                                link={category.link}
+                                category={category.category}
+                            />
+                        ))}
+                    </MobileCarousel>
 
                 </div>
 
@@ -502,53 +479,18 @@ const Home = () => {
                     </h2>
 
 
-                    <div className="testimonial-grid">
-
-                        {
-                            testimonials.map(
-                                item => (
-
-                                    <div
-
-                                        key={
-                                            item.name
-                                        }
-
-                                        className="testimonial-card"
-
-                                    >
-
-                                        <div>
-                                            ⭐⭐⭐⭐⭐
-                                        </div>
-
-
-                                        <p>
-
-                                            "
-                                            {
-                                                item.review
-                                            }
-                                            "
-
-                                        </p>
-
-
-                                        <strong>
-
-                                            - {
-                                                item.name
-                                            }
-
-                                        </strong>
-
-                                    </div>
-
-                                )
-                            )
-                        }
-
-                    </div>
+                    <MobileCarousel
+                        className="testimonial-grid home-testimonial-carousel"
+                        ariaLabel="Customer reviews"
+                    >
+                        {testimonials.map(item => (
+                            <div className="testimonial-card" key={item.name}>
+                                <RatingStars value={5} size="medium" />
+                                <p>"{item.review}"</p>
+                                <strong>- {item.name}</strong>
+                            </div>
+                        ))}
+                    </MobileCarousel>
 
                 </div>
 
@@ -574,11 +516,12 @@ const Home = () => {
                     </p>
 
 
-                    <button
-                        type="button"
+                    <Link
+                        to="/vendor/register"
+                        className="vendor-register-button"
                     >
                         Register Your Business
-                    </button>
+                    </Link>
 
                 </div>
 

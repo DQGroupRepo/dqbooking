@@ -8,6 +8,7 @@ import com.booking.repository.VendorServiceRepository;
 import com.booking.repository.BookingRepository;
 import com.booking.repository.BookingHoldRepository;
 import com.booking.model.enums.BookingHoldStatus;
+import com.booking.model.enums.BookingStatus;
 import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -24,6 +25,8 @@ public class ServiceResourceTypeController {
     @GetMapping
     public List<ServiceResourceType> getResourceTypes(@PathVariable String serviceId) {
         VendorService service = findService(serviceId);
+        if (service.getCategory() == null || !service.getCategory().supportsResourceTypes())
+            throw new IllegalArgumentException("Resource Types are supported only for STAY and HALL services.");
         return service.getResourceTypes() == null ? List.of() : service.getResourceTypes();
     }
 
@@ -32,6 +35,8 @@ public class ServiceResourceTypeController {
             @PathVariable String serviceId,
             @RequestBody UpdateServiceResourceTypesRequest request) {
         VendorService service = findService(serviceId);
+        if (service.getCategory() == null || !service.getCategory().supportsResourceTypes())
+            throw new IllegalArgumentException("Resource Types are supported only for STAY and HALL services.");
         List<ServiceResourceType> types = request.getResourceTypes() == null
                 ? new ArrayList<>() : request.getResourceTypes();
         Set<String> ids = new HashSet<>();
@@ -44,10 +49,15 @@ public class ServiceResourceTypeController {
         }
         if (!removedIds.isEmpty()) {
             boolean usedByBooking = bookingRepository.findByServiceId(serviceId).stream()
-                    .anyMatch(b -> removedIds.contains(b.getResourceTypeId()));
+                    .filter(b -> b.getStatus() == BookingStatus.PENDING || b.getStatus() == BookingStatus.CONFIRMED)
+                    .anyMatch(b -> removedIds.contains(b.getResourceTypeId())
+                            || (b.getResourceAllocations() != null && b.getResourceAllocations().stream()
+                            .anyMatch(a -> removedIds.contains(a.getResourceTypeId()))));
             boolean usedByHold = bookingHoldRepository.findByServiceIdAndStatusAndExpiresAtAfter(
                             serviceId, BookingHoldStatus.ACTIVE, LocalDateTime.now()).stream()
-                    .anyMatch(h -> removedIds.contains(h.getResourceTypeId()));
+                    .anyMatch(h -> removedIds.contains(h.getResourceTypeId())
+                            || (h.getResourceAllocations() != null && h.getResourceAllocations().stream()
+                            .anyMatch(a -> removedIds.contains(a.getResourceTypeId()))));
             if (usedByBooking || usedByHold)
                 throw new IllegalArgumentException("A resource type with an existing booking or active hold cannot be removed.");
         }
@@ -59,6 +69,29 @@ public class ServiceResourceTypeController {
             if (type.getId() == null || type.getId().isBlank()) type.setId(UUID.randomUUID().toString());
             if (!ids.add(type.getId())) throw new IllegalArgumentException("Duplicate resource type.");
             List<ServiceResourceUnit> oldUnits = type.getUnits() == null ? new ArrayList<>() : new ArrayList<>(type.getUnits());
+            Set<String> retainedUnitIds = new HashSet<>();
+            for (int i = 1; i <= type.getQuantity(); i++) retainedUnitIds.add(type.getId() + "-" + i);
+            Set<String> deactivatedUnitIds = new HashSet<>();
+            oldUnits.stream().map(ServiceResourceUnit::getId).filter(Objects::nonNull)
+                    .filter(id -> !retainedUnitIds.contains(id)).forEach(deactivatedUnitIds::add);
+            if (!deactivatedUnitIds.isEmpty()) {
+                boolean allocatedInBooking = bookingRepository.findByServiceId(serviceId).stream()
+                        .filter(b -> b.getStatus() == BookingStatus.PENDING || b.getStatus() == BookingStatus.CONFIRMED)
+                        .anyMatch(b -> (type.getId().equals(b.getResourceTypeId()) && b.getResourceIds() != null
+                                && b.getResourceIds().stream().anyMatch(deactivatedUnitIds::contains))
+                                || (b.getResourceAllocations() != null && b.getResourceAllocations().stream()
+                                .anyMatch(a -> type.getId().equals(a.getResourceTypeId()) && a.getResourceIds() != null
+                                        && a.getResourceIds().stream().anyMatch(deactivatedUnitIds::contains))));
+                boolean allocatedInHold = bookingHoldRepository.findByServiceIdAndStatusAndExpiresAtAfter(
+                                serviceId, BookingHoldStatus.ACTIVE, LocalDateTime.now()).stream()
+                        .anyMatch(h -> (type.getId().equals(h.getResourceTypeId()) && h.getResourceIds() != null
+                                && h.getResourceIds().stream().anyMatch(deactivatedUnitIds::contains))
+                                || (h.getResourceAllocations() != null && h.getResourceAllocations().stream()
+                                .anyMatch(a -> type.getId().equals(a.getResourceTypeId()) && a.getResourceIds() != null
+                                        && a.getResourceIds().stream().anyMatch(deactivatedUnitIds::contains))));
+                if (allocatedInBooking || allocatedInHold)
+                    throw new IllegalArgumentException("Room quantity cannot be reduced while the affected physical rooms are booked or held.");
+            }
             List<ServiceResourceUnit> units = new ArrayList<>();
             int unitCount = Math.max(type.getQuantity(), oldUnits.size());
             for (int i = 0; i < unitCount; i++) {

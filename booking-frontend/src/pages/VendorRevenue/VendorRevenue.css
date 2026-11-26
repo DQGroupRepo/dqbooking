@@ -67,3 +67,15 @@
     }
 
 }
+
+@media (max-width: 700px) {
+    .vendor-revenue { min-width: 0; max-width: 100%; overflow-x: hidden; padding: 0; }
+    .vendor-revenue .page-header { margin-bottom: 18px; }
+    .vendor-revenue .page-header h1 { font-size: 23px; line-height: 1.25; }
+    .vendor-revenue .summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-bottom: 18px; }
+    .vendor-revenue .revenue-chart-card { min-width: 0; width: 100%; padding: 14px 10px; box-sizing: border-box; overflow: hidden; }
+    .vendor-revenue .revenue-chart-card h2 { font-size: 17px; }
+}
+@media (max-width: 380px) {
+    .vendor-revenue .summary-grid { grid-template-columns: minmax(0, 1fr); }
+}

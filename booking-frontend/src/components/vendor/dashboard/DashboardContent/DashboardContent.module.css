@@ -41,3 +41,9 @@
 }
 
 }
+.grid, .rightPanel { min-width: 0; max-width: 100%; box-sizing: border-box; }
+@media (max-width: 900px) {
+    .grid { display: flex; flex-direction: column; width: 100%; gap: 18px; }
+    .grid > *, .rightPanel { width: 100%; min-width: 0; max-width: 100%; }
+    .rightPanel { gap: 18px; }
+}

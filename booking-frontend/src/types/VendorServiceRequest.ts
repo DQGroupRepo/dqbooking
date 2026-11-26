@@ -10,6 +10,7 @@ import type { ServicePackageRequest } from "./ServicePackageRequest";
 import type { ServiceDetailSection } from "./ServiceDetailSection";
 
 import type { CateringMenuItem } from "./CateringMenuItem";
+import type { BeautyDetails } from "./BeautyDetails";
 
 export interface VendorCateringDetailsRequest {
   vegetarian: boolean;
@@ -59,6 +60,8 @@ export interface VendorServiceRequest {
   detailSections: ServiceDetailSection[];
 
   cateringDetails?: VendorCateringDetailsRequest;
+
+  beautyDetails?: BeautyDetails;
 
   /* =====================================
        PACKAGES

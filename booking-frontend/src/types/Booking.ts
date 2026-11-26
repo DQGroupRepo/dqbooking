@@ -19,8 +19,16 @@ export interface Booking {
 
   bookingFrom: string;
   bookingTo: string;
+  eventDate?: string;
   bookingType?: "STANDARD_SLOT" | "ROOM_STAY" | "DAY_PACKAGE";
   roomQuantity?: number;
+  slotId?: string;
+  slotName?: string;
+  slotStartTime?: string;
+  slotEndTime?: string;
+  resourceTypeName?: string;
+  resourceIds?: string[];
+  resourceNames?: string[];
 
   guestCount: number;
 
@@ -45,8 +53,11 @@ export interface Booking {
   pricing: BookingPricingResponse;
 
   packageId?: string;
+  packageName?: string;
+  packagePrice?: number;
+  packageFeatures?: string[];
 
-  packageType?: "SILVER" | "GOLD" | "PREMIUM";
+  packageType?: "SILVER" | "GOLD" | "PREMIUM" | "FIXED_DURATION";
 
   cancellable?: boolean;
 

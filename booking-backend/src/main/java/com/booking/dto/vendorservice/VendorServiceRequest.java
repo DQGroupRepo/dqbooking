@@ -4,6 +4,7 @@ import com.booking.dto.pricing.VendorServicePricingRequest;
 import com.booking.dto.service.ServiceDetailSectionRequest;
 import com.booking.dto.service.ServicePackageRequest;
 import com.booking.dto.service.CateringDetailsRequest;
+import com.booking.model.embedded.BeautyDetails;
 import com.booking.model.enums.DiscountType;
 import com.booking.model.enums.ServiceCategory;
 import com.booking.model.embedded.ServiceTag;
@@ -83,5 +84,8 @@ public class VendorServiceRequest {
     private List<ServicePackageRequest> packages;
     @Valid
     private CateringDetailsRequest cateringDetails;
+
+    @Valid
+    private BeautyDetails beautyDetails;
 
 }

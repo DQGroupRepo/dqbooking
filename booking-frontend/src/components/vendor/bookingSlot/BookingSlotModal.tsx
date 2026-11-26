@@ -61,6 +61,7 @@ export default function BookingSlotModal({
     const isEditMode = !!slot;
     const [saving, setSaving] = useState(false);
     const [resourceTypes, setResourceTypes] = useState<ServiceResourceType[]>([]);
+    const [isCateringService, setIsCateringService] = useState(false);
     const [formData, setFormData] = useState<CreateBookingSlotRequest>({
         slotName: "",
         startTime: "",
@@ -78,7 +79,8 @@ export default function BookingSlotModal({
                 endTime: "",
                 maxBookings: 1,
                 displayOrder: 1,
-                bookingPattern: "DAILY_RECURRING"
+                bookingPattern: "DAILY_RECURRING",
+                resourceTypeId: undefined
             });
             return;
         }
@@ -89,9 +91,36 @@ export default function BookingSlotModal({
             endTime: slot.endTime,
             maxBookings: slot.maxBookings,
             displayOrder: slot.displayOrder,
-            bookingPattern: slot.bookingPattern ?? "DAILY_RECURRING"
+            bookingPattern: slot.bookingPattern ?? "DAILY_RECURRING",
+            resourceTypeId: slot.resourceTypeId
         });
     }, [slot, open]);
+
+    useEffect(() => {
+        if (!open || !serviceId) return;
+        let cancelled = false;
+        (async () => {
+            try {
+                const service = await VendorServiceService.getServiceById(serviceId);
+                const category = String(service.category ?? "").trim().toUpperCase();
+                const supportsResources = ["STAY", "STAYS", "HALL", "HALLS"].includes(category);
+                if (!cancelled) setIsCateringService(category === "CATERING");
+                const types = supportsResources
+                    ? await VendorServiceService.getResourceTypes(serviceId)
+                    : [];
+                if (!cancelled) setResourceTypes(types ?? []);
+            } catch (error) {
+                if (!cancelled) {
+                    console.error("Failed to load slot resource types", error);
+                    setResourceTypes([]);
+                    setIsCateringService(false);
+                }
+            }
+        })();
+        return () => {
+            cancelled = true;
+        };
+    }, [serviceId, open]);
 
     function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
         const { name, value, type } = e.target;
@@ -122,11 +151,17 @@ export default function BookingSlotModal({
             return;
         }
         if (formData.maxBookings <= 0) {
-            toast.error("Maximum bookings must be at least 1.");
+            toast.error(isCateringService
+                ? "Maximum guests must be at least 1."
+                : "Maximum bookings must be at least 1.");
             return;
         }
         if (formData.displayOrder <= 0) {
             toast.error("Display Order must be greater than zero.");
+            return;
+        }
+        if (resourceTypes.length > 0 && !formData.resourceTypeId) {
+            toast.error("Select a Resource Type for this booking slot.");
             return;
         }
 
@@ -233,7 +268,7 @@ export default function BookingSlotModal({
                 <Input
                     name="maxBookings"
                     type="number"
-                    label="Maximum Bookings"
+                    label={isCateringService ? "Maximum Guests" : "Maximum Bookings"}
                     value={formData.maxBookings.toString()}
                     onChange={handleChange}
                 />

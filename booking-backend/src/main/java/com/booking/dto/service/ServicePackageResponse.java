@@ -1,5 +1,6 @@
 package com.booking.dto.service;
 
+import com.booking.model.embedded.ResourceTypeRequirement;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -12,7 +13,10 @@ public class ServicePackageResponse {
 
     private String id;
 
+    /** Legacy single-type mapping retained for older clients and saved packages. */
     private String resourceTypeId;
+
+    private List<ResourceTypeRequirement> resourceRequirements;
 
     /** PER_DAY, PER_NIGHT, or FIXED. */
     private String pricingBasis = "FIXED";
@@ -24,6 +28,8 @@ public class ServicePackageResponse {
     private Integer maximumDuration = 31;
 
     private Integer includedDuration;
+
+    private Integer durationMinutes;
 
     private String name;
 

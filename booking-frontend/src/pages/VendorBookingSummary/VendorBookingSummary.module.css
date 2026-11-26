@@ -47,3 +47,45 @@
     gap: 20px;
 
 }
+
+/* Mobile: keep the booking calendar as the primary focus. */
+@media (max-width: 700px) {
+    .container {
+        gap: 14px;
+        padding: 0 12px 20px;
+        min-width: 0;
+    }
+
+    .header {
+        padding: 2px 2px 0;
+    }
+
+    .header h1 {
+        font-size: 22px;
+        line-height: 1.2;
+    }
+
+    .header p {
+        margin: 4px 0 0;
+        font-size: 12px;
+        line-height: 1.4;
+    }
+
+    .statsGrid {
+        display: flex;
+        gap: 10px;
+        overflow-x: auto;
+        overflow-y: hidden;
+        padding: 2px 1px 8px;
+        margin: 0;
+        scroll-snap-type: x proximity;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: thin;
+    }
+
+    .statsGrid > * {
+        flex: 0 0 128px;
+        min-width: 0;
+        scroll-snap-align: start;
+    }
+}

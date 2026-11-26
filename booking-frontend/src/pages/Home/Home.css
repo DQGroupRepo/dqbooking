@@ -366,21 +366,27 @@
     margin-bottom:25px;
 }
 
-.vendor-banner button {
+.vendor-banner .vendor-register-button {
 
-    background:white;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 
-    color:#dfa974;
+    background: white;
+    color: #dfa974;
+    border: none;
+    padding: 12px 30px;
+    border-radius: 6px;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+    transition: transform .18s ease, box-shadow .18s ease;
+}
 
-    border:none;
-
-    padding:12px 30px;
-
-    border-radius:6px;
-
-    font-weight:600;
-
-    cursor:pointer;
+.vendor-banner .vendor-register-button:hover {
+    color: #dfa974;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, .12);
 }
 
 /* =========================================================
@@ -479,4 +485,188 @@
 
     }
 
+}
+
+/* Mobile/tablet homepage carousels. Desktop retains the original grids. */
+@media (max-width: 900px) {
+    .categories-section {
+        padding: 36px 0 42px;
+        overflow: hidden;
+    }
+
+    .home-category-carousel {
+        display: block;
+    }
+
+    .home-category-carousel .dq-mobile-carousel__viewport {
+        gap: 16px;
+        padding: 4px 2px 14px;
+    }
+
+    .home-category-carousel .dq-mobile-carousel__item {
+        flex: 0 0 clamp(230px, 42vw, 300px);
+        width: clamp(230px, 42vw, 300px);
+    }
+
+    .home-category-carousel .category-link,
+    .home-category-carousel .category-card {
+        height: 100%;
+    }
+
+    .home-category-carousel .category-card {
+        min-height: 235px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        padding: 26px 20px;
+        border-radius: 22px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, .06);
+    }
+
+    .home-testimonial-carousel {
+        display: block;
+    }
+
+    .home-testimonial-carousel .dq-mobile-carousel__viewport {
+        gap: 16px;
+        padding: 4px 2px 14px;
+    }
+
+    .home-testimonial-carousel .dq-mobile-carousel__item {
+        flex: 0 0 min(86%, 420px);
+        width: min(86%, 420px);
+    }
+
+    .home-testimonial-carousel .testimonial-card {
+        height: 100%;
+        min-height: 150px;
+        box-sizing: border-box;
+    }
+
+    .testimonial-section {
+        padding: 52px 0;
+        overflow: hidden;
+    }
+}
+
+@media (max-width: 600px) {
+    .home-category-carousel .dq-mobile-carousel__item {
+        flex-basis: 82vw;
+        width: 82vw;
+    }
+
+    .home-category-carousel .category-card {
+        min-height: 220px;
+    }
+
+    .home-testimonial-carousel .dq-mobile-carousel__item {
+        flex-basis: 88%;
+        width: 88%;
+    }
+}
+
+
+/* Homepage category carousel: two compact category cards per pagination page. */
+@media (max-width: 900px) {
+    .home-category-carousel .dq-mobile-carousel__page-content.is-multi-card {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+    }
+
+    .home-category-carousel .dq-mobile-carousel__card {
+        min-width: 0;
+        width: 100%;
+    }
+
+    .home-category-carousel .category-link,
+    .home-category-carousel .category-card {
+        width: 100%;
+        height: 100%;
+        box-sizing: border-box;
+    }
+
+    .home-category-carousel .category-card {
+        min-height: 0;
+        padding: 18px 10px;
+        border-radius: 16px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        box-shadow: 0 5px 16px rgba(0, 0, 0, .05);
+    }
+
+    .home-category-carousel .category-icon {
+        font-size: 30px;
+        line-height: 1.1;
+        margin: 0 0 4px;
+    }
+
+    .home-category-carousel .category-card h3 {
+        font-size: clamp(13px, 2.5vw, 17px);
+        line-height: 1.2;
+        margin: 0;
+        overflow-wrap: anywhere;
+    }
+
+    .home-category-carousel .category-card p {
+        font-size: clamp(11px, 2vw, 13px);
+        line-height: 1.3;
+        text-align: center;
+    }
+
+    .home-category-carousel .dq-mobile-carousel__pagination {
+        padding-top: 10px;
+    }
+}
+
+@media (max-width: 420px) {
+    /* Keep two categories in each page even on narrow phones; cards are compacted. */
+    .home-category-carousel .dq-mobile-carousel__page-content.is-multi-card {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+    }
+
+    .home-category-carousel .category-card {
+        padding: 14px 7px;
+        border-radius: 14px;
+    }
+
+    .home-category-carousel .category-icon {
+        font-size: 26px;
+    }
+
+    .home-category-carousel .category-card h3 {
+        font-size: 12px;
+    }
+
+    .home-category-carousel .category-card p {
+        font-size: 10px;
+    }
+}
+
+.vendor-banner .vendor-register-button {
+    max-width: 100%;
+}
+
+@media (max-width: 600px) {
+    .vendor-banner {
+        padding: 48px 16px;
+    }
+
+    .vendor-banner h2 {
+        font-size: 1.45rem;
+        line-height: 1.25;
+    }
+
+    .vendor-banner p {
+        font-size: .95rem;
+    }
+
+    .vendor-banner .vendor-register-button {
+        width: 100%;
+        max-width: 320px;
+        padding: 13px 18px;
+    }
 }

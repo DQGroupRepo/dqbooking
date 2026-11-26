@@ -22,6 +22,7 @@ import type {
 } from "../../../../types/VendorEnquiry";
 
 import styles from "./BookingCalendar.module.css";
+import DateField from "../../../common/DateField/DateField";
 
 
 interface Props {
@@ -112,6 +113,14 @@ const formatSelectedDate = (
             year: "numeric"
         }
     );
+};
+
+const formatBookingDate = (value?: string): string => {
+    if (!value) return "";
+    const key = toDateKey(value);
+    if (!key) return "";
+    const [year, month, day] = key.split("-").map(Number);
+    return new Date(year, month - 1, day).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
 };
 
 
@@ -1222,6 +1231,29 @@ export default function BookingCalendar({
                                             </div>
 
 
+                                            <div className={styles.bookingSchedule}>
+                                                <div>
+                                                    <span>Booking dates</span>
+                                                    <strong>
+                                                        {formatBookingDate(booking.bookingFrom || booking.eventDate)}
+                                                        {booking.bookingTo && toDateKey(booking.bookingTo) !== toDateKey(booking.bookingFrom || booking.eventDate)
+                                                            ? ` – ${formatBookingDate(booking.bookingTo)}` : ""}
+                                                    </strong>
+                                                </div>
+                                                {(booking.slotName || booking.slotStartTime || booking.slotEndTime) && (
+                                                    <div>
+                                                        <span>Time slot</span>
+                                                        <strong>{booking.slotName || "Selected slot"}{(booking.slotStartTime || booking.slotEndTime) ? ` (${booking.slotStartTime ?? ""}${booking.slotEndTime ? ` – ${booking.slotEndTime}` : ""})` : ""}</strong>
+                                                    </div>
+                                                )}
+                                                {String(booking.serviceCategory ?? "").toUpperCase() === "STAY" && (
+                                                    <div>
+                                                        <span>Room</span>
+                                                        <strong>{[booking.resourceTypeName, booking.roomQuantity ? `Qty ${booking.roomQuantity}` : "", ...(booking.resourceNames ?? [])].filter(Boolean).join(" · ") || "Room allocation details unavailable"}</strong>
+                                                    </div>
+                                                )}
+                                            </div>
+
                                             <div
                                                 className={
                                                     styles.paymentRow
@@ -1535,23 +1567,23 @@ export default function BookingCalendar({
 
                                 <label>
                                     Event date
-                                    <input
-                                        type="date"
+                                    <DateField
                                         value={getDateKey(selectedDate)}
                                         readOnly
+                                        ariaLabel="Event date"
                                     />
                                 </label>
 
                                 <label>
                                     Follow-up date <span>(optional)</span>
-                                    <input
-                                        type="date"
-                                        min={getEarliestFollowUpDate()}
+                                    <DateField
+                                        minDate={getEarliestFollowUpDate()}
                                         value={enquiryForm.followUpDate}
-                                        onChange={event => setEnquiryForm(current => ({
+                                        onChange={date => setEnquiryForm(current => ({
                                             ...current,
-                                            followUpDate: event.target.value
+                                            followUpDate: date
                                         }))}
+                                        ariaLabel="Follow-up date"
                                     />
                                     <small>
                                         Reminders are sent at 5:00 AM or 1:00 PM, whichever is the next scheduled run.

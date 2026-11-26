@@ -122,21 +122,21 @@ class CartService {
 
     private async releaseHold(item: CartItem): Promise<void> {
 
-        if (!item.holdId) {
-            return;
-        }
+        const holdIds = Array.from(new Set([
+            ...(item.holds ?? []).map(hold => hold.holdId),
+            ...(item.holdId ? [item.holdId] : [])
+        ].filter(Boolean)));
 
-        try {
-            await BookingAvailabilityService.releaseHold(
-                item.serviceId,
-                item.holdId
-            );
-        } catch (error) {
-            console.warn(
-                `Could not release hold ${item.holdId}; it will expire automatically.`,
-                error
-            );
-        }
+        await Promise.all(holdIds.map(async holdId => {
+            try {
+                await BookingAvailabilityService.releaseHold(item.serviceId, holdId);
+            } catch (error) {
+                console.warn(
+                    `Could not release hold ${holdId}; it will expire automatically.`,
+                    error
+                );
+            }
+        }));
     }
 
 
@@ -177,41 +177,69 @@ class CartService {
     async replaceItem(item: CartItem): Promise<CartItem[]> {
 
         const cart = this.getCart();
-        const existing = cart.find(
-            cartItem => cartItem.serviceId === item.serviceId
+        const requirementsKey = (value: CartItem) => JSON.stringify(
+            (value.resourceRequirements ?? [])
+                .map(requirement => `${requirement.resourceTypeId}:${requirement.quantity}`)
+                .sort()
         );
+        const sameBookingSelection = (cartItem: CartItem) =>
+            String(item.category ?? "").toUpperCase() === "STAY" &&
+            !cartItem.bundleId && !item.bundleId &&
+            cartItem.serviceId === item.serviceId &&
+            cartItem.slotId === item.slotId &&
+            cartItem.packageId === item.packageId &&
+            (cartItem.bookingFrom ?? cartItem.eventDate ?? "").slice(0, 16) ===
+                (item.bookingFrom ?? item.eventDate ?? "").slice(0, 16) &&
+            (cartItem.bookingTo ?? cartItem.eventDate ?? "").slice(0, 16) ===
+                (item.bookingTo ?? item.eventDate ?? "").slice(0, 16) &&
+            requirementsKey(cartItem) === requirementsKey(item);
+        const existingIndex = cart.findIndex(sameBookingSelection);
 
-        let nextCart = cart;
-
-        if (existing) {
-            nextCart = cart
-                .filter(cartItem => cartItem.serviceId !== item.serviceId)
-                .map(cartItem => {
-                    // Replacing a member with a different bundle (or a
-                    // normal booking) invalidates the old bundle group.
-                    if (
-                        existing.bundleId &&
-                        existing.bundleId !== item.bundleId &&
-                        cartItem.bundleId === existing.bundleId
-                    ) {
-                        return this.withoutBundleAssociation(cartItem);
-                    }
-
-                    return cartItem;
-                });
+        if (existingIndex >= 0) {
+            const existing = cart[existingIndex];
+            const existingHolds = existing.holds?.length
+                ? existing.holds
+                : existing.holdId
+                    ? [{ holdId: existing.holdId, roomQuantity: existing.roomQuantity, quantity: existing.quantity, expiresAt: existing.holdExpiresAt, price: existing.price }]
+                    : [];
+            const newHolds = item.holds?.length
+                ? item.holds
+                : item.holdId
+                    ? [{ holdId: item.holdId, roomQuantity: item.roomQuantity, quantity: item.quantity, expiresAt: item.holdExpiresAt, price: item.price }]
+                    : [];
+            const mergedHolds = [...existingHolds, ...newHolds].filter(
+                (hold, index, all) => all.findIndex(candidate => candidate.holdId === hold.holdId) === index
+            );
+            const mergedRoomQuantity = mergedHolds.reduce(
+                (sum, hold) => sum + Number(hold.roomQuantity ?? hold.quantity ?? 1), 0
+            );
+            const mergedQuantity = mergedHolds.reduce(
+                (sum, hold) => sum + Number(hold.quantity ?? hold.roomQuantity ?? 1), 0
+            );
+            const merged: CartItem = {
+                ...existing,
+                holds: mergedHolds,
+                holdId: mergedHolds[0]?.holdId,
+                holdExpiresAt: mergedHolds.reduce<string | undefined>((earliest, hold) => {
+                    if (!hold.expiresAt) return earliest;
+                    return !earliest || Date.parse(hold.expiresAt) < Date.parse(earliest)
+                        ? hold.expiresAt : earliest;
+                }, undefined),
+                roomQuantity: existing.bookingType === "ROOM_STAY" ? mergedRoomQuantity : existing.roomQuantity,
+                quantity: mergedQuantity,
+                price: mergedHolds.reduce((sum, hold) => sum + Number(hold.price ?? 0), 0) ||
+                    Number(existing.price) + Number(item.price)
+            };
+            const nextCart = [...cart];
+            nextCart[existingIndex] = merged;
+            this.saveCart(nextCart);
+            return nextCart;
         }
 
-        nextCart = [...nextCart, item];
-
+        const nextCart = [...cart, item];
         this.saveCart(nextCart);
-
-        if (existing?.holdId && existing.holdId !== item.holdId) {
-            await this.releaseHold(existing);
-        }
-
         return nextCart;
     }
-
 
     /*
      * ADD ITEM COMPATIBILITY ALIAS
@@ -237,29 +265,64 @@ class CartService {
      * retain a discount association.
      */
 
-    async removeItem(serviceId: string): Promise<CartItem[]> {
-
+    async removeItem(serviceId: string, holdId?: string): Promise<CartItem[]> {
         const cart = this.getCart();
-        const removed = cart.filter(item => item.serviceId === serviceId);
-        const removedBundleIds = new Set(
-            removed.map(item => item.bundleId).filter(
-                (id): id is string => Boolean(id)
-            )
-        );
-
+        const removed = cart.filter(item => item.serviceId === serviceId &&
+            (!holdId || item.holdId === holdId));
+        const removedBundleIds = new Set(removed.map(item => item.bundleId).filter((id): id is string => Boolean(id)));
         const nextCart = cart
-            .filter(item => item.serviceId !== serviceId)
-            .map(item =>
-                item.bundleId && removedBundleIds.has(item.bundleId)
-                    ? this.withoutBundleAssociation(item)
-                    : item
-            );
-
-        // Persist removal even if the network is unavailable; backend
-        // expiry is the fallback if release cannot be reached.
+            .filter(item => !(item.serviceId === serviceId && (!holdId || item.holdId === holdId)))
+            .map(item => item.bundleId && removedBundleIds.has(item.bundleId)
+                ? this.withoutBundleAssociation(item)
+                : item);
         this.saveCart(nextCart);
         await this.releaseHolds(removed);
+        return nextCart;
+    }
 
+    // Remove one underlying hold when the backend reports that specific hold
+    // as expired. Other holds represented by the same visible cart line remain.
+    async removeHold(serviceId: string, holdId: string): Promise<CartItem[]> {
+        const cart = this.getCart();
+        const removed: CartItem[] = [];
+        const nextCart: CartItem[] = [];
+
+        cart.forEach(item => {
+            if (item.serviceId !== serviceId) {
+                nextCart.push(item);
+                return;
+            }
+            const holds = item.holds?.length
+                ? item.holds
+                : item.holdId
+                    ? [{ holdId: item.holdId, roomQuantity: item.roomQuantity, quantity: item.quantity, expiresAt: item.holdExpiresAt, price: item.price }]
+                    : [];
+            const matching = holds.filter(hold => hold.holdId === holdId);
+            if (!matching.length) {
+                nextCart.push(item);
+                return;
+            }
+            removed.push({ ...item, holds: matching, holdId: matching[0].holdId });
+            const remaining = holds.filter(hold => hold.holdId !== holdId);
+            if (!remaining.length) return;
+            const roomQuantity = remaining.reduce((sum, hold) => sum + Number(hold.roomQuantity ?? hold.quantity ?? 1), 0);
+            const quantity = remaining.reduce((sum, hold) => sum + Number(hold.quantity ?? hold.roomQuantity ?? 1), 0);
+            const remainingPrice = remaining.reduce((sum, hold) => sum + Number(hold.price ?? 0), 0);
+            nextCart.push({
+                ...item,
+                holds: remaining,
+                holdId: remaining[0].holdId,
+                holdExpiresAt: remaining.reduce<string | undefined>((earliest, hold) => {
+                    if (!hold.expiresAt) return earliest;
+                    return !earliest || Date.parse(hold.expiresAt) < Date.parse(earliest) ? hold.expiresAt : earliest;
+                }, undefined),
+                roomQuantity: item.bookingType === "ROOM_STAY" ? roomQuantity : item.roomQuantity,
+                quantity,
+                price: remainingPrice || item.price
+            });
+        });
+        this.saveCart(nextCart);
+        await this.releaseHolds(removed);
         return nextCart;
     }
 
@@ -288,9 +351,9 @@ class CartService {
     ): Promise<CartItem[]> {
 
         const cart = this.getCart();
-        const removed = cart.filter(item => item.serviceId === serviceId);
+        const removed = cart.filter(item => item.serviceId === serviceId && item.bundleId === bundleId);
         const nextCart = cart
-            .filter(item => item.serviceId !== serviceId)
+            .filter(item => !(item.serviceId === serviceId && item.bundleId === bundleId))
             .map(item =>
                 item.bundleId === bundleId
                     ? this.withoutBundleAssociation(item)
@@ -362,6 +425,20 @@ class CartService {
     }
 
 
+    /**
+     * Returns the cart line's gross amount before bundle discount.
+     * Catering prices are stored per guest, so multiply by the selected
+     * guest count here. Other categories retain their existing price rules.
+     */
+    getItemTotalPrice(item: CartItem): number {
+        const basePrice = Number(item.price) || 0;
+        const category = String(item.category ?? "").trim().toUpperCase();
+        if (category === "CATERING") {
+            return basePrice * Math.max(1, Number(item.guestCount) || 1);
+        }
+        return basePrice;
+    }
+
     /*
      * =========================================
      * RAW SUBTOTAL
@@ -379,9 +456,7 @@ class CartService {
                     item
                 ) =>
                     total +
-                    Number(
-                        item.price
-                    ),
+                    this.getItemTotalPrice(item),
                 0
             );
 
@@ -532,9 +607,7 @@ console.log("isBundleComplete:", cart);
                     item
                 ) =>
                     total +
-                    Number(
-                        item.price
-                    ),
+                    this.getItemTotalPrice(item),
                 0
             );
 

@@ -67,6 +67,14 @@ public class BookingResponse extends BaseEntity {
 
     private String slotEndTime;
 
+    private Integer roomQuantity;
+
+    private String resourceTypeName;
+
+    private java.util.List<String> resourceIds;
+
+    private java.util.List<String> resourceNames;
+
     private Integer guestCount;
 
     private BookingStatus status;
@@ -144,5 +152,15 @@ public class BookingResponse extends BaseEntity {
     private String packageId;
 
     private String packageType;
+
+    /** Immutable package details copied from the booking pricing snapshot. */
+    private String packageName;
+
+    private BigDecimal packagePrice;
+
+    private java.util.List<String> packageFeatures;
+
+    private java.util.List<String> selectedBeautyServiceIds;
+    private java.util.List<String> selectedBeautyServiceNames;
 
 }

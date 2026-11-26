@@ -22,6 +22,47 @@ export default function BookingTableStats({
 
         <div className={styles.tableWrapper}>
 
+            <div className={styles.mobileBookingList}>
+                {bookings.length === 0 ? (
+                    <div className={styles.mobileEmptyState}>No bookings found.</div>
+                ) : bookings.map((booking) => (
+                    <article
+                        key={booking.id}
+                        className={styles.mobileBookingCard}
+                        onClick={() => openBooking(booking.id)}
+                        onKeyDown={(event) => {
+                            if (event.key === "Enter" || event.key === " ") {
+                                event.preventDefault();
+                                openBooking(booking.id);
+                            }
+                        }}
+                        role="button"
+                        tabIndex={0}
+                    >
+                        <div className={styles.mobileCardTop}>
+                            <strong>{booking.bookingNumber}</strong>
+                            <span className={`${styles.status} ${styles[booking.status.toLowerCase()]}`}>
+                                {booking.status}
+                            </span>
+                        </div>
+                        <div className={styles.mobileCustomer}>{booking.customerName}</div>
+                        <div className={styles.mobileService}>{booking.serviceName}</div>
+                        <div className={styles.mobileCardMeta}>
+                            <span><small>Event date</small><strong>{booking.eventDate}</strong></span>
+                            <span><small>Amount</small><strong>₹{Number(booking.amount ?? 0).toLocaleString("en-IN")}</strong></span>
+                        </div>
+                        <button
+                            type="button"
+                            className={styles.mobileViewButton}
+                            onClick={(event) => {
+                                event.stopPropagation();
+                                openBooking(booking.id);
+                            }}
+                        >View booking</button>
+                    </article>
+                ))}
+            </div>
+
             <table className={styles.table}>
 
                 <thead>

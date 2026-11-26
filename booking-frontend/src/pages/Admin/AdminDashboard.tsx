@@ -1,3 +1,4 @@
+import Loader from "../../components/common/Loader";
 import { useEffect, useState } from "react";
 
 import AdminDashboardService, {
@@ -74,19 +75,7 @@ const AdminDashboard = () => {
 
     if (loading) {
 
-        return (
-            <section className="admin-dashboard">
-
-                <div className="admin-empty-state">
-
-                    <h3>
-                        Loading dashboard...
-                    </h3>
-
-                </div>
-
-            </section>
-        );
+        return <Loader label="Loading admin dashboard" />;
 
     }
 

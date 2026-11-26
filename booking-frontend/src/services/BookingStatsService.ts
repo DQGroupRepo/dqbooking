@@ -32,6 +32,19 @@ interface BookingResponse {
     bookingTo?: string;
     serviceCategory?: string;
     bookingType?: string;
+    roomQuantity?: number;
+    slotId?: string;
+    slotName?: string;
+    slotStartTime?: string;
+    slotEndTime?: string;
+    resourceTypeName?: string;
+    resourceIds?: string[];
+    resourceNames?: string[];
+    vendorCanCancel?: boolean;
+    packageId?: string;
+    packageName?: string;
+    packagePrice?: number;
+    packageFeatures?: string[];
 
     guestCount: number;
 
@@ -76,6 +89,10 @@ interface BookingDetailsResponse {
 
     vendorEmail: string;
 
+    customerName?: string | null;
+    customerPhone?: string | null;
+    customerEmail?: string | null;
+
     bookingDate: string;
 
     eventDate: string;
@@ -83,6 +100,19 @@ interface BookingDetailsResponse {
     bookingTo?: string;
     serviceCategory?: string;
     bookingType?: string;
+    roomQuantity?: number;
+    slotId?: string;
+    slotName?: string;
+    slotStartTime?: string;
+    slotEndTime?: string;
+    resourceTypeName?: string;
+    resourceIds?: string[];
+    resourceNames?: string[];
+    vendorCanCancel?: boolean;
+    packageId?: string;
+    packageName?: string;
+    packagePrice?: number;
+    packageFeatures?: string[];
 
     guestCount: number;
 
@@ -239,6 +269,19 @@ class BookingStatsService {
             bookingTo: booking.bookingTo,
             serviceCategory: booking.serviceCategory,
             bookingType: booking.bookingType,
+            roomQuantity: booking.roomQuantity,
+            slotId: booking.slotId,
+            slotName: booking.slotName,
+            slotStartTime: booking.slotStartTime,
+            slotEndTime: booking.slotEndTime,
+            resourceTypeName: booking.resourceTypeName,
+            resourceIds: booking.resourceIds,
+            resourceNames: booking.resourceNames,
+            vendorCanCancel: booking.vendorCanCancel,
+            packageId: booking.packageId,
+            packageName: booking.packageName,
+            packagePrice: booking.packagePrice,
+            packageFeatures: booking.packageFeatures,
 
             guestCount:
                 booking.guestCount,
@@ -286,20 +329,9 @@ class BookingStatsService {
                 booking.bookingNumber,
 
 
-            /*
-             * Customer information is not
-             * currently included in the
-             * details response.
-             */
-
-            customerName:
-                "",
-
-            customerPhone:
-                "",
-
-            customerEmail:
-                "",
+            customerName: booking.customerName ?? "",
+            customerPhone: booking.customerPhone ?? "",
+            customerEmail: booking.customerEmail ?? "",
 
 
             serviceName:
@@ -322,6 +354,19 @@ class BookingStatsService {
             bookingTo: booking.bookingTo,
             serviceCategory: booking.serviceCategory,
             bookingType: booking.bookingType,
+            roomQuantity: booking.roomQuantity,
+            slotId: booking.slotId,
+            slotName: booking.slotName,
+            slotStartTime: booking.slotStartTime,
+            slotEndTime: booking.slotEndTime,
+            resourceTypeName: booking.resourceTypeName,
+            resourceIds: booking.resourceIds,
+            resourceNames: booking.resourceNames,
+            vendorCanCancel: booking.vendorCanCancel,
+            packageId: booking.packageId,
+            packageName: booking.packageName,
+            packagePrice: booking.packagePrice,
+            packageFeatures: booking.packageFeatures,
 
             guestCount:
                 booking.guestCount,

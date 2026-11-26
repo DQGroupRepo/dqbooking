@@ -1099,3 +1099,307 @@ span {
 .booking-slot-card.incompatible:hover:not(:disabled) {
     opacity: 0.82;
 }
+
+
+/* Warm-premium booking panel skin; booking behavior and form controls are unchanged. */
+.vendor-booking-card {
+    max-width: none;
+    border: 1px solid #efdfd0;
+    border-radius: 18px;
+    background: linear-gradient(180deg, #fffdfb 0%, #fff8f0 100%);
+    box-shadow: 0 12px 34px rgba(104, 65, 34, .12);
+    padding: 25px 24px;
+}
+.vendor-booking-card h2 { color: #c66a2d; }
+.vendor-booking-card label { color: #553a29; }
+.vendor-booking-card input,
+.vendor-booking-card select {
+    border-color: #ead8c7;
+    border-radius: 10px;
+}
+.vendor-booking-card input:focus,
+.vendor-booking-card select:focus {
+    border-color: #cf7437;
+    box-shadow: 0 0 0 3px rgba(207,116,55,.13);
+}
+.booking-slot-card {
+    border-color: #ead8c7;
+    background: #fff8f1;
+}
+.booking-slot-card:hover:not(:disabled) {
+    border-color: #cf7437;
+    background: #fff1e5;
+}
+.booking-slot-card.selected,
+.booking-slot-card.active,
+.booking-slot-card[aria-pressed="true"] {
+    border-color: #cf7437;
+    background: #ffefdf;
+}
+.vendor-booking-card button {
+    border-radius: 10px;
+}
+@media (max-width: 900px) {
+    .vendor-booking-card { position: static; }
+}
+@media (max-width: 600px) {
+    .vendor-booking-card { padding: 21px 17px; border-radius: 15px; }
+    .vendor-booking-card h2 { font-size: 30px; }
+}
+
+/* Approved DQBooking booking-panel treatment. */
+.vendor-booking-card {
+    padding: 0 20px 22px;
+    max-width: none;
+    border: 1px solid #dce6ef;
+    border-radius: 18px;
+    background: #fff;
+    box-shadow: 0 8px 28px rgba(12,48,74,.10);
+    overflow: hidden;
+}
+.booking-panel-heading {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    margin: 0 -20px 18px;
+    padding: 16px 20px;
+    border-radius: 16px 16px 0 0;
+    background: #087b91;
+    color: #fff;
+    font-size: 19px;
+    font-weight: 700;
+}
+.booking-panel-heading span { font-size: 21px; }
+.booking-price-summary {
+    margin: 0 0 17px;
+    padding: 13px 14px 9px;
+    border-radius: 12px;
+    background: #eef8fa;
+}
+.vendor-booking-card .booking-price-summary h2 {
+    margin: 0 0 5px;
+    color: #df7d1c;
+    font-size: 30px;
+    line-height: 1.15;
+}
+.vendor-booking-card .selected-package-name {
+    color: #0b3550;
+    font-weight: 700;
+    margin-bottom: 4px;
+}
+.vendor-booking-card .pricing-hint { margin-bottom: 0; color: #718096; }
+.vendor-booking-card label { color: #102f49; font-size: 13px; }
+.vendor-booking-card input,
+.vendor-booking-card select {
+    min-height: 44px;
+    border: 1px solid #d5e1eb;
+    border-radius: 10px;
+    color: #17364f;
+}
+.vendor-booking-card input:focus,
+.vendor-booking-card select:focus {
+    border-color: #087da0;
+    box-shadow: 0 0 0 3px rgba(8,125,160,.12);
+}
+.stay-date-range-fields {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0,1fr));
+    gap: 10px;
+}
+.stay-date-field { min-width: 0; }
+.stay-date-field label { margin-top: 12px; }
+.stay-date-field input { width: 100%; }
+.booking-slots {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 10px;
+    max-height: none;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 4px 3px 12px;
+    margin: 8px 0 12px;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+    scrollbar-width: thin;
+    scrollbar-color: #78aabd #e7eef4;
+}
+.booking-slot-card {
+    flex: 0 0 145px;
+    width: 145px;
+    min-width: 145px;
+    min-height: 100px;
+    border: 1px solid #d5e4ed;
+    border-radius: 12px;
+    background: #f7fbfd;
+    scroll-snap-align: start;
+}
+.booking-slot-card:hover:not(:disabled) {
+    border-color: #087da0;
+    background: #eef8fa;
+}
+.booking-slot-card.selected,
+.booking-slot-card.active,
+.booking-slot-card[aria-pressed="true"] {
+    border: 2px solid #087da0;
+    background: #eaf6fa;
+    box-shadow: 0 4px 13px rgba(8,125,160,.12);
+}
+.booking-slot-name { color: #0b3550; }
+.booking-slot-availability { color: #16834a; }
+.vendor-booking-card .book-button {
+    min-height: 48px;
+    margin-top: 20px;
+    border-radius: 11px;
+    background: #087b91;
+    color: #fff;
+}
+.vendor-booking-card .book-button:hover:not(:disabled) { background: #06677c; }
+.vendor-booking-card .save-button {
+    min-height: 44px;
+    border: 1px solid #cbdde8;
+    border-radius: 11px;
+    background: #fff;
+    color: #0b5574;
+}
+.vendor-booking-card .save-button:hover { background: #f1f8fb; border-color: #087da0; }
+@media (max-width: 760px) {
+    .vendor-booking-card { padding: 0 16px 18px; }
+    .booking-panel-heading { margin-left: -16px; margin-right: -16px; padding: 14px 16px; }
+    .stay-date-range-fields { gap: 8px; }
+    .booking-slot-card { flex-basis: 138px; width: 138px; min-width: 138px; }
+}
+@media (max-width: 360px) {
+    .stay-date-range-fields { grid-template-columns: minmax(0,1fr); }
+}
+
+/* Final brand alignment: replace teal/green booking accents with DQBooking navy blue. */
+.vendor-detail-page .booking-panel-heading { background: #082f49; }
+.vendor-detail-page .booking-price-summary { background: #edf3f9; }
+.vendor-detail-page .booking-price-summary h2 { color: #df7d1c; }
+.vendor-detail-page .booking-summary-label { color: #14558a; }
+.vendor-detail-page .vendor-booking-card input:focus,
+.vendor-detail-page .vendor-booking-card select:focus { border-color: #14558a; box-shadow: 0 0 0 3px rgba(20,85,138,.12); }
+.vendor-detail-page .booking-slot-card:hover:not(:disabled) { border-color: #14558a; background: #edf3f9; }
+.vendor-detail-page .booking-slot-card.selected,
+.vendor-detail-page .booking-slot-card.active,
+.vendor-detail-page .booking-slot-card[aria-pressed="true"] { border-color: #14558a; background: #edf3f9; box-shadow: 0 4px 13px rgba(11,53,80,.12); }
+.vendor-detail-page .booking-slot-name { color: #0b3550; }
+.vendor-detail-page .booking-slot-availability { color: #14558a; }
+.vendor-detail-page .vendor-booking-card .book-button { background: #14558a; }
+.vendor-detail-page .vendor-booking-card .book-button:hover:not(:disabled) { background: #0b3550; }
+.vendor-detail-page .vendor-booking-card .save-button { color: #14558a; }
+.vendor-detail-page .vendor-booking-card .save-button:hover { background: #edf3f9; border-color: #14558a; }
+.vendor-detail-page .booking-slots { scrollbar-color: #7895b0 #e7edf4; }
+
+
+/* =========================================================
+   FINAL BOOKING PANEL / SLOT VISUAL CORRECTIONS
+   ========================================================= */
+.vendor-detail-page .booking-panel-heading {
+    background: #0b3550 !important; /* Match the DQBooking header navy */
+    color: #fff;
+}
+
+.vendor-detail-page .booking-slots {
+    gap: 10px;
+    padding: 5px 2px 10px;
+    margin: 8px 0 12px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: thin;
+    scrollbar-color: #7895b0 #e8eef4;
+}
+
+.vendor-detail-page .booking-slot-card {
+    border: 1px solid #cbd9e6;
+    border-radius: 12px;
+    background: #f1f6fb;
+    color: #17364f;
+    transition: background .18s ease, border-color .18s ease, box-shadow .18s ease;
+}
+
+.vendor-detail-page .booking-slot-card:hover:not(:disabled) {
+    border-color: #14558a;
+    background: #e7f0f8;
+}
+
+.vendor-detail-page .booking-slot-card.selected,
+.vendor-detail-page .booking-slot-card.active,
+.vendor-detail-page .booking-slot-card[aria-pressed="true"] {
+    border: 2px solid #14558a;
+    background: #e3edf7;
+    color: #0b3550;
+    box-shadow: 0 4px 12px rgba(11, 53, 80, .13);
+}
+
+.vendor-detail-page .booking-slot-name,
+.vendor-detail-page .booking-slot-time {
+    color: #0b3550;
+}
+
+.vendor-detail-page .booking-slot-availability,
+.vendor-detail-page .booking-slot-unavailable-text {
+    color: #14558a;
+}
+
+/* Slim, rounded scrollbar with a clear thumb on Chromium and Safari. */
+.vendor-detail-page .booking-slots::-webkit-scrollbar {
+    height: 7px;
+}
+.vendor-detail-page .booking-slots::-webkit-scrollbar-track {
+    background: #e8eef4;
+    border-radius: 999px;
+}
+.vendor-detail-page .booking-slots::-webkit-scrollbar-thumb {
+    background: #7895b0;
+    border: 1px solid #e8eef4;
+    border-radius: 999px;
+}
+.vendor-detail-page .booking-slots::-webkit-scrollbar-thumb:hover {
+    background: #14558a;
+}
+
+
+/* Match the existing DQBooking global header exactly. */
+.vendor-detail-page .booking-panel-heading {
+    background: #073654 !important;
+    color: #fff;
+}
+
+/* Beauty & Makeup service selection and appointment options */
+.beauty-customer-selection,
+.beauty-appointment-options { display: grid; gap: 10px; margin: 14px 0; }
+.beauty-customer-service { display: flex; align-items: center; gap: 10px; padding: 10px; border: 1px solid var(--border-color, #ddd); border-radius: 8px; cursor: pointer; }
+.beauty-customer-service span { flex: 1; min-width: 0; }
+.beauty-customer-service strong { white-space: nowrap; }
+.beauty-appointment-options-scroll {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 9px;
+    max-height: 330px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 3px 7px 3px 2px;
+    scrollbar-width: thin;
+}
+.beauty-appointment-options-scroll button {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    min-height: 58px;
+    border: 1px solid #d5e0eb;
+    border-radius: 10px;
+    padding: 8px 6px;
+    color: #123b5a;
+    background: #fff;
+    cursor: pointer;
+    transition: background .15s ease, border-color .15s ease;
+}
+.beauty-appointment-options-scroll button strong { font-size: 14px; }
+.beauty-appointment-options-scroll button small { color: #647b91; font-size: 11px; }
+.beauty-appointment-options-scroll button.selected { border: 2px solid #1768c4; background: #eaf3ff; color: #073b70; }
+.beauty-appointment-options-scroll button:disabled { opacity: .45; color: #687786; background: #edf0f3; cursor: not-allowed; }
+@media (max-width: 480px) { .beauty-appointment-options-scroll { grid-template-columns: repeat(2, minmax(0, 1fr)); max-height: 280px; } }

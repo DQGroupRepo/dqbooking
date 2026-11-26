@@ -1,3 +1,4 @@
+import NumericInput from "../NumericInput/NumericInput";
 import styles from "./Input.module.css";
 
 interface InputProps {
@@ -7,6 +8,7 @@ interface InputProps {
     placeholder?: string;
     type?: string;
     onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    disabled?: boolean;
 }
 
 export default function Input({
@@ -16,19 +18,18 @@ export default function Input({
     value,
     type = "text",
     onChange,
+    disabled = false,
 }: InputProps) {
 
     return (
         <div className={styles.group}>
             <label>{label}</label>
 
-            <input
-                name={name}
-                type={type}
-                value={value}
-                placeholder={placeholder}
-                onChange={onChange}
-            />
+            {type === "number" ? (
+                <NumericInput name={name} value={value} placeholder={placeholder} onChange={onChange} />
+            ) : (
+                <input name={name} type={type} value={value} placeholder={placeholder} onChange={onChange} disabled={disabled} />
+            )}
         </div>
     );
 }

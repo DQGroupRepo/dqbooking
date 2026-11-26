@@ -1,9 +1,12 @@
+import MobileCarousel from "../../components/common/MobileCarousel/MobileCarousel";
+import Loader from "../../components/common/Loader";
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { FaPlus } from "react-icons/fa";
 import toast from "react-hot-toast";
 import axios from "axios";
 
+import VendorServiceService from "../../services/VendorServiceService";
 import BookingSlotService from "../../services/BookingSlotService";
 import type { BookingSlot } from "../../types/BookingSlot";
 
@@ -20,6 +23,7 @@ export default function ManageBookingSlots() {
     const [slots, setSlots] = useState<BookingSlot[]>([]);
 
     const [loading, setLoading] = useState(true);
+    const [isCateringService, setIsCateringService] = useState(false);
 
     const [showModal, setShowModal] = useState(false);
 
@@ -59,6 +63,9 @@ export default function ManageBookingSlots() {
         if (!serviceId) return;
 
         try {
+
+            const service = await VendorServiceService.getServiceById(serviceId);
+            setIsCateringService(String(service.category ?? "").trim().toUpperCase() === "CATERING");
 
             const response =
                 await BookingSlotService.getSlots(serviceId);
@@ -230,7 +237,7 @@ export default function ManageBookingSlots() {
 
     if (loading) {
 
-        return <h2>Loading...</h2>;
+        return <Loader />;
 
     }
 
@@ -250,7 +257,7 @@ export default function ManageBookingSlots() {
 
             </div>
 
-            <div className="slot-summary">
+            <MobileCarousel className="slot-summary" ariaLabel="Booking slot statistics" itemsPerPage={2}>
 
                 <div className="summary-card">
 
@@ -284,7 +291,7 @@ export default function ManageBookingSlots() {
 
                 </div>
 
-            </div>
+            </MobileCarousel>
 
             {
 
@@ -320,31 +327,18 @@ export default function ManageBookingSlots() {
 
                     (
 
-                        <div className="slots-grid">
-
-                            {
-
-                                slots.map(slot => (
-
-                                    <BookingSlotCard
-
-                                        key={slot.id}
-
-                                        slot={slot}
-
-                                        onEdit={handleEdit}
-
-                                        onDelete={handleDelete}
-
-                                        onToggleStatus={handleToggleStatus}
-
-                                    />
-
-                                ))
-
-                            }
-
-                        </div>
+                        <MobileCarousel className="slots-grid" ariaLabel="Booking slots">
+                            {slots.map(slot => (
+                                <BookingSlotCard
+                                    key={slot.id}
+                                    slot={slot}
+                                    onEdit={handleEdit}
+                                    onDelete={handleDelete}
+                                    onToggleStatus={handleToggleStatus}
+                    isCateringService={isCateringService}
+                                />
+                            ))}
+                        </MobileCarousel>
 
                     )
 

@@ -44,6 +44,15 @@ class AdminVendorVerificationService {
     }
 
 
+    async getPendingSettings(vendorId: string): Promise<any[]> {
+        const response = await api.get<any[]>(`/admin/vendors/${vendorId}/settings-approval`);
+        return response.data;
+    }
+
+    async decideSettings(vendorId: string, itemKeys: string[], action: "APPROVE" | "REJECT", reason?: string): Promise<void> {
+        await api.post(`/admin/vendors/${vendorId}/settings-approval/decision`, { itemKeys, action, reason });
+    }
+
     async approveVendor(
         vendorId: string
     ): Promise<void> {

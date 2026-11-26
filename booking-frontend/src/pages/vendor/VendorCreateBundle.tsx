@@ -1,3 +1,4 @@
+import NumericInput from "../../components/common/ui/NumericInput";
 import {
     useEffect,
     useState
@@ -988,9 +989,9 @@ const VendorCreateBundle = () => {
                     </label>
 
 
-                    <input
+                    <NumericInput
 
-                        type="number"
+
 
                         min="0"
 

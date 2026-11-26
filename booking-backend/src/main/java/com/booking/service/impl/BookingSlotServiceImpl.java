@@ -216,6 +216,18 @@ public class BookingSlotServiceImpl
        ======================================================= */
 
     private void validateResourceType(VendorService service, String resourceTypeId) {
+        boolean supportsResourceTypes = service.getCategory() != null
+                && service.getCategory().supportsResourceTypes();
+        if (!supportsResourceTypes) {
+            if (resourceTypeId != null && !resourceTypeId.isBlank()) {
+                throw new IllegalArgumentException("Resource Types can be assigned only to STAY and HALL booking slots.");
+            }
+            return;
+        }
+        boolean hasConfiguredTypes = service.getResourceTypes() != null && !service.getResourceTypes().isEmpty();
+        if (hasConfiguredTypes && (resourceTypeId == null || resourceTypeId.isBlank())) {
+            throw new IllegalArgumentException("Select a Resource Type for this booking slot.");
+        }
         if (resourceTypeId == null || resourceTypeId.isBlank()) return;
         boolean exists = service.getResourceTypes() != null && service.getResourceTypes().stream()
                 .anyMatch(type -> resourceTypeId.equals(type.getId()) && !Boolean.FALSE.equals(type.getActive()));

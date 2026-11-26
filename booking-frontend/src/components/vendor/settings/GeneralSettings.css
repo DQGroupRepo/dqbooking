@@ -1,0 +1,11 @@
+.logo-remove-button { margin: 8px 0; border: 0; background: transparent; color: #b42318; cursor: pointer; font: inherit; font-size: .9rem; }
+.logo-remove-button:disabled { opacity: .55; cursor: not-allowed; }
+
+.settings-pending-alert { display: block; margin: 10px 0 14px; padding: 12px 14px; border: 1px solid #f0d38a; border-left: 4px solid #d99a16; border-radius: 8px; background: #fff9e9; color: #684b12; font-size: .88rem; line-height: 1.5; }
+.pending-logo-preview { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 8px; }
+.pending-logo-preview span { font-weight: 600; }
+.pending-logo-preview img { max-width: 110px; max-height: 76px; object-fit: contain; padding: 5px; border: 1px solid #e2e6ed; border-radius: 6px; background: #fff; }
+
+.business-logo-preview-wrap { position:relative; display:inline-flex; margin:10px 0; padding:0; }
+.business-logo-remove-icon { position:absolute; top:-9px; right:-9px; width:27px; height:27px; display:flex; align-items:center; justify-content:center; border:2px solid #fff; border-radius:50%; background:#e53935; color:#fff; font-size:20px; font-weight:700; line-height:1; cursor:pointer; box-shadow:0 1px 4px rgba(0,0,0,.22); }
+.business-logo-remove-icon:disabled { opacity:.55; cursor:not-allowed; }

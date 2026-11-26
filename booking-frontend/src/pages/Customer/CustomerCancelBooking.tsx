@@ -1,3 +1,4 @@
+import Loader from "../../components/common/Loader";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import toast from "react-hot-toast";
@@ -125,7 +126,7 @@ export default function CustomerCancelBooking() {
 
     if (loading) {
 
-        return <h2>Loading...</h2>;
+        return <Loader />;
 
     }
 

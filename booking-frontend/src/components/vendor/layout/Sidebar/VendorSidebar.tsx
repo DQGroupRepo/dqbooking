@@ -157,25 +157,11 @@ export default function VendorSidebar({
             ===================================================== */}
 
             <div className="vendor-logo">
-
-                <span className="logo-icon">
-                    🎉
-                </span>
-
-
-                <div>
-
-                    <h2>
-                        EventNest
-                    </h2>
-
-
-                    <p>
-                        Vendor Portal
-                    </p>
-
-                </div>
-
+                <img
+                    src="/images/dq-logo.png"
+                    alt="DQBooking"
+                    className="vendor-logo-image"
+                />
             </div>
 
 

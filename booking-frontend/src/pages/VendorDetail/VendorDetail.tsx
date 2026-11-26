@@ -1,3 +1,4 @@
+import Loader from "../../components/common/Loader";
 import { useEffect, useRef, useState } from "react";
 import {
     useLocation,
@@ -11,13 +12,13 @@ import VendorAmenities from "../../components/vendor/VendorAmenities";
 import VendorPackages from "../../components/vendor/VendorPackages";
 import VendorReviews from "../../components/vendor/VendorReviews";
 import BookingCard from "../../components/vendor/VendorBookingCard";
-import "./ResourceTypeSelector.css";
 import VendorServiceDetails
     from "../../components/vendor/VendorServiceDetails";
 
 import VendorDetailService from "../../services/VendorDetailService";
 import BundleService from "../../services/BundleService";
 import type { ServicePackage } from "../../types/ServicePackage";
+import type { CartSelectedCateringDish } from "../../types/CartItem";
 
 import type { VendorDetail as VendorDetailType } from "../../types/VendorDetail";
 
@@ -58,7 +59,6 @@ const VendorDetail = () => {
         setSelectedPackage
     ] = useState<ServicePackage | null>(null);
 
-    const [selectedResourceTypeId, setSelectedResourceTypeId] = useState<string | null>(null);
     /*
      * =========================================
      * VENDOR
@@ -90,6 +90,12 @@ const VendorDetail = () => {
 
     const [selectedSlotId, setSelectedSlotId] =
         useState<string | null>(null);
+    const [selectedSlotResourceTypeId, setSelectedSlotResourceTypeId] =
+        useState<string | null>(null);
+    const [packageSelectionVersion, setPackageSelectionVersion] = useState(0);
+    const [selectedCateringDishes, setSelectedCateringDishes] =
+        useState<CartSelectedCateringDish[]>([]);
+    const [selectedBeautyServiceIds, setSelectedBeautyServiceIds] = useState<string[]>([]);
 
     // Anchor for bringing date-specific package choices into view.
     const packagesSectionRef = useRef<HTMLDivElement>(null);
@@ -137,6 +143,8 @@ const VendorDetail = () => {
         // A package selected for a previous date
         // must never remain selected.
         setSelectedPackage(null);
+        setSelectedCateringDishes([]);
+        setSelectedBeautyServiceIds([]);
 
         setSelectedEventDate(date);
 
@@ -241,10 +249,19 @@ const VendorDetail = () => {
             return;
         }
 
+        const nextPackageId = pkg.id.trim();
+        if (selectedPackage?.id !== nextPackageId) {
+            setSelectedCateringDishes([]);
+        }
         setSelectedPackage({
             ...pkg,
-            id: pkg.id.trim()
+            id: nextPackageId
         });
+        setSelectedBeautyServiceIds([]);
+        // Package changes invalidate the prior slot selection.
+        setSelectedSlotId(null);
+        setSelectedSlotResourceTypeId(null);
+        setPackageSelectionVersion(version => version + 1);
     };
 
 
@@ -404,7 +421,7 @@ const VendorDetail = () => {
     if (!vendor) {
 
     return (
-            <h2>Loading...</h2>
+            <Loader />
         );
 
     }
@@ -416,16 +433,20 @@ const VendorDetail = () => {
      * =========================================
      */
 
-    const activeResourceTypes = (vendor?.resourceTypes ?? []).filter(type => type.active !== false);
+    const category = String(vendor?.category ?? "").trim().toUpperCase();
+    const isBeautyService = category === "MAKEUP";
+    const activeBeautyServices = (vendor.beautyDetails?.services ?? []).filter(item => item.active);
+    const selectedBeautyDuration = (vendor.beautyDetails?.durationRules ?? []).find(rule => selectedBeautyServiceIds.length >= rule.minServices && selectedBeautyServiceIds.length <= rule.maxServices)?.durationMinutes ?? 0;
+    const selectedBeautyPrice = activeBeautyServices.filter(item => selectedBeautyServiceIds.includes(item.id)).reduce((sum, item) => sum + Number(item.price || 0), 0);
+    const isStayService = ["STAY", "STAYS"].includes(category);
+    const usesResourceTypes = isStayService || ["HALL", "HALLS"].includes(category);
+    const activeResourceTypes = usesResourceTypes
+        ? (vendor?.resourceTypes ?? []).filter(type => type.active !== false)
+        : [];
     const fixedDurationPackages = pricingPackages.filter(pkg => pkg.packageType === "FIXED_DURATION");
     const regularPricingPackages = pricingPackages.filter(pkg => pkg.packageType !== "FIXED_DURATION");
-    const visiblePricingPackages = activeResourceTypes.length > 1
-        ? (selectedResourceTypeId
-            ? regularPricingPackages.filter(pkg => pkg.resourceTypeId === selectedResourceTypeId)
-            : [])
-        : activeResourceTypes.length === 1
-            ? regularPricingPackages.filter(pkg => pkg.resourceTypeId === activeResourceTypes[0].id)
-            : regularPricingPackages;
+    // Stay customers select a complete package composition, not a resource type first.
+    const visiblePricingPackages = regularPricingPackages;
 
     return (
 
@@ -448,159 +469,118 @@ const VendorDetail = () => {
             )}
 
 
-            <VendorGallery
-                vendor={vendor}
-            />
-
-
-            <section className="section">
-
+            <section className="section vendor-detail-page">
                 <div className="container vendor-layout">
-
                     <div className="vendor-detail-main">
-
-                        <VendorInfo
-                            vendor={vendor}
-                        />
-
-                        <VendorServiceDetails
-                                vendor={vendor}
-                            />
-
-
-                        <VendorAmenities
-                            vendor={vendor}
-                        />
-
-
-                        <div
-                            ref={packagesSectionRef}
-                            className="vendor-packages-anchor"
-                        >
-                        {!selectedEventDate ? (
-
-                            <div className="pricing-date-message">
-
-                                <div className="pricing-date-icon">
-                                    📅
-                                </div>
-
-                                <h3>
-                                    Packages & Pricing
-                                </h3>
-
-                                <p>
-                                    Select your event date to get the exact price
-                                    and available packages.
-                                </p>
-
-                                <span>
-                                    Pricing may vary depending on the date and season.
-                                </span>
-
-                            </div>
-
-                        ) : pricingLoading ? (
-
-                            <div className="pricing-loading">
-                                Loading pricing...
-                            </div>
-
-                        ) : (pricingPackages.length === 0) ? (
-
-                            <div className="pricing-unavailable">
-
-                                <div className="pricing-unavailable-icon">
-                                    📅
-                                </div>
-
-                                <h3>
-                                    Pricing Not Available
-                                </h3>
-
-                                <p>
-                                    No packages or pricing are available for
-                                    <strong>
-                                        {" "}
-                                        {selectedEventDate}
-                                    </strong>.
-                                </p>
-
-                                <span>
-                                    Please select another event date to check
-                                    available pricing.
-                                </span>
-
-                            </div>
-
-                        ) : (
-
-                            <>
-                            {activeResourceTypes.length > 1 && (
-                                <div className="resource-type-selector">
-                                    <h3>Select Resource Type</h3>
-                                    <div className="resource-type-options">
-                                        {activeResourceTypes.map(type => (
-                                            <button
-                                                type="button"
-                                                key={type.id}
-                                                className={selectedResourceTypeId === type.id ? "selected" : ""}
-                                                onClick={() => {
-                                                    setSelectedResourceTypeId(type.id);
-                                                    setSelectedPackage(null);
-                                                    setSelectedSlotId(null);
-                                                }}
-                                            >
-                                                <strong>{type.name}</strong>
-                                                <span>{type.quantity} available unit(s)</span>
-                                            </button>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-                            {visiblePricingPackages.length > 0 ? (
-                                <VendorPackages packages={visiblePricingPackages} selectedPackage={selectedPackage} selectedSlotId={selectedSlotId} onSelectPackage={handlePackageSelect} />
-                            ) : (
-                                <div className="pricing-unavailable"><h3>No packages available for this resource type</h3><p>Please choose another Resource Type.</p></div>
-                            )}
-                            {fixedDurationPackages.length > 0 && (
-                                <section className="fixed-duration-packages">
-                                    <h2>Fixed-Duration Packages</h2>
-                                    <p>Packages with a predefined duration and price.</p>
-                                    <VendorPackages packages={fixedDurationPackages} selectedPackage={selectedPackage} selectedSlotId={selectedSlotId} onSelectPackage={handlePackageSelect} />
-                                </section>
-                            )}
-                            </>
-                        )}
-                        </div>
-
-
-                        <VendorReviews />
-
+                        <VendorGallery vendor={vendor} />
+                        <VendorInfo vendor={vendor} />
                     </div>
 
+                    <div className="vendor-detail-main-lower">
+                        <div className="vendor-detail-information">
+                            <VendorServiceDetails vendor={vendor} />
+                        </div>
+                        <VendorAmenities vendor={vendor} />
 
-                    <BookingCard
-                        vendor={vendor}
-                        serviceId={serviceId}
-                        bundles={bundles}
-                        selectedPackage={selectedPackage}
-                        selectedResourceTypeId={selectedResourceTypeId}
-                        onEventDateChange={handleEventDateChange}
-                        onClearSelectedPackage={() => setSelectedPackage(null)}
-                        onSelectedSlotChange={(slotId) => {
-                            setSelectedSlotId(slotId);
+                        <BookingCard
+                            vendor={vendor}
+                            serviceId={serviceId}
+                            bundles={bundles}
+                            selectedPackage={selectedPackage}
+                            selectedCateringDishes={selectedCateringDishes}
+                            selectedBeautyServiceIds={selectedBeautyServiceIds}
+                            packageSelectionVersion={packageSelectionVersion}
+                            selectedResourceTypeId={null}
+                            onEventDateChange={handleEventDateChange}
+                            onClearSelectedPackage={() => {
+                                setSelectedPackage(null);
+                                setSelectedCateringDishes([]);
+                            }}
+                            onSelectedSlotChange={(slotId, resourceTypeId) => {
+                                setSelectedSlotId(slotId);
+                                setSelectedSlotResourceTypeId(resourceTypeId ?? null);
+                                if (slotId) scrollToPackagesIfNeeded();
+                            }}
+                        />
 
-                            // Slot changes should not interrupt the user if the
-                            // package heading is already visible.
-                            if (slotId) {
-                                scrollToPackagesIfNeeded();
-                            }
-                        }}
-                    />
-
+                        <div ref={packagesSectionRef} className="vendor-packages-anchor">
+                            {!selectedEventDate ? (
+                                <div className="pricing-date-message">
+                                    <div className="pricing-date-icon">📅</div>
+                                    <h3>Packages &amp; Pricing</h3>
+                                    <p>Select your event date to see the exact price and available packages.</p>
+                                    <span>Pricing may vary depending on the date and season.</span>
+                                </div>
+                            ) : pricingLoading ? (
+                                <div className="pricing-loading">Loading packages and prices...</div>
+                            ) : pricingPackages.length === 0 ? (
+                                <div className="pricing-unavailable">
+                                    <div className="pricing-unavailable-icon">📅</div>
+                                    <h3>Pricing Not Available</h3>
+                                    <p>No packages or pricing are available for <strong>{" "}{selectedEventDate}</strong>.</p>
+                                    <span>Please select another event date to check available pricing.</span>
+                                </div>
+                            ) : (
+                                <>
+                                    {visiblePricingPackages.length > 0 ? (
+                                        <VendorPackages packages={visiblePricingPackages} selectedPackage={selectedPackage} selectedSlotId={selectedSlotId} selectedSlotResourceTypeId={selectedSlotResourceTypeId} isStay={isStayService} usesResourceTypes={usesResourceTypes} resourceTypes={activeResourceTypes} onSelectPackage={handlePackageSelect} onSelectedCateringDishesChange={setSelectedCateringDishes} />
+                                    ) : (
+                                        <div className="pricing-unavailable">
+                                            <h3>No packages available</h3>
+                                            <p>Please select another date or contact the vendor.</p>
+                                        </div>
+                                    )}
+                                    {fixedDurationPackages.length > 0 && (
+                                        <section className="fixed-duration-packages">
+                                            <h2>Fixed-Duration Packages</h2>
+                                            <p>Packages with a predefined duration and price.</p>
+                                            <VendorPackages packages={fixedDurationPackages} selectedPackage={selectedPackage} selectedSlotId={selectedSlotId} selectedSlotResourceTypeId={selectedSlotResourceTypeId} isStay={isStayService} usesResourceTypes={usesResourceTypes} resourceTypes={activeResourceTypes} onSelectPackage={handlePackageSelect} onSelectedCateringDishesChange={setSelectedCateringDishes} />
+                                        </section>
+                                    )}
+                                </>
+                            )}
+                            {isBeautyService && selectedEventDate && activeBeautyServices.length > 0 && (
+                                <section className="beauty-book-service-section" aria-labelledby="beauty-book-service-title">
+                                    <div className="beauty-book-service-heading">
+                                        <div>
+                                            <h2 id="beauty-book-service-title">Book Service &amp; Visit</h2>
+                                            <p>Select individual services if you don't want to choose a fixed package.</p>
+                                        </div>
+                                        {selectedBeautyServiceIds.length > 0 && <span>{selectedBeautyServiceIds.length} selected</span>}
+                                    </div>
+                                    <div className="beauty-book-service-grid">
+                                        {activeBeautyServices.map(item => (
+                                            <label className={`beauty-book-service-option${selectedBeautyServiceIds.includes(item.id) ? " is-selected" : ""}`} key={item.id}>
+                                                <input
+                                                    type="checkbox"
+                                                    checked={selectedBeautyServiceIds.includes(item.id)}
+                                                    onChange={event => {
+                                                        if (event.target.checked) {
+                                                            setSelectedPackage(null);
+                                                            setSelectedCateringDishes([]);
+                                                            setSelectedBeautyServiceIds(current => [...current, item.id]);
+                                                        } else {
+                                                            setSelectedBeautyServiceIds(current => current.filter(id => id !== item.id));
+                                                        }
+                                                    }}
+                                                />
+                                                <span className="beauty-book-service-name">{item.name}</span>
+                                                <strong>₹{Number(item.price).toLocaleString("en-IN")}</strong>
+                                            </label>
+                                        ))}
+                                    </div>
+                                    {selectedBeautyServiceIds.length > 0 && (
+                                        <div className="beauty-book-service-summary">
+                                            <span>{selectedBeautyDuration > 0 ? `${selectedBeautyDuration} minutes` : "Duration rule not configured for this selection"}</span>
+                                            <strong>Subtotal: ₹{selectedBeautyPrice.toLocaleString("en-IN")}</strong>
+                                        </div>
+                                    )}
+                                </section>
+                            )}
+                        </div>
+                        <VendorReviews />
+                    </div>
                 </div>
-
             </section>
 
         </>

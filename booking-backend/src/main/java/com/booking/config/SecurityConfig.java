@@ -77,9 +77,11 @@ public class SecurityConfig {
 
                         .requestMatchers(
                                 "/api/health",
+                                "/api/monitoring/vendor-count",
                                 "/api/auth/login",
                                 "/api/auth/register",
                                 "/api/auth/vendor/register",
+                                "/api/auth/forgot-password/**",
                                 "/api/customer/services",
                                 "/api/customer/services/**",
                                 "/api/tag-directory/categories",
@@ -112,7 +114,9 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/api/vendor/**",
                                 "/api/bookings/vendor",
-                                "/api/bundles/vendor"
+                                "/api/bundles/vendor",
+                                "/api/bookings/*/cancellation-preview",
+                                "/api/bookings/*/cancel"
                         )
                         .hasAnyRole(
                                 "VENDOR_ADMIN",

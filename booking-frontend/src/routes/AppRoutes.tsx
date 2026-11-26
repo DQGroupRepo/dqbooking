@@ -15,10 +15,12 @@ import MainLayout from "../layouts/MainLayout";
 import VendorLayout from "../layouts/VendorLayout";
 
 import Home from "../pages/Home/Home";
+import StaticInfoPage from "../pages/StaticInfo/StaticInfoPage";
 import CategoryListing from "../pages/CategoryListing/CategoryListing";
 import VendorDetail from "../pages/VendorDetail/VendorDetail";
 import BookingCheckout from "../pages/BookingCheckout/BookingCheckout";
 import Login from "../pages/Login/Login";
+import ForgotPassword from "../pages/ForgotPassword/ForgotPassword";
 import Register from "../pages/Register/Register";
 import CreateListing from "../pages/CreateListing/CreateListing";
 import VendorAddService from "../pages/VendorAddService/VendorAddService";
@@ -340,6 +342,11 @@ const AppRoutes = () => {
                         }
                     />
 
+                    <Route path="/help-center" element={<StaticInfoPage page="help" />} />
+                    <Route path="/contact-us" element={<StaticInfoPage page="contact" />} />
+                    <Route path="/terms-and-conditions" element={<StaticInfoPage page="terms" />} />
+                    <Route path="/privacy-policy" element={<StaticInfoPage page="privacy" />} />
+
 
                     <Route
                         path="/vendor/:serviceId"
@@ -372,6 +379,8 @@ const AppRoutes = () => {
                         }
                     />
 
+
+                    <Route path="/forgot-password" element={<ForgotPassword />} />
 
                     <Route
                         path="/register"

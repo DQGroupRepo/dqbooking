@@ -1,6 +1,7 @@
 import { useState } from "react";
 
 import type { Review } from "../../../types/Review";
+import RatingStars from "../../common/RatingStars";
 
 import Button from "../../common/ui/Button/Button";
 
@@ -58,7 +59,7 @@ export default function ReviewList({
 
                             <div className="review-rating">
 
-                                {"⭐".repeat(review.rating)}
+                                <RatingStars value={review.rating} size="medium" />
 
                             </div>
 

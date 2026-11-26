@@ -1,3 +1,4 @@
+import NumericInput from "../../common/ui/NumericInput";
 import type { ServiceSettings } from "../../../types/ServiceSettings";
 
 interface Props {
@@ -34,9 +35,9 @@ export default function BookingSettingsSection({
 
                     Minimum Advance Booking
 
-                    <input
+                    <NumericInput
 
-                        type="number"
+
 
                         name="minimumAdvanceDays"
 
@@ -52,9 +53,9 @@ export default function BookingSettingsSection({
 
                     Maximum Advance Booking
 
-                    <input
+                    <NumericInput
 
-                        type="number"
+
 
                         name="maximumAdvanceDays"
 
@@ -70,9 +71,9 @@ export default function BookingSettingsSection({
 
                     Minimum Guests
 
-                    <input
+                    <NumericInput
 
-                        type="number"
+
 
                         name="minimumGuests"
 
@@ -88,9 +89,9 @@ export default function BookingSettingsSection({
 
                     Maximum Guests
 
-                    <input
+                    <NumericInput
 
-                        type="number"
+
 
                         name="maximumGuests"
 
@@ -106,9 +107,9 @@ export default function BookingSettingsSection({
 
                     Deposit %
 
-                    <input
+                    <NumericInput
 
-                        type="number"
+
 
                         name="depositPercentage"
 
@@ -124,9 +125,9 @@ export default function BookingSettingsSection({
 
                     Balance Due (Days)
 
-                    <input
+                    <NumericInput
 
-                        type="number"
+
 
                         name="balanceDueDays"
 

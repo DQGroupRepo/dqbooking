@@ -1,3 +1,5 @@
+import "./ManageAvailability.css";
+import Loader from "../../components/common/Loader";
 import Calendar from "react-calendar";
 
 import AvailabilitySummary from "../../components/vendor/availability/AvailabilitySummary/AvailabilitySummary";
@@ -16,6 +18,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 
 import BookingSlotService from "../../services/BookingSlotService";
+import VendorServiceService from "../../services/VendorServiceService";
 
 import type { BookingSlot } from "../../types/BookingSlot";
 
@@ -35,6 +38,12 @@ export default function ManageAvailability() {
 
     const [loading, setLoading] =
         useState(true);
+
+    const [isStayService, setIsStayService] =
+        useState(false);
+
+    const [isCateringService, setIsCateringService] =
+        useState(false);
 
     const [showModal, setShowModal] =
         useState(false);
@@ -113,6 +122,11 @@ export default function ManageAvailability() {
 
         try {
 
+            const service = await VendorServiceService.getServiceById(serviceId);
+            const category = String(service.category ?? "").toLowerCase().trim();
+            setIsStayService(["stay", "stays", "hall", "halls"].includes(category));
+            setIsCateringService(category === "catering");
+
             const response =
                 await BookingSlotService.getSlots(serviceId);
 
@@ -147,7 +161,7 @@ export default function ManageAvailability() {
 
     if (loading) {
 
-        return <h2>Loading...</h2>;
+        return <Loader />;
 
     }
 
@@ -159,7 +173,7 @@ export default function ManageAvailability() {
             <AvailabilitySummary
                 selectedDate={selectedDate}
                 totalSlots={slots.length}
-                blockedSlots={0}
+                blockedSlots={overrides.filter(o => Boolean(o.blocked)).length}
                 availableCapacity={
 
                     slots
@@ -177,6 +191,7 @@ export default function ManageAvailability() {
                         )
 
                 }
+                isStayService={isStayService}
             />
 
             <div className="availability-layout">
@@ -199,6 +214,8 @@ export default function ManageAvailability() {
                         slots={slots}
                         overrides={overrides}
                         onManage={handleManage}
+                        isStayService={isStayService}
+                        isCateringService={isCateringService}
                     />
 
                 </div>
@@ -216,6 +233,8 @@ export default function ManageAvailability() {
                         selectedDate={selectedDate}
                         slot={selectedSlot}
                         override={selectedOverride}
+                        isStayService={isStayService}
+                        isCateringService={isCateringService}
                     />
 
                 )

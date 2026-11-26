@@ -14,6 +14,10 @@ export interface BookingGroup {
 
     totalDiscount: number;
 
+    individualDiscount?: number;
+
+    bundleDiscount?: number;
+
     finalTotal: number;
 
     bundleApplied: boolean;

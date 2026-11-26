@@ -6,6 +6,8 @@ import com.booking.dto.register.RegisterRequest;
 import com.booking.dto.register.VendorRegisterRequest;
 import com.booking.dto.register.VendorRegisterResponse;
 import com.booking.exception.InvalidCredentialsException;
+import com.booking.exception.ResourceAlreadyExistsException;
+import com.booking.exception.ResourceAlreadyExistsException;
 import com.booking.model.User;
 import com.booking.model.VendorAccount;
 import com.booking.model.enums.Role;
@@ -19,6 +21,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import java.util.Locale;
+
+import java.util.Locale;
 
 @Service
 @RequiredArgsConstructor
@@ -45,7 +51,7 @@ public class AuthService {
     public LoginResponse login(LoginRequest request) {
         log.info("Login attempt email={}", request.getEmail());
 
-        User user = userRepository.findByEmail(request.getEmail())
+        User user = userRepository.findByEmailIgnoreCase(normalizeEmail(request.getEmail()))
                 .orElseThrow(() -> {
                     log.warn("Login failed - user not found email={}", request.getEmail());
                     return new InvalidCredentialsException();
@@ -110,6 +116,43 @@ public class AuthService {
     }
 
 
+    private String normalizeEmail(String email) {
+        return email == null ? "" : email.trim().toLowerCase(Locale.ROOT);
+    }
+
+    /**
+     * Strip common formatting characters before storing/comparing phone numbers.
+     * Registration DTOs enforce the current 10-digit mobile-number format.
+     */
+    private String normalizePhone(String phone) {
+        return phone == null ? "" : phone.replaceAll("\\D", "");
+    }
+
+    /**
+     * Enforces uniqueness across customer and vendor accounts.
+     */
+    private void validateRegistrationIdentity(String email, String phone) {
+        boolean emailExists = userRepository.existsByEmailIgnoreCase(email);
+        boolean phoneExists = userRepository.existsByPhone(phone);
+
+        if (emailExists && phoneExists) {
+            throw new ResourceAlreadyExistsException(
+                    "This email address and phone number are already registered. Please login or use different details."
+            );
+        }
+        if (emailExists) {
+            throw new ResourceAlreadyExistsException(
+                    "This email address is already registered. Please login or use another email."
+            );
+        }
+        if (phoneExists) {
+            throw new ResourceAlreadyExistsException(
+                    "This phone number is already registered. Please use another number."
+            );
+        }
+    }
+
+
     /*
      * =========================================
      * CUSTOMER REGISTRATION
@@ -126,34 +169,16 @@ public class AuthService {
         );
 
 
-        if (userRepository
-                .findByEmail(
-                        request.getEmail()
-                )
-                .isPresent()) {
+        String normalizedEmail = normalizeEmail(request.getEmail());
+        String normalizedPhone = normalizePhone(request.getPhone());
 
-            log.warn(
-                    "Customer registration rejected - email already registered email={}",
-                    request.getEmail()
-            );
-
-            throw new IllegalArgumentException(
-                    "Email already registered"
-            );
-        }
-
+        validateRegistrationIdentity(normalizedEmail, normalizedPhone);
 
         User user =
                 new User();
 
-
-        user.setEmail(
-                request.getEmail()
-        );
-
-        user.setPhone(
-                request.getPhone()
-        );
+        user.setEmail(normalizedEmail);
+        user.setPhone(normalizedPhone);
 
         user.setPassword(
                 passwordEncoder.encode(
@@ -219,12 +244,15 @@ public class AuthService {
          * =========================================
          */
 
+        String normalizedEmail = normalizeEmail(request.getEmail());
+        String normalizedPhone = normalizePhone(request.getPhone());
+
+        validateRegistrationIdentity(normalizedEmail, normalizedPhone);
+
         User vendor =
                 new User();
 
-        vendor.setEmail(
-                request.getEmail()
-        );
+        vendor.setEmail(normalizedEmail);
 
         vendor.setPassword(
                 passwordEncoder.encode(
@@ -309,9 +337,7 @@ public class AuthService {
         }
 
 
-        vendor.setPhone(
-                request.getPhone()
-        );
+        vendor.setPhone(normalizedPhone);
 
         vendor.setCity(
                 request.getCity()

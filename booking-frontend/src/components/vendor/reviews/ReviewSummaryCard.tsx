@@ -1,4 +1,5 @@
 import type { Review } from "../../../types/Review";
+import RatingStars from "../../common/RatingStars";
 
 import "./ReviewSummaryCard.css";
 
@@ -45,9 +46,8 @@ export default function ReviewSummaryCard({
             </h2>
 
             <div className="rating-number">
-
-                ⭐ {average}
-
+                <RatingStars value={Number(average)} size="large" />
+                <span>{average}</span>
             </div>
 
             <p>

@@ -26,5 +26,12 @@ public class VendorProfileResponse {
     private Integer totalReviews;
 
     private Boolean verified;
+    private String email;
+    private String state, pincode, logo;
+    private String accountHolder, bankName, accountNumber, ifsc, upiId, payoutMethod;
+    private String gstNumber, panNumber, businessLicense;
+    private String gstCertificateUrl, panCardUrl, businessLicenseUrl;
+    private Boolean emailNotifications, smsNotifications, bookingAlerts, reviewAlerts, paymentAlerts, marketingEmails;
+    private com.booking.model.enums.VendorVerificationStatus verificationStatus;
 
 }

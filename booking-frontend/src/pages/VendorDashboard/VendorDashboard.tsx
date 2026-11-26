@@ -1,3 +1,4 @@
+import Loader from "../../components/common/Loader";
 import {
     useEffect,
     useState
@@ -144,13 +145,7 @@ export default function VendorDashboard() {
     if (loading) {
 
 
-        return (
-
-            <p>
-                Loading Dashboard...
-            </p>
-
-        );
+        return <Loader label="Loading your dashboard" />;
 
 
     }

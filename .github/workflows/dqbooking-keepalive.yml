@@ -1,0 +1,46 @@
+
+name: DQBooking Render Keep Alive
+
+on:
+  schedule:
+    - cron: "2,7,12,17,22,27,32,37,42,47,52,57 * * * *"
+
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  keep-render-awake:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+
+    steps:
+      - name: Ping DQBooking backend
+        env:
+          MONITOR_TOKEN: ${{ secrets.DQBOOKING_MONITOR_TOKEN }}
+          API_BASE_URL: https://dqbooking-z0gb.onrender.com
+        run: |
+          if [ -z "$MONITOR_TOKEN" ]; then
+            echo "Monitoring token is missing"
+            exit 1
+          fi
+
+          RESPONSE=$(curl \
+            --fail \
+            --silent \
+            --show-error \
+            --max-time 120 \
+            --retry 2 \
+            --retry-delay 5 \
+            --retry-all-errors \
+            -H "X-Monitor-Token: ${MONITOR_TOKEN}" \
+            "${API_BASE_URL}/api/monitoring/vendor-count")
+
+          echo "$RESPONSE" | jq -e \
+            '.status == "UP" and
+             (.vendorCount | type == "number")' \
+            > /dev/null
+
+          echo "DQBooking backend is responding"
+          echo "$RESPONSE" | jq .

@@ -30,5 +30,6 @@ export interface AdminVendorVerification {
     address?: string;
     verificationStatus: VendorVerificationStatus;
     verified: boolean;
+    pendingSettingsCount?: number;
     services: AdminVendorService[];
 }

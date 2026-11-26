@@ -81,6 +81,8 @@ public class BookingServiceImpl implements BookingService
      */
     private final BookingHoldRepository bookingHoldRepository;
 
+    private final BookingSlotRepository bookingSlotRepository;
+
     @Override
     public BookingGroupResponse createBooking(
             CreateBookingRequest request
@@ -133,7 +135,7 @@ public class BookingServiceImpl implements BookingService
          */
 
         List<BookingServiceItemRequest> allServiceItems =
-                new java.util.ArrayList<>();
+                new ArrayList<>();
 
 
         /*
@@ -234,10 +236,7 @@ public class BookingServiceImpl implements BookingService
                      * service123_2026-09-20
                      */
 
-                    String key =
-                            item.getServiceId()
-                                    + "_"
-                                    + item.getBookingFrom().toLocalDate();
+                    String key = bookingServiceItemKey(item);
 
 
                     /*
@@ -302,11 +301,8 @@ public class BookingServiceImpl implements BookingService
                 allServiceItems
                         .stream()
                         .collect(
-                                java.util.stream.Collectors.toMap(
-                                        item ->
-                                                item.getServiceId()
-                                                        + "_"
-                                                        + item.getBookingFrom().toLocalDate(),
+                                Collectors.toMap(
+                                        BookingServiceImpl::bookingServiceItemKey,
 
                                         item -> item,
 
@@ -392,7 +388,7 @@ public class BookingServiceImpl implements BookingService
                                                 )
                         )
                         .collect(
-                                java.util.stream.Collectors.toMap(
+                                Collectors.toMap(
                                         VendorService::getId,
                                         service -> service
                                 )
@@ -406,7 +402,7 @@ public class BookingServiceImpl implements BookingService
          */
 
         List<BookingResponse> bookingResponses =
-                new java.util.ArrayList<>();
+                new ArrayList<>();
 
 
         BigDecimal originalTotal =
@@ -415,6 +411,8 @@ public class BookingServiceImpl implements BookingService
 
         BigDecimal totalDiscount =
                 BigDecimal.ZERO;
+        BigDecimal individualDiscountTotal = BigDecimal.ZERO;
+        BigDecimal bundleDiscountTotal = BigDecimal.ZERO;
 
 
         BigDecimal finalTotal =
@@ -509,7 +507,7 @@ public class BookingServiceImpl implements BookingService
                             .stream()
                             .map(serviceMap::get)
                             .filter(
-                                    java.util.Objects::nonNull
+                                    Objects::nonNull
                             )
                             .toList();
 
@@ -578,6 +576,9 @@ public class BookingServiceImpl implements BookingService
                                 calculationItem.setBookingTo(
                                         item.getBookingTo()
                                 );
+                                calculationItem.setGuestCount(item.getGuestCount());
+                                calculationItem.setRoomQuantity(item.getRoomQuantity());
+                                calculationItem.setSelectedBeautyServiceIds(item.getSelectedBeautyServiceIds());
 
                                 return calculationItem;
 
@@ -615,6 +616,7 @@ public class BookingServiceImpl implements BookingService
              * =========================================
              */
 
+            java.util.Set<String> matchedBundleItemKeys = new java.util.HashSet<>();
             for (
                     BundleDiscountItem bundleItem :
                     bundleResult.getItems()
@@ -633,32 +635,17 @@ public class BookingServiceImpl implements BookingService
                 ) {
 
                     BookingServiceItemRequest matchingItem =
-                            bundleRequest
-                                    .getItems()
-                                    .stream()
-                                    .filter(
-                                            item ->
-                                                    item.getServiceId()
-                                                            .equals(
-                                                                    bundleItem.getServiceId()
-                                                            )
-                                    )
+                            bundleRequest.getItems().stream()
+                                    .filter(item -> Objects.equals(item.getServiceId(), bundleItem.getServiceId()))
+                                    .filter(item -> !matchedBundleItemKeys.contains(bookingServiceItemKey(item)))
                                     .findFirst()
                                     .orElse(null);
 
 
                     if (matchingItem != null) {
 
-                        String discountKey =
-                                matchingItem.getServiceId()
-                                        + "_"
-                                        + matchingItem.getBookingFrom()
-                                        + "_"
-                                        + matchingItem.getBookingTo()
-                                        + "_"
-                                        + (matchingItem.getPackageId() != null
-                                        ? matchingItem.getPackageId()
-                                        : "");
+                        String discountKey = bookingServiceItemKey(matchingItem);
+                        matchedBundleItemKeys.add(discountKey);
 
                         bundleDiscountMap.merge(
                                 discountKey,
@@ -736,12 +723,24 @@ public class BookingServiceImpl implements BookingService
              * Each service item has its own date.
              */
 
-            PricingCalculationResult pricingResult =
-                    pricingCalculationService.calculatePrice(
-                            vendorService.getId(),
-                            item.getBookingFrom().toLocalDate(),
-                            item.getPackageId()
-                    );
+            if (vendorService.getCategory() != null
+                    && "CATERING".equalsIgnoreCase(vendorService.getCategory().name())
+                    && (item.getGuestCount() == null || item.getGuestCount() < 1)) {
+                throw new IllegalArgumentException("Please provide a valid guest count for Catering.");
+            }
+
+            PricingCalculationResult pricingResult;
+            if (vendorService.getCategory() == com.booking.model.enums.ServiceCategory.MAKEUP
+                    && (item.getPackageId() == null || item.getPackageId().isBlank())) {
+                BigDecimal beautyBaseAmount = calculateBeautyServiceAmount(vendorService, item.getSelectedBeautyServiceIds());
+                pricingResult = pricingCalculationService.calculatePriceWithBaseAmount(
+                        vendorService.getId(), item.getBookingFrom().toLocalDate(), null,
+                        item.getGuestCount(), beautyBaseAmount);
+            } else {
+                pricingResult = pricingCalculationService.calculatePrice(
+                        vendorService.getId(), item.getBookingFrom().toLocalDate(),
+                        item.getPackageId(), item.getGuestCount());
+            }
 
             ServicePackage selectedPackage =
                     resolvePackage(
@@ -752,19 +751,37 @@ public class BookingServiceImpl implements BookingService
 
             validatePackageSlot(vendorService, selectedPackage, item);
             if (vendorService.getCategory() == com.booking.model.enums.ServiceCategory.STAY) {
-                int rooms = item.getRoomQuantity() == null ? 1 : item.getRoomQuantity();
+                int combinations = item.getRoomQuantity() == null ? 1 : item.getRoomQuantity();
+                int roomsPerCombination = selectedPackage.getResourceRequirements() == null
+                        || selectedPackage.getResourceRequirements().isEmpty() ? 1
+                        : selectedPackage.getResourceRequirements().stream()
+                        .mapToInt(requirement -> requirement.getQuantity() == null ? 0 : requirement.getQuantity())
+                        .sum();
                 int guestsPerRoom = selectedPackage.getMaxGuestsPerRoom();
-                int maxGuests = rooms * guestsPerRoom;
+                int maxGuests = Math.multiplyExact(Math.multiplyExact(combinations, roomsPerCombination), guestsPerRoom);
                 if (item.getGuestCount() != null && item.getGuestCount() > maxGuests) {
                     throw new IllegalArgumentException(
-                            "Guest count exceeds the selected package capacity of " + maxGuests + " guests for " + rooms + " room(s).");
+                            "Guest count exceeds the selected package capacity of " + maxGuests + " guests across " + (combinations * roomsPerCombination) + " room(s).");
                 }
             }
 
-            BigDecimal serviceTotal =
-                    safe(
-                            pricingResult.getTotalAmount()
-                    );
+            BigDecimal serviceTotal = safe(pricingResult.getTotalAmount());
+            int stayPriceMultiplier = 1;
+            if (vendorService.getCategory() == com.booking.model.enums.ServiceCategory.STAY) {
+                int packageQuantity = item.getRoomQuantity() == null ? 1 : item.getRoomQuantity();
+                int stayNights = Math.max(1, (int) ChronoUnit.DAYS.between(
+                        item.getBookingFrom().toLocalDate(), item.getBookingTo().toLocalDate()));
+                boolean fixedDuration = selectedPackage != null
+                        && "FIXED_DURATION".equalsIgnoreCase(selectedPackage.getPackageType());
+                boolean durationPriced = selectedPackage != null
+                        && ("PER_NIGHT".equalsIgnoreCase(selectedPackage.getPricingBasis())
+                        || "PER_DAY".equalsIgnoreCase(selectedPackage.getPricingBasis()));
+                int durationMultiplier = !fixedDuration && durationPriced ? stayNights : 1;
+                stayPriceMultiplier = Math.multiplyExact(packageQuantity, durationMultiplier);
+                // The package price is for one complete room composition, per
+                // night where configured. Quantity means complete combinations.
+                serviceTotal = serviceTotal.multiply(BigDecimal.valueOf(stayPriceMultiplier));
+            }
 
 
             /*
@@ -787,10 +804,7 @@ public class BookingServiceImpl implements BookingService
              * can belong to another bundle.
              */
 
-            String serviceItemKey =
-                    item.getServiceId()
-                            + "_"
-                            + item.getBookingFrom().toLocalDate();
+            String serviceItemKey = bookingServiceItemKey(item);
 
 
             String bundleId =
@@ -805,17 +819,14 @@ public class BookingServiceImpl implements BookingService
              * =========================================
              */
 
-            String discountKey =
-                    item.getServiceId()
-                            + "_"
-                            + item.getBookingFrom().toLocalDate()
-                            + "_"
-                            + (
-                            item.getPackageId() != null
-                                    ? item.getPackageId()
-                                    : ""
-                    );
-
+            String discountKey = bookingServiceItemKey(item);
+            if (bundleId != null) {
+                BigDecimal preDiscountAmount = safe(pricingResult.getSubtotal());
+                if (vendorService.getCategory() == com.booking.model.enums.ServiceCategory.STAY) {
+                    preDiscountAmount = preDiscountAmount.multiply(BigDecimal.valueOf(stayPriceMultiplier));
+                }
+                serviceTotal = preDiscountAmount;
+            }
 
             BigDecimal bundleDiscount =
                     bundleDiscountMap.getOrDefault(
@@ -866,9 +877,24 @@ public class BookingServiceImpl implements BookingService
 
             booking.setBookingFrom(item.getBookingFrom());
             booking.setBookingTo(item.getBookingTo());
+            booking.setSelectedBeautyServiceIds(item.getSelectedBeautyServiceIds() == null
+                    ? new ArrayList<>() : new ArrayList<>(item.getSelectedBeautyServiceIds()));
+            booking.setSelectedBeautyServiceNames(resolveBeautyServiceNames(vendorService, item.getSelectedBeautyServiceIds()));
             // Persist the exact slot selected in the cart/checkout request.
             // Availability uses this field to charge capacity to only that slot.
             booking.setSlotId(item.getSlotId());
+            if (item.getSlotId() != null && !item.getSlotId().isBlank()) {
+                BookingSlot selectedSlot = bookingSlotRepository
+                        .findById(item.getSlotId())
+                        .orElse(null);
+                if (selectedSlot != null) {
+                    booking.setSlotName(selectedSlot.getSlotName());
+                    booking.setSlotStartTime(selectedSlot.getStartTime() == null
+                            ? null : selectedSlot.getStartTime().toString());
+                    booking.setSlotEndTime(selectedSlot.getEndTime() == null
+                            ? null : selectedSlot.getEndTime().toString());
+                }
+            }
             if (item.getHoldId() != null && !item.getHoldId().isBlank()) {
                 java.util.Optional<BookingHold> holdOptional =
                         bookingHoldRepository.findById(item.getHoldId());
@@ -876,10 +902,12 @@ public class BookingServiceImpl implements BookingService
                     BookingHold hold = holdOptional.get();
                     booking.setResourceTypeId(hold.getResourceTypeId());
                     booking.setResourceIds(hold.getResourceIds() == null
-                            ? new java.util.ArrayList<>() : new java.util.ArrayList<>(hold.getResourceIds()));
+                            ? new ArrayList<>() : new ArrayList<>(hold.getResourceIds()));
+                    booking.setResourceAllocations(hold.getResourceAllocations() == null
+                            ? new ArrayList<>() : new ArrayList<>(hold.getResourceAllocations()));
                     booking.setBookingIntervals(hold.getBookingIntervals() == null
-                            ? new java.util.ArrayList<>()
-                            : new java.util.ArrayList<>(hold.getBookingIntervals()));
+                            ? new ArrayList<>()
+                            : new ArrayList<>(hold.getBookingIntervals()));
                 }
             }
             boolean stayBooking = vendorService.getCategory() == com.booking.model.enums.ServiceCategory.STAY;
@@ -956,11 +984,10 @@ public class BookingServiceImpl implements BookingService
             );
 
 
-            BookingPricingSnapshot pricingSnapshot =
-                    createPricingSnapshot(
-                            pricingResult
-                    );
-
+            BookingPricingSnapshot pricingSnapshot = createPricingSnapshot(pricingResult);
+            if (vendorService.getCategory() == com.booking.model.enums.ServiceCategory.STAY) {
+                scaleStayPricingSnapshot(pricingSnapshot, stayPriceMultiplier);
+            }
 
             Bundle bookingBundle =
                     bundleId == null
@@ -992,20 +1019,17 @@ public class BookingServiceImpl implements BookingService
              * existing pricing discount.
              */
 
-            BigDecimal existingDiscount =
-                    safe(
-                            pricingSnapshot
-                                    .getDiscountAmount()
-                    );
-
-
-
-            pricingSnapshot.setDiscountAmount(
-                    existingDiscount
-                            .add(
-                                    bundleDiscount
-                            )
-            );
+            BigDecimal existingDiscount = bundleId == null
+                    ? safe(pricingSnapshot.getDiscountAmount())
+                    : BigDecimal.ZERO;
+            if (bundleId != null) {
+                // Bundled services retain all payment heads, but individual
+                // service discounts are intentionally excluded.
+                pricingSnapshot.setDiscounts(new ArrayList<>());
+                pricingSnapshot.setDiscountAmount(BigDecimal.ZERO);
+                pricingSnapshot.setTotalAmount(safe(pricingSnapshot.getSubtotal()));
+            }
+            pricingSnapshot.setDiscountAmount(existingDiscount.add(bundleDiscount));
 
 
             if (
@@ -1040,8 +1064,8 @@ public class BookingServiceImpl implements BookingService
 
                 List<BookingDiscountSnapshot> existingDiscounts =
                         pricingSnapshot.getDiscounts() == null
-                                ? new java.util.ArrayList<>()
-                                : new java.util.ArrayList<>(
+                                ? new ArrayList<>()
+                                : new ArrayList<>(
                                 pricingSnapshot.getDiscounts()
                         );
 
@@ -1169,7 +1193,11 @@ public class BookingServiceImpl implements BookingService
                                     pricingSnapshot.getDiscountAmount()
                             )
                     );
-
+            if (bundleId != null) {
+                bundleDiscountTotal = bundleDiscountTotal.add(bundleDiscount);
+            } else {
+                individualDiscountTotal = individualDiscountTotal.add(safe(pricingSnapshot.getDiscountAmount()));
+            }
 
             finalTotal =
                     finalTotal.add(
@@ -1222,6 +1250,8 @@ public class BookingServiceImpl implements BookingService
                 .totalDiscount(
                         totalDiscount
                 )
+                .individualDiscount(individualDiscountTotal)
+                .bundleDiscount(bundleDiscountTotal)
 
                 .finalTotal(
                         finalTotal
@@ -1415,6 +1445,33 @@ public class BookingServiceImpl implements BookingService
      * expiresAt > now. The purpose of this method is to
      * stop a stale cart item from reaching final booking.
      */
+
+
+    private List<String> resolveBeautyServiceNames(VendorService service, List<String> selectedIds) {
+        if (selectedIds == null || selectedIds.isEmpty() || service.getBeautyDetails() == null
+                || service.getBeautyDetails().getServices() == null) return new ArrayList<>();
+        return selectedIds.stream().map(id -> service.getBeautyDetails().getServices().stream()
+                .filter(item -> id.equals(item.getId())).map(BeautyServiceItem::getName)
+                .findFirst().orElse("Beauty service" )).toList();
+    }
+
+    private BigDecimal calculateBeautyServiceAmount(VendorService service, List<String> selectedIds) {
+        if (selectedIds == null || selectedIds.isEmpty() || service.getBeautyDetails() == null
+                || service.getBeautyDetails().getServices() == null) {
+            throw new IllegalArgumentException("Select at least one configured Beauty service.");
+        }
+        java.util.Set<String> unique = new java.util.HashSet<>(selectedIds);
+        if (unique.size() != selectedIds.size()) throw new IllegalArgumentException("Duplicate Beauty services are not allowed.");
+        BigDecimal total = BigDecimal.ZERO;
+        for (String id : selectedIds) {
+            var item = service.getBeautyDetails().getServices().stream()
+                    .filter(candidate -> candidate.isActive() && id.equals(candidate.getId()))
+                    .findFirst().orElseThrow(() -> new IllegalArgumentException("A selected Beauty service is no longer available."));
+            total = total.add(item.getPrice());
+        }
+        return total;
+    }
+
     private void validateActiveBookingHolds(
             List<BookingServiceItemRequest> serviceItems,
             String customerId
@@ -1427,7 +1484,13 @@ public class BookingServiceImpl implements BookingService
                 BookingHold hold = bookingHoldRepository.findById(item.getHoldId())
                         .orElseThrow(() -> new ExpiredBookingHoldException(
                                 item.getServiceId(), item.getSlotId(),
-                                item.getBookingFrom() == null ? null : item.getBookingFrom().toString()));
+                                item.getBookingFrom() == null ? null : item.getBookingFrom().toLocalDate().toString(),
+                                item.getHoldId()));
+
+                boolean isCatering = vendorServiceRepository.findById(item.getServiceId())
+                        .map(service -> service.getCategory() != null
+                                && "CATERING".equalsIgnoreCase(service.getCategory().name()))
+                        .orElse(false);
 
                 boolean validExactHold =
                         customerId.equals(hold.getCustomerId())
@@ -1437,12 +1500,15 @@ public class BookingServiceImpl implements BookingService
                                 && hold.getExpiresAt().isAfter(now)
                                 && Objects.equals(hold.getSlotId(), item.getSlotId())
                                 && Objects.equals(hold.getPackageId(), item.getPackageId())
+                                && Objects.equals(hold.getSelectedBeautyServiceIds() == null ? List.of() : hold.getSelectedBeautyServiceIds(),
+                                item.getSelectedBeautyServiceIds() == null ? List.of() : item.getSelectedBeautyServiceIds())
                                 && Objects.equals(hold.getBookingType() == null ? "STANDARD_SLOT" : hold.getBookingType(),
                                 item.getBookingType() == null ? "STANDARD_SLOT" : item.getBookingType())
                                 && hold.getBookingFrom() != null
                                 && hold.getBookingTo() != null
                                 && Objects.equals(hold.getBookingFrom(), item.getBookingFrom())
                                 && Objects.equals(hold.getBookingTo(), item.getBookingTo())
+                                && (!isCatering || Objects.equals(hold.getGuestCount(), item.getGuestCount()))
                                 && (!"ROOM_STAY".equalsIgnoreCase(item.getBookingType())
                                 || Objects.equals(
                                 hold.getRoomQuantity() == null ? 1 : hold.getRoomQuantity(),
@@ -1453,7 +1519,8 @@ public class BookingServiceImpl implements BookingService
                             customerId, item.getServiceId(), item.getHoldId());
                     throw new ExpiredBookingHoldException(
                             item.getServiceId(), item.getSlotId(),
-                            item.getBookingFrom() == null ? null : item.getBookingFrom().toString());
+                            item.getBookingFrom() == null ? null : item.getBookingFrom().toLocalDate().toString(),
+                            item.getHoldId());
                 }
                 continue;
             }
@@ -1471,6 +1538,11 @@ public class BookingServiceImpl implements BookingService
                     bookingHoldRepository.findByServiceIdAndStatusAndExpiresAtAfter(
                             item.getServiceId(), BookingHoldStatus.ACTIVE, now);
 
+            boolean isCatering = vendorServiceRepository.findById(item.getServiceId())
+                    .map(service -> service.getCategory() != null
+                            && "CATERING".equalsIgnoreCase(service.getCategory().name()))
+                    .orElse(false);
+
             boolean validHold = activeHolds.stream().anyMatch(hold ->
                     customerId.equals(hold.getCustomerId())
                             && hold.getBookingFrom() != null
@@ -1480,14 +1552,16 @@ public class BookingServiceImpl implements BookingService
                             && Objects.equals(hold.getBookingType() == null ? "STANDARD_SLOT" : hold.getBookingType(),
                             item.getBookingType() == null ? "STANDARD_SLOT" : item.getBookingType())
                             && Objects.equals(hold.getSlotId(), item.getSlotId())
-                            && Objects.equals(hold.getPackageId(), item.getPackageId()));
+                            && Objects.equals(hold.getPackageId(), item.getPackageId())
+                            && (!isCatering || Objects.equals(hold.getGuestCount(), item.getGuestCount())));
 
             if (!validHold) {
                 log.warn("Booking rejected because active hold is missing or expired customerId={} serviceId={} slotId={} bookingFrom={}",
                         customerId, item.getServiceId(), item.getSlotId(), item.getBookingFrom());
                 throw new ExpiredBookingHoldException(
                         item.getServiceId(), item.getSlotId(),
-                        item.getBookingFrom() == null ? null : item.getBookingFrom().toString());
+                        item.getBookingFrom() == null ? null : item.getBookingFrom().toLocalDate().toString(),
+                        item.getHoldId());
             }
         }
     }
@@ -1506,7 +1580,8 @@ public class BookingServiceImpl implements BookingService
             BookingHold hold = bookingHoldRepository.findById(item.getHoldId())
                     .orElseThrow(() -> new ExpiredBookingHoldException(
                             item.getServiceId(), item.getSlotId(),
-                            item.getBookingFrom() == null ? null : item.getBookingFrom().toString()));
+                            item.getBookingFrom() == null ? null : item.getBookingFrom().toLocalDate().toString(),
+                            item.getHoldId()));
             if (!customerId.equals(hold.getCustomerId())
                     || !item.getServiceId().equals(hold.getServiceId())
                     || hold.getStatus() != BookingHoldStatus.ACTIVE
@@ -1514,6 +1589,8 @@ public class BookingServiceImpl implements BookingService
                     || !hold.getExpiresAt().isAfter(now)
                     || !Objects.equals(hold.getSlotId(), item.getSlotId())
                     || !Objects.equals(hold.getPackageId(), item.getPackageId())
+                    || !Objects.equals(hold.getSelectedBeautyServiceIds() == null ? List.of() : hold.getSelectedBeautyServiceIds(),
+                    item.getSelectedBeautyServiceIds() == null ? List.of() : item.getSelectedBeautyServiceIds())
                     || !Objects.equals(hold.getBookingFrom(), item.getBookingFrom())
                     || !Objects.equals(hold.getBookingTo(), item.getBookingTo())
                     || ("ROOM_STAY".equalsIgnoreCase(item.getBookingType())
@@ -1523,7 +1600,8 @@ public class BookingServiceImpl implements BookingService
                     item.getBookingType() == null ? "STANDARD_SLOT" : item.getBookingType())) {
                 throw new ExpiredBookingHoldException(
                         item.getServiceId(), item.getSlotId(),
-                        item.getBookingFrom() == null ? null : item.getBookingFrom().toString());
+                        item.getBookingFrom() == null ? null : item.getBookingFrom().toLocalDate().toString(),
+                        item.getHoldId());
             }
             hold.setStatus(BookingHoldStatus.CONVERTED);
             hold.setBookingGroupId(bookingGroupId);
@@ -1538,21 +1616,25 @@ public class BookingServiceImpl implements BookingService
             BookingServiceItemRequest item
     ) {
         boolean isStay = service.getCategory() == com.booking.model.enums.ServiceCategory.STAY;
+        boolean isBeauty = service.getCategory() == com.booking.model.enums.ServiceCategory.MAKEUP;
+        boolean usesResourceTypes = service.getCategory() != null
+                && service.getCategory().supportsResourceTypes();
         if (selectedPackage == null) {
-            if (isStay) {
-                throw new IllegalArgumentException("A package is required for STAY bookings.");
+            if (isStay || usesResourceTypes) {
+                throw new IllegalArgumentException("A package is required for this resource-managed service.");
             }
+            if (isBeauty) return;
             if (item.getSlotId() == null || item.getSlotId().isBlank()) {
                 throw new IllegalArgumentException("A booking slot or an explicitly configured slot-free package is required.");
             }
             return;
         }
 
-        boolean requiresSlot = isStay || !Boolean.FALSE.equals(selectedPackage.getRequiresSlot());
+        boolean requiresSlot = !isBeauty && (usesResourceTypes || !Boolean.FALSE.equals(selectedPackage.getRequiresSlot()));
         String slotId = item.getSlotId();
 
-        if (!requiresSlot && !isStay) {
-            throw new IllegalArgumentException("Slot-free packages are supported only for STAY services.");
+        if (!requiresSlot && !isStay && !isBeauty) {
+            throw new IllegalArgumentException("Slot-free packages are supported only for STAY and Beauty services.");
         }
         if (requiresSlot && (slotId == null || slotId.isBlank())) {
             throw new IllegalArgumentException("Select a booking slot for this package.");
@@ -1565,6 +1647,16 @@ public class BookingServiceImpl implements BookingService
         if (requiresSlot && allowedSlots != null && !allowedSlots.isEmpty()
                 && !allowedSlots.contains(slotId)) {
             throw new IllegalArgumentException("The selected booking slot is not available for this package.");
+        }
+
+        if (usesResourceTypes) {
+            boolean hasRequirements = selectedPackage.getResourceRequirements() != null
+                    && !selectedPackage.getResourceRequirements().isEmpty();
+            boolean hasLegacyResourceType = selectedPackage.getResourceTypeId() != null
+                    && !selectedPackage.getResourceTypeId().isBlank();
+            if (!hasRequirements && !hasLegacyResourceType) {
+                throw new IllegalArgumentException("The selected package must include at least one Resource Type.");
+            }
         }
 
         if (isStay) {
@@ -1864,6 +1956,24 @@ public class BookingServiceImpl implements BookingService
         return snapshot;
     }
 
+    private void scaleStayPricingSnapshot(BookingPricingSnapshot snapshot, int quantity) {
+        if (snapshot == null || quantity <= 1) return;
+        BigDecimal multiplier = BigDecimal.valueOf(quantity);
+        snapshot.setBaseAmount(safe(snapshot.getBaseAmount()).multiply(multiplier));
+        snapshot.setSubtotal(safe(snapshot.getSubtotal()).multiply(multiplier));
+        snapshot.setDiscountAmount(safe(snapshot.getDiscountAmount()).multiply(multiplier));
+        snapshot.setAdvanceAmount(safe(snapshot.getAdvanceAmount()).multiply(multiplier));
+        snapshot.setBalanceAmount(safe(snapshot.getBalanceAmount()).multiply(multiplier));
+        if (snapshot.getPricingHeads() != null) {
+            snapshot.getPricingHeads().forEach(head -> head.setCalculatedAmount(
+                    safe(head.getCalculatedAmount()).multiply(multiplier)));
+        }
+        if (snapshot.getDiscounts() != null) {
+            snapshot.getDiscounts().forEach(discount -> discount.setCalculatedAmount(
+                    safe(discount.getCalculatedAmount()).multiply(multiplier)));
+        }
+    }
+
     private BigDecimal safe(
             BigDecimal value
     ) {
@@ -1880,16 +1990,7 @@ public class BookingServiceImpl implements BookingService
 
         log.info("Cancelling booking bookingId={}", bookingId);
 
-        String email =
-                SecurityUtil.getCurrentUserEmail();
-
-        User customer =
-                userRepository
-                        .findByEmail(email)
-                        .orElseThrow(() ->
-                                new ResourceNotFoundException(
-                                        "Authenticated user not found."
-                                ));
+        User currentUser = SecurityUtil.getCurrentUser();
 
         Booking booking =
                 bookingRepository.findById(bookingId)
@@ -1898,7 +1999,7 @@ public class BookingServiceImpl implements BookingService
                                         "Booking not found."
                                 ));
 
-        validateCancellation(booking, customer);
+        validateCancellation(booking, currentUser);
 
         /*
          * Calculate cancellation charges
@@ -1917,11 +2018,15 @@ public class BookingServiceImpl implements BookingService
                 BookingStatus.CANCELLED
         );
 
-        if (booking.getPaidAmount().compareTo(BigDecimal.ZERO) > 0) {
-
-            booking.setPaymentStatus(
-                    PaymentStatus.REFUND_PENDING
-            );
+        BigDecimal paidAmount = safe(booking.getPaidAmount());
+        BigDecimal refundableAmount = safe(calculation.getRefundableAmount());
+        if (paidAmount.compareTo(BigDecimal.ZERO) > 0
+                && refundableAmount.compareTo(BigDecimal.ZERO) > 0) {
+            booking.setPaymentStatus(PaymentStatus.REFUND_PENDING);
+        }
+        // A cancelled booking must never retain a collectible balance.
+        if (booking.getPricingSnapshot() != null) {
+            booking.getPricingSnapshot().setBalanceAmount(BigDecimal.ZERO);
         }
 
         booking.setCancelledAt(
@@ -2183,6 +2288,71 @@ public class BookingServiceImpl implements BookingService
         BookingPricingSnapshot snapshot =
                 booking.getPricingSnapshot();
 
+        VendorService bookingService = vendorServiceRepository.findById(booking.getServiceId()).orElse(null);
+        String serviceCategory = bookingService == null || bookingService.getCategory() == null
+                ? null : bookingService.getCategory().name();
+        String slotName = booking.getSlotName();
+        String slotStartTime = booking.getSlotStartTime();
+        String slotEndTime = booking.getSlotEndTime();
+        if (booking.getSlotId() != null && (slotName == null || slotName.isBlank())) {
+            var legacySlot = bookingSlotRepository.findById(booking.getSlotId()).orElse(null);
+            if (legacySlot != null) {
+                slotName = legacySlot.getSlotName();
+                slotStartTime = legacySlot.getStartTime() == null ? null : legacySlot.getStartTime().toString();
+                slotEndTime = legacySlot.getEndTime() == null ? null : legacySlot.getEndTime().toString();
+            }
+        }
+        List<String> allocatedResourceIds = new ArrayList<>();
+        List<String> allocatedResourceNames = new ArrayList<>();
+        if (booking.getResourceAllocations() != null) {
+            booking.getResourceAllocations().forEach(allocation -> {
+                if (allocation.getResourceIds() != null) allocatedResourceIds.addAll(allocation.getResourceIds());
+            });
+        }
+        if (allocatedResourceIds.isEmpty() && booking.getResourceIds() != null) {
+            allocatedResourceIds.addAll(booking.getResourceIds());
+        }
+        String resourceTypeName = null;
+        if (("STAY".equals(serviceCategory) || "HALL".equals(serviceCategory))
+                && bookingService != null && bookingService.getResourceTypes() != null) {
+            List<String> names = new ArrayList<>();
+            if (booking.getResourceAllocations() != null) {
+                booking.getResourceAllocations().forEach(allocation -> bookingService.getResourceTypes().stream()
+                        .filter(type -> Objects.equals(type.getId(), allocation.getResourceTypeId()))
+                        .findFirst().ifPresent(type -> names.add(type.getName())));
+            }
+            if (names.isEmpty() && booking.getResourceTypeId() != null) {
+                bookingService.getResourceTypes().stream()
+                        .filter(type -> Objects.equals(type.getId(), booking.getResourceTypeId()))
+                        .findFirst().ifPresent(type -> names.add(type.getName()));
+            }
+            if (!names.isEmpty()) resourceTypeName = String.join(", ", names);
+            if (bookingService.getResourceTypes() != null) {
+                for (var resourceType : bookingService.getResourceTypes()) {
+                    if (booking.getResourceAllocations() != null && !booking.getResourceAllocations().isEmpty()) {
+                        booking.getResourceAllocations().stream()
+                                .filter(allocation -> Objects.equals(allocation.getResourceTypeId(), resourceType.getId()))
+                                .filter(allocation -> allocation.getResourceIds() != null)
+                                .forEach(allocation -> allocation.getResourceIds().forEach(resourceId -> {
+                                    var unit = resourceType.getUnits() == null ? null : resourceType.getUnits().stream()
+                                            .filter(candidate -> Objects.equals(candidate.getId(), resourceId))
+                                            .findFirst().orElse(null);
+                                    allocatedResourceNames.add(unit == null || unit.getName() == null || unit.getName().isBlank()
+                                            ? resourceId : unit.getName());
+                                }));
+                    } else if (Objects.equals(resourceType.getId(), booking.getResourceTypeId()) && resourceType.getUnits() != null) {
+                        allocatedResourceIds.forEach(resourceId -> resourceType.getUnits().stream()
+                                .filter(unit -> Objects.equals(unit.getId(), resourceId)).findFirst()
+                                .ifPresent(unit -> allocatedResourceNames.add(unit.getName() == null ? resourceId : unit.getName())));
+                    }
+                }
+            }
+        }
+        if (allocatedResourceNames.isEmpty()) allocatedResourceNames.addAll(allocatedResourceIds);
+        User customer = booking.getCustomerId() == null ? null : userRepository.findById(booking.getCustomerId()).orElse(null);
+        String customerName = booking.getCustomerName() != null ? booking.getCustomerName() : customer == null ? null : customer.getFullName();
+        String customerPhone = booking.getCustomerPhone() != null ? booking.getCustomerPhone() : customer == null ? null : customer.getPhone();
+        String customerEmail = booking.getCustomerEmail() != null ? booking.getCustomerEmail() : customer == null ? null : customer.getEmail();
 
         /*
          * =========================================
@@ -2224,6 +2394,13 @@ public class BookingServiceImpl implements BookingService
                 .vendorEmail(
                         vendor.getEmail()
                 )
+                .customerName(customerName)
+                .customerPhone(customerPhone)
+                .customerEmail(customerEmail)
+                .vendorCanCancel((currentUser.getRole() == com.booking.model.enums.Role.VENDOR_ADMIN
+                        || currentUser.getRole() == com.booking.model.enums.Role.VENDOR_USER)
+                        && Objects.equals(booking.getVendorId(), vendorAccessService.getEffectiveVendorId())
+                        && isVendorCreatedBooking(booking))
 
                 .bookingDate(
                         booking.getCreatedTs()
@@ -2232,6 +2409,16 @@ public class BookingServiceImpl implements BookingService
 
                 .bookingFrom(booking.getBookingFrom())
                 .bookingTo(booking.getBookingTo())
+                .serviceCategory(serviceCategory)
+                .bookingType(booking.getBookingType())
+                .roomQuantity(booking.getRoomQuantity())
+                .slotId(booking.getSlotId())
+                .slotName(slotName)
+                .slotStartTime(slotStartTime)
+                .slotEndTime(slotEndTime)
+                .resourceIds(allocatedResourceIds)
+                .resourceNames(allocatedResourceNames)
+                .resourceTypeName(resourceTypeName)
 
                 .guestCount(
                         booking.getGuestCount()
@@ -2280,6 +2467,10 @@ public class BookingServiceImpl implements BookingService
                 .paidAmount(
                         booking.getPaidAmount()
                 )
+                .packageId(snapshot == null ? booking.getPackageId() : snapshot.getPackageId())
+                .packageName(snapshot == null ? booking.getPackageType() : snapshot.getPackageType())
+                .packagePrice(snapshot == null ? null : snapshot.getPackagePrice())
+                .packageFeatures(snapshot == null ? null : snapshot.getPackageFeatures())
 
                 .pricingHeads(
                         snapshot.getPricingHeads()
@@ -2315,15 +2506,7 @@ public class BookingServiceImpl implements BookingService
 
         log.info("Calculating cancellation preview bookingId={}", bookingId);
 
-        String email =
-                SecurityUtil.getCurrentUserEmail();
-        User customer =
-                userRepository
-                        .findByEmail(email)
-                        .orElseThrow(() ->
-                                new ResourceNotFoundException(
-                                        "Authenticated user not found."
-                                ));
+        User currentUser = SecurityUtil.getCurrentUser();
 
         Booking booking =
                 bookingRepository
@@ -2335,7 +2518,7 @@ public class BookingServiceImpl implements BookingService
 
         validateCancellation(
                 booking,
-                customer
+                currentUser
         );
 
         CancellationCalculation calculation =
@@ -2396,6 +2579,22 @@ public class BookingServiceImpl implements BookingService
     private CancellationCalculation calculateCancellation(
             Booking booking
     ) {
+        BigDecimal amountPaid = safe(booking.getPaidAmount());
+        long daysBeforeEvent = booking.getBookingFrom() == null
+                ? 0L
+                : ChronoUnit.DAYS.between(LocalDate.now(), booking.getBookingFrom().toLocalDate());
+
+        // An unpaid booking is cancelled without creating a charge or balance.
+        // No policy lookup is needed when there is no paid amount to refund.
+        if (amountPaid.compareTo(BigDecimal.ZERO) <= 0) {
+            return CancellationCalculation.builder()
+                    .daysBeforeEvent((int) daysBeforeEvent)
+                    .refundPercentage(0)
+                    .refundableAmount(BigDecimal.ZERO)
+                    .cancellationCharge(BigDecimal.ZERO)
+                    .processingDays(0)
+                    .build();
+        }
 
         ServiceSettings settings =
                 serviceSettingsRepository
@@ -2410,73 +2609,33 @@ public class BookingServiceImpl implements BookingService
         CancellationPolicy policy =
                 settings.getCancellationPolicy();
 
-        long daysBeforeEvent =
 
-                ChronoUnit.DAYS.between(
+        RefundRule matchedRule = policy == null || policy.getRefundRules() == null
+                ? null
+                : policy.getRefundRules().stream()
+                .filter(rule -> {
+                    boolean minimum = daysBeforeEvent >= rule.getMinDaysBeforeEvent();
+                    boolean maximum = rule.getMaxDaysBeforeEvent() == null
+                            || daysBeforeEvent <= rule.getMaxDaysBeforeEvent();
+                    return minimum && maximum;
+                })
+                .findFirst()
+                .orElse(null);
 
-                        LocalDate.now(),
+        int refundPercentage = matchedRule == null ? 0 : matchedRule.getRefundPercentage();
+        BigDecimal calculationBasis = policy != null
+                && policy.getRefundOn() == com.booking.model.enums.RefundOnType.TOTAL_AMOUNT
+                ? safe(booking.getTotalAmount())
+                : amountPaid;
+        BigDecimal policyRefund = calculationBasis
+                .multiply(BigDecimal.valueOf(refundPercentage))
+                .divide(BigDecimal.valueOf(100));
+        BigDecimal policyCharge = calculationBasis.subtract(policyRefund).max(BigDecimal.ZERO);
 
-                        booking.getBookingFrom().toLocalDate()
-
-                );
-
-        RefundRule matchedRule =
-
-                policy.getRefundRules()
-
-                        .stream()
-
-                        .filter(rule -> {
-
-                            boolean minimum =
-
-                                    daysBeforeEvent >=
-                                            rule.getMinDaysBeforeEvent();
-
-                            boolean maximum =
-
-                                    rule.getMaxDaysBeforeEvent() == null ||
-
-                                            daysBeforeEvent <=
-                                                    rule.getMaxDaysBeforeEvent();
-
-                            return minimum && maximum;
-
-                        })
-
-                        .findFirst()
-
-                        .orElse(null);
-
-        int refundPercentage =
-
-                matchedRule == null
-
-                        ? 0
-
-                        : matchedRule.getRefundPercentage();
-
-        BigDecimal refundableAmount =
-
-                booking.getPaidAmount()
-
-                        .multiply(
-
-                                BigDecimal.valueOf(refundPercentage)
-
-                        )
-
-                        .divide(
-
-                                BigDecimal.valueOf(100)
-
-                        );
-
-        BigDecimal cancellationCharge =
-
-                booking.getPaidAmount()
-
-                        .subtract(refundableAmount);
+        // The vendor can retain only money already received. Never create a debt
+        // or an outstanding cancellation balance for the customer.
+        BigDecimal cancellationCharge = policyCharge.min(amountPaid);
+        BigDecimal refundableAmount = amountPaid.subtract(cancellationCharge).max(BigDecimal.ZERO);
 
         return CancellationCalculation
 
@@ -2499,7 +2658,7 @@ public class BookingServiceImpl implements BookingService
                 )
 
                 .processingDays(
-                        policy.getProcessingDays()
+                        policy == null || policy.getProcessingDays() == null ? 0 : policy.getProcessingDays()
                 )
 
                 .build();
@@ -2508,41 +2667,93 @@ public class BookingServiceImpl implements BookingService
 
     private void validateCancellation(
             Booking booking,
-            User customer
+            User currentUser
     ) {
+        if (currentUser == null) {
+            throw new AccessDeniedException("You are not authorized to cancel this booking.");
+        }
 
-        if (!booking.getCustomerId().equals(customer.getId())) {
+        boolean customerOwnsBooking = currentUser.getRole() == com.booking.model.enums.Role.CUSTOMER
+                && Objects.equals(booking.getCustomerId(), currentUser.getId());
 
-            throw new AccessDeniedException(
-                    "You cannot cancel this booking."
-            );
+        if (customerOwnsBooking) {
+            ServiceSettings serviceSettings = serviceSettingsRepository
+                    .findByServiceId(booking.getServiceId()).orElse(null);
+            CancellationPolicy customerPolicy = serviceSettings == null
+                    ? null : serviceSettings.getCancellationPolicy();
+            if (customerPolicy != null && Boolean.FALSE.equals(customerPolicy.getAllowCancellation())) {
+                throw new IllegalStateException("Customer cancellation is not allowed for this service.");
+            }
+        }
 
+        boolean vendorOwnsBooking = false;
+        if (currentUser.getRole() == com.booking.model.enums.Role.VENDOR_ADMIN
+                || currentUser.getRole() == com.booking.model.enums.Role.VENDOR_USER) {
+            vendorPermissionService.checkEdit(VendorPage.BOOKINGS);
+            String effectiveVendorId = vendorAccessService.getEffectiveVendorId();
+            if (!Objects.equals(booking.getVendorId(), effectiveVendorId)) {
+                throw new AccessDeniedException("You cannot cancel a booking belonging to another vendor.");
+            }
+
+            // Audit metadata is the primary source for who initiated the booking.
+            // For bookings created through the vendor-side booking flow, the
+            // authenticated vendor is also stored as customerId by the existing
+            // createBooking flow. Use that persisted identity as a fallback for
+            // older records where created_user was not populated.
+            vendorOwnsBooking = isVendorCreatedBooking(booking);
+            if (!vendorOwnsBooking) {
+                throw new AccessDeniedException(
+                        "This booking was created by the customer. Please contact the customer and ask them to cancel it."
+                );
+            }
+        }
+
+        if (!customerOwnsBooking && !vendorOwnsBooking) {
+            throw new AccessDeniedException("You cannot cancel this booking.");
         }
 
         if (booking.getStatus() == BookingStatus.CANCELLED) {
-
-            throw new IllegalStateException(
-                    "Booking is already cancelled."
-            );
-
+            throw new IllegalStateException("Booking is already cancelled.");
         }
 
         if (booking.getStatus() == BookingStatus.COMPLETED) {
-
-            throw new IllegalStateException(
-                    "Completed booking cannot be cancelled."
-            );
-
+            throw new IllegalStateException("Completed booking cannot be cancelled.");
         }
 
-        if (booking.getBookingFrom().toLocalDate().isBefore(LocalDate.now())) {
+        if (booking.getBookingFrom() == null
+                || booking.getBookingFrom().toLocalDate().isBefore(LocalDate.now())) {
+            throw new IllegalStateException("Past bookings cannot be cancelled.");
+        }
+    }
 
-            throw new IllegalStateException(
-                    "Past bookings cannot be cancelled."
-            );
-
+    private boolean isVendorCreatedBooking(Booking booking) {
+        if (booking == null || booking.getVendorId() == null) {
+            return false;
         }
 
+        // Check the audit creator first. This remains authoritative when present.
+        User auditCreator = booking.getCreatedUser() == null
+                ? null : userRepository.findById(booking.getCreatedUser()).orElse(null);
+        if (belongsToBookingVendor(auditCreator, booking.getVendorId())) {
+            return true;
+        }
+
+        // Legacy/vendor-originated bookings can have no created_user audit value.
+        // The createBooking flow stores its authenticated principal in customerId;
+        // verify that principal's vendor role and vendor relationship before
+        // allowing cancellation. A normal customer account will never pass this.
+        User bookingInitiator = booking.getCustomerId() == null
+                ? null : userRepository.findById(booking.getCustomerId()).orElse(null);
+        return belongsToBookingVendor(bookingInitiator, booking.getVendorId());
+    }
+
+    private boolean belongsToBookingVendor(User user, String bookingVendorId) {
+        if (user == null || bookingVendorId == null) return false;
+        if (user.getRole() == com.booking.model.enums.Role.VENDOR_ADMIN) {
+            return Objects.equals(user.getId(), bookingVendorId);
+        }
+        return user.getRole() == com.booking.model.enums.Role.VENDOR_USER
+                && Objects.equals(user.getVendorId(), bookingVendorId);
     }
 
     private void validateBookingGroupAccess(
@@ -2669,6 +2880,20 @@ public class BookingServiceImpl implements BookingService
     }
 
 
+    /** Stable identity for one independently-held booking line. */
+    private static String bookingServiceItemKey(BookingServiceItemRequest item) {
+        if (item.getHoldId() != null && !item.getHoldId().isBlank()) {
+            return item.getHoldId();
+        }
+        return String.join("|",
+                Objects.toString(item.getServiceId(), ""),
+                Objects.toString(item.getSlotId(), ""),
+                Objects.toString(item.getPackageId(), ""),
+                Objects.toString(item.getBookingFrom(), ""),
+                Objects.toString(item.getBookingTo(), ""),
+                Objects.toString(item.getRoomQuantity(), "1"));
+    }
+
     @Override
     public BookingGroupResponse getBookingGroup(
             String bookingGroupId
@@ -2760,6 +2985,15 @@ public class BookingServiceImpl implements BookingService
                         );
 
 
+        BigDecimal bundleDiscountTotal = bookings.stream()
+                .map(booking -> booking.getPricingSnapshot())
+                .filter(Objects::nonNull)
+                .flatMap(snapshot -> snapshot.getDiscounts() == null ? java.util.stream.Stream.empty() : snapshot.getDiscounts().stream())
+                .filter(discount -> "Bundle Discount".equalsIgnoreCase(discount.getName()))
+                .map(discount -> safe(discount.getCalculatedAmount()))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal individualDiscountTotal = totalDiscount.subtract(bundleDiscountTotal).max(BigDecimal.ZERO);
+
         Booking firstBooking =
                 bookings.get(0);
 
@@ -2814,6 +3048,8 @@ public class BookingServiceImpl implements BookingService
                 .totalDiscount(
                         totalDiscount
                 )
+                .individualDiscount(individualDiscountTotal)
+                .bundleDiscount(bundleDiscountTotal)
 
                 .finalTotal(
                         finalTotal

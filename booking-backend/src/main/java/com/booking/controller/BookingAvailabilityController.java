@@ -89,6 +89,15 @@ public class BookingAvailabilityController {
                 );
     }
 
+    @GetMapping("/beauty")
+    public List<com.booking.dto.availability.BeautyAppointmentOption> getBeautyAppointments(
+            @PathVariable String serviceId,
+            @RequestParam @NotNull @FutureOrPresent LocalDate date,
+            @RequestParam @NotNull @jakarta.validation.constraints.Min(1) Integer durationMinutes
+    ) {
+        return bookingAvailabilityService.getBeautyAppointmentOptions(serviceId, date, durationMinutes);
+    }
+
     @PostMapping("/hold")
     public BookingHoldResponse holdSlot(
             @Valid @RequestBody CreateBookingHoldRequest request

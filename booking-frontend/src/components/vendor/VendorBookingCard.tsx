@@ -1,4 +1,6 @@
+import NumericInput from "../common/ui/NumericInput";
 import { useEffect, useState } from "react";
+import DateField from "../common/DateField/DateField";
 import toast from "react-hot-toast";
 import { useLocation, useNavigate } from "react-router-dom";
 
@@ -11,6 +13,7 @@ import CartService from "../../services/CartService";
 import VendorDetailService from "../../services/VendorDetailService";
 
 import BookingAvailabilityService from "../../services/BookingAvailabilityService";
+import formatTime from "../../util/timeFormatter";
 import type { SlotAvailability } from "../../types/SlotAvailability";
 
 import "./VendorBookingCard.css";
@@ -25,10 +28,12 @@ interface Props {
     bundles?: Bundle[];
 
     selectedPackage?: ServicePackage | null;
+    packageSelectionVersion?: number;
 
     selectedResourceTypeId?: string | null;
 
     selectedCateringDishes?: CartSelectedCateringDish[];
+    selectedBeautyServiceIds?: string[];
 
     onEventDateChange?: (
         date: string
@@ -36,22 +41,13 @@ interface Props {
 
     onClearSelectedPackage?: () => void;
 
-    onSelectedSlotChange?: (slotId: string | null) => void;
+    onSelectedSlotChange?: (slotId: string | null, resourceTypeId?: string | null) => void;
 }
 
 
-function getTomorrowDate(): string {
-
-    const tomorrow = new Date();
-
-    tomorrow.setDate(
-        tomorrow.getDate() + 1
-    );
-
-    return tomorrow
-        .toISOString()
-        .split("T")[0];
-
+function getTodayDate(): string {
+    const today = new Date();
+    return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
 }
 
 function addOneDay(date: string): string {
@@ -83,8 +79,10 @@ const BookingCard = ({
     serviceId,
     bundles = [],
     selectedPackage,
+    packageSelectionVersion = 0,
     selectedResourceTypeId,
     selectedCateringDishes = [],
+    selectedBeautyServiceIds = [],
     onEventDateChange,
     onClearSelectedPackage,
     onSelectedSlotChange
@@ -127,6 +125,16 @@ const BookingCard = ({
     // Guest count is required only for catering services.
     const isCatering =
         String(vendor.category ?? "").trim().toUpperCase() === "CATERING";
+    const isBeauty = String(vendor.category ?? "").trim().toUpperCase() === "MAKEUP";
+    const [beautyOptions, setBeautyOptions] = useState<{startTime:string;endTime:string;durationMinutes:number;available:boolean;remainingCapacity:number}[]>([]);
+    const [selectedBeautyStart, setSelectedBeautyStart] = useState("");
+    useEffect(() => { setSelectedBeautyStart(""); }, [selectedPackage?.id]);
+    const beautyDetails = vendor.beautyDetails;
+    const beautyDuration = selectedPackage
+        ? (selectedPackage.durationMinutes ?? (beautyDetails?.durationRules ?? []).find(rule => (selectedPackage.features?.length ?? 0) >= rule.minServices && (selectedPackage.features?.length ?? 0) <= rule.maxServices)?.durationMinutes ?? 30)
+        : (beautyDetails?.durationRules ?? []).find(rule => selectedBeautyServiceIds.length >= rule.minServices && selectedBeautyServiceIds.length <= rule.maxServices)?.durationMinutes ?? 0;
+    const selectedBeautyServices = (beautyDetails?.services ?? []).filter(item => selectedBeautyServiceIds.includes(item.id));
+    const beautyIndividualPrice = selectedBeautyServices.reduce((sum,item)=>sum + Number(item.price || 0),0);
 
 
     /*
@@ -140,57 +148,89 @@ const BookingCard = ({
 
     // Keep every slot visible. Incompatible options remain clickable so the
     // customer can switch selections without being trapped by a filter.
-    const eligibleSlots = slots.filter(slot =>
-        // Match backend validation: a slot with no explicit resourceTypeId
-        // remains eligible when it is explicitly included in the package's
-        // slotIds. Only reject a slot when it is assigned to a different type.
-        (!selectedPackage?.resourceTypeId ||
-            !slot.resourceTypeId ||
-            slot.resourceTypeId === selectedPackage.resourceTypeId) &&
-        (!selectedPackage?.slotIds?.length ||
-            selectedPackage.slotIds.includes(slot.slotId))
+    const usesResourceTypes = ["STAY", "STAYS", "HALL", "HALLS"].includes(
+        String(vendor.category ?? "").trim().toUpperCase()
     );
+    const eligibleSlots = slots.filter(slot => {
+        const packageResourceTypeIds = selectedPackage?.resourceRequirements?.length
+            ? selectedPackage.resourceRequirements.map(requirement => requirement.resourceTypeId)
+            : selectedPackage?.resourceTypeId
+                ? [selectedPackage.resourceTypeId]
+                : [];
+
+        // Package slotIds is the authoritative package-to-slot mapping.
+        // A booking slot may not have its own resourceTypeId; in that case,
+        // keep it eligible when the package explicitly includes that slot.
+        // If a slot does carry a resourceTypeId, ensure the package includes it.
+        const resourceTypeMatches = !usesResourceTypes || !selectedPackage
+            || !slot.resourceTypeId
+            || packageResourceTypeIds.includes(slot.resourceTypeId);
+
+        return resourceTypeMatches &&
+            (!selectedPackage?.slotIds?.length || selectedPackage.slotIds.includes(slot.slotId));
+    });
 
 
     const [selectedSlot, setSelectedSlot] =
         useState<SlotAvailability | null>(null);
 
     const isStay = ["STAY", "STAYS"].includes(String(vendor.category ?? "").trim().toUpperCase());
-    const requiresSlot = isStay || selectedPackage?.requiresSlot !== false;
+    const requiresSlot = isBeauty
+        ? Boolean(selectedPackage)
+        : (isStay || selectedPackage?.requiresSlot !== false);
     const [roomQuantity, setRoomQuantity] = useState(1);
     const [customBookingFrom, setCustomBookingFrom] = useState("");
     const [customBookingTo, setCustomBookingTo] = useState("");
 
     useEffect(() => {
-        if (!customBookingFrom || !selectedPackage) return;
+        if (!customBookingFrom || !selectedPackage || !selectedSlot) {
+            // A package alone does not establish a booking interval. The
+            // selected slot is required before calculating checkout.
+            setCustomBookingTo("");
+            return;
+        }
 
         const isFixedDuration = selectedPackage.packageType === "FIXED_DURATION";
-        // A STAY package can still be priced per calendar day. Only PER_NIGHT
-        // (or a flat-price STAY package) uses checkout-exclusive night counting.
-        const usesNightCount = selectedPackage.pricingBasis === "PER_NIGHT" ||
-            (isStay && selectedPackage.pricingBasis !== "PER_DAY");
+        const isOvernightStaySlot = isStay && Boolean(
+            selectedSlot.startTime && selectedSlot.endTime &&
+            selectedSlot.endTime <= selectedSlot.startTime
+        );
+        const usesNightCount = (isStay && isFixedDuration) ||
+            selectedPackage.pricingBasis === "PER_NIGHT" ||
+            (isStay && selectedSlot.bookingPattern === "CONTINUOUS") ||
+            isOvernightStaySlot;
         const duration = Math.max(1, isFixedDuration
             ? (selectedPackage.includedDuration ?? 1)
             : (selectedPackage.minimumDuration ?? 1));
 
-        // Fixed-duration packages always determine checkout. For flexible
-        // packages, only provide a default when the customer has not chosen it.
-        if (isFixedDuration || !customBookingTo) {
-            setCustomBookingTo(addDays(customBookingFrom, usesNightCount ? duration : duration - 1));
-        }
+        setCustomBookingTo(addDays(customBookingFrom, usesNightCount ? duration : duration - 1));
     }, [selectedPackage?.id, selectedPackage?.packageType, selectedPackage?.includedDuration,
-        selectedPackage?.minimumDuration, selectedPackage?.pricingBasis, customBookingFrom, isStay]);
+        selectedPackage?.minimumDuration, selectedPackage?.pricingBasis, customBookingFrom,
+        selectedSlot?.slotId, selectedSlot?.bookingPattern, selectedSlot?.startTime,
+        selectedSlot?.endTime, isStay]);
 
 
     const [slotsLoading, setSlotsLoading] =
         useState(false);
 
 
+    useEffect(() => {
+        if (!isBeauty || selectedPackage || selectedBeautyServiceIds.length === 0 || !serviceId || !eventDate || beautyDuration < 1) {
+            setBeautyOptions([]); setSelectedBeautyStart(""); return;
+        }
+        let active = true;
+        BookingAvailabilityService.getBeautyAppointmentOptions(serviceId, eventDate, beautyDuration)
+            .then(options => { if (active) { setBeautyOptions(options); setSelectedBeautyStart(current => options.some(o => o.startTime === current && o.available) ? current : ""); } })
+            .catch(error => { if (active) { setBeautyOptions([]); setSelectedBeautyStart(""); setSlotError(error?.response?.data?.message ?? "Unable to load Beauty appointment times."); } });
+        return () => { active = false; };
+    }, [isBeauty, selectedPackage?.id, selectedBeautyServiceIds.join(","), serviceId, eventDate, beautyDuration]);
+
     const [slotError, setSlotError] =
         useState<string | null>(null);
 
     const [rangeAvailabilityError, setRangeAvailabilityError] =
         useState<string | null>(null);
+    const [rangeAvailabilityLoading, setRangeAvailabilityLoading] = useState(false);
 
 
     const [holdingSlot, setHoldingSlot] =
@@ -372,26 +412,70 @@ const BookingCard = ({
     // when the newly selected type happens to expose a slot with the same ID.
     useEffect(() => {
         setSelectedSlot(null);
-        onSelectedSlotChange?.(null);
+        onSelectedSlotChange?.(null, null);
     }, [selectedResourceTypeId]);
 
+    // Every package selection starts a fresh slot/date choice. This prevents
+    // a previously selected slot or fixed-duration checkout date from leaking
+    // into the newly selected package.
     useEffect(() => {
-        if (!requiresSlot) {
+        setSelectedSlot(null);
+        onSelectedSlotChange?.(null, null);
+        setCustomBookingTo("");
+        setRangeAvailabilityError(null);
+        setRangeAvailabilityLoading(false);
+    }, [selectedPackage?.id, packageSelectionVersion]);
+
+    useEffect(() => {
+        if (!requiresSlot && selectedSlot) {
             setSelectedSlot(null);
-            return;
+            onSelectedSlotChange?.(null, null);
         }
-        if (selectedSlot && selectedPackage?.slotIds?.length
-            && !selectedPackage.slotIds.includes(selectedSlot.slotId)) {
-            setSelectedSlot(null);
-            onSelectedSlotChange?.(null);
-        }
-    }, [requiresSlot, selectedPackage?.id, (selectedPackage?.slotIds ?? []).join("|"), selectedSlot?.slotId]);
+    }, [requiresSlot, selectedSlot?.slotId]);
 
     /*
      * =========================================
      * LOAD SLOT AVAILABILITY
      * =========================================
      */
+
+    const getPackageResourceRequirements = () => {
+        const configured = selectedPackage?.resourceRequirements ?? [];
+        if (configured.length) return configured;
+        const legacyTypeId = selectedPackage?.resourceTypeId ?? selectedResourceTypeId;
+        return legacyTypeId ? [{ resourceTypeId: legacyTypeId, quantity: 1 }] : [];
+    };
+
+    const loadAvailabilityForPackage = async (date: string): Promise<SlotAvailability[]> => {
+        if (!serviceId) return [];
+        const requirements = getPackageResourceRequirements();
+        if (!usesResourceTypes || requirements.length === 0) {
+            return BookingAvailabilityService.getSlotAvailability(
+                serviceId, date, selectedPackage?.resourceTypeId ?? selectedResourceTypeId
+            );
+        }
+        const results = await Promise.all(requirements.map(requirement =>
+            BookingAvailabilityService.getSlotAvailability(serviceId, date, requirement.resourceTypeId)
+        ));
+        const first = results[0] ?? [];
+        return first.map(slot => {
+            const combinations = requirements.map((requirement, index) => {
+                const matching = results[index]?.find(item => item.slotId === slot.slotId);
+                return matching?.available
+                    ? Math.floor((matching.remainingCapacity ?? 0) / requirement.quantity)
+                    : 0;
+            });
+            const remainingCombinations = combinations.length ? Math.min(...combinations) : 0;
+            return {
+                ...slot,
+                resourceTypeId: undefined,
+                baseCapacity: remainingCombinations,
+                effectiveCapacity: remainingCombinations,
+                remainingCapacity: remainingCombinations,
+                available: remainingCombinations > 0
+            };
+        });
+    };
 
     const loadSlotAvailability = async (
         date: string
@@ -422,13 +506,7 @@ const BookingCard = ({
             );
 
 
-            const data =
-                await BookingAvailabilityService
-                    .getSlotAvailability(
-                        serviceId,
-                        date,
-                        selectedPackage?.resourceTypeId
-                    );
+            const data = await loadAvailabilityForPackage(date);
 
 
             console.log(
@@ -476,7 +554,7 @@ const BookingCard = ({
         if (eventDate && selectedPackage && requiresSlot) {
             void loadSlotAvailability(eventDate);
         }
-    }, [eventDate, selectedPackage?.id, requiresSlot, selectedResourceTypeId]);
+    }, [eventDate, selectedPackage?.id, JSON.stringify(selectedPackage?.resourceRequirements ?? []), requiresSlot, selectedResourceTypeId]);
 
 
     // Recheck every occupied date whenever the customer changes the range.
@@ -485,11 +563,15 @@ const BookingCard = ({
     useEffect(() => {
         if (!selectedSlot || !selectedPackage) {
             setRangeAvailabilityError(null);
+            setRangeAvailabilityLoading(false);
             return;
         }
         const from = isStay ? customBookingFrom : (customBookingFrom || eventDate);
         const to = isStay ? customBookingTo : (customBookingTo || eventDate);
-        if (!from || !to || to < from) return;
+        if (!from || !to || to < from) {
+            setRangeAvailabilityLoading(false);
+            return;
+        }
 
         const continuous = isStay || selectedSlot.bookingPattern === "CONTINUOUS";
         const dates: string[] = [];
@@ -499,16 +581,14 @@ const BookingCard = ({
             cursor = addOneDay(cursor);
             if (dates.length > 31) break;
         }
-        if (dates.length === 0) return;
+        if (dates.length === 0) {
+            setRangeAvailabilityLoading(false);
+            return;
+        }
 
         let cancelled = false;
-        Promise.all(dates.map(date =>
-            BookingAvailabilityService.getSlotAvailability(
-                serviceId!,
-                date,
-                selectedPackage?.resourceTypeId
-            )
-        )).then(results => {
+        setRangeAvailabilityLoading(true);
+        Promise.all(dates.map(date => loadAvailabilityForPackage(date))).then(results => {
             if (cancelled) return;
             let unavailableDate: string | null = null;
             let minimumRemaining = Number.POSITIVE_INFINITY;
@@ -524,6 +604,7 @@ const BookingCard = ({
             setRangeAvailabilityError(unavailableDate
                 ? `Selected slot is unavailable on ${unavailableDate}. Choose another date range or slot.`
                 : null);
+            setRangeAvailabilityLoading(false);
             setSelectedSlot(current => current?.slotId === selectedSlot.slotId
                 ? { ...current, available: !unavailableDate, remainingCapacity: Number.isFinite(minimumRemaining) ? minimumRemaining : current.remainingCapacity }
                 : current);
@@ -531,10 +612,11 @@ const BookingCard = ({
             if (!cancelled) {
                 console.warn("Could not recheck the full booking date range:", error);
                 setRangeAvailabilityError("Unable to verify availability for the full date range. Please try again.");
+                setRangeAvailabilityLoading(false);
             }
         });
         return () => { cancelled = true; };
-    }, [customBookingFrom, customBookingTo, eventDate, selectedSlot?.slotId, selectedPackage?.id, isStay, serviceId, roomQuantity]);
+    }, [customBookingFrom, customBookingTo, eventDate, selectedSlot?.slotId, selectedPackage?.id, JSON.stringify(selectedPackage?.resourceRequirements ?? []), isStay, serviceId, roomQuantity]);
 
     // A vendor can enter this page from the bookings calendar. Load the
     // availability for the prepopulated date using the existing availability
@@ -553,10 +635,28 @@ const BookingCard = ({
      * =========================================
      */
 
-    const getExistingCartItem = () =>
-        serviceId
-            ? CartService.getCart().find(item => item.serviceId === serviceId)
-            : undefined;
+    const getExistingCartItem = () => {
+        if (!serviceId) return undefined;
+        const selectedSlotId = selectedSlot?.slotId;
+        const selectedPackageId = selectedPackage?.id;
+        const fromDate = isStay ? customBookingFrom : (customBookingFrom || eventDate);
+        const toDate = isStay ? customBookingTo : (customBookingTo || eventDate);
+        const selectedResourceKey = JSON.stringify(
+            (selectedPackage?.resourceRequirements ?? [])
+                .map(item => `${item.resourceTypeId}:${item.quantity}`)
+                .sort()
+        );
+        return CartService.getCart().find(item =>
+            item.serviceId === serviceId &&
+            item.slotId === selectedSlotId &&
+            item.packageId === selectedPackageId &&
+            (item.bookingFrom ?? item.eventDate ?? "").slice(0, 10) === (fromDate ?? "") &&
+            (item.bookingTo ?? item.eventDate ?? "").slice(0, 10) === (toDate ?? "") &&
+            JSON.stringify((item.resourceRequirements ?? [])
+                .map(requirement => `${requirement.resourceTypeId}:${requirement.quantity}`)
+                .sort()) === selectedResourceKey
+        );
+    };
 
     const hasReusableExistingHold = (
         slotId?: string,
@@ -564,13 +664,13 @@ const BookingCard = ({
     ): boolean => {
         const existing = getExistingCartItem();
 
-        return Boolean(
-            existing?.holdId &&
-            existing.slotId === (slotId ?? selectedSlot?.slotId) &&
-            existing.eventDate === (date ?? eventDate) &&
-            existing.holdExpiresAt &&
-            Date.parse(existing.holdExpiresAt) > Date.now()
-        );
+        // Existing holds reserve their own units; they must not be reused as
+        // proof that an additional quantity is available. The hold endpoint
+        // performs the authoritative capacity check for every new addition.
+        void existing;
+        void slotId;
+        void date;
+        return false;
     };
 
 
@@ -605,6 +705,9 @@ const BookingCard = ({
             }
 
 
+            if (isBeauty && !selectedPackage && selectedBeautyServiceIds.length === 0) { alert("Please select at least one Beauty service or a fixed package."); return false; }
+            if (isBeauty && !selectedPackage && beautyDuration < 1) { alert("The selected Beauty services do not have a configured duration rule."); return false; }
+            if (isBeauty && !selectedPackage && !selectedBeautyStart) { alert("Please select an available appointment time."); return false; }
             if (requiresSlot && !selectedSlot) {
                 alert("Please select an available time slot.");
                 return false;
@@ -697,6 +800,9 @@ const BookingCard = ({
             }
 
 
+            if (isBeauty && !selectedPackage && selectedBeautyServiceIds.length === 0) { toast.error("Please select at least one Beauty service or a fixed package."); return false; }
+            if (isBeauty && !selectedPackage && beautyDuration < 1) { toast.error("The selected Beauty services do not have a configured duration rule."); return false; }
+            if (isBeauty && !selectedPackage && !selectedBeautyStart) { toast.error("Please select an available appointment time."); return false; }
             if (requiresSlot && !selectedSlot) {
                 alert("Please select an available time slot.");
                 return false;
@@ -715,10 +821,45 @@ const BookingCard = ({
                 return false;
             }
 
+            // Catering packages with selectable menu items must include at
+            // least one customer-selected dish before a hold/cart item is made.
+            const cateringPackage = selectedPackage as (ServicePackage & {
+                cateringMenu?: {
+                    vegetarianSelectionLimit?: number;
+                    nonVegetarianSelectionLimit?: number;
+                    soupSelectionLimit?: number;
+                    dessertSelectionLimit?: number;
+                    vegetarianDishes?: unknown[];
+                    nonVegetarianDishes?: unknown[];
+                    soupDishes?: unknown[];
+                    dessertDishes?: unknown[];
+                } | null;
+                cateringPackageMenu?: {
+                    vegetarianSelectionLimit?: number;
+                    nonVegetarianSelectionLimit?: number;
+                    soupSelectionLimit?: number;
+                    dessertSelectionLimit?: number;
+                    vegetarianDishes?: unknown[];
+                    nonVegetarianDishes?: unknown[];
+                    soupDishes?: unknown[];
+                    dessertDishes?: unknown[];
+                } | null;
+            }) | null;
+            const cateringMenu = cateringPackage?.cateringPackageMenu ?? cateringPackage?.cateringMenu;
+            const hasSelectableCateringDishes = Boolean(cateringMenu && (
+                ((cateringMenu.vegetarianSelectionLimit ?? 0) > 0 && (cateringMenu.vegetarianDishes?.length ?? 0) > 0) ||
+                ((cateringMenu.nonVegetarianSelectionLimit ?? 0) > 0 && (cateringMenu.nonVegetarianDishes?.length ?? 0) > 0) ||
+                ((cateringMenu.soupSelectionLimit ?? 0) > 0 && (cateringMenu.soupDishes?.length ?? 0) > 0) ||
+                ((cateringMenu.dessertSelectionLimit ?? 0) > 0 && (cateringMenu.dessertDishes?.length ?? 0) > 0)
+            ));
+            if (isCatering && hasSelectableCateringDishes && selectedCateringDishes.length === 0) {
+                toast.error("Please open the Catering Menu and select at least one dish before adding this package to your cart.");
+                return false;
+            }
 
             const existingCartItem = getExistingCartItem();
 
-            if (existingCartItem) {
+            if (existingCartItem && (existingCartItem.bundleId || bundle?.id)) {
                 const confirmed = window.confirm(
                     `“${vendor.serviceName}” is already in your cart. Continuing will replace its current booking details.` +
                     (existingCartItem.bundleId && existingCartItem.bundleId !== bundle?.id
@@ -734,8 +875,9 @@ const BookingCard = ({
 
 
             /*
-             * For STAY, each requested room consumes one unit of the selected
-             * slot capacity. Other categories keep the existing one-item quantity.
+             * For STAY, roomQuantity is the number of complete package
+             * combinations. Each combination may consume multiple physical
+             * units across one or more Resource Types.
              */
             const quantity = isStay ? roomQuantity : 1;
             const cartId =
@@ -786,7 +928,9 @@ const BookingCard = ({
                             )
                         })))
                     : [];
-                const bookingIntervals = isStay
+                const bookingIntervals = isBeauty && !selectedPackage
+                    ? [{ from: toLocalDateTime(eventDate, selectedBeautyStart), to: toLocalDateTime(eventDate, beautyOptions.find(o => o.startTime === selectedBeautyStart)?.endTime ?? selectedBeautyStart) }]
+                    : isStay
                     ? stayIntervals
                     : recurring
                         ? intervalDates.map(date => ({
@@ -806,13 +950,10 @@ const BookingCard = ({
                 const bookingFrom = bookingIntervals[0].from;
                 const bookingTo = bookingIntervals[bookingIntervals.length - 1].to;
                 const holdSlotId = selectedSlot?.slotId;
-                const canReuseHold = Boolean(existingCartItem?.holdId &&
-                    existingCartItem.slotId === holdSlotId &&
-                    existingCartItem.packageId === selectedPackage?.id &&
-                    existingCartItem.bookingFrom === bookingFrom &&
-                    existingCartItem.bookingTo === bookingTo &&
-                    (existingCartItem.roomQuantity ?? 1) === (isStay ? roomQuantity : 1) &&
-                    existingCartItem.holdExpiresAt && Date.parse(existingCartItem.holdExpiresAt) > Date.now());
+                // Each add operation secures a fresh hold. CartService merges
+                // identical selections into one visible line while retaining
+                // every hold ID for checkout and release.
+                const canReuseHold = false;
 
                 const hold = canReuseHold
                     ? { holdId: existingCartItem!.holdId!, expiresAt: existingCartItem!.holdExpiresAt! }
@@ -821,12 +962,15 @@ const BookingCard = ({
                         serviceId,
                         slotId: holdSlotId,
                         packageId: selectedPackage?.id,
-                        resourceTypeId: selectedPackage?.resourceTypeId,
+                        selectedBeautyServiceIds: isBeauty && !selectedPackage ? selectedBeautyServiceIds : [],
+                        // Stay room composition is defined by the selected package on the backend.
+                        // Do not send resourceRequirements/resourceTypeId as client overrides.
                         bookingFrom,
                         bookingTo,
                         bookingType: isStay ? "ROOM_STAY" : "STANDARD_SLOT",
                         roomQuantity: isStay ? roomQuantity : undefined,
-                        quantity
+                        quantity,
+                        guestCount: isCatering ? Number(guests) : undefined
                     });
 
                 if (!canReuseHold) {
@@ -863,14 +1007,16 @@ const BookingCard = ({
                     category:
                         vendor.category,
 
-                    price: selectedPackage
-                        ? (selectedPackage.packageType === "FIXED_DURATION" ? Number(selectedPackage.price) : Number(selectedPackage.price) * (
-                            selectedPackage.pricingBasis === "PER_NIGHT"
-                                ? Math.max(1, Math.round((new Date(`${rangeTo}T00:00:00`).getTime() - new Date(`${rangeFrom}T00:00:00`).getTime()) / 86400000))
-                                : selectedPackage.pricingBasis === "PER_DAY"
-                                    ? Math.max(1, Math.round((new Date(`${rangeTo}T00:00:00`).getTime() - new Date(`${rangeFrom}T00:00:00`).getTime()) / 86400000) + 1)
-                                    : 1
-                        ))
+                    price: isBeauty && !selectedPackage ? beautyIndividualPrice : selectedPackage
+                        ? Number(selectedPackage.price)
+                            * (isStay ? roomQuantity : 1)
+                            * (selectedPackage.packageType === "FIXED_DURATION" ? 1 : (
+                                selectedPackage.pricingBasis === "PER_NIGHT"
+                                    ? Math.max(1, Math.round((new Date(`${rangeTo}T00:00:00`).getTime() - new Date(`${rangeFrom}T00:00:00`).getTime()) / 86400000))
+                                    : selectedPackage.pricingBasis === "PER_DAY"
+                                        ? Math.max(1, Math.round((new Date(`${rangeTo}T00:00:00`).getTime() - new Date(`${rangeFrom}T00:00:00`).getTime()) / 86400000) + (isStay ? 0 : 1))
+                                        : 1
+                            ))
                         : Number(vendor.startingPrice),
 
                     quantity,
@@ -880,7 +1026,9 @@ const BookingCard = ({
                             vendor
                         ),
 
-                    eventDate: isStay ? undefined : (eventDate || bookingFrom.slice(0, 10)),
+                    // Keep check-in as the pricing date so the checkout pricing
+                    // API can apply date-effective discounts to Stay bookings.
+                    eventDate: isStay ? customBookingFrom : (eventDate || bookingFrom.slice(0, 10)),
                     bookingFrom,
                     bookingTo,
                     bookingIntervals,
@@ -929,6 +1077,11 @@ const BookingCard = ({
                     packageId:
                         selectedPackage?.id,
 
+                    packageName:
+                        selectedPackage?.name,
+
+                    resourceRequirements: selectedPackage?.resourceRequirements ?? [],
+
                     packageType:
                         selectedPackage?.packageType === "FIXED_DURATION"
                             ? "FIXED_DURATION"
@@ -952,6 +1105,9 @@ const BookingCard = ({
 
                     selectedCateringDishes:
                         selectedCateringDishes,
+
+                    selectedBeautyServiceIds: isBeauty && !selectedPackage ? selectedBeautyServiceIds : undefined,
+                    selectedBeautyServiceNames: isBeauty && !selectedPackage ? selectedBeautyServices.map(item => item.name) : undefined,
 
 
                     /*
@@ -1127,9 +1283,14 @@ const BookingCard = ({
             const dateDifference = Math.round(
                 (new Date(`${to}T00:00:00`).getTime() - new Date(`${from}T00:00:00`).getTime()) / 86400000
             );
-            const usesNightCount = selectedPackage?.pricingBasis === "PER_NIGHT" ||
-                (isStay && selectedPackage?.pricingBasis !== "PER_DAY") ||
-                selectedSlot?.bookingPattern === "CONTINUOUS";
+            const isOvernightStaySlot = isStay && Boolean(
+                selectedSlot?.startTime && selectedSlot?.endTime &&
+                selectedSlot.endTime <= selectedSlot.startTime
+            );
+            const usesNightCount = (isStay && selectedPackage?.packageType === "FIXED_DURATION") ||
+                selectedPackage?.pricingBasis === "PER_NIGHT" ||
+                selectedSlot?.bookingPattern === "CONTINUOUS" ||
+                isOvernightStaySlot;
             const duration = Math.max(1, usesNightCount ? dateDifference : dateDifference + 1);
             if (selectedPackage?.packageType === "FIXED_DURATION" && duration !== selectedPackage.includedDuration) {
                 toast.error(`This package is fixed at ${selectedPackage.includedDuration} ${isStay ? "nights" : "days"}. The checkout date is calculated automatically.`);
@@ -1234,7 +1395,7 @@ const BookingCard = ({
     const handleBooking =
         () => {
 
-            if (!selectedPackage) {
+            if (!selectedPackage && !(isBeauty && selectedBeautyServiceIds.length > 0)) {
                 return;
             }
 
@@ -1437,14 +1598,21 @@ const BookingCard = ({
 
             <aside className="vendor-booking-card">
 
+                <div className="booking-panel-heading">
+                    <span aria-hidden="true">▦</span>
+                    {isStay ? "Book Your Stay" : "Book This Service"}
+                </div>
+
+                <div className="booking-price-summary">
+                {selectedPackage && <div className="booking-summary-label">Selected Package</div>}
                 <h2>
                     ₹
                     {Number(selectedPackage
-                        ? (selectedPackage.packageType === "FIXED_DURATION"
-                            ? selectedPackage.price
-                            : Number(selectedPackage.price) * (selectedPackage.pricingBasis === "PER_NIGHT"
+                        ? Number(selectedPackage.price)
+                            * (isStay ? roomQuantity : 1)
+                            * (selectedPackage.packageType === "FIXED_DURATION" ? 1 : (selectedPackage.pricingBasis === "PER_NIGHT"
                                 ? Math.max(1, Math.round((new Date(`${customBookingTo || customBookingFrom || eventDate}T00:00:00`).getTime() - new Date(`${customBookingFrom || eventDate}T00:00:00`).getTime()) / 86400000))
-                                : selectedPackage.pricingBasis === "PER_DAY" ? Math.max(1, Math.round((new Date(`${customBookingTo || customBookingFrom || eventDate}T00:00:00`).getTime() - new Date(`${customBookingFrom || eventDate}T00:00:00`).getTime()) / 86400000) + 1) : 1))
+                                : selectedPackage.pricingBasis === "PER_DAY" ? Math.max(1, Math.round((new Date(`${customBookingTo || customBookingFrom || eventDate}T00:00:00`).getTime() - new Date(`${customBookingFrom || eventDate}T00:00:00`).getTime()) / 86400000) + (isStay ? 0 : 1)) : 1))
                         : vendor.startingPrice).toLocaleString("en-IN")}
                 </h2>
 
@@ -1459,28 +1627,37 @@ const BookingCard = ({
 
 
                 <p className="pricing-hint">
-                    Select the event date to get the exact price.
+                    Select your dates and package to see the exact price.
                 </p>
+                </div>
 
 
                 {isStay ? (
                     <div className="stay-flexible-booking-fields">
-                        <label htmlFor="stay-booking-from">From Date (Check-in)</label>
-                        <input
+                        <div className="stay-date-range-fields">
+                        <div className="stay-date-field">
+                        <label htmlFor="stay-booking-from">Check-in Date</label>
+                        <DateField
                             id="stay-booking-from"
-                            type="date"
-                            min={getTomorrowDate()}
+                            minDate={getTodayDate()}
                             value={customBookingFrom}
-                            onChange={async e => {
-                                const from = e.target.value;
+                            onChange={async from => {
                                 const oldFrom = customBookingFrom || eventDate;
                                 const oldTo = customBookingTo;
                                 const oldSpan = oldFrom && oldTo
                                     ? Math.round((new Date(`${oldTo}T00:00:00`).getTime() - new Date(`${oldFrom}T00:00:00`).getTime()) / 86400000)
                                     : 0;
                                 const isFixedDuration = selectedPackage?.packageType === "FIXED_DURATION";
-                                const usesNightCount = selectedPackage?.pricingBasis === "PER_NIGHT" ||
-                                    (isStay && selectedPackage?.pricingBasis !== "PER_DAY");
+                                const isOvernightStaySlot = isStay && Boolean(
+                                    selectedSlot?.startTime && selectedSlot?.endTime &&
+                                    selectedSlot.endTime <= selectedSlot.startTime
+                                );
+                                const usesNightCount = Boolean(selectedPackage) && (
+                                    (isStay && isFixedDuration) ||
+                                    selectedPackage?.pricingBasis === "PER_NIGHT" ||
+                                    (isStay && selectedSlot?.bookingPattern === "CONTINUOUS") ||
+                                    isOvernightStaySlot
+                                );
                                 const duration = Math.max(1, isFixedDuration
                                     ? (selectedPackage?.includedDuration ?? 1)
                                     : (oldSpan > 0
@@ -1488,10 +1665,9 @@ const BookingCard = ({
                                         : (selectedPackage?.minimumDuration ?? 1)));
                                 setCustomBookingFrom(from);
                                 setEventDate(from);
-                                if (selectedPackage) {
+                                if (selectedPackage && selectedSlot) {
                                     setCustomBookingTo(addDays(from, usesNightCount ? duration : duration - 1));
                                 } else {
-                                    // Do not invent a checkout date before a package is selected.
                                     setCustomBookingTo("");
                                 }
                                 setSlotError(null);
@@ -1499,25 +1675,26 @@ const BookingCard = ({
 
                             }}
                         />
-                        <label htmlFor="stay-booking-to">To Date (Check-out)</label>
-                        <input
+                        </div>
+                        <div className="stay-date-field">
+                        <label htmlFor="stay-booking-to">Check-out Date</label>
+                        <DateField
                             id="stay-booking-to"
-                            type="date"
-                            min={customBookingFrom || getTomorrowDate()}
+                            minDate={customBookingFrom || getTodayDate()}
                             value={customBookingTo}
                             readOnly={selectedPackage?.packageType === "FIXED_DURATION"}
-                            onChange={e => { if (selectedPackage?.packageType !== "FIXED_DURATION") setCustomBookingTo(e.target.value); }}
+                            onChange={date => { if (selectedPackage?.packageType !== "FIXED_DURATION") setCustomBookingTo(date); }}
                         />
+                        </div>
+                        </div>
                     </div>
                 ) : (
                     <>
-                        <label>From Date</label>
-                        <input
-                            type="date"
+                        <label>{isBeauty ? "Appointment Date" : "From Date"}</label>
+                        <DateField
                             value={eventDate}
-                            min={getTomorrowDate()}
-                            onChange={async (e) => {
-                                const date = e.target.value;
+                            minDate={getTodayDate()}
+                            onChange={async (date) => {
                                 const oldFrom = customBookingFrom || eventDate;
                                 const oldTo = customBookingTo || oldFrom;
                                 const oldSpan = oldFrom && oldTo
@@ -1538,18 +1715,34 @@ const BookingCard = ({
 
                             }}
                         />
-                        <label>To Date</label>
-                        <input
-                            type="date"
+                        {!isBeauty && <><label>To Date</label>
+                        <DateField
                             value={customBookingTo || eventDate}
-                            min={eventDate || getTomorrowDate()}
+                            minDate={eventDate || getTodayDate()}
                             readOnly={selectedPackage?.packageType === "FIXED_DURATION"}
-                            onChange={e => { if (selectedPackage?.packageType !== "FIXED_DURATION") setCustomBookingTo(e.target.value); }}
+                            onChange={date => { if (selectedPackage?.packageType !== "FIXED_DURATION") setCustomBookingTo(date); }}
                         />
                         <p className="package-eligibility-help">
                             Select a date range. Availability is checked for every occupied session.
-                        </p>
+                        </p></>}
                     </>
+                )}
+
+                {isBeauty && selectedPackage && <p className="package-eligibility-help">Fixed package duration: {beautyDuration || "Not configured"} minutes.</p>}
+                {isBeauty && !selectedPackage && selectedBeautyServiceIds.length > 0 && eventDate && beautyDuration > 0 && (
+                    <div className="beauty-appointment-options">
+                        <label>Available appointment times</label>
+                        {beautyOptions.length === 0 ? <p>No appointment times are available for this selection/date.</p> : (
+                            <div className="beauty-appointment-options-scroll" role="listbox" aria-label="Available appointment start times">
+                                {beautyOptions.map(option => (
+                                    <button type="button" role="option" aria-selected={selectedBeautyStart === option.startTime} key={option.startTime} disabled={!option.available} className={selectedBeautyStart === option.startTime ? "selected" : ""} onClick={() => setSelectedBeautyStart(option.startTime)}>
+                                        <strong>{formatTime(option.startTime)}</strong>
+                                        <small>{option.available ? `${option.remainingCapacity} ${option.remainingCapacity === 1 ? "spot" : "spots"} left` : "Unavailable"}</small>
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                    </div>
                 )}
 
                 {
@@ -1663,15 +1856,20 @@ const BookingCard = ({
                                                                     onClearSelectedPackage?.();
                                                                 }
                                                                 setSelectedSlot(slot);
-                                                                onSelectedSlotChange?.(slot.slotId);
-                                                                const minUnits = Math.max(1, selectedPackage?.minimumDuration ?? 1);
-                                                                const continuous = slot.bookingPattern === "CONTINUOUS";
-                                                                const nights = selectedPackage?.pricingBasis === "PER_NIGHT" ||
-                                                                    (isStay && selectedPackage?.pricingBasis !== "PER_DAY");
+                                                                onSelectedSlotChange?.(slot.slotId, slot.resourceTypeId ?? null);
+                                                                const isFixedDuration = selectedPackage?.packageType === "FIXED_DURATION";
+                                                                const duration = Math.max(1, isFixedDuration
+                                                                    ? (selectedPackage?.includedDuration ?? 1)
+                                                                    : (selectedPackage?.minimumDuration ?? 1));
+                                                                const isOvernightStaySlot = isStay && Boolean(
+                                                                    slot.startTime && slot.endTime && slot.endTime <= slot.startTime
+                                                                );
+                                                                const usesNightCount = (isStay && isFixedDuration) ||
+                                                                    selectedPackage?.pricingBasis === "PER_NIGHT" ||
+                                                                    (isStay && slot.bookingPattern === "CONTINUOUS") ||
+                                                                    isOvernightStaySlot;
                                                                 setCustomBookingFrom(eventDate);
-                                                                if (!customBookingTo || customBookingTo === eventDate) {
-                                                                    setCustomBookingTo(addDays(eventDate, continuous || nights ? minUnits : minUnits - 1));
-                                                                }
+                                                                setCustomBookingTo(addDays(eventDate, usesNightCount ? duration : duration - 1));
 
                                                             }}
                                                         >
@@ -1688,13 +1886,13 @@ const BookingCard = ({
                                                                 <span className="booking-slot-time">
 
                                                                     {
-                                                                        slot.startTime
+                                                                        formatTime(slot.startTime)
                                                                     }
 
                                                                     {" - "}
 
                                                                     {
-                                                                        slot.endTime
+                                                                        formatTime(slot.endTime)
                                                                     }
 
                                                                 </span>
@@ -1801,10 +1999,10 @@ const BookingCard = ({
 
                 {isStay && (
                     <div className="stay-flexible-booking-fields">
-                        <label htmlFor="stay-room-quantity">Number of rooms</label>
-                        <input
+                        <label htmlFor="stay-room-quantity">Number of package combinations</label>
+                        <NumericInput
                             id="stay-room-quantity"
-                            type="number"
+
                             min="1"
                             value={roomQuantity}
                             onChange={e => setRoomQuantity(Math.max(1, Math.floor(Number(e.target.value) || 1)))}
@@ -1816,7 +2014,7 @@ const BookingCard = ({
                         </p>
                         {selectedSlot && (
                             <p className="package-eligibility-help">
-                                {selectedSlot.remainingCapacity ?? 0} room(s) currently available for this slot on the check-in date. You requested {roomQuantity}. Availability is checked against the same Resource Type and slot time for every night of the stay.
+                                {selectedSlot.remainingCapacity ?? 0} complete package combination(s) currently available for this slot on the check-in date. You requested {roomQuantity}. Availability checks every included room type for every night of the stay.
                             </p>
                         )}
                     </div>
@@ -1828,8 +2026,8 @@ const BookingCard = ({
                             Guests
                         </label>
 
-                        <input
-                            type="number"
+                        <NumericInput
+
                             min="1"
                             value={guests}
                             onChange={(e) =>
@@ -1846,13 +2044,15 @@ const BookingCard = ({
                     type="button"
                     onClick={handleBooking}
                     disabled={
-                        !selectedPackage ||
+                        (!selectedPackage && !(isBeauty && selectedBeautyServiceIds.length > 0)) ||
+                        (isBeauty && !selectedPackage && (!selectedBeautyStart || beautyDuration < 1 || !beautyOptions.some(option => option.startTime === selectedBeautyStart && option.available))) ||
                         (requiresSlot && !selectedSlot) ||
                         (requiresSlot && selectedSlot && (!selectedSlot.available || (isStay && (selectedSlot.remainingCapacity ?? 0) < roomQuantity)) && !hasReusableExistingHold(selectedSlot.slotId, eventDate)) ||
                         (isStay && (!customBookingFrom || !customBookingTo || customBookingTo < customBookingFrom)) ||
                         holdingSlot ||
                         (requiresSlot && slotsLoading) ||
-                        Boolean(rangeAvailabilityError)
+                        Boolean(rangeAvailabilityError) ||
+                        rangeAvailabilityLoading
                     }
                 >
                     {
@@ -1867,7 +2067,7 @@ const BookingCard = ({
                     className="save-button"
                     type="button"
                 >
-                    ♡ Save Vendor
+                    ♡ Save for Later
                 </button>
 
             </aside>

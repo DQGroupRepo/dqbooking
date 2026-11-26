@@ -80,7 +80,9 @@ public class PricingController {
             @RequestParam(
                     required = false
             )
-            String packageId
+            String packageId,
+
+            @RequestParam(required = false) Integer guestCount
 
     ) {
 
@@ -88,7 +90,8 @@ public class PricingController {
                 .calculatePrice(
                         serviceId,
                         eventDate,
-                        packageId
+                        packageId,
+                        guestCount
                 );
     }
 

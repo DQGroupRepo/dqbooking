@@ -215,18 +215,18 @@ const BookingConfirmation = () => {
                             </div>
 
 
-                            <div className="pricing-row discount-row">
-                                <span>
-                                    Bundle Discount
-                                </span>
-
-                                <strong>
-                                    - ₹
-                                    {Number(
-                                        bookingGroup.totalDiscount
-                                    ).toLocaleString("en-IN")}
-                                </strong>
-                            </div>
+                            {(bookingGroup.individualDiscount ?? (bookingGroup.bundleApplied ? 0 : bookingGroup.totalDiscount)) > 0 && (
+                                <div className="pricing-row discount-row">
+                                    <span>Individual Discount</span>
+                                    <strong>- ₹{Number(bookingGroup.individualDiscount ?? bookingGroup.totalDiscount).toLocaleString("en-IN")}</strong>
+                                </div>
+                            )}
+                            {(bookingGroup.bundleDiscount ?? (bookingGroup.bundleApplied ? bookingGroup.totalDiscount : 0)) > 0 && (
+                                <div className="pricing-row discount-row">
+                                    <span>Bundle Discount</span>
+                                    <strong>- ₹{Number(bookingGroup.bundleDiscount ?? bookingGroup.totalDiscount).toLocaleString("en-IN")}</strong>
+                                </div>
+                            )}
 
 
                             <div className="pricing-row total">

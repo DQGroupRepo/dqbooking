@@ -1,3 +1,4 @@
+import NumericInput from "../../../common/ui/NumericInput";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 
@@ -30,6 +31,9 @@ interface Props {
 
     override?: AvailabilityOverride;
 
+    isStayService?: boolean;
+    isCateringService?: boolean;
+
 }
 
 export default function AvailabilityOverrideModal({
@@ -47,7 +51,10 @@ export default function AvailabilityOverrideModal({
     slot,
 
 
-    override
+    override,
+
+    isStayService = false,
+    isCateringService = false
 
 }: Props) {
 
@@ -156,7 +163,7 @@ export default function AvailabilityOverrideModal({
                     {
                         blocked,
                         reason,
-                        capacityOverride: capacity === "" ? null : Number(capacity)
+                        capacityOverride: isStayService || capacity === "" ? null : Number(capacity)
                     }
                 );
 
@@ -249,13 +256,13 @@ export default function AvailabilityOverrideModal({
 
                 </label>
 
-                <label>
+                {!isStayService && <label>
 
-                    Capacity Override
+                    {isCateringService ? "Guest Capacity Override" : "Capacity Override"}
 
-                    <input
+                    <NumericInput
 
-                        type="number"
+
 
                         value={capacity}
 
@@ -275,7 +282,7 @@ export default function AvailabilityOverrideModal({
 
                     />
 
-                </label>
+                </label>}
 
                 <div className="modal-actions">
 

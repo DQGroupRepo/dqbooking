@@ -1,3 +1,7 @@
+import NumericInput from "../../../components/common/ui/NumericInput";
+import DateField from "../../../components/common/DateField/DateField";
+import MobileCarousel from "../../../components/common/MobileCarousel/MobileCarousel";
+import Loader from "../../../components/common/Loader";
 import { useEffect, useState } from "react";
 
 import { useNavigate, useParams } from "react-router-dom";
@@ -153,6 +157,8 @@ const VendorPricing = () => {
 
     const [isCateringService, setIsCateringService] = useState(false);
     const [isStayService, setIsStayService] = useState(false);
+    const [isMakeupService, setIsMakeupService] = useState(false);
+    const [isResourceService, setIsResourceService] = useState(false);
     const [bookingSlots, setBookingSlots] = useState<BookingSlot[]>([]);
     const [resourceTypes, setResourceTypes] = useState<ServiceResourceType[]>([]);
     const [resourceTypeName, setResourceTypeName] = useState("");
@@ -194,7 +200,8 @@ const VendorPricing = () => {
 
     const removeResourceType = async (resourceTypeId: string) => {
         if (!serviceId) return;
-        if (packages.some(pkg => pkg.resourceTypeId === resourceTypeId) ||
+        if (packages.some(pkg => pkg.resourceTypeId === resourceTypeId ||
+            (pkg.resourceRequirements ?? []).some(requirement => requirement.resourceTypeId === resourceTypeId)) ||
             bookingSlots.some(slot => slot.resourceTypeId === resourceTypeId)) {
             toast.error("Unassign this resource type from packages and booking slots before removing it.");
             return;
@@ -243,10 +250,16 @@ const VendorPricing = () => {
                 const category = service.category?.toLowerCase().trim();
                 const isCatering = category === "catering";
                 const isStay = category === "stay" || category === "stays";
+                const isMakeup = category === "makeup";
+                const usesResourceTypes = isStay || category === "hall" || category === "halls";
 
                 setIsCateringService(isCatering);
                 setIsStayService(isStay);
-                const savedResourceTypes = await VendorServiceService.getResourceTypes(serviceId!);
+                setIsMakeupService(isMakeup);
+                setIsResourceService(usesResourceTypes);
+                const savedResourceTypes = usesResourceTypes
+                    ? await VendorServiceService.getResourceTypes(serviceId!)
+                    : [];
                 if (!cancelled) setResourceTypes(savedResourceTypes);
 
                 // Package eligibility and STAY inventory are managed by booking slots.
@@ -732,20 +745,36 @@ const VendorPricing = () => {
              * There is no separate package API call.
              */
 
-            if (!isStayService && packages.some(pkg => pkg.active && pkg.requiresSlot === false)) {
-                toast.error("Packages without predefined slots are supported only for Stays services.");
+            if (!isResourceService && !isMakeupService && packages.some(pkg => pkg.active && pkg.requiresSlot === false)) {
+                toast.error("Packages without predefined slots are supported only for Stays and Beauty services.");
                 setSaving(false);
                 return;
             }
 
-            if (isStayService) {
-                const invalidStayPackage = packages.find(pkg => pkg.active && (!Number.isInteger(Number(pkg.maxGuestsPerRoom)) || Number(pkg.maxGuestsPerRoom) < 1));
+            if (isResourceService) {
+                const invalidStayPackage = isStayService
+                    ? packages.find(pkg => pkg.active && (!Number.isInteger(Number(pkg.maxGuestsPerRoom)) || Number(pkg.maxGuestsPerRoom) < 1))
+                    : undefined;
                 if (invalidStayPackage) {
                     toast.error(`Enter a maximum of at least one guest per room for package "${invalidStayPackage.name || "Untitled"}".`);
                     setSaving(false);
                     return;
                 }
-                const unassignedStayPackage = packages.find(pkg => pkg.active && !(pkg.slotIds ?? []).length);
+                const unassignedInventoryPackage = packages.find(pkg => pkg.active && !(pkg.resourceRequirements?.length || pkg.resourceTypeId));
+                if (unassignedInventoryPackage) {
+                    toast.error(`Add at least one Resource Type to package "${unassignedInventoryPackage.name || "Untitled"}".`);
+                    setSaving(false);
+                    return;
+                }
+                const invalidInventoryPackage = packages.find(pkg => pkg.active && (pkg.resourceRequirements ?? []).some(item => !item.resourceTypeId || !Number.isInteger(Number(item.quantity)) || Number(item.quantity) < 1));
+                if (invalidInventoryPackage) {
+                    toast.error(`Check the ${isStayService ? "room" : "resource"} composition for package "${invalidInventoryPackage.name || "Untitled"}".`);
+                    setSaving(false);
+                    return;
+                }
+                const unassignedStayPackage = isStayService
+                    ? packages.find(pkg => pkg.active && !(pkg.slotIds ?? []).length)
+                    : undefined;
                 if (unassignedStayPackage) {
                     toast.error(`Assign at least one booking slot to package "${unassignedStayPackage.name || "Untitled"}".`);
                     setSaving(false);
@@ -753,9 +782,9 @@ const VendorPricing = () => {
                 }
             }
 
-            const invalidFixedDurationPackage = packages.find(pkg => pkg.active && pkg.packageType === "FIXED_DURATION" && (!pkg.resourceTypeId || !pkg.includedDuration || pkg.includedDuration < 1 || pkg.pricingBasis !== "FIXED"));
+            const invalidFixedDurationPackage = packages.find(pkg => isStayService && pkg.active && pkg.packageType === "FIXED_DURATION" && (!(pkg.resourceRequirements?.length || pkg.resourceTypeId) || !pkg.includedDuration || pkg.includedDuration < 1 || pkg.pricingBasis !== "FIXED"));
             if (invalidFixedDurationPackage) {
-                toast.error(`Fixed-duration package "${invalidFixedDurationPackage.name || "Untitled"}" requires a Resource Type, an included duration, and fixed pricing.`);
+                toast.error(`Fixed-duration package "${invalidFixedDurationPackage.name || "Untitled"}" requires at least one Resource Type, an included duration, and fixed pricing.`);
                 setSaving(false);
                 return;
             }
@@ -1027,13 +1056,14 @@ const VendorPricing = () => {
             price: 0,
             features: [],
             active: true,
-            requiresSlot: true,
+            requiresSlot: !isMakeupService,
             slotIds: [],
             pricingBasis: "FIXED",
             minimumDuration: 1,
             maximumDuration: 31,
             includedDuration: packageType === "FIXED_DURATION" ? 3 : undefined,
             resourceTypeId: undefined,
+            resourceRequirements: [],
             maxGuestsPerRoom: isStayService ? 2 : undefined,
             packageType
 
@@ -1048,6 +1078,33 @@ const VendorPricing = () => {
 
     }
 
+
+    function addPackageResourceRequirement(packageIndex: number) {
+        setPackages(previous => previous.map((pkg, index) => {
+            if (index !== packageIndex) return pkg;
+            const existing = pkg.resourceRequirements ?? (pkg.resourceTypeId ? [{ resourceTypeId: pkg.resourceTypeId, quantity: 1 }] : []);
+            const used = new Set(existing.map(item => item.resourceTypeId));
+            const nextType = resourceTypes.find(type => type.active !== false && !used.has(type.id));
+            if (!nextType) return pkg;
+            return { ...pkg, resourceRequirements: [...existing, { resourceTypeId: nextType.id, quantity: 1 }], resourceTypeId: undefined };
+        }));
+    }
+
+    function updatePackageResourceRequirement(packageIndex: number, requirementIndex: number, field: "resourceTypeId" | "quantity", value: string | number) {
+        setPackages(previous => previous.map((pkg, index) => {
+            if (index !== packageIndex) return pkg;
+            const next = [...(pkg.resourceRequirements ?? (pkg.resourceTypeId ? [{ resourceTypeId: pkg.resourceTypeId, quantity: 1 }] : []))];
+            if (!next[requirementIndex]) return pkg;
+            next[requirementIndex] = { ...next[requirementIndex], [field]: value };
+            return { ...pkg, resourceRequirements: next, resourceTypeId: undefined };
+        }));
+    }
+
+    function removePackageResourceRequirement(packageIndex: number, requirementIndex: number) {
+        setPackages(previous => previous.map((pkg, index) => index === packageIndex
+            ? { ...pkg, resourceRequirements: (pkg.resourceRequirements ?? (pkg.resourceTypeId ? [{ resourceTypeId: pkg.resourceTypeId, quantity: 1 }] : [])).filter((_, i) => i !== requirementIndex), resourceTypeId: undefined }
+            : pkg));
+    }
 
     function togglePackage(
         packageIndex: number
@@ -1349,11 +1406,7 @@ const VendorPricing = () => {
 
         return (
 
-            <div className="vendor-pricing-loading">
-
-                Loading Pricing...
-
-            </div>
+            <Loader label="Loading pricing configuration" />
 
         );
 
@@ -1609,6 +1662,7 @@ const VendorPricing = () => {
                         SERVICE PACKAGES
                     ================================================= */}
 
+                    {isResourceService && (
                     <section className="pricing-card package-card-section">
                         <div className="package-section-header">
                             <div>
@@ -1622,7 +1676,7 @@ const VendorPricing = () => {
                                     <input value={resourceTypeName} onChange={e => setResourceTypeName(e.target.value)} placeholder="e.g. Big Hall, Small Hall" />
                                 </label>
                                 <label>Physical quantity
-                                    <input type="number" min={1} max={100} value={resourceTypeQuantity} onChange={e => setResourceTypeQuantity(Math.max(1, Number(e.target.value) || 1))} />
+                                    <NumericInput  min={1} max={100} value={resourceTypeQuantity} onChange={e => setResourceTypeQuantity(Math.max(1, Number(e.target.value) || 1))} />
                                 </label>
                                 <button type="button" className="add-package-btn" onClick={addResourceType}>+ Add Resource Type</button>
                             </div>
@@ -1632,9 +1686,10 @@ const VendorPricing = () => {
                                     <button type="button" className="remove-feature-btn" onClick={() => removeResourceType(type.id)}>Remove</button>
                                 </div>
                             ))}
-                            {resourceTypes.length === 0 && <p className="package-eligibility-help">No resource types configured. Existing slot-capacity behavior remains active.</p>}
+                            {resourceTypes.length === 0 && <p className="package-eligibility-help">No Resource Types configured yet. Add at least one physical resource before saving resource-based packages.</p>}
                         </div>
                     </section>
+                    )}
 
                     <section className="pricing-card package-card-section">
 
@@ -1652,16 +1707,34 @@ const VendorPricing = () => {
                                     {packages.length} {packages.length === 1 ? "package" : "packages"}
                                 </div>
 
-                                <button
-                                    type="button"
-                                    className="add-package-btn"
-                                    onClick={() => addPackage("STANDARD")}
-                                >
-                                    + Create Resource Type Package
-                                </button>
-                                <button type="button" className="add-package-btn" onClick={() => addPackage("FIXED_DURATION")}>
-                                    + Create Fixed-Duration Package
-                                </button>
+                                {isResourceService ? (
+                                    <>
+                                        <button
+                                            type="button"
+                                            className="add-package-btn"
+                                            onClick={() => addPackage("STANDARD")}
+                                        >
+                                            + Create Resource Package
+                                        </button>
+                                        {isStayService && (
+                                            <button
+                                                type="button"
+                                                className="add-package-btn"
+                                                onClick={() => addPackage("FIXED_DURATION")}
+                                            >
+                                                + Create Fixed-Duration Package
+                                            </button>
+                                        )}
+                                    </>
+                                ) : (
+                                    <button
+                                        type="button"
+                                        className="add-package-btn"
+                                        onClick={() => addPackage("STANDARD")}
+                                    >
+                                        + Create Package
+                                    </button>
+                                )}
                             </div>
 
                         </div>
@@ -1674,18 +1747,11 @@ const VendorPricing = () => {
                                 <p>
                                     Create your first package with a name, price and optional features.
                                 </p>
-                                <button
-                                    type="button"
-                                    className="add-package-btn"
-                                    onClick={() => addPackage("STANDARD")}
-                                >
-                                    + Create Package
-                                </button>
                             </div>
 
                         ) : (
 
-                            <div className="package-editor-grid">
+                            <MobileCarousel className="package-editor-grid" ariaLabel="Service packages" paginationPosition="top">
 
                                 {packages.map((pkg, packageIndex) => {
 
@@ -1733,11 +1799,11 @@ const VendorPricing = () => {
 
                                                 <>
                                                     <div className="package-price-field">
-                                                        <label>Package Price</label>
+                                                        <label>{isStayService ? "Price per complete package combination" : "Package Price"}</label>
                                                         <div className="package-price-input">
                                                             <span>₹</span>
-                                                            <input
-                                                                type="number"
+                                                            <NumericInput
+
                                                                 min="0"
                                                                 step="0.01"
                                                                 value={pkg.price ?? 0}
@@ -1751,12 +1817,20 @@ const VendorPricing = () => {
                                                             />
                                                         </div>
                                                     </div>
+                                                    {isStayService && <p className="package-eligibility-help">This price applies to one complete room composition. The customer-selected quantity multiplies the price by the number of complete combinations.</p>}
+                                                    {isMakeupService && <div className="package-eligibility-config">
+                                                        <label>Appointment duration (minutes)
+                                                            <NumericInput min="1" max="1440" value={pkg.durationMinutes ?? 30}
+                                                                onChange={e => updatePackage(packageIndex, "durationMinutes", Math.max(1, Math.min(1440, Number(e.target.value) || 1)))} />
+                                                        </label>
+                                                        <p className="package-eligibility-help">This fixed package occupies one customer capacity position for the full duration. If left unset, duration is derived from the configured duration rule using the number of package features.</p>
+                                                    </div>}
 
                                                     {pkg.packageType === "FIXED_DURATION" ? (
                                                         <div className="package-eligibility-config">
                                                             <div className="package-features-header"><h5>Fixed-Duration Package</h5></div>
                                                             <label>Included {isStayService ? "nights" : "days"}
-                                                                <input type="number" min="1" max="31" value={pkg.includedDuration ?? 3}
+                                                                <NumericInput  min="1" max="31" value={pkg.includedDuration ?? 3}
                                                                     onChange={e => updatePackage(packageIndex, "includedDuration", Math.max(1, Math.min(31, Number(e.target.value) || 1)))} />
                                                             </label>
                                                             <p className="package-eligibility-help">Customers cannot change this duration. Checkout is calculated from the selected start date.</p>
@@ -1775,17 +1849,17 @@ const VendorPricing = () => {
                                                                 <option value="FIXED">Flat price per booking</option>
                                                             </select>
                                                         </label>
-                                                        <div className="package-duration-fields">
-                                                            <label>
+                                                        <div className="package-duration-fields stay-duration-fields">
+                                                            <label className="stay-duration-field">
                                                                 Minimum {pkg.pricingBasis === "PER_NIGHT" ? "nights" : "days"}
-                                                                <input type="number" min="1" max="31"
+                                                                <NumericInput  min="1" max="31"
                                                                     value={pkg.minimumDuration ?? 1}
                                                                     onChange={e => updatePackage(packageIndex, "minimumDuration", Math.max(1, Math.min(31, Number(e.target.value) || 1)))}
                                                                 />
                                                             </label>
-                                                            <label>
+                                                            <label className="stay-duration-field">
                                                                 Maximum {pkg.pricingBasis === "PER_NIGHT" ? "nights" : "days"}
-                                                                <input type="number" min={pkg.minimumDuration ?? 1} max="31"
+                                                                <NumericInput  min={pkg.minimumDuration ?? 1} max="31"
                                                                     value={pkg.maximumDuration ?? 31}
                                                                     onChange={e => updatePackage(packageIndex, "maximumDuration", Math.max(pkg.minimumDuration ?? 1, Math.min(31, Number(e.target.value) || 1)))}
                                                                 />
@@ -1797,24 +1871,40 @@ const VendorPricing = () => {
                                                     </div>
                                                     )}
 
-                                                    {resourceTypes.length > 0 && (
+                                                    {isResourceService && (
                                                         <div className="package-eligibility-config">
-                                                            <div className="package-features-header"><h5>Resource Type</h5></div>
-                                                            <p className="package-eligibility-help">Choose which physical inventory group this package uses.</p>
-                                                            <select value={pkg.resourceTypeId ?? ""} onChange={e => updatePackage(packageIndex, "resourceTypeId", e.target.value || undefined)}>
-                                                                <option value="">Select resource type</option>
-                                                                {resourceTypes.filter(type => type.active !== false).map(type => <option key={type.id} value={type.id}>{type.name} ({type.quantity} unit(s))</option>)}
-                                                            </select>
+                                                            <div className="package-features-header"><h5>{isStayService ? "Room composition" : "Resource composition"}</h5></div>
+                                                            <p className="package-eligibility-help">{isStayService
+                                                                ? "Define the rooms included in one complete package. For example, 2 Premium + 1 Gold. Customers can book multiple complete combinations; all included rooms are held together."
+                                                                : "Define the physical resources included in this package. Each selected resource is reserved for the configured booking slot and interval."}</p>
+                                                            {(pkg.resourceRequirements ?? (pkg.resourceTypeId ? [{ resourceTypeId: pkg.resourceTypeId, quantity: 1 }] : [])).map((requirement, requirementIndex) => (
+                                                                <div className="package-duration-fields stay-room-composition-row" key={`${requirement.resourceTypeId}-${requirementIndex}`}>
+                                                                    <label className="stay-room-type-field">
+                                                                        {isStayService ? "Room type" : "Resource type"}
+                                                                        <select value={requirement.resourceTypeId} onChange={e => updatePackageResourceRequirement(packageIndex, requirementIndex, "resourceTypeId", e.target.value)}>
+                                                                            {resourceTypes.filter(type => type.active !== false).map(type => <option key={type.id} value={type.id}>{type.name} ({type.quantity} total)</option>)}
+                                                                        </select>
+                                                                    </label>
+                                                                    <label className="stay-room-quantity-field">
+                                                                        {isStayService ? "Rooms in package" : "Units in package"}
+                                                                        <NumericInput  min="1" max="100" value={requirement.quantity} onChange={e => updatePackageResourceRequirement(packageIndex, requirementIndex, "quantity", Math.max(1, Math.min(100, Math.floor(Number(e.target.value) || 1))))} />
+                                                                    </label>
+                                                                    <button type="button" className="remove-package-room-btn" onClick={() => removePackageResourceRequirement(packageIndex, requirementIndex)}>Remove</button>
+                                                                </div>
+                                                            ))}
+                                                            <button type="button" className="add-package-btn stay-add-room-type-btn" onClick={() => addPackageResourceRequirement(packageIndex)} disabled={resourceTypes.filter(type => type.active !== false).length <= (pkg.resourceRequirements ?? []).length}>+ Add {isStayService ? "Room Type" : "Resource Type"}</button>
                                                         </div>
                                                     )}
                                                     <div className="package-eligibility-config">
                                                         <div className="package-features-header">
-                                                            <h5>{isStayService ? "Booking Slots & Room Capacity" : "Booking Time Configuration"}</h5>
+                                                            <h5>{isResourceService ? "Booking Slots & Resource Availability" : "Booking Time Configuration"}</h5>
                                                         </div>
                                                         <p className="package-eligibility-help">
                                                             {isStayService
-                                                                ? "Assign this STAY package to one or more active booking slots. Each slot's maximum bookings value is the number of rooms available."
-                                                                : "Select which slots customers may use with this package. Leave all unchecked to allow all active slots."}
+                                                                ? "Assign this STAY package to one or more active booking slots. Slots control check-in timing and vendor date blocks; physical room availability is calculated from the Resource Types above."
+                                                                : isResourceService
+                                                                    ? "Select the booking slots customers may use with this resource package. Configure the slot times to match the sessions you offer."
+                                                                    : "Select which slots customers may use with this package. Leave all unchecked to allow all active slots."}
                                                         </p>
                                                         {bookingSlots.length === 0 ? (
                                                             <p className="package-eligibility-help">No active booking slots configured yet.</p>
@@ -1842,9 +1932,9 @@ const VendorPricing = () => {
                                                             </p>
                                                             <label className="stay-max-guests-field">
                                                                 <span className="stay-max-guests-label">Maximum guests per room</span>
-                                                                <input
+                                                                <NumericInput
                                                                     className="stay-max-guests-input"
-                                                                    type="number"
+
                                                                     min="1"
                                                                     step="1"
                                                                     value={pkg.maxGuestsPerRoom ?? ""}
@@ -1966,7 +2056,7 @@ const VendorPricing = () => {
 
                                 })}
 
-                            </div>
+                            </MobileCarousel>
 
                         )}
 
@@ -2017,9 +2107,9 @@ const VendorPricing = () => {
                                 </label>
 
 
-                                <input
+                                <NumericInput
 
-                                    type="number"
+
 
                                     min="0"
 
@@ -2045,21 +2135,10 @@ const VendorPricing = () => {
                                 </label>
 
 
-                                <input
-
-                                    type="date"
-
-                                    value={
-                                        pricing.effectiveFrom ??
-                                        ""
-                                    }
-
-                                    onChange={e =>
-                                        updateEffectiveFrom(
-                                            e.target.value
-                                        )
-                                    }
-
+                                <DateField
+                                    value={pricing.effectiveFrom ?? ""}
+                                    onChange={updateEffectiveFrom}
+                                    ariaLabel="Pricing effective from"
                                 />
 
                             </div>
@@ -2072,21 +2151,11 @@ const VendorPricing = () => {
                                 </label>
 
 
-                                <input
-
-                                    type="date"
-
-                                    value={
-                                        pricing.effectiveUntil ??
-                                        ""
-                                    }
-
-                                    onChange={e =>
-                                        updateEffectiveUntil(
-                                            e.target.value
-                                        )
-                                    }
-
+                                <DateField
+                                    value={pricing.effectiveUntil ?? ""}
+                                    minDate={pricing.effectiveFrom ?? undefined}
+                                    onChange={updateEffectiveUntil}
+                                    ariaLabel="Pricing effective until"
                                 />
 
                             </div>
@@ -2214,9 +2283,9 @@ const VendorPricing = () => {
                                             </select>
 
 
-                                            <input
+                                            <NumericInput
 
-                                                type="number"
+
 
                                                 value={
                                                     head.value
@@ -2363,9 +2432,9 @@ const VendorPricing = () => {
                                             </select>
 
 
-                                            <input
+                                            <NumericInput
 
-                                                type="number"
+
 
                                                 value={
                                                     discount.value
@@ -2478,9 +2547,9 @@ const VendorPricing = () => {
                             </label>
 
 
-                            <input
+                            <NumericInput
 
-                                type="number"
+
 
                                 min="0"
 
@@ -2566,9 +2635,9 @@ const VendorPricing = () => {
                             </label>
 
 
-                            <input
+                            <NumericInput
 
-                                type="number"
+
 
                                 min="0"
 
@@ -2678,8 +2747,8 @@ const VendorPricing = () => {
                                                             From Days
                                                         </label>
 
-                                                        <input
-                                                            type="number"
+                                                        <NumericInput
+
                                                             min="0"
                                                             value={
                                                                 rule.minDaysBeforeEvent
@@ -2704,8 +2773,8 @@ const VendorPricing = () => {
                                                             To Days
                                                         </label>
 
-                                                        <input
-                                                            type="number"
+                                                        <NumericInput
+
                                                             min="0"
                                                             value={
                                                                 rule.maxDaysBeforeEvent ===
@@ -2738,8 +2807,8 @@ const VendorPricing = () => {
 
                                                         <div className="percentage-input">
 
-                                                            <input
-                                                                type="number"
+                                                            <NumericInput
+
                                                                 min="0"
                                                                 max="100"
                                                                 value={

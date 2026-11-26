@@ -17,3 +17,5 @@
     margin-bottom:20px;
 
 }
+
+.revenue-chart-card { width: 100%; min-width: 0; box-sizing: border-box; overflow: hidden; }

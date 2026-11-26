@@ -39,7 +39,7 @@ public class CustomerController {
             @RequestParam(defaultValue = "20") int size
     ) throws Exception {
         if ((categoryTag != null && !categoryTag.isBlank()) || (location != null && !location.isBlank())) {
-            return customerService.searchListings(categoryTag, location, page, size);
+            return customerService.searchListings(category, categoryTag, location, page, size);
         }
         return customerService.getVendorListings(category);
     }

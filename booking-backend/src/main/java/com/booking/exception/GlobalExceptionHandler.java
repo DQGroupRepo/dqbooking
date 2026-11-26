@@ -211,6 +211,13 @@ public class GlobalExceptionHandler {
 
     }
 
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ErrorResponse> handleIllegalArgumentException(IllegalArgumentException ex) {
+        log.warn("Invalid request: {}", ex.getMessage());
+        ErrorResponse error = new ErrorResponse(HttpStatus.BAD_REQUEST.value(), ex.getMessage(), LocalDateTime.now());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+    }
+
     @ExceptionHandler(IllegalStateException.class)
     public ResponseEntity<ErrorResponse> handleIllegalStateException(
             IllegalStateException ex
@@ -294,6 +301,11 @@ public class GlobalExceptionHandler {
         response.put(
                 "eventDate",
                 ex.getEventDate()
+        );
+
+        response.put(
+                "holdId",
+                ex.getHoldId()
         );
 
         response.put(

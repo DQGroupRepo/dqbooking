@@ -13,9 +13,11 @@ class VendorListingService {
             await api.get<VendorListing[]>(
                 "/customer/services",
                 {
-                    params: (location || categoryTag)
-                        ? { location, categoryTag }
-                        : category ? { category } : undefined
+                    params: {
+                        ...(category ? { category } : {}),
+                        ...(location ? { location } : {}),
+                        ...(categoryTag ? { categoryTag } : {})
+                    }
                 }
             );
 

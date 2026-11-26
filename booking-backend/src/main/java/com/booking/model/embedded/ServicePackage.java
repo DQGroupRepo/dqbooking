@@ -16,6 +16,9 @@ public class ServicePackage {
     /** Resource type whose physical inventory this package consumes. */
     private String resourceTypeId;
 
+    /** Multiple inventory groups consumed by one complete package (STAY only). */
+    private List<ResourceTypeRequirement> resourceRequirements = new ArrayList<>();
+
     /** PER_DAY, PER_NIGHT, or FIXED. */
     private String pricingBasis = "FIXED";
     private Integer minimumDuration = 1;
@@ -23,6 +26,9 @@ public class ServicePackage {
 
     /** Exact included duration for FIXED_DURATION packages (STAY uses nights). */
     private Integer includedDuration;
+
+    /** Optional fixed appointment duration in minutes for Beauty packages. */
+    private Integer durationMinutes;
 
     private String name;
 

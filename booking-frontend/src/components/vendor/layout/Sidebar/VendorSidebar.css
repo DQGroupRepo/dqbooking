@@ -43,44 +43,6 @@
 
 }
 
-.logo-icon{
-
-    width:52px;
-
-    height:52px;
-
-    background:#1e40af;
-
-    border-radius:14px;
-
-    display:flex;
-
-    align-items:center;
-
-    justify-content:center;
-
-    font-size:24px;
-
-}
-
-.vendor-logo h2{
-
-    margin:0;
-
-    font-size:22px;
-
-}
-
-.vendor-logo p{
-
-    margin-top:4px;
-
-    color:#94a3b8;
-
-    font-size:13px;
-
-}
-
 .vendor-sidebar nav{
 
     display:flex;
@@ -182,4 +144,12 @@
     .vendor-sidebar {
         transition: none;
     }
+}
+
+
+.vendor-logo { flex-direction: column; align-items: flex-start; gap: 8px; }
+.vendor-logo-image { display: block; width: 190px; max-width: 100%; height: auto; max-height: 74px; object-fit: contain; object-position: left center; }
+@media (max-width: 992px) {
+    .vendor-logo { align-items: flex-start; }
+    .vendor-logo-image { width: 180px; max-height: 70px; }
 }

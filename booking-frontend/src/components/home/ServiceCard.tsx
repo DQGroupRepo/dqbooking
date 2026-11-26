@@ -6,11 +6,14 @@ import type {
     VendorListing
 } from "../../types/VendorListing";
 
+import RatingStars from "../common/RatingStars";
+import LocationBadge from "../common/LocationBadge";
 import "./ServiceCard.css";
 
 
 const ServiceCard = ({
     serviceId,
+    serviceName,
     businessName,
     description,
     city,
@@ -47,7 +50,7 @@ const ServiceCard = ({
                 }
 
                 alt={
-                    businessName
+                    serviceName || businessName
                 }
 
             />
@@ -58,16 +61,12 @@ const ServiceCard = ({
 
                 <h3>
 
-                    {businessName}
+                    {serviceName || businessName}
 
                 </h3>
 
 
-                <p>
-
-                    📍 {city}
-
-                </p>
+                <LocationBadge city={city} variant="card" />
 
 
                 {
@@ -75,7 +74,7 @@ const ServiceCard = ({
 
                         <p className="service-rating">
 
-                            ⭐ {rating.toFixed(1)}
+                            <RatingStars value={rating} size="small" /> {rating.toFixed(1)}
 
                             {
                                 reviewCount !== undefined && (

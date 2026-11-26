@@ -1,3 +1,4 @@
+import type { BeautyDetails } from "./BeautyDetails";
 import type { ServicePackage } from "./ServicePackage";
 
 export interface DetailAttribute {
@@ -89,4 +90,6 @@ export interface VendorDetail {
   packages?: ServicePackage[];
 
   resourceTypes?: ServiceResourceType[];
+
+  beautyDetails?: BeautyDetails;
 }

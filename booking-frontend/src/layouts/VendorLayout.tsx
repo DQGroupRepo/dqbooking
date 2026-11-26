@@ -442,7 +442,7 @@ const VendorLayout = () => {
             >
               <span aria-hidden="true">☰</span>
             </button>
-            <span className="vendor-mobile-brand">EventNest</span>
+            <span className="vendor-mobile-brand"><img src="/images/dq-logo.png" alt="DQBooking" /></span>
           </div>
 
           <VendorTopBar />
@@ -505,7 +505,7 @@ const VendorLayout = () => {
             >
               <span aria-hidden="true">☰</span>
             </button>
-            <span className="vendor-mobile-brand">EventNest</span>
+            <span className="vendor-mobile-brand"><img src="/images/dq-logo.png" alt="DQBooking" /></span>
           </div>
 
           <VendorTopBar />

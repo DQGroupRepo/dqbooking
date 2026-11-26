@@ -106,3 +106,15 @@
     font-weight:700;
     color:#0F4C81;
 }
+.container { min-width: 0; max-width: 100%; box-sizing: border-box; }
+.tableScroll { width: 100%; max-width: 100%; overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain; scrollbar-width: thin; }
+@media (max-width: 900px) { .table { min-width: 680px; } }
+@media (max-width: 600px) {
+    .container { padding: 18px 14px; border-radius: 16px; }
+    .header { align-items: flex-start; gap: 12px; margin-bottom: 14px; }
+    .header h2 { min-width: 0; font-size: 20px; line-height: 1.25; }
+    .viewAll { flex: 0 0 auto; padding: 9px 12px; font-size: 12px; }
+    .table thead th, .table td { padding: 13px 12px; white-space: nowrap; font-size: 13px; }
+    .customer { gap: 9px; }
+    .avatar { flex: 0 0 36px; width: 36px; height: 36px; }
+}
